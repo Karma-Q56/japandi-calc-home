@@ -14,7 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      leads: {
+        Row: {
+          area: string | null
+          consent: boolean
+          consent_version: string
+          consented_at: string | null
+          contact_name: string
+          created_at: string
+          id: string
+          notes: string | null
+          phone: string
+          quiet_day: string | null
+          restaurant_name: string
+          restaurant_type: string | null
+        }
+        Insert: {
+          area?: string | null
+          consent?: boolean
+          consent_version: string
+          consented_at?: string | null
+          contact_name: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          phone: string
+          quiet_day?: string | null
+          restaurant_name: string
+          restaurant_type?: string | null
+        }
+        Update: {
+          area?: string | null
+          consent?: boolean
+          consent_version?: string
+          consented_at?: string | null
+          contact_name?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          phone?: string
+          quiet_day?: string | null
+          restaurant_name?: string
+          restaurant_type?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
