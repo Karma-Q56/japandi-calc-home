@@ -6,7 +6,7 @@ import { planRepeatVisits, plannerDefaults, plannerPlans, rand, whatsappLink } f
 import { useCountUp } from './motion';
 
 function Money({ value }: { value: number }) { const v = useCountUp(value); return <>{rand(v)}</>; }
-function Num({ value, digits = 1 }: { value: number; digits?: number }) { const v = useCountUp(value); return <>{v.toLocaleString('en-ZA', { minimumFractionDigits: digits, maximumFractionDigits: digits })}</>; }
+function Num({ value, digits = 1 }: { value: number; digits?: number }) { const v = useCountUp(value); return <>{v.toFixed(digits)}</>; }
 
 type Field = { id: string; label: string; value: number; min: number; max: number; step: number; prefix?: string; suffix?: string; set: (v: number) => void };
 
@@ -58,7 +58,7 @@ export function Planner() {
           <div><dt>Contribution ({margin}% margin)</dt><dd><Money value={r.contribution} /></dd></div>
           <div className="planner-after"><dt>After the {plan} fee ({rand(fee)})</dt><dd><Money value={r.afterFee} /></dd></div>
         </dl>
-        <p className="planner-breakeven">{r.breakEvenPerWeek === null ? 'Break-even needs a margin above 0%.' : <>Break-even: about <strong>{r.breakEvenPerWeek.toLocaleString('en-ZA', { maximumFractionDigits: 1 })}</strong> extra visits a week.</>}</p>
+        <p className="planner-breakeven">{r.breakEvenPerWeek === null ? 'Break-even needs a margin above 0%.' : <>Break-even: about <strong>{r.breakEvenPerWeek.toFixed(1)}</strong> extra visits a week.</>}</p>
         <div className="planner-actions">
           <Button variant="patron" className="primary-cta" asChild><a href={whatsappLink(message)} target="_blank" rel="noopener noreferrer">Talk through your numbers <ArrowUpRight /></a></Button>
           <Button variant="quiet" type="button" onClick={reset}><RotateCcw /> Reset</Button>
