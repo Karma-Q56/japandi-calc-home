@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Check, Coffee, Heart, Star } from 'lucide-react';
 import dish from '@/assets/dish.jpg';
-import { commercial, rand } from '@/lib/patron';
+import { commercial } from '@/lib/patron';
 import { prefersReducedMotion, useCountUp, useInViewOnce } from './motion';
 
 const menu = [
@@ -70,7 +70,7 @@ function OwnerScreen() {
   return <div ref={ref} className="screen"><div className="screen-label">Owner campaign</div><div className="screen-body screen-owner">
     <span className="owner-audience">No visit in 30 days · 84 guests</span>
     <div className="owner-message">We miss you! Pop in this Tuesday for a coffee on us with any breakfast.</div>
-    <span className="owner-cost">Estimated cost {rand(84 * commercial.smsEstimate)}.{Math.round((84 * commercial.smsEstimate * 100) % 100).toString().padStart(2, '0')} (84 × R0.35, illustrative)</span>
+    <span className="owner-cost">Estimated cost R{(84 * commercial.smsEstimate).toFixed(2)} (84 × R0.35, illustrative)</span>
     <span className={`staff-button small ${step >= 1 ? 'is-pressed' : ''}`}>Send</span>
     <div className="owner-results"><span>Delivered <strong>{Math.round(delivered)}</strong></span><span>Redeemed <strong>{Math.round(redeemed)}</strong></span></div></div></div>;
 }
