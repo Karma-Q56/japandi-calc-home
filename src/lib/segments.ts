@@ -2,18 +2,18 @@
 
 // GSM-7 basic character set (160 chars single, 153 per part in multipart)
 const GSM_7_CHARS = new Set([
-  '@', '£', '$', '¥', 'è', 'é', 'ù', 'ì', 'ò', 'Ç',
-  '\n', '\r', '\t', ' ', '!', '"', '#', '¤', '%', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/',
+  '@', '\u00a3', '$', '\u00a5', '\u00e8', '\u00e9', '\u00f9', '\u00ec', '\u00f2', '\u00c7',
+  '\n', '\r', '\t', ' ', '!', '"', '#', '\u00a4', '%', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/',
   '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '<', '=', '>', '?',
   'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-  'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'Ä', 'Ö', 'Ñ', 'Ü', '§',
+  'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '\u00c4', '\u00d6', '\u00d1', '\u00dc', '\u00a7',
   'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
-  'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'ä', 'ö', 'ñ', 'ü', 'à',
+  'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '\u00e4', '\u00f6', '\u00f1', '\u00fc', '\u00e0',
 ]);
 
 // GSM-7 extension characters (count as 2 characters each in GSM-7 encoding)
-// These are: ^ { } \ [ ~ ] | €
-const GSM_7_EXTENSION_CHARS = new Set(['^', '{', '}', '\\', '[', '~', ']', '|', '€']);
+// These are: ^ { } \ [ ~ ] | \u20ac
+const GSM_7_EXTENSION_CHARS = new Set(['^', '{', '}', '\\', '[', '~', ']', '|', '\u20ac']);
 
 /**
  * Check if a character is in the GSM-7 basic set
@@ -73,22 +73,7 @@ export function countSegments(text: string): number {
     }
     
     // For multipart: 153 chars per segment, but extension chars still count as 2
-    // So each segment can hold 153 basic chars, or fewer if there are extension chars
-    // Actually, the limit is 153 * 7 bits = 1071 bits per segment for multipart
-    // GSM-7 basic = 7 bits, extension = 14 bits (2 x 7 bits)
-    // So: basic chars * 7 + extension chars * 14 <= 1071 bits per segment
-    
     // Simplified approach: count total bits and divide by bits per segment
-    let totalBits = 0;
-    for (const char of text) {
-      totalBits += isGsm7Extension(char) ? 14 : 7;
-    }
-    
-    // First segment can hold 160 chars (1120 bits for basic, but with extension chars it's less)
-    // Actually, first segment is 160 chars for basic, but with extension it's different
-    // Standard approach: 160 for first, 153 for subsequent, but extension chars count as 2
-    
-    // More accurate: calculate how many chars fit in each segment
     const SEGMENT_BITS = 1120; // 160 * 7 bits for first segment
     const MULTIPART_SEGMENT_BITS = 1071; // 153 * 7 bits for subsequent segments
     
@@ -149,16 +134,14 @@ export function hasGsm7Extension(text: string): boolean {
  */
 export function sanitizeForGsm7(text: string): { text: string; modified: boolean } {
   const replacements: Record<string, string> = {
-    '"': '"', // Keep straight quotes
-    "'": "'", // Keep straight apostrophe
-    '“': '"', // Left double quote
-    '”': '"', // Right double quote
-    '‘': "'", // Left single quote
-    '’': "'", // Right single quote
-    '…': '...', // Ellipsis
-    '–': '-', // En dash
-    '—': '-', // Em dash
-    '€': 'EUR', // Euro symbol
+    '\u201c': '"', // Left double quote
+    '\u201d': '"', // Right double quote
+    '\u2018': "'", // Left single quote
+    '\u2019': "'", // Right single quote
+    '\u2026': '...', // Ellipsis
+    '\u2013': '-', // En dash
+    '\u2014': '-', // Em dash
+    '\u20ac': 'EUR', // Euro symbol
   };
 
   let modified = false;

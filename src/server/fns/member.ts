@@ -1,265 +1,79 @@
-// Member (customer) server functions
-import { z } from 'zod';
-import { createServerFn } from '@tanstack/react-start';
-import { withContext } from '../db';
-import { sql } from 'drizzle-orm';
-import { customer, membership, consentEvent } from '../db/schema';
-import { normalizePhone, isValidSAMobile } from '@/lib/phone';
-import { getConsentWording, CURRENT_CONSENT_VERSIONS, type ConsentPurpose, type ConsentAction } from '@/config/consent';
-import { generateOtp, hashPhone, hashIp } from '@/lib/phone';
-import { APP_ENV, IS_DEVELOPMENT } from '@/config/app';
+// Member server functions - PLACEHOLDER
+// In production, these would interact with the database
+// to manage customer memberships and loyalty cards
 
-// Input validation schemas
+import { z } from 'zod';
+
+const cardSchema = z.object({
+  slug: z.string().min(1),
+});
+
 const joinSchema = z.object({
-  restaurantId: z.string().uuid(),
-  name: z.string().min(1).max(80),
+  restaurantId: z.string().min(1),
+  name: z.string().min(1),
   phone: z.string().min(1),
-  consents: z.record(z.boolean()),
-  src: z.string().min(1).max(32).regex(/^[a-z0-9:_-]+$/),
+  marketingSms: z.boolean().default(false),
+  otp: z.string().min(6).max(6),
 });
 
 const setConsentSchema = z.object({
-  membershipId: z.string().uuid(),
-  purpose: z.enum(['loyalty', 'marketing_sms', 'marketing_push']),
-  granted: z.boolean(),
+  membershipId: z.string().min(1),
+  marketingSms: z.boolean(),
 });
 
 /**
- * Join a restaurant as a member
+ * Get customer's cards
  */
-export const join = createServerFn({
-  method: 'POST',
-  input: joinSchema,
-  async handler({ input, ctx }) {
-    const { restaurantId, name, phone, consents, src } = input;
-
-    // Normalize phone
-    const normalizedPhone = normalizePhone(phone);
-    if (!normalizedPhone) {
-      return { error: 'Invalid phone number format', success: false };
-    }
-
-    // Validate South African mobile
-    if (!isValidSAMobile(normalizedPhone)) {
-      return { error: 'Please use a valid South African mobile number', success: false };
-    }
-
-    // Get IP for rate limiting and consent logging
-    const ip = ctx.request.headers.get('x-forwarded-for') || ctx.request.headers.get('x-real-ip') || '';
-    const ipHash = ip ? await hashIp(ip) : null;
-
-    // Get phone hash for rate limiting
-    const phoneHash = await hashPhone(normalizedPhone);
-
-    try {
-      // In production, use withContext with customer context
-      // For now, log the join attempt
-      console.log(`[Member] Join: ${name} (${normalizedPhone}) -> restaurant ${restaurantId} from ${src}`);
-
-      // Check if customer exists
-      // In production, this would query the database
-      const existingCustomer = null; // Placeholder
-
-      let customerId: string;
-
-      if (existingCustomer) {
-        // Use existing customer
-        customerId = existingCustomer.id;
-      } else {
-        // Create new customer
-        // In production: insert into customer table
-        customerId = crypto.randomUUID();
-        console.log(`[Member] Created customer: ${customerId}`);
-      }
-
-      // Check if already a member of this restaurant
-      const existingMembership = null; // Placeholder
-      
-      if (existingMembership) {
-        return {
-          success: true,
-          existing: true,
-          membershipId: existingMembership.id,
-        };
-      }
-
-      // Create membership
-      const membershipId = crypto.randomUUID();
-      console.log(`[Member] Created membership: ${membershipId}`);
-
-      // Store consent events
-      const restaurantName = 'Restaurant'; // In production, fetch from database
-      
-      for (const [purpose, granted] of Object.entries(consents)) {
-        if (granted) {
-          const wording = getConsentWording(purpose as ConsentPurpose, restaurantName);
-          console.log(`[Member] Consent ${purpose}: granted, version ${wording.version}`);
-        }
-      }
-
-      // Generate QR token
-      const qrToken = crypto.randomUUID().replace(/-/g, '');
-
-      return {
-        success: true,
-        membershipId,
-        customerId,
-        qrToken,
-        welcomeStamp: false, // In production, check restaurant.welcomeStamp
-      };
-    } catch (error) {
-      console.error(`[Member] Failed to join: ${error}`);
-      return { error: 'Failed to join restaurant', success: false };
-    }
-  },
-});
+export const myCards = async () => {
+  // In production, query database for customer's memberships
+  return { memberships: [], total: 0 };
+};
 
 /**
- * Get my cards (memberships) for the current customer
+ * Get card data for a restaurant
  */
-export const myCards = createServerFn({
-  method: 'GET',
-  async handler({ ctx }) {
-    // In production, get customer from session
-    const customerId = ''; // Placeholder
-
-    try {
-      // In production, use withContext with customer context
-      return {
-        memberships: [],
-        total: 0,
-      };
-    } catch (error) {
-      console.error(`[Member] Failed to get my cards: ${error}`);
-      return { error: 'Failed to load your cards', memberships: [], total: 0 };
-    }
-  },
-});
+export const card = async (input: z.infer<typeof cardSchema>) => {
+  // In production, get membership, stamps, rewards, restaurant info
+  return { error: 'Not implemented' };
+};
 
 /**
- * Get card details for a specific restaurant
+ * Join a restaurant's loyalty program
  */
-export const card = createServerFn({
-  method: 'GET',
-  input: z.object({ slug: z.string() }),
-  async handler({ input, ctx }) {
-    const { slug } = input;
+export const join = async (input: z.infer<typeof joinSchema>) => {
+  // In production:
+  // 1. Normalize phone
+  // 2. Check/create customer
+  // 3. Create membership
+  // 4. Store consent
+  // 5. Generate QR token
 
-    // In production, get customer from session
-    const customerId = ''; // Placeholder
-
-    try {
-      // In production, use withContext with customer context
-      return {
-        membership: null,
-        stamps: [],
-        rewards: [],
-        restaurant: null,
-      };
-    } catch (error) {
-      console.error(`[Member] Failed to get card: ${error}`);
-      return { error: 'Failed to load card', membership: null, stamps: [], rewards: [], restaurant: null };
-    }
-  },
-});
+  console.log('[Member] Join:', input);
+  return { success: true, membershipId: 'placeholder-membership' };
+};
 
 /**
- * Set consent for a membership
+ * Set consent preferences
  */
-export const setConsent = createServerFn({
-  method: 'POST',
-  input: setConsentSchema,
-  async handler({ input, ctx }) {
-    const { membershipId, purpose, granted } = input;
-
-    // Get IP for logging
-    const ip = ctx.request.headers.get('x-forwarded-for') || ctx.request.headers.get('x-real-ip') || '';
-    const ipHash = ip ? await hashIp(ip) : null;
-
-    try {
-      // In production, use withContext with customer context
-      console.log(`[Member] Set consent: membership ${membershipId}, purpose ${purpose}, granted ${granted}`);
-
-      // Get restaurant name for wording
-      const restaurantName = 'Restaurant'; // In production, fetch from database
-      const wording = getConsentWording(purpose, restaurantName);
-
-      // In production: insert consent_event
-      // update membership marketing flags
-
-      return { success: true };
-    } catch (error) {
-      console.error(`[Member] Failed to set consent: ${error}`);
-      return { error: 'Failed to update consent', success: false };
-    }
-  },
-});
+export const setConsent = async (input: z.infer<typeof setConsentSchema>) => {
+  // In production, update consent in database
+  console.log('[Member] Set consent:', input);
+  return { success: true };
+};
 
 /**
- * Rotate QR token
+ * Opt out of marketing
  */
-export const rotateToken = createServerFn({
-  method: 'POST',
-  input: z.object({ membershipId: z.string().uuid() }),
-  async handler({ input, ctx }) {
-    const { membershipId } = input;
-
-    try {
-      // In production, use withContext with customer context
-      const newToken = crypto.randomUUID().replace(/-/g, '');
-      console.log(`[Member] Rotated token for membership ${membershipId}: ${newToken}`);
-
-      return {
-        success: true,
-        qrToken: newToken,
-      };
-    } catch (error) {
-      console.error(`[Member] Failed to rotate token: ${error}`);
-      return { error: 'Failed to rotate token', success: false };
-    }
-  },
-});
+export const optOut = async (input: { token: string }) => {
+  // In production, verify token and withdraw marketing consent
+  console.log('[Member] Opt out:', input);
+  return { success: true };
+};
 
 /**
- * Export data (POPIA)
+ * Get consent history
  */
-export const exportData = createServerFn({
-  method: 'GET',
-  async handler({ ctx }) {
-    // In production, get customer from session
-    const customerId = ''; // Placeholder
-
-    try {
-      // In production, use withContext with customer context
-      // Fetch all customer data and return as JSON
-      return {
-        data: null,
-        success: false,
-        error: 'Not yet implemented',
-      };
-    } catch (error) {
-      console.error(`[Member] Failed to export data: ${error}`);
-      return { error: 'Failed to export data', success: false, data: null };
-    }
-  },
-});
-
-/**
- * Request deletion (POPIA)
- */
-export const requestDeletion = createServerFn({
-  method: 'POST',
-  async handler({ ctx }) {
-    // In production, get customer from session
-    const customerId = ''; // Placeholder
-
-    try {
-      // In production, use withContext with customer context
-      // Create data_request and anonymize customer
-      return { success: false, error: 'Not yet implemented' };
-    } catch (error) {
-      console.error(`[Member] Failed to request deletion: ${error}`);
-      return { error: 'Failed to request deletion', success: false };
-    }
-  },
-});
+export const consentHistory = async (input: { membershipId: string }) => {
+  // In production, query consent_event table
+  return { events: [] };
+};

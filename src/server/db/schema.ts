@@ -385,8 +385,9 @@ export const otpSendLog = pgTable('otp_send_log', {
 });
 
 // Rate Limit Hit
+
 export const rateLimitHit = pgTable('rate_limit_hit', {
-  id: integer('id').primaryKey({ mode: 'number' }).generatedAlwaysAsIdentity(),
+  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
   bucket: text('bucket').notNull(),
   key: text('key').notNull(),
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),

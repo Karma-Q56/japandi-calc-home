@@ -40,7 +40,8 @@ export const CURRENT_CONSENT_VERSIONS: Record<ConsentPurpose, string> = {
 // Get current wording for a purpose
 export function getConsentWording(purpose: ConsentPurpose, restaurantName: string): ConsentWording {
   const version = CURRENT_CONSENT_VERSIONS[purpose];
-  const wording = CONSENT_WORDING[`${version}_${purpose}`];
+  const key = `${version}_${purpose}` as const;
+  const wording = CONSENT_WORDING[key];
   
   if (!wording) {
     throw new Error(`No consent wording found for purpose: ${purpose}`);
@@ -54,7 +55,8 @@ export function getConsentWording(purpose: ConsentPurpose, restaurantName: strin
 
 // Get wording by version and purpose (for historical lookups)
 export function getConsentWordingByVersion(version: string, purpose: ConsentPurpose, restaurantName: string): ConsentWording | null {
-  const wording = CONSENT_WORDING[`${version}_${purpose}`];
+  const key = `${version}_${purpose}` as const;
+  const wording = CONSENT_WORDING[key];
   
   if (!wording) {
     return null;

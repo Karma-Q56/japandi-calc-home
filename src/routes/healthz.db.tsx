@@ -3,13 +3,13 @@ import { checkDatabase } from '../server/db';
 
 export const Route = createFileRoute('/healthz/db')({
   loader: async () => {
-    const databaseUrl = import.meta.env.DATABASE_URL;
-    
+    const databaseUrl = (import.meta.env as { DATABASE_URL?: string }).DATABASE_URL;
+
     if (!databaseUrl) {
-      return { 
-        status: 'error', 
+      return {
+        status: 'error',
         error: 'DATABASE_URL not configured',
-        timestamp: new Date().toISOString() 
+        timestamp: new Date().toISOString(),
       };
     }
 
@@ -33,13 +33,12 @@ export const Route = createFileRoute('/healthz/db')({
       };
     }
   },
-  head: () => ({ title: 'Database Health Check' }),
   component: DatabaseHealthCheck,
 });
 
 function DatabaseHealthCheck() {
   const loaderData = Route.useLoaderData();
-  
+
   if (loaderData.status === 'ok') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">

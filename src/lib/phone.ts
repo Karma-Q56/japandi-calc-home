@@ -4,12 +4,6 @@ const SA_COUNTRY_CODE = '+27';
 const SA_COUNTRY_CODE_DIGITS = '27';
 const SA_NATIONAL_PREFIX = '0';
 
-// GSM-7 basic character set (for segment counting)
-const GSM_7_BASIC = /^[\u0040-\u007F\u00A3\u00A5\u00A7\u00BF\u00C5\u00C6\u00D8\u00DE\u00DF\u00E0-\u00E2\u00E4\u00E5\u00E7\u00E8-\u00EA\u00EC\u00EE\u00EF\u00F1\u00F8\u00F9\u00FC\u00FE\u0101\u0111\u0121\u012B\u0131\u0138\u0141\u0148\u0150\u0151\u0160\u0161\u016F\u017E\u0178]$/;
-
-// GSM-7 extension characters (count as 2 in a message)
-const GSM_7_EXTENSION = /^[\u000A\u000D\u0009\u000B\u000C\u0020\u0022\u0023\u0024\u0025\u0026\u0027\u0028\u0029\u002A\u002B\u002C\u002D\u002E\u002F\u0030-\u0039\u003A\u003B\u003C\u003D\u003E\u003F\u0040\u0041\u0042\u0043\u0044\u0045\u0046\u0047\u0048\u0049\u004A\u004B\u004C\u004D\u004E\u004F\u0050\u0051\u0052\u0053\u0054\u0055\u0056\u0057\u0058\u0059\u005A\u005B\u005C\u005D\u005E\u005F\u0060\u0061\u0062\u0063\u0064\u0065\u0066\u0067\u0068\u0069\u006A\u006B\u006C\u006D\u006E\u006F\u0070\u0071\u0072\u0073\u0074\u0075\u0076\u0077\u0078\u0079\u007A\u007B\u007C\u007D\u007E\u007F]$/;
-
 /**
  * Normalize a phone number to E.164 format for South Africa
  * Accepts: +27821234567, 0821234567, 821234567, 0027821234567, +27 82 123 4567
@@ -179,12 +173,19 @@ export function maskPhone(phone: string): string {
  */
 export function generateOtp(): string {
   const array = new Uint8Array(3);
-  crypto.getRandomValues(array);
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    crypto.getRandomValues(array);
+  } else {
+    // Fallback for environments without crypto
+    for (let i = 0; i < array.length; i++) {
+      array[i] = Math.floor(Math.random() * 256);
+    }
+  }
   
   let otp = '';
   for (let i = 0; i < 3; i++) {
     // Generate a random number between 0 and 999, pad to 3 digits
-    const num = array[i] % 1000;
+    const num = array[i]! % 1000;
     otp += num.toString().padStart(3, '0');
   }
   

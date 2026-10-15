@@ -4,7 +4,6 @@ export const Route = createFileRoute('/healthz')({
   loader: async () => {
     return { status: 'ok', timestamp: new Date().toISOString() };
   },
-  head: () => ({ title: 'Health Check' }),
   component: HealthCheck,
 });
 

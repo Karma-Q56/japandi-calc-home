@@ -119,5 +119,5 @@ export function verifyReferencePlanner(): boolean {
 export function formatZAR(amount: number): string {
   const rounded = Math.round(Math.abs(amount));
   const text = `R${rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
-  return amount < 0 && rounded > 0 ? `−${text}` : text;
+  return amount < 0 && rounded > 0 ? `\u2212${text}` : text;
 }

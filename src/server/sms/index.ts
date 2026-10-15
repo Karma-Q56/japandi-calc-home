@@ -14,7 +14,7 @@ const providers: Record<string, SmsProvider> = {
  * Get the configured SMS provider
  */
 export function getSmsProvider(): SmsProvider {
-  const providerName = import.meta.env.SMS_PROVIDER || 'console';
+  const providerName = (import.meta.env as { SMS_PROVIDER?: string }).SMS_PROVIDER || 'console';
   const provider = providers[providerName];
   
   if (!provider) {
