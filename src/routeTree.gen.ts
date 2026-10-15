@@ -10,33 +10,62 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppRouteImport } from './routes/app'
+import { Route as HealthzRouteImport } from './routes/healthz'
+import { Route as HealthzDbRouteImport } from './routes/healthz.db'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppRoute = AppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HealthzRoute = HealthzRouteImport.update({
+  id: '/healthz',
+  path: '/healthz',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HealthzDbRoute = HealthzDbRouteImport.update({
+  id: '/db',
+  path: '/db',
+  getParentRoute: () => HealthzRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/app': typeof AppRoute
+  '/healthz': typeof HealthzRouteWithChildren
+  '/healthz/db': typeof HealthzDbRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/app': typeof AppRoute
+  '/healthz': typeof HealthzRouteWithChildren
+  '/healthz/db': typeof HealthzDbRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/app': typeof AppRoute
+  '/healthz': typeof HealthzRouteWithChildren
+  '/healthz/db': typeof HealthzDbRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/app' | '/healthz' | '/healthz/db'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/app' | '/healthz' | '/healthz/db'
+  id: '__root__' | '/' | '/app' | '/healthz' | '/healthz/db'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRoute
+  HealthzRoute: typeof HealthzRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +77,45 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/healthz': {
+      id: '/healthz'
+      path: '/healthz'
+      fullPath: '/healthz'
+      preLoaderRoute: typeof HealthzRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/healthz/db': {
+      id: '/healthz/db'
+      path: '/db'
+      fullPath: '/healthz/db'
+      preLoaderRoute: typeof HealthzDbRouteImport
+      parentRoute: typeof HealthzRoute
+    }
   }
 }
 
+interface HealthzRouteChildren {
+  HealthzDbRoute: typeof HealthzDbRoute
+}
+
+const HealthzRouteChildren: HealthzRouteChildren = {
+  HealthzDbRoute: HealthzDbRoute,
+}
+
+const HealthzRouteWithChildren =
+  HealthzRoute._addFileChildren(HealthzRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRoute,
+  HealthzRoute: HealthzRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

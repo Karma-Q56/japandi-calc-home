@@ -1,0 +1,1 @@
+DATABASE_URL=postgresql://app_user:YOUR_PASSWORD@YOUR_NEON_HOST/YOUR_DATABASE?sslmode=require
