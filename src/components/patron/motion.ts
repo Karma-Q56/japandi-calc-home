@@ -39,7 +39,7 @@ export function useRevealAll() {
 export function useInViewOnce<T extends Element>() {
   const ref = useRef<T>(null);
   const [seen, setSeen] = useState(false);
-  useEffect(() => { if (ref.current) return observeOnce(ref.current, () => setSeen(true)); }, []);
+  useEffect(() => { if (!ref.current) return undefined; return observeOnce(ref.current, () => setSeen(true)); }, []);
   return [ref, seen] as const;
 }
 
