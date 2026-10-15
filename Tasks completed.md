@@ -62,3 +62,8 @@ This file tracks implementation against the supplied `BUILD_PLAN.md`. Work follo
 ## M9 — Hardening and launch
 
 - [ ] Not started.
+
+## Repository publication
+
+- [x] Pushed the current platform foundation to the GitHub `main` branch (commit `f22ec03`).
+- [x] Kept the local `.env` out of the new commits, removed the previously tracked copy from the current branch, and ignored Playwright output.
