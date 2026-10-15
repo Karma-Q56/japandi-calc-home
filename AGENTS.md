@@ -1,4 +1,5 @@
-> [!IMPORTANT]`r`n> Preserve published Git history. Avoid force-pushing or rewriting commits that have already been shared.
+> [!IMPORTANT]
+> Preserve published Git history. Avoid force-pushing or rewriting commits that have already been shared.
 
 ## Application structure
 - Keep the marketing experience on the index route; product flows are outside the homepage scope.
