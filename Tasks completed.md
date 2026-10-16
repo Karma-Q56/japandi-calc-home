@@ -52,4 +52,4 @@ The user explicitly asked to proceed with M2/M3 without blocking on these verifi
 
 ## GitHub
 
-- [ ] Current changes have not yet been committed or pushed.
+- [x] M0/M2/M3 implementation pushed to `vibe/m1-m3-implementation-ab5f40` in `Karma-Q56/japandi-calc-home` at commit `ddae6f7`.
