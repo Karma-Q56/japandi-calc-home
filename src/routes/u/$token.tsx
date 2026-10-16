@@ -1,38 +1,14 @@
-// PLACEHOLDER - M3: Guest Join & Cards
-// In production, this would handle opt-out requests via tokenized links
+import { createFileRoute } from '@tanstack/react-router';
+import { useState } from 'react';
+import { api } from '@/api';
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
-export async function loader() {
-  return {};
-}
-
-export async function head() {
-  return { title: 'Opt Out | Patron' };
-}
-
+export const Route = createFileRoute('/u/$token')({ component: OptOutPage });
 function OptOutPage() {
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <Card className="max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-xl">Opt Out</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-gray-600 text-center">
-            This is a placeholder for the opt-out page.
-          </p>
-          <p className="text-gray-600 text-center">
-            In production, clicking Confirm would withdraw marketing consent.
-          </p>
-          <Button className="w-full" asChild>
-            <a href="/">Back Home</a>
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
-  );
+  const { token } = Route.useParams();
+  const [status, setStatus] = useState<'ready' | 'done' | 'invalid'>('ready');
+  const confirm = async () => {
+    const result = await api.member.optOutByToken(token);
+    setStatus(result.ok ? 'done' : 'invalid');
+  };
+  return <main className="guest-page"><section className="guest-panel optout-panel"><p className="eyebrow">Message preferences</p><h1>{status === 'done' ? 'You’re opted out.' : status === 'invalid' ? 'This link has expired.' : 'Stop marketing messages?'}</h1><p>{status === 'done' ? 'Marketing SMS consent has been withdrawn. Your loyalty card remains available.' : status === 'invalid' ? 'This opt-out link is invalid or expired. You can update preferences in card settings.' : 'Confirm to stop promotional SMS from this restaurant. Your loyalty card will continue to work.'}</p>{status === 'ready' && <button className="builder-primary" onClick={confirm}>Confirm opt out</button>}<a href="/">Back to Patron</a></section></main>;
 }
-
-export default OptOutPage;

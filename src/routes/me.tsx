@@ -1,52 +1,10 @@
-// PLACEHOLDER - M3: Guest Join & Cards
-// In production, this would display all of a customer's loyalty cards
+import { createFileRoute, redirect } from '@tanstack/react-router';
+import { useSyncExternalStore } from 'react';
+import { api } from '@/api';
+import { demoRepo } from '@/data/repo';
+import { requireRole } from '@/data/session';
+import { ThemeProvider } from '@/theme';
+import { clock } from '@/lib/clock';
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
-export async function loader() {
-  return {};
-}
-
-export async function head() {
-  return { title: 'My Cards | Patron' };
-}
-
-function MyCardsPage() {
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-lg font-bold text-gray-900">My Cards</h1>
-            <Button variant="outline" size="sm" asChild>
-              <a href="/me/settings">Settings</a>
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-6xl mx-auto px-4 py-8">
-        <Card className="text-center">
-          <CardHeader>
-            <CardTitle className="text-lg">My Loyalty Cards</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-gray-600">
-              This is a placeholder for the My Cards page.
-            </p>
-            <p className="text-gray-600">
-              In production, this would display all your loyalty cards
-              from restaurants you've joined.
-            </p>
-            <Button asChild>
-              <a href="/">Back Home</a>
-            </Button>
-          </CardContent>
-        </Card>
-      </main>
-    </div>
-  );
-}
-
-export default MyCardsPage;
+export const Route=createFileRoute('/me')({beforeLoad:()=>{if(!requireRole('guest')(demoRepo.read().session)||!demoRepo.read().session.customerId)throw redirect({to:'/demo'});},component:MyCards});
+function MyCards(){const state=useSyncExternalStore(demoRepo.subscribe,demoRepo.read,demoRepo.read);const customerId=state.session.customerId!;const result=api.member.cards(customerId);const memberships=result.ok?result.data:[];return <main className="guest-page"><header className="guest-header"><a href="/demo">{state.customers.find(item=>item.id===customerId)?.name||'My cards'}</a><a href="/me/settings">Settings</a></header><section className="guest-card-content"><p className="eyebrow">Your regular places</p><h1>My cards.</h1>{memberships.length?<div className="my-cards-list">{memberships.map(item=>{const reward=item.rewards.some(value=>!value.redeemedAt);const days=item.lastVisitAt?Math.max(0,Math.floor((clock.now()-new Date(item.lastVisitAt).getTime())/86400000)):null;return <ThemeProvider key={item.id} theme={item.restaurant.theme}><a className="my-card-tile" href={`/r/${item.restaurant.slug}/card`}><div className="my-card-top"><span>{item.restaurant.name}</span>{reward&&<b>Reward ready</b>}</div><p>{item.stampsCurrent} of {item.restaurant.stampsRequired} stamps · {item.restaurant.rewardDescription}</p><div className="my-card-progress"><i style={{width:`${Math.min(100,item.stampsCurrent/item.restaurant.stampsRequired*100)}%`}}/></div><small>{days===null?'No visits yet':days===0?'Last visit today':`Last visit ${days} ${days===1?'day':'days'} ago`}</small></a></ThemeProvider>;})}</div>:<section className="guest-panel"><h2>No cards yet.</h2><p>Join a restaurant by scanning its QR code or opening its page.</p><a className="builder-primary" href="/demo">Explore the demo</a></section>}</section></main>;}
