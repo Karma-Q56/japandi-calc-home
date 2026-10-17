@@ -11,14 +11,28 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/app'
+import { Route as CaseStudiesRouteImport } from './routes/case-studies'
+import { Route as ConsentWordingRouteImport } from './routes/consent-wording'
+import { Route as ContactRouteImport } from './routes/contact'
 import { Route as DemoRouteImport } from './routes/demo'
+import { Route as FaqRouteImport } from './routes/faq'
 import { Route as HealthzRouteImport } from './routes/healthz'
+import { Route as HowItWorksRouteImport } from './routes/how-it-works'
+import { Route as LinkExpiredRouteImport } from './routes/link-expired'
+import { Route as MaintenanceRouteImport } from './routes/maintenance'
 import { Route as MeRouteImport } from './routes/me'
+import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as OpsRouteImport } from './routes/ops'
+import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as SessionExpiredRouteImport } from './routes/session-expired'
 import { Route as StampRouteImport } from './routes/stamp'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AppMenuRouteImport } from './routes/app.menu'
+import { Route as AppOnboardingRouteImport } from './routes/app.onboarding'
 import { Route as AppQrRouteImport } from './routes/app.qr'
 import { Route as DemoOutboxRouteImport } from './routes/demo.outbox'
+import { Route as DemoStatusRouteImport } from './routes/demo.status'
 import { Route as HealthzDbRouteImport } from './routes/healthz.db'
 import { Route as MeSettingsRouteImport } from './routes/me.settings'
 import { Route as OpsRestaurantsRouteImport } from './routes/ops.restaurants'
@@ -47,9 +61,29 @@ const AppRoute = AppRouteImport.update({
   path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CaseStudiesRoute = CaseStudiesRouteImport.update({
+  id: '/case-studies',
+  path: '/case-studies',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConsentWordingRoute = ConsentWordingRouteImport.update({
+  id: '/consent-wording',
+  path: '/consent-wording',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DemoRoute = DemoRouteImport.update({
   id: '/demo',
   path: '/demo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HealthzRoute = HealthzRouteImport.update({
@@ -57,9 +91,29 @@ const HealthzRoute = HealthzRouteImport.update({
   path: '/healthz',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HowItWorksRoute = HowItWorksRouteImport.update({
+  id: '/how-it-works',
+  path: '/how-it-works',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LinkExpiredRoute = LinkExpiredRouteImport.update({
+  id: '/link-expired',
+  path: '/link-expired',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MaintenanceRoute = MaintenanceRouteImport.update({
+  id: '/maintenance',
+  path: '/maintenance',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MeRoute = MeRouteImport.update({
   id: '/me',
   path: '/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OfflineRoute = OfflineRouteImport.update({
+  id: '/offline',
+  path: '/offline',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OpsRoute = OpsRouteImport.update({
@@ -67,14 +121,39 @@ const OpsRoute = OpsRouteImport.update({
   path: '/ops',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SessionExpiredRoute = SessionExpiredRouteImport.update({
+  id: '/session-expired',
+  path: '/session-expired',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StampRoute = StampRouteImport.update({
   id: '/stamp',
   path: '/stamp',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppMenuRoute = AppMenuRouteImport.update({
   id: '/menu',
   path: '/menu',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOnboardingRoute = AppOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => AppRoute,
 } as any)
 const AppQrRoute = AppQrRouteImport.update({
@@ -85,6 +164,11 @@ const AppQrRoute = AppQrRouteImport.update({
 const DemoOutboxRoute = DemoOutboxRouteImport.update({
   id: '/outbox',
   path: '/outbox',
+  getParentRoute: () => DemoRoute,
+} as any)
+const DemoStatusRoute = DemoStatusRouteImport.update({
+  id: '/status',
+  path: '/status',
   getParentRoute: () => DemoRoute,
 } as any)
 const HealthzDbRoute = HealthzDbRouteImport.update({
@@ -176,14 +260,28 @@ const OpsRestaurantsIdQrRoute = OpsRestaurantsIdQrRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/case-studies': typeof CaseStudiesRoute
+  '/consent-wording': typeof ConsentWordingRoute
+  '/contact': typeof ContactRoute
   '/demo': typeof DemoRouteWithChildren
+  '/faq': typeof FaqRoute
   '/healthz': typeof HealthzRouteWithChildren
+  '/how-it-works': typeof HowItWorksRoute
+  '/link-expired': typeof LinkExpiredRoute
+  '/maintenance': typeof MaintenanceRoute
   '/me': typeof MeRouteWithChildren
+  '/offline': typeof OfflineRoute
   '/ops': typeof OpsRouteWithChildren
+  '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
+  '/session-expired': typeof SessionExpiredRoute
   '/stamp': typeof StampRoute
+  '/terms': typeof TermsRoute
   '/app/menu': typeof AppMenuRoute
+  '/app/onboarding': typeof AppOnboardingRoute
   '/app/qr': typeof AppQrRoute
   '/demo/outbox': typeof DemoOutboxRoute
+  '/demo/status': typeof DemoStatusRoute
   '/healthz/db': typeof HealthzDbRoute
   '/me/settings': typeof MeSettingsRoute
   '/ops/restaurants': typeof OpsRestaurantsRouteWithChildren
@@ -205,14 +303,28 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/case-studies': typeof CaseStudiesRoute
+  '/consent-wording': typeof ConsentWordingRoute
+  '/contact': typeof ContactRoute
   '/demo': typeof DemoRouteWithChildren
+  '/faq': typeof FaqRoute
   '/healthz': typeof HealthzRouteWithChildren
+  '/how-it-works': typeof HowItWorksRoute
+  '/link-expired': typeof LinkExpiredRoute
+  '/maintenance': typeof MaintenanceRoute
   '/me': typeof MeRouteWithChildren
+  '/offline': typeof OfflineRoute
   '/ops': typeof OpsRouteWithChildren
+  '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
+  '/session-expired': typeof SessionExpiredRoute
   '/stamp': typeof StampRoute
+  '/terms': typeof TermsRoute
   '/app/menu': typeof AppMenuRoute
+  '/app/onboarding': typeof AppOnboardingRoute
   '/app/qr': typeof AppQrRoute
   '/demo/outbox': typeof DemoOutboxRoute
+  '/demo/status': typeof DemoStatusRoute
   '/healthz/db': typeof HealthzDbRoute
   '/me/settings': typeof MeSettingsRoute
   '/ops/restaurants': typeof OpsRestaurantsRouteWithChildren
@@ -235,14 +347,28 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/case-studies': typeof CaseStudiesRoute
+  '/consent-wording': typeof ConsentWordingRoute
+  '/contact': typeof ContactRoute
   '/demo': typeof DemoRouteWithChildren
+  '/faq': typeof FaqRoute
   '/healthz': typeof HealthzRouteWithChildren
+  '/how-it-works': typeof HowItWorksRoute
+  '/link-expired': typeof LinkExpiredRoute
+  '/maintenance': typeof MaintenanceRoute
   '/me': typeof MeRouteWithChildren
+  '/offline': typeof OfflineRoute
   '/ops': typeof OpsRouteWithChildren
+  '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
+  '/session-expired': typeof SessionExpiredRoute
   '/stamp': typeof StampRoute
+  '/terms': typeof TermsRoute
   '/app/menu': typeof AppMenuRoute
+  '/app/onboarding': typeof AppOnboardingRoute
   '/app/qr': typeof AppQrRoute
   '/demo/outbox': typeof DemoOutboxRoute
+  '/demo/status': typeof DemoStatusRoute
   '/healthz/db': typeof HealthzDbRoute
   '/me/settings': typeof MeSettingsRoute
   '/ops/restaurants': typeof OpsRestaurantsRouteWithChildren
@@ -266,14 +392,28 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/app'
+    | '/case-studies'
+    | '/consent-wording'
+    | '/contact'
     | '/demo'
+    | '/faq'
     | '/healthz'
+    | '/how-it-works'
+    | '/link-expired'
+    | '/maintenance'
     | '/me'
+    | '/offline'
     | '/ops'
+    | '/pricing'
+    | '/privacy'
+    | '/session-expired'
     | '/stamp'
+    | '/terms'
     | '/app/menu'
+    | '/app/onboarding'
     | '/app/qr'
     | '/demo/outbox'
+    | '/demo/status'
     | '/healthz/db'
     | '/me/settings'
     | '/ops/restaurants'
@@ -295,14 +435,28 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/app'
+    | '/case-studies'
+    | '/consent-wording'
+    | '/contact'
     | '/demo'
+    | '/faq'
     | '/healthz'
+    | '/how-it-works'
+    | '/link-expired'
+    | '/maintenance'
     | '/me'
+    | '/offline'
     | '/ops'
+    | '/pricing'
+    | '/privacy'
+    | '/session-expired'
     | '/stamp'
+    | '/terms'
     | '/app/menu'
+    | '/app/onboarding'
     | '/app/qr'
     | '/demo/outbox'
+    | '/demo/status'
     | '/healthz/db'
     | '/me/settings'
     | '/ops/restaurants'
@@ -324,14 +478,28 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/app'
+    | '/case-studies'
+    | '/consent-wording'
+    | '/contact'
     | '/demo'
+    | '/faq'
     | '/healthz'
+    | '/how-it-works'
+    | '/link-expired'
+    | '/maintenance'
     | '/me'
+    | '/offline'
     | '/ops'
+    | '/pricing'
+    | '/privacy'
+    | '/session-expired'
     | '/stamp'
+    | '/terms'
     | '/app/menu'
+    | '/app/onboarding'
     | '/app/qr'
     | '/demo/outbox'
+    | '/demo/status'
     | '/healthz/db'
     | '/me/settings'
     | '/ops/restaurants'
@@ -354,11 +522,23 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
+  CaseStudiesRoute: typeof CaseStudiesRoute
+  ConsentWordingRoute: typeof ConsentWordingRoute
+  ContactRoute: typeof ContactRoute
   DemoRoute: typeof DemoRouteWithChildren
+  FaqRoute: typeof FaqRoute
   HealthzRoute: typeof HealthzRouteWithChildren
+  HowItWorksRoute: typeof HowItWorksRoute
+  LinkExpiredRoute: typeof LinkExpiredRoute
+  MaintenanceRoute: typeof MaintenanceRoute
   MeRoute: typeof MeRouteWithChildren
+  OfflineRoute: typeof OfflineRoute
   OpsRoute: typeof OpsRouteWithChildren
+  PricingRoute: typeof PricingRoute
+  PrivacyRoute: typeof PrivacyRoute
+  SessionExpiredRoute: typeof SessionExpiredRoute
   StampRoute: typeof StampRoute
+  TermsRoute: typeof TermsRoute
   RSlugRoute: typeof RSlugRouteWithChildren
   STokenRoute: typeof STokenRoute
   UTokenRoute: typeof UTokenRoute
@@ -384,11 +564,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/case-studies': {
+      id: '/case-studies'
+      path: '/case-studies'
+      fullPath: '/case-studies'
+      preLoaderRoute: typeof CaseStudiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/consent-wording': {
+      id: '/consent-wording'
+      path: '/consent-wording'
+      fullPath: '/consent-wording'
+      preLoaderRoute: typeof ConsentWordingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/demo': {
       id: '/demo'
       path: '/demo'
       fullPath: '/demo'
       preLoaderRoute: typeof DemoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/healthz': {
@@ -398,11 +606,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HealthzRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/how-it-works': {
+      id: '/how-it-works'
+      path: '/how-it-works'
+      fullPath: '/how-it-works'
+      preLoaderRoute: typeof HowItWorksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/link-expired': {
+      id: '/link-expired'
+      path: '/link-expired'
+      fullPath: '/link-expired'
+      preLoaderRoute: typeof LinkExpiredRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/maintenance': {
+      id: '/maintenance'
+      path: '/maintenance'
+      fullPath: '/maintenance'
+      preLoaderRoute: typeof MaintenanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/me': {
       id: '/me'
       path: '/me'
       fullPath: '/me'
       preLoaderRoute: typeof MeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/offline': {
+      id: '/offline'
+      path: '/offline'
+      fullPath: '/offline'
+      preLoaderRoute: typeof OfflineRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ops': {
@@ -412,6 +648,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OpsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/session-expired': {
+      id: '/session-expired'
+      path: '/session-expired'
+      fullPath: '/session-expired'
+      preLoaderRoute: typeof SessionExpiredRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/stamp': {
       id: '/stamp'
       path: '/stamp'
@@ -419,11 +676,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StampRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/menu': {
       id: '/app/menu'
       path: '/menu'
       fullPath: '/app/menu'
       preLoaderRoute: typeof AppMenuRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/onboarding': {
+      id: '/app/onboarding'
+      path: '/onboarding'
+      fullPath: '/app/onboarding'
+      preLoaderRoute: typeof AppOnboardingRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/qr': {
@@ -438,6 +709,13 @@ declare module '@tanstack/react-router' {
       path: '/outbox'
       fullPath: '/demo/outbox'
       preLoaderRoute: typeof DemoOutboxRouteImport
+      parentRoute: typeof DemoRoute
+    }
+    '/demo/status': {
+      id: '/demo/status'
+      path: '/status'
+      fullPath: '/demo/status'
+      preLoaderRoute: typeof DemoStatusRouteImport
       parentRoute: typeof DemoRoute
     }
     '/healthz/db': {
@@ -564,11 +842,13 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppMenuRoute: typeof AppMenuRoute
+  AppOnboardingRoute: typeof AppOnboardingRoute
   AppQrRoute: typeof AppQrRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppMenuRoute: AppMenuRoute,
+  AppOnboardingRoute: AppOnboardingRoute,
   AppQrRoute: AppQrRoute,
 }
 
@@ -576,11 +856,13 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 interface DemoRouteChildren {
   DemoOutboxRoute: typeof DemoOutboxRoute
+  DemoStatusRoute: typeof DemoStatusRoute
   DemoAsRoleRoute: typeof DemoAsRoleRoute
 }
 
 const DemoRouteChildren: DemoRouteChildren = {
   DemoOutboxRoute: DemoOutboxRoute,
+  DemoStatusRoute: DemoStatusRoute,
   DemoAsRoleRoute: DemoAsRoleRoute,
 }
 
@@ -659,11 +941,23 @@ const RSlugRouteWithChildren = RSlugRoute._addFileChildren(RSlugRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
+  CaseStudiesRoute: CaseStudiesRoute,
+  ConsentWordingRoute: ConsentWordingRoute,
+  ContactRoute: ContactRoute,
   DemoRoute: DemoRouteWithChildren,
+  FaqRoute: FaqRoute,
   HealthzRoute: HealthzRouteWithChildren,
+  HowItWorksRoute: HowItWorksRoute,
+  LinkExpiredRoute: LinkExpiredRoute,
+  MaintenanceRoute: MaintenanceRoute,
   MeRoute: MeRouteWithChildren,
+  OfflineRoute: OfflineRoute,
   OpsRoute: OpsRouteWithChildren,
+  PricingRoute: PricingRoute,
+  PrivacyRoute: PrivacyRoute,
+  SessionExpiredRoute: SessionExpiredRoute,
   StampRoute: StampRoute,
+  TermsRoute: TermsRoute,
   RSlugRoute: RSlugRouteWithChildren,
   STokenRoute: STokenRoute,
   UTokenRoute: UTokenRoute,

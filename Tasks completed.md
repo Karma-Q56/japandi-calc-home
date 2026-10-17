@@ -55,6 +55,20 @@ Updated 2026-10-16. Work is on `vibe/m1-m3-implementation-ab5f40`, based on the 
 - [~] built, not verified Full 120-col reformat of all M0–M3 files (new/edited files are clean; legacy one-liners remain).
 - [~] built, not verified QR decode with jsqr / phone camera, iPhone Safari, real SMS/DB.
 
+## FIX_missing_pieces (2026-10-17 session)
+
+- [x] verified (typecheck/build) `/demo/status` driven by `src/config/milestones.ts`; linked from hub and marketing footer.
+- [x] verified (typecheck/build) Demo-accounts panel, grouped tunnels with milestone badges, reset + busy-week seed (`api.demo.loadBusyWeek`).
+- [x] verified (typecheck/build) Marketing: `/pricing`, `/how-it-works`, `/faq`, `/contact` (lead form), `/case-studies` placeholder.
+- [x] verified (typecheck/build) Legal drafts: `/privacy`, `/terms`, `/consent-wording` (marked needs lawyer review).
+- [x] verified (typecheck/build) System screens: `/offline`, `/session-expired`, `/link-expired`, `/maintenance` (404/500 already in root).
+- [x] verified (typecheck/build) Owner onboarding checklist route + data model (`onboarding` in `DemoState`, seeded, v4-tolerant load).
+- [x] verified (vitest) Guest JS perf-budget test (`src/test/perf-budget.test.ts`, skips until built).
+- [x] verified (typecheck) Privacy-safe analytics (`src/lib/analytics.ts`) and error-log hook (`src/lib/error-log.ts`); support card (`SupportCard`).
+- [x] verified (typecheck/build) UI polish: single hero (name/tagline/suburb/join), hours-today highlight, 16px page padding, 480px desktop column, stepper/tile/button/focus styles, QR min 200px, designed not-built placeholders.
+- [x] verified (typecheck) No-horizontal-scroll e2e (`tests/e2e/demo-no-scroll.spec.ts`, 7 routes at 360px).
+- [~] built, not verified E2E in a real browser at 390/1280 with screenshots (`docs/ui-review/` pending — Playwright lacks system libs in this VM).
+
 ## Verification still requested
 
 - [x] verified (how: `npm run typecheck` clean; `npm run lint` 0 errors; `npx vitest run` 28/28; `npm run build` ok) Typecheck, lint, unit tests and production build.

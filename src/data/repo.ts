@@ -19,6 +19,7 @@ function load(): DemoState {
           otpSendLog: parsed.otpSendLog ?? [],
           pinAttempts: parsed.pinAttempts ?? [],
           pinLockouts: parsed.pinLockouts ?? [],
+          onboarding: parsed.onboarding ?? [],
         }
       : createSeed();
   } catch {

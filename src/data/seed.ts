@@ -236,19 +236,17 @@ export function createSeed(now = Date.UTC(2026, 9, 1, 8)): DemoState {
       earnedAt: m.lastVisitAt ?? new Date(now).toISOString(),
       ...(i % 3 === 0 ? { redeemedAt: new Date(now - 86400000).toISOString() } : {}),
     }));
-  const messages = customers
-    .slice(0, 5)
-    .map((customer, i) => ({
-      id: `message-seed-${i + 1}`,
-      restaurantId: restaurants[0]!.id,
-      customerId: customer.id,
-      body: `Hi ${customer.name.split(" ")[0]}, we miss you! Visit this Tuesday for a coffee on us. Reply STOP to opt out.`,
-      segments: 2,
-      costCents: 70,
-      status: (i === 0 ? "queued" : i === 4 ? "failed" : "delivered") as
-        "queued" | "failed" | "delivered",
-      createdAt: new Date(now - (i + 1) * 3600000).toISOString(),
-    }));
+  const messages = customers.slice(0, 5).map((customer, i) => ({
+    id: `message-seed-${i + 1}`,
+    restaurantId: restaurants[0]!.id,
+    customerId: customer.id,
+    body: `Hi ${customer.name.split(" ")[0]}, we miss you! Visit this Tuesday for a coffee on us. Reply STOP to opt out.`,
+    segments: 2,
+    costCents: 70,
+    status: (i === 0 ? "queued" : i === 4 ? "failed" : "delivered") as
+      "queued" | "failed" | "delivered",
+    createdAt: new Date(now - (i + 1) * 3600000).toISOString(),
+  }));
   return {
     version: 2,
     now,
@@ -299,5 +297,6 @@ export function createSeed(now = Date.UTC(2026, 9, 1, 8)): DemoState {
     otpSendLog: [],
     pinAttempts: [],
     pinLockouts: [],
+    onboarding: restaurants.map((r) => ({ restaurantId: r.id, done: {} })),
   };
 }
