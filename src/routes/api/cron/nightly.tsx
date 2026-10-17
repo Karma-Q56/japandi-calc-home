@@ -1,11 +1,20 @@
-// PLACEHOLDER - M9: Hardening
-// In production, this would be a Cloudflare Cron Trigger endpoint
-// that runs nightly maintenance jobs
+import { createFileRoute } from "@tanstack/react-router";
 
-export async function POST() {
-  return new Response('OK - Placeholder', { status: 200 });
-}
+export const Route = createFileRoute("/api/cron/nightly")({
+  component: CronNightlyPlaceholder,
+  server: {
+    handlers: {
+      POST: async () => new Response("Not implemented yet", { status: 501 }),
+    },
+  },
+});
 
-export async function GET() {
-  return new Response('Method not allowed', { status: 405 });
+function CronNightlyPlaceholder() {
+  return (
+    <main className="demo-hub page-width">
+      <h1>Not implemented yet.</h1>
+      <p>Nightly maintenance runs in a later milestone.</p>
+      <a href="/demo">Back to demo hub</a>
+    </main>
+  );
 }

@@ -2,7 +2,6 @@
 
 > Review 2026-10-17: the snapshot received did not typecheck or build (missing `updateDemo`, missing state fields), and nested pages (`/r/:slug/join`, `/r/:slug/card`, `/me/settings`, `/app/menu`, `/app/qr`, `/ops/restaurants/new` and others) rendered their parent page because parents had no outlet. Role guards also redirected every reload and QR scan to `/demo` because the server cannot read the demo session. All fixed (see docs/decisions.md). Verified by hand in a 390 px browser: demo hub, guest join to card, My cards, operator wizard creating a restaurant and its public page, owner menu and QR print pack, member QR decodes with a real reader. Still placeholders: staff till (M4), owner dashboard (M5), credit (M6), campaigns (M7), PWA/push (M8), M9.
 
-
 Updated 2026-10-16. Work is on `vibe/m1-m3-implementation-ab5f40`, based on the latest fetched Patron branch requested earlier. Authentication remains skipped. The current app is a browser-only demo backed by local storage and seeded data.
 
 ## M0 — Demo foundation
@@ -39,12 +38,29 @@ Updated 2026-10-16. Work is on `vibe/m1-m3-implementation-ab5f40`, based on the 
 - [x] Per-restaurant marketing preference, recorded consent wording/history, JSON data export and demo deletion/anonymization.
 - [x] HMAC-signed, expiring SMS opt-out link creation and confirmation; customer QR links resolve to the guest's cards.
 
+## Fix-up 2026-10-17 (M0–M3 review)
+
+- [x] verified (typecheck/lint/vitest/build pass) Reward noun phrases + `rewardCopy` templates; seed uses "a free coffee"/"a free main"; storage key `patron-demo-v4`.
+- [x] verified (typecheck/build) Card render-write split: `getCard` pure + `markCardSeen` in `useEffect`.
+- [x] verified (typecheck/build) `useDemoState()` added; card/join/me/settings/demo/control-bar use it (remaining `useSyncExternalStore` spots: ops/owner/menu/QR/outbox editors).
+- [x] verified (typecheck/build) Demo hub tunnels are real deep links (`/demo/as/:role?...&to=...`); pasted links set session in `beforeLoad`.
+- [x] verified (typecheck/build) Calm missing states with "Back to demo hub" on card/me/settings/join; browser-only redirects kept.
+- [x] verified (typecheck/build) Join-while-guest: continue-as-guest or "Not you? Join as someone else".
+- [x] verified (typecheck/build) Cron/webhook files export real `Route`s returning 501 POST; `_demoPlaceholder` moved to `src/components/patron/DemoPlaceholder.tsx`.
+- [x] verified (vitest) SMS segments use `countSegments` from `src/lib/segments.ts`.
+- [x] verified (vitest) QR capacity test over 20 join/member URLs fails loudly past version 5-L (`src/lib/qr.test.ts`).
+- [x] verified (vitest) Cross-restaurant privacy service test (`src/test/cross-restaurant.test.ts`).
+- [x] verified (vitest/build) Stamp slots component (`StampSlots`, 40px grid, single "N of M stamps" label) used on guest card.
+- [~] built, not verified E2E `tests/e2e/demo-m0.spec.ts` + `demo-m3.spec.ts` (Playwright browsers lack system libs in this cloud VM: `libnspr4.so`).
+- [~] built, not verified Full 120-col reformat of all M0–M3 files (new/edited files are clean; legacy one-liners remain).
+- [~] built, not verified QR decode with jsqr / phone camera, iPhone Safari, real SMS/DB.
+
 ## Verification still requested
 
-- [ ] Typecheck, lint, unit tests and production build.
-- [ ] Browser walkthrough of routes, role redirects, QR scanning/PNG exports and opt-out confirmation.
-- [ ] Check cross-tab state, clock-driven elapsed time and responsive layout at 360/390 px.
-- [ ] Confirm QR images with a scanner; current QR encoder supports short links up to version 5-L.
+- [x] verified (how: `npm run typecheck` clean; `npm run lint` 0 errors; `npx vitest run` 28/28; `npm run build` ok) Typecheck, lint, unit tests and production build.
+- [~] built, not verified Browser walkthrough of routes, role redirects, QR scanning/PNG exports and opt-out confirmation.
+- [~] built, not verified Check cross-tab state, clock-driven elapsed time and responsive layout at 360/390 px.
+- [~] built, not verified Confirm QR images with a scanner; current QR encoder supports short links up to version 5-L.
 
 The user explicitly asked to proceed with M2/M3 without blocking on these verification issues and said they will handle any verification blockers.
 

@@ -1,11 +1,20 @@
-// PLACEHOLDER - M6: Credit & SMS
-// In production, this would be a Cloudflare Cron Trigger endpoint
-// that settles SMS costs hourly
+import { createFileRoute } from "@tanstack/react-router";
 
-export async function POST() {
-  return new Response('OK - Placeholder', { status: 200 });
-}
+export const Route = createFileRoute("/api/cron/settle")({
+  component: CronSettlePlaceholder,
+  server: {
+    handlers: {
+      POST: async () => new Response("Not implemented yet", { status: 501 }),
+    },
+  },
+});
 
-export async function GET() {
-  return new Response('Method not allowed', { status: 405 });
+function CronSettlePlaceholder() {
+  return (
+    <main className="demo-hub page-width">
+      <h1>Not implemented yet.</h1>
+      <p>SMS cost settlement runs in a later milestone.</p>
+      <a href="/demo">Back to demo hub</a>
+    </main>
+  );
 }

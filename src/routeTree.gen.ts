@@ -25,10 +25,15 @@ import { Route as OpsRestaurantsRouteImport } from './routes/ops.restaurants'
 import { Route as RSlugRouteImport } from './routes/r.$slug'
 import { Route as STokenRouteImport } from './routes/s/$token'
 import { Route as UTokenRouteImport } from './routes/u/$token'
+import { Route as ApiCronDispatchRouteImport } from './routes/api/cron/dispatch'
+import { Route as ApiCronNightlyRouteImport } from './routes/api/cron/nightly'
+import { Route as ApiCronSettleRouteImport } from './routes/api/cron/settle'
+import { Route as DemoAsRoleRouteImport } from './routes/demo.as.$role'
 import { Route as OpsRestaurantsIdRouteImport } from './routes/ops.restaurants.$id'
 import { Route as OpsRestaurantsNewRouteImport } from './routes/ops.restaurants.new'
 import { Route as RSlugCardRouteImport } from './routes/r.$slug.card'
 import { Route as RSlugJoinRouteImport } from './routes/r.$slug.join'
+import { Route as ApiWebhooksSmsProviderRouteImport } from './routes/api/webhooks/sms/$provider'
 import { Route as OpsRestaurantsIdLookRouteImport } from './routes/ops.restaurants.$id.look'
 import { Route as OpsRestaurantsIdQrRouteImport } from './routes/ops.restaurants.$id.qr'
 
@@ -112,6 +117,26 @@ const UTokenRoute = UTokenRouteImport.update({
   path: '/u/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCronDispatchRoute = ApiCronDispatchRouteImport.update({
+  id: '/api/cron/dispatch',
+  path: '/api/cron/dispatch',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCronNightlyRoute = ApiCronNightlyRouteImport.update({
+  id: '/api/cron/nightly',
+  path: '/api/cron/nightly',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCronSettleRoute = ApiCronSettleRouteImport.update({
+  id: '/api/cron/settle',
+  path: '/api/cron/settle',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoAsRoleRoute = DemoAsRoleRouteImport.update({
+  id: '/as/$role',
+  path: '/as/$role',
+  getParentRoute: () => DemoRoute,
+} as any)
 const OpsRestaurantsIdRoute = OpsRestaurantsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -131,6 +156,11 @@ const RSlugJoinRoute = RSlugJoinRouteImport.update({
   id: '/join',
   path: '/join',
   getParentRoute: () => RSlugRoute,
+} as any)
+const ApiWebhooksSmsProviderRoute = ApiWebhooksSmsProviderRouteImport.update({
+  id: '/api/webhooks/sms/$provider',
+  path: '/api/webhooks/sms/$provider',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const OpsRestaurantsIdLookRoute = OpsRestaurantsIdLookRouteImport.update({
   id: '/look',
@@ -160,10 +190,15 @@ export interface FileRoutesByFullPath {
   '/r/$slug': typeof RSlugRouteWithChildren
   '/s/$token': typeof STokenRoute
   '/u/$token': typeof UTokenRoute
+  '/api/cron/dispatch': typeof ApiCronDispatchRoute
+  '/api/cron/nightly': typeof ApiCronNightlyRoute
+  '/api/cron/settle': typeof ApiCronSettleRoute
+  '/demo/as/$role': typeof DemoAsRoleRoute
   '/ops/restaurants/$id': typeof OpsRestaurantsIdRouteWithChildren
   '/ops/restaurants/new': typeof OpsRestaurantsNewRoute
   '/r/$slug/card': typeof RSlugCardRoute
   '/r/$slug/join': typeof RSlugJoinRoute
+  '/api/webhooks/sms/$provider': typeof ApiWebhooksSmsProviderRoute
   '/ops/restaurants/$id/look': typeof OpsRestaurantsIdLookRoute
   '/ops/restaurants/$id/qr': typeof OpsRestaurantsIdQrRoute
 }
@@ -184,10 +219,15 @@ export interface FileRoutesByTo {
   '/r/$slug': typeof RSlugRouteWithChildren
   '/s/$token': typeof STokenRoute
   '/u/$token': typeof UTokenRoute
+  '/api/cron/dispatch': typeof ApiCronDispatchRoute
+  '/api/cron/nightly': typeof ApiCronNightlyRoute
+  '/api/cron/settle': typeof ApiCronSettleRoute
+  '/demo/as/$role': typeof DemoAsRoleRoute
   '/ops/restaurants/$id': typeof OpsRestaurantsIdRouteWithChildren
   '/ops/restaurants/new': typeof OpsRestaurantsNewRoute
   '/r/$slug/card': typeof RSlugCardRoute
   '/r/$slug/join': typeof RSlugJoinRoute
+  '/api/webhooks/sms/$provider': typeof ApiWebhooksSmsProviderRoute
   '/ops/restaurants/$id/look': typeof OpsRestaurantsIdLookRoute
   '/ops/restaurants/$id/qr': typeof OpsRestaurantsIdQrRoute
 }
@@ -209,10 +249,15 @@ export interface FileRoutesById {
   '/r/$slug': typeof RSlugRouteWithChildren
   '/s/$token': typeof STokenRoute
   '/u/$token': typeof UTokenRoute
+  '/api/cron/dispatch': typeof ApiCronDispatchRoute
+  '/api/cron/nightly': typeof ApiCronNightlyRoute
+  '/api/cron/settle': typeof ApiCronSettleRoute
+  '/demo/as/$role': typeof DemoAsRoleRoute
   '/ops/restaurants/$id': typeof OpsRestaurantsIdRouteWithChildren
   '/ops/restaurants/new': typeof OpsRestaurantsNewRoute
   '/r/$slug/card': typeof RSlugCardRoute
   '/r/$slug/join': typeof RSlugJoinRoute
+  '/api/webhooks/sms/$provider': typeof ApiWebhooksSmsProviderRoute
   '/ops/restaurants/$id/look': typeof OpsRestaurantsIdLookRoute
   '/ops/restaurants/$id/qr': typeof OpsRestaurantsIdQrRoute
 }
@@ -235,10 +280,15 @@ export interface FileRouteTypes {
     | '/r/$slug'
     | '/s/$token'
     | '/u/$token'
+    | '/api/cron/dispatch'
+    | '/api/cron/nightly'
+    | '/api/cron/settle'
+    | '/demo/as/$role'
     | '/ops/restaurants/$id'
     | '/ops/restaurants/new'
     | '/r/$slug/card'
     | '/r/$slug/join'
+    | '/api/webhooks/sms/$provider'
     | '/ops/restaurants/$id/look'
     | '/ops/restaurants/$id/qr'
   fileRoutesByTo: FileRoutesByTo
@@ -259,10 +309,15 @@ export interface FileRouteTypes {
     | '/r/$slug'
     | '/s/$token'
     | '/u/$token'
+    | '/api/cron/dispatch'
+    | '/api/cron/nightly'
+    | '/api/cron/settle'
+    | '/demo/as/$role'
     | '/ops/restaurants/$id'
     | '/ops/restaurants/new'
     | '/r/$slug/card'
     | '/r/$slug/join'
+    | '/api/webhooks/sms/$provider'
     | '/ops/restaurants/$id/look'
     | '/ops/restaurants/$id/qr'
   id:
@@ -283,10 +338,15 @@ export interface FileRouteTypes {
     | '/r/$slug'
     | '/s/$token'
     | '/u/$token'
+    | '/api/cron/dispatch'
+    | '/api/cron/nightly'
+    | '/api/cron/settle'
+    | '/demo/as/$role'
     | '/ops/restaurants/$id'
     | '/ops/restaurants/new'
     | '/r/$slug/card'
     | '/r/$slug/join'
+    | '/api/webhooks/sms/$provider'
     | '/ops/restaurants/$id/look'
     | '/ops/restaurants/$id/qr'
   fileRoutesById: FileRoutesById
@@ -302,6 +362,10 @@ export interface RootRouteChildren {
   RSlugRoute: typeof RSlugRouteWithChildren
   STokenRoute: typeof STokenRoute
   UTokenRoute: typeof UTokenRoute
+  ApiCronDispatchRoute: typeof ApiCronDispatchRoute
+  ApiCronNightlyRoute: typeof ApiCronNightlyRoute
+  ApiCronSettleRoute: typeof ApiCronSettleRoute
+  ApiWebhooksSmsProviderRoute: typeof ApiWebhooksSmsProviderRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -418,6 +482,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/cron/dispatch': {
+      id: '/api/cron/dispatch'
+      path: '/api/cron/dispatch'
+      fullPath: '/api/cron/dispatch'
+      preLoaderRoute: typeof ApiCronDispatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/cron/nightly': {
+      id: '/api/cron/nightly'
+      path: '/api/cron/nightly'
+      fullPath: '/api/cron/nightly'
+      preLoaderRoute: typeof ApiCronNightlyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/cron/settle': {
+      id: '/api/cron/settle'
+      path: '/api/cron/settle'
+      fullPath: '/api/cron/settle'
+      preLoaderRoute: typeof ApiCronSettleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/as/$role': {
+      id: '/demo/as/$role'
+      path: '/as/$role'
+      fullPath: '/demo/as/$role'
+      preLoaderRoute: typeof DemoAsRoleRouteImport
+      parentRoute: typeof DemoRoute
+    }
     '/ops/restaurants/$id': {
       id: '/ops/restaurants/$id'
       path: '/$id'
@@ -445,6 +537,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/r/$slug/join'
       preLoaderRoute: typeof RSlugJoinRouteImport
       parentRoute: typeof RSlugRoute
+    }
+    '/api/webhooks/sms/$provider': {
+      id: '/api/webhooks/sms/$provider'
+      path: '/api/webhooks/sms/$provider'
+      fullPath: '/api/webhooks/sms/$provider'
+      preLoaderRoute: typeof ApiWebhooksSmsProviderRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/ops/restaurants/$id/look': {
       id: '/ops/restaurants/$id/look'
@@ -477,10 +576,12 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 interface DemoRouteChildren {
   DemoOutboxRoute: typeof DemoOutboxRoute
+  DemoAsRoleRoute: typeof DemoAsRoleRoute
 }
 
 const DemoRouteChildren: DemoRouteChildren = {
   DemoOutboxRoute: DemoOutboxRoute,
+  DemoAsRoleRoute: DemoAsRoleRoute,
 }
 
 const DemoRouteWithChildren = DemoRoute._addFileChildren(DemoRouteChildren)
@@ -566,6 +667,10 @@ const rootRouteChildren: RootRouteChildren = {
   RSlugRoute: RSlugRouteWithChildren,
   STokenRoute: STokenRoute,
   UTokenRoute: UTokenRoute,
+  ApiCronDispatchRoute: ApiCronDispatchRoute,
+  ApiCronNightlyRoute: ApiCronNightlyRoute,
+  ApiCronSettleRoute: ApiCronSettleRoute,
+  ApiWebhooksSmsProviderRoute: ApiWebhooksSmsProviderRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
