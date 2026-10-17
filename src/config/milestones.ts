@@ -121,15 +121,29 @@ export const MILESTONE_STATUS: MilestoneStatus[] = [
   {
     id: "M4",
     title: "M4 — Staff till",
-    state: "Placeholder",
-    summary: "Pair device, PIN, stamp, undo, redeem.",
+    state: "Built",
+    summary: "Pair device, PIN, stamp, undo, redeem, audit.",
     screens: [
       {
         path: "/stamp",
         label: "Staff till",
-        state: "Placeholder",
-        description: "Designed not-built screen until M4 lands.",
+        state: "Built",
+        description: "Pairing, PIN keypad, lookup, Add stamp, undo, redeem.",
         open: "/demo/as/staff?staff=staff-1&to=/stamp",
+      },
+      {
+        path: "/app/team",
+        label: "Team and PINs",
+        state: "Built",
+        description: "Add staff, HMAC PIN issue, pairing codes.",
+        open: "/demo/as/owner?restaurant=rest-daily-grind&to=/app/team",
+      },
+      {
+        path: "/app/audit",
+        label: "Audit log",
+        state: "Built",
+        description: "Filterable sign-in, stamp, undo, redeem events.",
+        open: "/demo/as/owner?restaurant=rest-daily-grind&to=/app/audit",
       },
     ],
   },

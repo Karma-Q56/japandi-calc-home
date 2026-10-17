@@ -44,6 +44,7 @@ export interface StaffMember {
   restaurantId: string;
   displayName: string;
   active: boolean;
+  pinHash: string | null;
 }
 export interface MenuSection {
   id: string;
@@ -107,8 +108,12 @@ export interface StampEvent {
   id: string;
   restaurantId: string;
   membershipId: string;
+  staffId: string | null;
+  key: string | null;
   createdAt: string;
   status: "valid" | "undone";
+  undoneAt?: string;
+  undoneBy?: string;
 }
 export interface Reward {
   id: string;
@@ -117,6 +122,8 @@ export interface Reward {
   description: string;
   earnedAt: string;
   redeemedAt?: string;
+  redeemedBy?: string;
+  stampId?: string;
 }
 export interface Campaign {
   id: string;
@@ -128,6 +135,7 @@ export interface Campaign {
   recipients: number;
   delivered: number;
   failed: number;
+  awardStamp?: boolean;
 }
 export interface Message {
   id: string;
@@ -147,6 +155,9 @@ export interface Redemption {
   membershipId: string;
   rewardId: string;
   redeemedAt: string;
+  redeemedBy?: string;
+  kind: "reward" | "campaign";
+  code?: string;
 }
 export interface LedgerEntry {
   id: string;
@@ -173,6 +184,7 @@ export interface AuditEvent {
   actor: string;
   action: string;
   restaurantId?: string;
+  object?: string;
   createdAt: string;
 }
 export interface Lead {
@@ -234,6 +246,8 @@ export interface DemoSession {
   restaurantId?: string;
   customerId?: string;
   staffId?: string;
+  tillPairedRestaurantId?: string;
+  staffExpiresAt?: number;
 }
 export interface DemoState {
   version: 2;

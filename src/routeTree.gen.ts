@@ -28,9 +28,11 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SessionExpiredRouteImport } from './routes/session-expired'
 import { Route as StampRouteImport } from './routes/stamp'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as AppAuditRouteImport } from './routes/app.audit'
 import { Route as AppMenuRouteImport } from './routes/app.menu'
 import { Route as AppOnboardingRouteImport } from './routes/app.onboarding'
 import { Route as AppQrRouteImport } from './routes/app.qr'
+import { Route as AppTeamRouteImport } from './routes/app.team'
 import { Route as DemoOutboxRouteImport } from './routes/demo.outbox'
 import { Route as DemoStatusRouteImport } from './routes/demo.status'
 import { Route as HealthzDbRouteImport } from './routes/healthz.db'
@@ -146,6 +148,11 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppAuditRoute = AppAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppMenuRoute = AppMenuRouteImport.update({
   id: '/menu',
   path: '/menu',
@@ -159,6 +166,11 @@ const AppOnboardingRoute = AppOnboardingRouteImport.update({
 const AppQrRoute = AppQrRouteImport.update({
   id: '/qr',
   path: '/qr',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTeamRoute = AppTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
   getParentRoute: () => AppRoute,
 } as any)
 const DemoOutboxRoute = DemoOutboxRouteImport.update({
@@ -277,9 +289,11 @@ export interface FileRoutesByFullPath {
   '/session-expired': typeof SessionExpiredRoute
   '/stamp': typeof StampRoute
   '/terms': typeof TermsRoute
+  '/app/audit': typeof AppAuditRoute
   '/app/menu': typeof AppMenuRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/qr': typeof AppQrRoute
+  '/app/team': typeof AppTeamRoute
   '/demo/outbox': typeof DemoOutboxRoute
   '/demo/status': typeof DemoStatusRoute
   '/healthz/db': typeof HealthzDbRoute
@@ -320,9 +334,11 @@ export interface FileRoutesByTo {
   '/session-expired': typeof SessionExpiredRoute
   '/stamp': typeof StampRoute
   '/terms': typeof TermsRoute
+  '/app/audit': typeof AppAuditRoute
   '/app/menu': typeof AppMenuRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/qr': typeof AppQrRoute
+  '/app/team': typeof AppTeamRoute
   '/demo/outbox': typeof DemoOutboxRoute
   '/demo/status': typeof DemoStatusRoute
   '/healthz/db': typeof HealthzDbRoute
@@ -364,9 +380,11 @@ export interface FileRoutesById {
   '/session-expired': typeof SessionExpiredRoute
   '/stamp': typeof StampRoute
   '/terms': typeof TermsRoute
+  '/app/audit': typeof AppAuditRoute
   '/app/menu': typeof AppMenuRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/qr': typeof AppQrRoute
+  '/app/team': typeof AppTeamRoute
   '/demo/outbox': typeof DemoOutboxRoute
   '/demo/status': typeof DemoStatusRoute
   '/healthz/db': typeof HealthzDbRoute
@@ -409,9 +427,11 @@ export interface FileRouteTypes {
     | '/session-expired'
     | '/stamp'
     | '/terms'
+    | '/app/audit'
     | '/app/menu'
     | '/app/onboarding'
     | '/app/qr'
+    | '/app/team'
     | '/demo/outbox'
     | '/demo/status'
     | '/healthz/db'
@@ -452,9 +472,11 @@ export interface FileRouteTypes {
     | '/session-expired'
     | '/stamp'
     | '/terms'
+    | '/app/audit'
     | '/app/menu'
     | '/app/onboarding'
     | '/app/qr'
+    | '/app/team'
     | '/demo/outbox'
     | '/demo/status'
     | '/healthz/db'
@@ -495,9 +517,11 @@ export interface FileRouteTypes {
     | '/session-expired'
     | '/stamp'
     | '/terms'
+    | '/app/audit'
     | '/app/menu'
     | '/app/onboarding'
     | '/app/qr'
+    | '/app/team'
     | '/demo/outbox'
     | '/demo/status'
     | '/healthz/db'
@@ -683,6 +707,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/audit': {
+      id: '/app/audit'
+      path: '/audit'
+      fullPath: '/app/audit'
+      preLoaderRoute: typeof AppAuditRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/menu': {
       id: '/app/menu'
       path: '/menu'
@@ -702,6 +733,13 @@ declare module '@tanstack/react-router' {
       path: '/qr'
       fullPath: '/app/qr'
       preLoaderRoute: typeof AppQrRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/team': {
+      id: '/app/team'
+      path: '/team'
+      fullPath: '/app/team'
+      preLoaderRoute: typeof AppTeamRouteImport
       parentRoute: typeof AppRoute
     }
     '/demo/outbox': {
@@ -841,15 +879,19 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppAuditRoute: typeof AppAuditRoute
   AppMenuRoute: typeof AppMenuRoute
   AppOnboardingRoute: typeof AppOnboardingRoute
   AppQrRoute: typeof AppQrRoute
+  AppTeamRoute: typeof AppTeamRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAuditRoute: AppAuditRoute,
   AppMenuRoute: AppMenuRoute,
   AppOnboardingRoute: AppOnboardingRoute,
   AppQrRoute: AppQrRoute,
+  AppTeamRoute: AppTeamRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

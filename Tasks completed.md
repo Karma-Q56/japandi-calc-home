@@ -69,6 +69,15 @@ Updated 2026-10-16. Work is on `vibe/m1-m3-implementation-ab5f40`, based on the 
 - [x] verified (typecheck) No-horizontal-scroll e2e (`tests/e2e/demo-no-scroll.spec.ts`, 7 routes at 360px).
 - [~] built, not verified E2E in a real browser at 390/1280 with screenshots (`docs/ui-review/` pending — Playwright lacks system libs in this VM).
 
+## M4 — Staff till (2026-10-17 session)
+
+- [x] verified (vitest 20/20) Rule engine `src/domain/stamps.ts` mirrors `record_stamp`: stamped/too_soon/not_a_member/duplicate_retry, threshold reward + reset, undo with reward void + counter restore, campaign redeem once + stamp award.
+- [x] verified (vitest) Team PINs via WebCrypto HMAC-SHA256 (`src/lib/pin.ts`, `src/domain/team.ts`): seeded demo PINs, issue/reset, 5-in-10min lockout, 12h staff session.
+- [x] verified (vitest) Single-use 10-minute pairing codes; demo pair-this-device shortcut; restaurant-scoped lookup/stamp (cross-venue refused).
+- [x] verified (typecheck/build) Routes `/stamp` (keypad, lookup, Add stamp, undo, redeem, recent), `/app/team`, `/app/audit` (filterable, no PINs/phones).
+- [x] verified (vitest) SQL contract table `STAMP_CONTRACT` (`src/test/stamp-contract.test.ts`), reusable in M9.
+- [~] built, not verified BarcodeDetector camera path (JS QR fallback = typed codes); phone-camera scan, vibration, iPhone Safari.
+
 ## Verification still requested
 
 - [x] verified (how: `npm run typecheck` clean; `npm run lint` 0 errors; `npx vitest run` 28/28; `npm run build` ok) Typecheck, lint, unit tests and production build.

@@ -186,6 +186,8 @@ export function createSeed(now = Date.UTC(2026, 9, 1, 8)): DemoState {
       id: `stamp-${i + 1}`,
       restaurantId: membership.restaurantId,
       membershipId: membership.id,
+      staffId: null,
+      key: null,
       createdAt: new Date(now - ((i * 13) % 90) * 86400000).toISOString(),
       status: "valid" as const,
     };
@@ -257,6 +259,12 @@ export function createSeed(now = Date.UTC(2026, 9, 1, 8)): DemoState {
       restaurantId: r.id,
       displayName: ["Mia", "Thabo", "Zanele"][i]!,
       active: true,
+      // Demo PINs: 1234 / 2345 / 3456 (HMAC-SHA256, see src/lib/pin.ts).
+      pinHash: [
+        "d3c06b557b557cceab0d8d1bf86080c2fe52c54fcad30d2c71ecd1185f48c470",
+        "71cdffabd248fa0499e5b5667b2fe772971cc1bd49ef9a2162410c21822f0825",
+        "25989fffa1a1c1a3d4c752b50602f11972883c5ff51048a7a64cc77a4790a1c9",
+      ][i]!,
     })),
     sections,
     items,
@@ -276,6 +284,7 @@ export function createSeed(now = Date.UTC(2026, 9, 1, 8)): DemoState {
       recipients: 12 + i,
       delivered: 11 + i,
       failed: 1,
+      awardStamp: true,
     })),
     messages,
     redemptions: [],

@@ -3920,3 +3920,10 @@ input:focus-visible {
     display: none;
   }
 }
+
+/* ===== M4 till ===== */
+.pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
+.pin-pad button { min-height: 56px; min-width: 44px; font-size: 20px; border: 1px solid var(--border); border-radius: 12px; background: var(--background); }
+.pin-pad button:disabled { opacity: 0; }
+.pin-pad button:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+.field-error { color: var(--destructive); font-size: 14px; }

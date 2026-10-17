@@ -33,6 +33,8 @@ export const demo = {
             id: `busy-${membership.id}-w${week}`,
             restaurantId: membership.restaurantId,
             membershipId: membership.id,
+            staffId: null,
+            key: null,
             createdAt: new Date(state.now - (week * 7 + (index % 5)) * 86400000).toISOString(),
             status: "valid",
           });

@@ -172,6 +172,8 @@ export function joinRestaurant(input: {
             id: crypto.randomUUID(),
             restaurantId: restaurant.id,
             membershipId,
+            staffId: null,
+            key: null,
             createdAt: now,
             status: "valid",
           },

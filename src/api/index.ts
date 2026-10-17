@@ -30,6 +30,25 @@ import {
   withdrawMarketingConsent,
 } from "@/domain/members";
 import { fakeSmsProvider } from "@/domain/sms";
+import {
+  lookupMember,
+  recordStamp,
+  redeemCampaignCode,
+  redeemReward,
+  undoStamp,
+} from "@/domain/stamps";
+import {
+  addStaff,
+  createPairingCode,
+  lastStampPerStaff,
+  pairThisDevice,
+  redeemPairingCode,
+  issuePin,
+  setStaffActive,
+  signInWithPin,
+  staffSessionValid,
+} from "@/domain/team";
+import { listAudit } from "@/domain/audit";
 
 export const api = {
   demo,
@@ -65,7 +84,25 @@ export const api = {
     requestDeletion: requestAccountDeletion,
     downloadData: getCustomerData,
   },
-  stamp: {},
+  stamp: {
+    lookup: lookupMember,
+    record: recordStamp,
+    undo: undoStamp,
+    redeemReward,
+    redeemCampaign: redeemCampaignCode,
+    sessionValid: staffSessionValid,
+  },
+  team: {
+    add: addStaff,
+    setActive: setStaffActive,
+    issuePin,
+    signIn: signInWithPin,
+    lastStamps: lastStampPerStaff,
+    createPairingCode,
+    redeemPairingCode,
+    pairThisDevice,
+  },
+  audit: { list: listAudit },
   dash: {},
   campaign: {},
   credit: {},
