@@ -1,10 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { withChildren } from "@/lib/nested";
 import { useDemoState } from "@/data/useDemoState";
 import { demoRepo } from "@/data/repo";
 import { api } from "@/api";
 import { APP_NAME } from "@/config/app";
 
-export const Route = createFileRoute("/demo")({ component: DemoHub });
+const DemoPage = withChildren(DemoHub);
+export const Route = createFileRoute("/demo")({ component: DemoPage });
 
 function DemoHub() {
   const state = useDemoState();
