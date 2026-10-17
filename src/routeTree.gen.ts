@@ -29,9 +29,14 @@ import { Route as SessionExpiredRouteImport } from './routes/session-expired'
 import { Route as StampRouteImport } from './routes/stamp'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AppAuditRouteImport } from './routes/app.audit'
+import { Route as AppCampaignsRouteImport } from './routes/app.campaigns'
+import { Route as AppCreditRouteImport } from './routes/app.credit'
+import { Route as AppCustomersRouteImport } from './routes/app.customers'
+import { Route as AppLoyaltyRouteImport } from './routes/app.loyalty'
 import { Route as AppMenuRouteImport } from './routes/app.menu'
 import { Route as AppOnboardingRouteImport } from './routes/app.onboarding'
 import { Route as AppQrRouteImport } from './routes/app.qr'
+import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppTeamRouteImport } from './routes/app.team'
 import { Route as DemoOutboxRouteImport } from './routes/demo.outbox'
 import { Route as DemoStatusRouteImport } from './routes/demo.status'
@@ -44,6 +49,7 @@ import { Route as UTokenRouteImport } from './routes/u/$token'
 import { Route as ApiCronDispatchRouteImport } from './routes/api/cron/dispatch'
 import { Route as ApiCronNightlyRouteImport } from './routes/api/cron/nightly'
 import { Route as ApiCronSettleRouteImport } from './routes/api/cron/settle'
+import { Route as AppCustomersCustomerIdRouteImport } from './routes/app.customers.$customerId'
 import { Route as DemoAsRoleRouteImport } from './routes/demo.as.$role'
 import { Route as OpsRestaurantsIdRouteImport } from './routes/ops.restaurants.$id'
 import { Route as OpsRestaurantsNewRouteImport } from './routes/ops.restaurants.new'
@@ -153,6 +159,26 @@ const AppAuditRoute = AppAuditRouteImport.update({
   path: '/audit',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCampaignsRoute = AppCampaignsRouteImport.update({
+  id: '/campaigns',
+  path: '/campaigns',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCreditRoute = AppCreditRouteImport.update({
+  id: '/credit',
+  path: '/credit',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCustomersRoute = AppCustomersRouteImport.update({
+  id: '/customers',
+  path: '/customers',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppLoyaltyRoute = AppLoyaltyRouteImport.update({
+  id: '/loyalty',
+  path: '/loyalty',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppMenuRoute = AppMenuRouteImport.update({
   id: '/menu',
   path: '/menu',
@@ -166,6 +192,11 @@ const AppOnboardingRoute = AppOnboardingRouteImport.update({
 const AppQrRoute = AppQrRouteImport.update({
   id: '/qr',
   path: '/qr',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
 const AppTeamRoute = AppTeamRouteImport.update({
@@ -227,6 +258,11 @@ const ApiCronSettleRoute = ApiCronSettleRouteImport.update({
   id: '/api/cron/settle',
   path: '/api/cron/settle',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppCustomersCustomerIdRoute = AppCustomersCustomerIdRouteImport.update({
+  id: '/$customerId',
+  path: '/$customerId',
+  getParentRoute: () => AppCustomersRoute,
 } as any)
 const DemoAsRoleRoute = DemoAsRoleRouteImport.update({
   id: '/as/$role',
@@ -290,9 +326,14 @@ export interface FileRoutesByFullPath {
   '/stamp': typeof StampRoute
   '/terms': typeof TermsRoute
   '/app/audit': typeof AppAuditRoute
+  '/app/campaigns': typeof AppCampaignsRoute
+  '/app/credit': typeof AppCreditRoute
+  '/app/customers': typeof AppCustomersRouteWithChildren
+  '/app/loyalty': typeof AppLoyaltyRoute
   '/app/menu': typeof AppMenuRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/qr': typeof AppQrRoute
+  '/app/settings': typeof AppSettingsRoute
   '/app/team': typeof AppTeamRoute
   '/demo/outbox': typeof DemoOutboxRoute
   '/demo/status': typeof DemoStatusRoute
@@ -305,6 +346,7 @@ export interface FileRoutesByFullPath {
   '/api/cron/dispatch': typeof ApiCronDispatchRoute
   '/api/cron/nightly': typeof ApiCronNightlyRoute
   '/api/cron/settle': typeof ApiCronSettleRoute
+  '/app/customers/$customerId': typeof AppCustomersCustomerIdRoute
   '/demo/as/$role': typeof DemoAsRoleRoute
   '/ops/restaurants/$id': typeof OpsRestaurantsIdRouteWithChildren
   '/ops/restaurants/new': typeof OpsRestaurantsNewRoute
@@ -335,9 +377,14 @@ export interface FileRoutesByTo {
   '/stamp': typeof StampRoute
   '/terms': typeof TermsRoute
   '/app/audit': typeof AppAuditRoute
+  '/app/campaigns': typeof AppCampaignsRoute
+  '/app/credit': typeof AppCreditRoute
+  '/app/customers': typeof AppCustomersRouteWithChildren
+  '/app/loyalty': typeof AppLoyaltyRoute
   '/app/menu': typeof AppMenuRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/qr': typeof AppQrRoute
+  '/app/settings': typeof AppSettingsRoute
   '/app/team': typeof AppTeamRoute
   '/demo/outbox': typeof DemoOutboxRoute
   '/demo/status': typeof DemoStatusRoute
@@ -350,6 +397,7 @@ export interface FileRoutesByTo {
   '/api/cron/dispatch': typeof ApiCronDispatchRoute
   '/api/cron/nightly': typeof ApiCronNightlyRoute
   '/api/cron/settle': typeof ApiCronSettleRoute
+  '/app/customers/$customerId': typeof AppCustomersCustomerIdRoute
   '/demo/as/$role': typeof DemoAsRoleRoute
   '/ops/restaurants/$id': typeof OpsRestaurantsIdRouteWithChildren
   '/ops/restaurants/new': typeof OpsRestaurantsNewRoute
@@ -381,9 +429,14 @@ export interface FileRoutesById {
   '/stamp': typeof StampRoute
   '/terms': typeof TermsRoute
   '/app/audit': typeof AppAuditRoute
+  '/app/campaigns': typeof AppCampaignsRoute
+  '/app/credit': typeof AppCreditRoute
+  '/app/customers': typeof AppCustomersRouteWithChildren
+  '/app/loyalty': typeof AppLoyaltyRoute
   '/app/menu': typeof AppMenuRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/qr': typeof AppQrRoute
+  '/app/settings': typeof AppSettingsRoute
   '/app/team': typeof AppTeamRoute
   '/demo/outbox': typeof DemoOutboxRoute
   '/demo/status': typeof DemoStatusRoute
@@ -396,6 +449,7 @@ export interface FileRoutesById {
   '/api/cron/dispatch': typeof ApiCronDispatchRoute
   '/api/cron/nightly': typeof ApiCronNightlyRoute
   '/api/cron/settle': typeof ApiCronSettleRoute
+  '/app/customers/$customerId': typeof AppCustomersCustomerIdRoute
   '/demo/as/$role': typeof DemoAsRoleRoute
   '/ops/restaurants/$id': typeof OpsRestaurantsIdRouteWithChildren
   '/ops/restaurants/new': typeof OpsRestaurantsNewRoute
@@ -428,9 +482,14 @@ export interface FileRouteTypes {
     | '/stamp'
     | '/terms'
     | '/app/audit'
+    | '/app/campaigns'
+    | '/app/credit'
+    | '/app/customers'
+    | '/app/loyalty'
     | '/app/menu'
     | '/app/onboarding'
     | '/app/qr'
+    | '/app/settings'
     | '/app/team'
     | '/demo/outbox'
     | '/demo/status'
@@ -443,6 +502,7 @@ export interface FileRouteTypes {
     | '/api/cron/dispatch'
     | '/api/cron/nightly'
     | '/api/cron/settle'
+    | '/app/customers/$customerId'
     | '/demo/as/$role'
     | '/ops/restaurants/$id'
     | '/ops/restaurants/new'
@@ -473,9 +533,14 @@ export interface FileRouteTypes {
     | '/stamp'
     | '/terms'
     | '/app/audit'
+    | '/app/campaigns'
+    | '/app/credit'
+    | '/app/customers'
+    | '/app/loyalty'
     | '/app/menu'
     | '/app/onboarding'
     | '/app/qr'
+    | '/app/settings'
     | '/app/team'
     | '/demo/outbox'
     | '/demo/status'
@@ -488,6 +553,7 @@ export interface FileRouteTypes {
     | '/api/cron/dispatch'
     | '/api/cron/nightly'
     | '/api/cron/settle'
+    | '/app/customers/$customerId'
     | '/demo/as/$role'
     | '/ops/restaurants/$id'
     | '/ops/restaurants/new'
@@ -518,9 +584,14 @@ export interface FileRouteTypes {
     | '/stamp'
     | '/terms'
     | '/app/audit'
+    | '/app/campaigns'
+    | '/app/credit'
+    | '/app/customers'
+    | '/app/loyalty'
     | '/app/menu'
     | '/app/onboarding'
     | '/app/qr'
+    | '/app/settings'
     | '/app/team'
     | '/demo/outbox'
     | '/demo/status'
@@ -533,6 +604,7 @@ export interface FileRouteTypes {
     | '/api/cron/dispatch'
     | '/api/cron/nightly'
     | '/api/cron/settle'
+    | '/app/customers/$customerId'
     | '/demo/as/$role'
     | '/ops/restaurants/$id'
     | '/ops/restaurants/new'
@@ -714,6 +786,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuditRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/campaigns': {
+      id: '/app/campaigns'
+      path: '/campaigns'
+      fullPath: '/app/campaigns'
+      preLoaderRoute: typeof AppCampaignsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/credit': {
+      id: '/app/credit'
+      path: '/credit'
+      fullPath: '/app/credit'
+      preLoaderRoute: typeof AppCreditRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/customers': {
+      id: '/app/customers'
+      path: '/customers'
+      fullPath: '/app/customers'
+      preLoaderRoute: typeof AppCustomersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/loyalty': {
+      id: '/app/loyalty'
+      path: '/loyalty'
+      fullPath: '/app/loyalty'
+      preLoaderRoute: typeof AppLoyaltyRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/menu': {
       id: '/app/menu'
       path: '/menu'
@@ -733,6 +833,13 @@ declare module '@tanstack/react-router' {
       path: '/qr'
       fullPath: '/app/qr'
       preLoaderRoute: typeof AppQrRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/settings': {
+      id: '/app/settings'
+      path: '/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/team': {
@@ -819,6 +926,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCronSettleRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/customers/$customerId': {
+      id: '/app/customers/$customerId'
+      path: '/$customerId'
+      fullPath: '/app/customers/$customerId'
+      preLoaderRoute: typeof AppCustomersCustomerIdRouteImport
+      parentRoute: typeof AppCustomersRoute
+    }
     '/demo/as/$role': {
       id: '/demo/as/$role'
       path: '/as/$role'
@@ -878,19 +992,41 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppCustomersRouteChildren {
+  AppCustomersCustomerIdRoute: typeof AppCustomersCustomerIdRoute
+}
+
+const AppCustomersRouteChildren: AppCustomersRouteChildren = {
+  AppCustomersCustomerIdRoute: AppCustomersCustomerIdRoute,
+}
+
+const AppCustomersRouteWithChildren = AppCustomersRoute._addFileChildren(
+  AppCustomersRouteChildren,
+)
+
 interface AppRouteChildren {
   AppAuditRoute: typeof AppAuditRoute
+  AppCampaignsRoute: typeof AppCampaignsRoute
+  AppCreditRoute: typeof AppCreditRoute
+  AppCustomersRoute: typeof AppCustomersRouteWithChildren
+  AppLoyaltyRoute: typeof AppLoyaltyRoute
   AppMenuRoute: typeof AppMenuRoute
   AppOnboardingRoute: typeof AppOnboardingRoute
   AppQrRoute: typeof AppQrRoute
+  AppSettingsRoute: typeof AppSettingsRoute
   AppTeamRoute: typeof AppTeamRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppAuditRoute: AppAuditRoute,
+  AppCampaignsRoute: AppCampaignsRoute,
+  AppCreditRoute: AppCreditRoute,
+  AppCustomersRoute: AppCustomersRouteWithChildren,
+  AppLoyaltyRoute: AppLoyaltyRoute,
   AppMenuRoute: AppMenuRoute,
   AppOnboardingRoute: AppOnboardingRoute,
   AppQrRoute: AppQrRoute,
+  AppSettingsRoute: AppSettingsRoute,
   AppTeamRoute: AppTeamRoute,
 }
 

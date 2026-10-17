@@ -10,18 +10,27 @@ function load(): DemoState {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return createSeed();
     const parsed = JSON.parse(raw) as DemoState;
-    return parsed.version === 2
-      ? {
-          ...createSeed(parsed.now),
-          ...parsed,
-          rateLimitHits: parsed.rateLimitHits ?? [],
-          pairingCodes: parsed.pairingCodes ?? [],
-          otpSendLog: parsed.otpSendLog ?? [],
-          pinAttempts: parsed.pinAttempts ?? [],
-          pinLockouts: parsed.pinLockouts ?? [],
-          onboarding: parsed.onboarding ?? [],
-        }
-      : createSeed();
+    if (parsed.version !== 2) return createSeed();
+    const fresh = createSeed(parsed.now);
+    const freshById = new Map(fresh.restaurants.map((r) => [r.id, r]));
+    return {
+      ...fresh,
+      ...parsed,
+      restaurants: parsed.restaurants.map((r) => ({
+        ...freshById.get(r.id),
+        ...r,
+        senderName: r.senderName ?? freshById.get(r.id)?.senderName ?? r.slug,
+        smsCapRestaurant: r.smsCapRestaurant ?? 3,
+        smsCapMember: r.smsCapMember ?? 2,
+        contact: r.contact ?? "",
+      })),
+      rateLimitHits: parsed.rateLimitHits ?? [],
+      pairingCodes: parsed.pairingCodes ?? [],
+      otpSendLog: parsed.otpSendLog ?? [],
+      pinAttempts: parsed.pinAttempts ?? [],
+      pinLockouts: parsed.pinLockouts ?? [],
+      onboarding: parsed.onboarding ?? [],
+    };
   } catch {
     return createSeed();
   }

@@ -22,7 +22,7 @@ function DeepLinkLanding() {
   const navigate = useNavigate();
   useEffect(() => {
     const state = demoRepo.read();
-    if (!["guest", "staff", "owner", "operator"].includes(role)) {
+    if (!["guest", "staff", "owner", "manager", "operator"].includes(role)) {
       void navigate({ to: "/demo", replace: true });
       return;
     }

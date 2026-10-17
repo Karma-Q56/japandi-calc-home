@@ -78,6 +78,15 @@ Updated 2026-10-16. Work is on `vibe/m1-m3-implementation-ab5f40`, based on the 
 - [x] verified (vitest) SQL contract table `STAMP_CONTRACT` (`src/test/stamp-contract.test.ts`), reusable in M9.
 - [~] built, not verified BarcodeDetector camera path (JS QR fallback = typed codes); phone-camera scan, vibration, iPhone Safari.
 
+## M5 — Owner dashboard (2026-10-17 session)
+
+- [x] verified (typecheck/build) Owner shell `/app` (sidebar desktop, bottom nav phones) with Overview; old demo placeholder removed; marketing still links to `/demo`.
+- [x] verified (vitest) `dash.overview()` single service: hand-computed seed values, lapsed rises with clock and matches Lapsed-30 filter, 8-week chart data, tooltips on every number.
+- [x] verified (vitest) Customers: search/filter/sort/pagination at 25, masked phones, reveal + CSV export audited, manager export refused, profile timeline, manual stamp, remove-from-list keeps counts.
+- [x] verified (vitest) Loyalty editor validation; lowering 8→6 keeps earned rewards, excess converts on next stamp; Settings sender/caps validation.
+- [x] verified (typecheck) Manager role in services + UI guards (team/audit/export stay owner-only); DemoControlBar + deep links accept manager.
+- [~] built, not verified M5 e2e at 360px card layout; CSV download bytes; real-browser shell nav.
+
 ## Verification still requested
 
 - [x] verified (how: `npm run typecheck` clean; `npm run lint` 0 errors; `npx vitest run` 28/28; `npm run build` ok) Typecheck, lint, unit tests and production build.

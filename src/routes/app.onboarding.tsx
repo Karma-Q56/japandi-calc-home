@@ -6,7 +6,7 @@ import { ONBOARDING_STEPS, getChecklist, toggleStep } from "@/domain/onboarding"
 
 export const Route = createFileRoute("/app/onboarding")({
   beforeLoad: () => {
-    if (!requireRole("owner")(demoRepo.read().session)) {
+    if (!requireRole("owner", "manager")(demoRepo.read().session)) {
       throw redirect({ to: "/demo" });
     }
   },

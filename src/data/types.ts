@@ -1,6 +1,6 @@
 export type RestaurantStatus = "draft" | "active" | "paused" | "closed";
 export type Plan = "starter" | "managed" | "partner" | "custom";
-export type DemoRole = "guest" | "staff" | "owner" | "operator";
+export type DemoRole = "guest" | "staff" | "owner" | "manager" | "operator";
 export type ConsentPurpose = "loyalty" | "marketing_sms" | "marketing_push";
 export type ConsentAction = "granted" | "withdrawn";
 
@@ -38,6 +38,10 @@ export interface Restaurant {
   specialIds: string[];
   createdAt: string;
   creditCents: number;
+  senderName: string;
+  smsCapRestaurant: number;
+  smsCapMember: number;
+  contact: string;
 }
 export interface StaffMember {
   id: string;

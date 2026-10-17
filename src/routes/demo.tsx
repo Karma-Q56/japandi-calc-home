@@ -47,9 +47,9 @@ function DemoHub() {
       tunnels: [
         {
           label: "Owner dashboard · The Daily Grind",
-          description: "Checklist, guests, loyalty, team, campaigns (M5).",
+          description: "Overview, guests, loyalty, team, settings.",
           href: `/demo/as/owner?restaurant=${cafe.id}&to=/app`,
-          badge: "Coming in a later milestone",
+          badge: null,
         },
         {
           label: "Menu editor",
@@ -99,7 +99,7 @@ function DemoHub() {
     {
       name: "Owner · The Daily Grind",
       role: "Owner",
-      can: "Menu, QR, loyalty and team once M5 lands.",
+      can: "Dashboard, menu, QR, loyalty, team.",
       href: `/demo/as/owner?restaurant=${cafe.id}&to=/app`,
     },
     {

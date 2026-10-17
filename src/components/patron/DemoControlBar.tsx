@@ -38,7 +38,7 @@ export function DemoControlBar() {
                 }))
               }
             >
-              {(["guest", "staff", "owner", "operator"] as DemoRole[]).map((role) => (
+              {(["guest", "staff", "owner", "manager", "operator"] as DemoRole[]).map((role) => (
                 <option key={role}>{role}</option>
               ))}
             </select>

@@ -4,7 +4,18 @@ import type { AuditEvent } from "@/data/types";
 import { failure, success } from "./demo";
 
 export type AuditAction =
-  "sign_in" | "pin_failure" | "lockout" | "stamp" | "undo" | "redeem" | "pin_reset" | "pairing";
+  | "sign_in"
+  | "pin_failure"
+  | "lockout"
+  | "stamp"
+  | "undo"
+  | "redeem"
+  | "pin_reset"
+  | "pairing"
+  | "phone_reveal"
+  | "export"
+  | "remove"
+  | "manual_stamp";
 
 /** Never pass PINs or full phone numbers — ids only. */
 export function logAudit(input: {

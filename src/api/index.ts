@@ -49,6 +49,15 @@ import {
   staffSessionValid,
 } from "@/domain/team";
 import { listAudit } from "@/domain/audit";
+import { overview } from "@/domain/dash";
+import {
+  customerProfile,
+  exportCsv,
+  listCustomers,
+  manualStamp,
+  removeFromList,
+  revealPhone,
+} from "@/domain/customers";
 
 export const api = {
   demo,
@@ -103,7 +112,15 @@ export const api = {
     pairThisDevice,
   },
   audit: { list: listAudit },
-  dash: {},
+  dash: { overview },
+  customers: {
+    list: listCustomers,
+    profile: customerProfile,
+    reveal: revealPhone,
+    export: exportCsv,
+    manualStamp,
+    remove: removeFromList,
+  },
   campaign: {},
   credit: {},
   ops: {},

@@ -86,6 +86,10 @@ const baseRestaurants: Restaurant[] = [
     specialIds: ["special-daily"],
     createdAt: "2026-01-05T08:00:00.000Z",
     creditCents: 4200,
+    senderName: "DailyGrind",
+    smsCapRestaurant: 3,
+    smsCapMember: 2,
+    contact: "hello@dailygrind.co.za",
   },
   {
     id: "rest-sunrise-bakes",
@@ -109,6 +113,10 @@ const baseRestaurants: Restaurant[] = [
     specialIds: ["special-sunrise"],
     createdAt: "2026-01-06T08:00:00.000Z",
     creditCents: 2700,
+    senderName: "SunriseBake",
+    smsCapRestaurant: 3,
+    smsCapMember: 2,
+    contact: "hello@sunrisebakes.co.za",
   },
   {
     id: "rest-oak-table",
@@ -132,6 +140,10 @@ const baseRestaurants: Restaurant[] = [
     specialIds: ["special-oak"],
     createdAt: "2026-01-07T08:00:00.000Z",
     creditCents: 6100,
+    senderName: "OakTable",
+    smsCapRestaurant: 3,
+    smsCapMember: 2,
+    contact: "hello@oaktable.co.za",
   },
 ];
 
