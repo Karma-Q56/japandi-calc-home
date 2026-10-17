@@ -1,15 +1,15 @@
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState, useSyncExternalStore } from 'react';
 import { api } from '@/api';
 import { getConsentWording } from '@/config/consent';
 import { DemoControlBar } from '@/components/patron/DemoControlBar';
 import { VerificationStep } from '@/components/patron/VerificationStep';
 import { demoRepo } from '@/data/repo';
-import { requireRole } from '@/data/session';
+import { requireRole, setDemoSession } from '@/data/session';
 import { ThemeProvider } from '@/theme';
 import { isValidSAMobile } from '@/lib/phone';
 
-export const Route=createFileRoute('/r/$slug/join')({beforeLoad:()=>{if(!requireRole('guest')(demoRepo.read().session))throw redirect({to:'/demo'});},component:JoinPage});
+export const Route=createFileRoute('/r/$slug/join')({beforeLoad:()=>{if(typeof window!=='undefined'&&!requireRole('guest')(demoRepo.read().session))setDemoSession({role:'guest'});},component:JoinPage});
 
 function JoinPage(){const{slug}=Route.useParams();const state=useSyncExternalStore(demoRepo.subscribe,demoRepo.read,demoRepo.read);const restaurant=state.restaurants.find(item=>item.slug===slug&&item.status==='active');const session=state.session;const customer=session.customerId?state.customers.find(item=>item.id===session.customerId):undefined;const[step,setStep]=useState(0);const[name,setName]=useState('');const[phone,setPhone]=useState('+27 ');const[loyaltyConsent,setLoyaltyConsent]=useState(false);const[marketingSms,setMarketingSms]=useState(false);const[error,setError]=useState('');const navigate=useNavigate();if(!restaurant)return <main className="demo-hub page-width"><h1>Restaurant not found.</h1><a href="/demo">Back to demo hub</a></main>;const loyalty=getConsentWording('loyalty',restaurant.name);const marketing=getConsentWording('marketing_sms',restaurant.name);
   const details=()=>{setError('');if(name.trim().length<1||name.trim().length>40)return setError('Enter your first name (up to 40 characters).');if(!isValidSAMobile(phone))return setError('Enter a valid South African mobile number. Landlines cannot receive SMS.');const limit=api.member.checkJoinRateLimit(phone);if(!limit.ok){setError(limit.error.message);return;}setStep(2);};

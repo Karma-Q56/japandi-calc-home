@@ -47,7 +47,12 @@ export const demoRepo: Repo = {
   },
   reset: () => {
     current = createSeed();
+    try { if (typeof window !== 'undefined') window.localStorage.setItem(STORAGE_KEY, JSON.stringify(current)); } catch { /* Keep the in-memory demo usable when storage is blocked or full. */ }
     notify();
     return current;
   },
 };
+
+export function updateDemo(mutator: (state: DemoState) => DemoState): DemoState {
+  return demoRepo.update(mutator);
+}

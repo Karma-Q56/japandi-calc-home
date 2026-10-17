@@ -15,7 +15,7 @@ function generator(degree: number) {
   let root = 1;
   for (let i = 0; i < degree; i++) {
     const next = Array(result.length + 1).fill(0) as number[];
-    result.forEach((coefficient, index) => { next[index] ^= coefficient; next[index + 1] ^= multiply(coefficient, root); });
+    result.forEach((coefficient, index) => { next[index]! ^= coefficient; next[index + 1]! ^= multiply(coefficient, root); });
     result = next;
     root = multiply(root, 2);
   }
@@ -27,7 +27,7 @@ function errorCorrection(data: number[], count: number) {
   for (const value of data) {
     const factor = value ^ remainder[0]!;
     remainder.shift(); remainder.push(0);
-    remainder.forEach((_, index) => { remainder[index] ^= multiply(poly[index + 1]!, factor); });
+    remainder.forEach((_, index) => { remainder[index]! ^= multiply(poly[index + 1]!, factor); });
   }
   return remainder;
 }

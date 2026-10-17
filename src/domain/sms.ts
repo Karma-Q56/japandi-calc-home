@@ -8,7 +8,7 @@ export interface SmsProvider {
 }
 
 function segmentCount(body: string) {
-  const gsm = /^[\x00-\x7F]*$/.test(body);
+  const gsm = [...body].every(character => character.charCodeAt(0) <= 0x7f);
   const length = gsm ? body.length : [...body].length;
   return length <= (gsm ? 160 : 70) ? 1 : Math.ceil(length / (gsm ? 153 : 67));
 }

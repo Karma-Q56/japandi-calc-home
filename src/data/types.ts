@@ -40,6 +40,10 @@ export interface AuditEvent { id: string; actor: string; action: string; restaur
 export interface Lead { id: string; restaurantName: string; phone: string }
 export interface DataRequest { id: string; customerId: string; kind: 'deletion'; status: 'open' | 'done'; createdAt: string }
 export interface RateLimitHit { bucket: string; key: string; createdAt: number }
+export interface PairingCode { id: string; restaurantId: string; codeHash: string; expiresAt: number; usedAt?: number }
+export interface OtpSendLogEntry { id: string; phoneHash: string; restaurantId?: string; costCents: number; createdAt: number }
+export interface PinAttempt { staffId: string; ok: boolean; createdAt: number }
+export interface PinLockout { staffId: string; until: number }
 export interface DemoSession { role: DemoRole; restaurantId?: string; customerId?: string; staffId?: string }
 export interface DemoState {
   version: 2; now: number; session: DemoSession; restaurants: Restaurant[]; staff: StaffMember[];
@@ -47,11 +51,13 @@ export interface DemoState {
   memberships: Membership[]; consents: ConsentEvent[]; stamps: StampEvent[]; rewards: Reward[];
   campaigns: Campaign[]; messages: Message[]; redemptions: Redemption[]; ledger: LedgerEntry[];
   payments: Payment[]; pushSubscriptions: PushSubscription[]; audit: AuditEvent[]; leads: Lead[]; dataRequests: DataRequest[]; rateLimitHits: RateLimitHit[];
+  pairingCodes: PairingCode[]; otpSendLog: OtpSendLogEntry[]; pinAttempts: PinAttempt[]; pinLockouts: PinLockout[];
 }
 
 export interface Repo {
   read(): DemoState;
-  write(state: DemoState): void;
+  update(mutator: (state: DemoState) => DemoState): DemoState;
+  write(state: DemoState): DemoState;
   reset(): DemoState;
   subscribe(listener: () => void): () => void;
 }

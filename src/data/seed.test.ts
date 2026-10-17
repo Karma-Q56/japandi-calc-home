@@ -47,5 +47,5 @@ describe('M0 deterministic demo seed', () => {
 });
 
 repoContract('Demo', () => ({
-  read: () => demoRepo.read(), write: state => demoRepo.write(state), reset: () => demoRepo.reset(), subscribe: listener => demoRepo.subscribe(listener),
+  read: () => demoRepo.read(), update: mutator => demoRepo.update(mutator), write: state => demoRepo.write(state), reset: () => demoRepo.reset(), subscribe: listener => demoRepo.subscribe(listener),
 }));

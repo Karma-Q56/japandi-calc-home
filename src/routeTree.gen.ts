@@ -11,8 +11,26 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/app'
+import { Route as DemoRouteImport } from './routes/demo'
 import { Route as HealthzRouteImport } from './routes/healthz'
+import { Route as MeRouteImport } from './routes/me'
+import { Route as OpsRouteImport } from './routes/ops'
+import { Route as StampRouteImport } from './routes/stamp'
+import { Route as AppMenuRouteImport } from './routes/app.menu'
+import { Route as AppQrRouteImport } from './routes/app.qr'
+import { Route as DemoOutboxRouteImport } from './routes/demo.outbox'
 import { Route as HealthzDbRouteImport } from './routes/healthz.db'
+import { Route as MeSettingsRouteImport } from './routes/me.settings'
+import { Route as OpsRestaurantsRouteImport } from './routes/ops.restaurants'
+import { Route as RSlugRouteImport } from './routes/r.$slug'
+import { Route as STokenRouteImport } from './routes/s/$token'
+import { Route as UTokenRouteImport } from './routes/u/$token'
+import { Route as OpsRestaurantsIdRouteImport } from './routes/ops.restaurants.$id'
+import { Route as OpsRestaurantsNewRouteImport } from './routes/ops.restaurants.new'
+import { Route as RSlugCardRouteImport } from './routes/r.$slug.card'
+import { Route as RSlugJoinRouteImport } from './routes/r.$slug.join'
+import { Route as OpsRestaurantsIdLookRouteImport } from './routes/ops.restaurants.$id.look'
+import { Route as OpsRestaurantsIdQrRouteImport } from './routes/ops.restaurants.$id.qr'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -24,48 +42,266 @@ const AppRoute = AppRouteImport.update({
   path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DemoRoute = DemoRouteImport.update({
+  id: '/demo',
+  path: '/demo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HealthzRoute = HealthzRouteImport.update({
   id: '/healthz',
   path: '/healthz',
   getParentRoute: () => rootRouteImport,
+} as any)
+const MeRoute = MeRouteImport.update({
+  id: '/me',
+  path: '/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OpsRoute = OpsRouteImport.update({
+  id: '/ops',
+  path: '/ops',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StampRoute = StampRouteImport.update({
+  id: '/stamp',
+  path: '/stamp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppMenuRoute = AppMenuRouteImport.update({
+  id: '/menu',
+  path: '/menu',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppQrRoute = AppQrRouteImport.update({
+  id: '/qr',
+  path: '/qr',
+  getParentRoute: () => AppRoute,
+} as any)
+const DemoOutboxRoute = DemoOutboxRouteImport.update({
+  id: '/outbox',
+  path: '/outbox',
+  getParentRoute: () => DemoRoute,
 } as any)
 const HealthzDbRoute = HealthzDbRouteImport.update({
   id: '/db',
   path: '/db',
   getParentRoute: () => HealthzRoute,
 } as any)
+const MeSettingsRoute = MeSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => MeRoute,
+} as any)
+const OpsRestaurantsRoute = OpsRestaurantsRouteImport.update({
+  id: '/restaurants',
+  path: '/restaurants',
+  getParentRoute: () => OpsRoute,
+} as any)
+const RSlugRoute = RSlugRouteImport.update({
+  id: '/r/$slug',
+  path: '/r/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const STokenRoute = STokenRouteImport.update({
+  id: '/s/$token',
+  path: '/s/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UTokenRoute = UTokenRouteImport.update({
+  id: '/u/$token',
+  path: '/u/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OpsRestaurantsIdRoute = OpsRestaurantsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => OpsRestaurantsRoute,
+} as any)
+const OpsRestaurantsNewRoute = OpsRestaurantsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => OpsRestaurantsRoute,
+} as any)
+const RSlugCardRoute = RSlugCardRouteImport.update({
+  id: '/card',
+  path: '/card',
+  getParentRoute: () => RSlugRoute,
+} as any)
+const RSlugJoinRoute = RSlugJoinRouteImport.update({
+  id: '/join',
+  path: '/join',
+  getParentRoute: () => RSlugRoute,
+} as any)
+const OpsRestaurantsIdLookRoute = OpsRestaurantsIdLookRouteImport.update({
+  id: '/look',
+  path: '/look',
+  getParentRoute: () => OpsRestaurantsIdRoute,
+} as any)
+const OpsRestaurantsIdQrRoute = OpsRestaurantsIdQrRouteImport.update({
+  id: '/qr',
+  path: '/qr',
+  getParentRoute: () => OpsRestaurantsIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
+  '/app': typeof AppRouteWithChildren
+  '/demo': typeof DemoRouteWithChildren
   '/healthz': typeof HealthzRouteWithChildren
+  '/me': typeof MeRouteWithChildren
+  '/ops': typeof OpsRouteWithChildren
+  '/stamp': typeof StampRoute
+  '/app/menu': typeof AppMenuRoute
+  '/app/qr': typeof AppQrRoute
+  '/demo/outbox': typeof DemoOutboxRoute
   '/healthz/db': typeof HealthzDbRoute
+  '/me/settings': typeof MeSettingsRoute
+  '/ops/restaurants': typeof OpsRestaurantsRouteWithChildren
+  '/r/$slug': typeof RSlugRouteWithChildren
+  '/s/$token': typeof STokenRoute
+  '/u/$token': typeof UTokenRoute
+  '/ops/restaurants/$id': typeof OpsRestaurantsIdRouteWithChildren
+  '/ops/restaurants/new': typeof OpsRestaurantsNewRoute
+  '/r/$slug/card': typeof RSlugCardRoute
+  '/r/$slug/join': typeof RSlugJoinRoute
+  '/ops/restaurants/$id/look': typeof OpsRestaurantsIdLookRoute
+  '/ops/restaurants/$id/qr': typeof OpsRestaurantsIdQrRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
+  '/app': typeof AppRouteWithChildren
+  '/demo': typeof DemoRouteWithChildren
   '/healthz': typeof HealthzRouteWithChildren
+  '/me': typeof MeRouteWithChildren
+  '/ops': typeof OpsRouteWithChildren
+  '/stamp': typeof StampRoute
+  '/app/menu': typeof AppMenuRoute
+  '/app/qr': typeof AppQrRoute
+  '/demo/outbox': typeof DemoOutboxRoute
   '/healthz/db': typeof HealthzDbRoute
+  '/me/settings': typeof MeSettingsRoute
+  '/ops/restaurants': typeof OpsRestaurantsRouteWithChildren
+  '/r/$slug': typeof RSlugRouteWithChildren
+  '/s/$token': typeof STokenRoute
+  '/u/$token': typeof UTokenRoute
+  '/ops/restaurants/$id': typeof OpsRestaurantsIdRouteWithChildren
+  '/ops/restaurants/new': typeof OpsRestaurantsNewRoute
+  '/r/$slug/card': typeof RSlugCardRoute
+  '/r/$slug/join': typeof RSlugJoinRoute
+  '/ops/restaurants/$id/look': typeof OpsRestaurantsIdLookRoute
+  '/ops/restaurants/$id/qr': typeof OpsRestaurantsIdQrRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
+  '/app': typeof AppRouteWithChildren
+  '/demo': typeof DemoRouteWithChildren
   '/healthz': typeof HealthzRouteWithChildren
+  '/me': typeof MeRouteWithChildren
+  '/ops': typeof OpsRouteWithChildren
+  '/stamp': typeof StampRoute
+  '/app/menu': typeof AppMenuRoute
+  '/app/qr': typeof AppQrRoute
+  '/demo/outbox': typeof DemoOutboxRoute
   '/healthz/db': typeof HealthzDbRoute
+  '/me/settings': typeof MeSettingsRoute
+  '/ops/restaurants': typeof OpsRestaurantsRouteWithChildren
+  '/r/$slug': typeof RSlugRouteWithChildren
+  '/s/$token': typeof STokenRoute
+  '/u/$token': typeof UTokenRoute
+  '/ops/restaurants/$id': typeof OpsRestaurantsIdRouteWithChildren
+  '/ops/restaurants/new': typeof OpsRestaurantsNewRoute
+  '/r/$slug/card': typeof RSlugCardRoute
+  '/r/$slug/join': typeof RSlugJoinRoute
+  '/ops/restaurants/$id/look': typeof OpsRestaurantsIdLookRoute
+  '/ops/restaurants/$id/qr': typeof OpsRestaurantsIdQrRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app' | '/healthz' | '/healthz/db'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/demo'
+    | '/healthz'
+    | '/me'
+    | '/ops'
+    | '/stamp'
+    | '/app/menu'
+    | '/app/qr'
+    | '/demo/outbox'
+    | '/healthz/db'
+    | '/me/settings'
+    | '/ops/restaurants'
+    | '/r/$slug'
+    | '/s/$token'
+    | '/u/$token'
+    | '/ops/restaurants/$id'
+    | '/ops/restaurants/new'
+    | '/r/$slug/card'
+    | '/r/$slug/join'
+    | '/ops/restaurants/$id/look'
+    | '/ops/restaurants/$id/qr'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/app' | '/healthz' | '/healthz/db'
-  id: '__root__' | '/' | '/app' | '/healthz' | '/healthz/db'
+  to:
+    | '/'
+    | '/app'
+    | '/demo'
+    | '/healthz'
+    | '/me'
+    | '/ops'
+    | '/stamp'
+    | '/app/menu'
+    | '/app/qr'
+    | '/demo/outbox'
+    | '/healthz/db'
+    | '/me/settings'
+    | '/ops/restaurants'
+    | '/r/$slug'
+    | '/s/$token'
+    | '/u/$token'
+    | '/ops/restaurants/$id'
+    | '/ops/restaurants/new'
+    | '/r/$slug/card'
+    | '/r/$slug/join'
+    | '/ops/restaurants/$id/look'
+    | '/ops/restaurants/$id/qr'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/demo'
+    | '/healthz'
+    | '/me'
+    | '/ops'
+    | '/stamp'
+    | '/app/menu'
+    | '/app/qr'
+    | '/demo/outbox'
+    | '/healthz/db'
+    | '/me/settings'
+    | '/ops/restaurants'
+    | '/r/$slug'
+    | '/s/$token'
+    | '/u/$token'
+    | '/ops/restaurants/$id'
+    | '/ops/restaurants/new'
+    | '/r/$slug/card'
+    | '/r/$slug/join'
+    | '/ops/restaurants/$id/look'
+    | '/ops/restaurants/$id/qr'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AppRoute: typeof AppRoute
+  AppRoute: typeof AppRouteWithChildren
+  DemoRoute: typeof DemoRouteWithChildren
   HealthzRoute: typeof HealthzRouteWithChildren
+  MeRoute: typeof MeRouteWithChildren
+  OpsRoute: typeof OpsRouteWithChildren
+  StampRoute: typeof StampRoute
+  RSlugRoute: typeof RSlugRouteWithChildren
+  STokenRoute: typeof STokenRoute
+  UTokenRoute: typeof UTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -84,12 +320,61 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/demo': {
+      id: '/demo'
+      path: '/demo'
+      fullPath: '/demo'
+      preLoaderRoute: typeof DemoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/healthz': {
       id: '/healthz'
       path: '/healthz'
       fullPath: '/healthz'
       preLoaderRoute: typeof HealthzRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/me': {
+      id: '/me'
+      path: '/me'
+      fullPath: '/me'
+      preLoaderRoute: typeof MeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ops': {
+      id: '/ops'
+      path: '/ops'
+      fullPath: '/ops'
+      preLoaderRoute: typeof OpsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stamp': {
+      id: '/stamp'
+      path: '/stamp'
+      fullPath: '/stamp'
+      preLoaderRoute: typeof StampRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/menu': {
+      id: '/app/menu'
+      path: '/menu'
+      fullPath: '/app/menu'
+      preLoaderRoute: typeof AppMenuRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/qr': {
+      id: '/app/qr'
+      path: '/qr'
+      fullPath: '/app/qr'
+      preLoaderRoute: typeof AppQrRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/demo/outbox': {
+      id: '/demo/outbox'
+      path: '/outbox'
+      fullPath: '/demo/outbox'
+      preLoaderRoute: typeof DemoOutboxRouteImport
+      parentRoute: typeof DemoRoute
     }
     '/healthz/db': {
       id: '/healthz/db'
@@ -98,8 +383,107 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HealthzDbRouteImport
       parentRoute: typeof HealthzRoute
     }
+    '/me/settings': {
+      id: '/me/settings'
+      path: '/settings'
+      fullPath: '/me/settings'
+      preLoaderRoute: typeof MeSettingsRouteImport
+      parentRoute: typeof MeRoute
+    }
+    '/ops/restaurants': {
+      id: '/ops/restaurants'
+      path: '/restaurants'
+      fullPath: '/ops/restaurants'
+      preLoaderRoute: typeof OpsRestaurantsRouteImport
+      parentRoute: typeof OpsRoute
+    }
+    '/r/$slug': {
+      id: '/r/$slug'
+      path: '/r/$slug'
+      fullPath: '/r/$slug'
+      preLoaderRoute: typeof RSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/s/$token': {
+      id: '/s/$token'
+      path: '/s/$token'
+      fullPath: '/s/$token'
+      preLoaderRoute: typeof STokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/u/$token': {
+      id: '/u/$token'
+      path: '/u/$token'
+      fullPath: '/u/$token'
+      preLoaderRoute: typeof UTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ops/restaurants/$id': {
+      id: '/ops/restaurants/$id'
+      path: '/$id'
+      fullPath: '/ops/restaurants/$id'
+      preLoaderRoute: typeof OpsRestaurantsIdRouteImport
+      parentRoute: typeof OpsRestaurantsRoute
+    }
+    '/ops/restaurants/new': {
+      id: '/ops/restaurants/new'
+      path: '/new'
+      fullPath: '/ops/restaurants/new'
+      preLoaderRoute: typeof OpsRestaurantsNewRouteImport
+      parentRoute: typeof OpsRestaurantsRoute
+    }
+    '/r/$slug/card': {
+      id: '/r/$slug/card'
+      path: '/card'
+      fullPath: '/r/$slug/card'
+      preLoaderRoute: typeof RSlugCardRouteImport
+      parentRoute: typeof RSlugRoute
+    }
+    '/r/$slug/join': {
+      id: '/r/$slug/join'
+      path: '/join'
+      fullPath: '/r/$slug/join'
+      preLoaderRoute: typeof RSlugJoinRouteImport
+      parentRoute: typeof RSlugRoute
+    }
+    '/ops/restaurants/$id/look': {
+      id: '/ops/restaurants/$id/look'
+      path: '/look'
+      fullPath: '/ops/restaurants/$id/look'
+      preLoaderRoute: typeof OpsRestaurantsIdLookRouteImport
+      parentRoute: typeof OpsRestaurantsIdRoute
+    }
+    '/ops/restaurants/$id/qr': {
+      id: '/ops/restaurants/$id/qr'
+      path: '/qr'
+      fullPath: '/ops/restaurants/$id/qr'
+      preLoaderRoute: typeof OpsRestaurantsIdQrRouteImport
+      parentRoute: typeof OpsRestaurantsIdRoute
+    }
   }
 }
+
+interface AppRouteChildren {
+  AppMenuRoute: typeof AppMenuRoute
+  AppQrRoute: typeof AppQrRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppMenuRoute: AppMenuRoute,
+  AppQrRoute: AppQrRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
+interface DemoRouteChildren {
+  DemoOutboxRoute: typeof DemoOutboxRoute
+}
+
+const DemoRouteChildren: DemoRouteChildren = {
+  DemoOutboxRoute: DemoOutboxRoute,
+}
+
+const DemoRouteWithChildren = DemoRoute._addFileChildren(DemoRouteChildren)
 
 interface HealthzRouteChildren {
   HealthzDbRoute: typeof HealthzDbRoute
@@ -112,10 +496,76 @@ const HealthzRouteChildren: HealthzRouteChildren = {
 const HealthzRouteWithChildren =
   HealthzRoute._addFileChildren(HealthzRouteChildren)
 
+interface MeRouteChildren {
+  MeSettingsRoute: typeof MeSettingsRoute
+}
+
+const MeRouteChildren: MeRouteChildren = {
+  MeSettingsRoute: MeSettingsRoute,
+}
+
+const MeRouteWithChildren = MeRoute._addFileChildren(MeRouteChildren)
+
+interface OpsRestaurantsIdRouteChildren {
+  OpsRestaurantsIdLookRoute: typeof OpsRestaurantsIdLookRoute
+  OpsRestaurantsIdQrRoute: typeof OpsRestaurantsIdQrRoute
+}
+
+const OpsRestaurantsIdRouteChildren: OpsRestaurantsIdRouteChildren = {
+  OpsRestaurantsIdLookRoute: OpsRestaurantsIdLookRoute,
+  OpsRestaurantsIdQrRoute: OpsRestaurantsIdQrRoute,
+}
+
+const OpsRestaurantsIdRouteWithChildren =
+  OpsRestaurantsIdRoute._addFileChildren(OpsRestaurantsIdRouteChildren)
+
+interface OpsRestaurantsRouteChildren {
+  OpsRestaurantsIdRoute: typeof OpsRestaurantsIdRouteWithChildren
+  OpsRestaurantsNewRoute: typeof OpsRestaurantsNewRoute
+}
+
+const OpsRestaurantsRouteChildren: OpsRestaurantsRouteChildren = {
+  OpsRestaurantsIdRoute: OpsRestaurantsIdRouteWithChildren,
+  OpsRestaurantsNewRoute: OpsRestaurantsNewRoute,
+}
+
+const OpsRestaurantsRouteWithChildren = OpsRestaurantsRoute._addFileChildren(
+  OpsRestaurantsRouteChildren,
+)
+
+interface OpsRouteChildren {
+  OpsRestaurantsRoute: typeof OpsRestaurantsRouteWithChildren
+}
+
+const OpsRouteChildren: OpsRouteChildren = {
+  OpsRestaurantsRoute: OpsRestaurantsRouteWithChildren,
+}
+
+const OpsRouteWithChildren = OpsRoute._addFileChildren(OpsRouteChildren)
+
+interface RSlugRouteChildren {
+  RSlugCardRoute: typeof RSlugCardRoute
+  RSlugJoinRoute: typeof RSlugJoinRoute
+}
+
+const RSlugRouteChildren: RSlugRouteChildren = {
+  RSlugCardRoute: RSlugCardRoute,
+  RSlugJoinRoute: RSlugJoinRoute,
+}
+
+const RSlugRouteWithChildren = RSlugRoute._addFileChildren(RSlugRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AppRoute: AppRoute,
+  AppRoute: AppRouteWithChildren,
+  DemoRoute: DemoRouteWithChildren,
   HealthzRoute: HealthzRouteWithChildren,
+  MeRoute: MeRouteWithChildren,
+  OpsRoute: OpsRouteWithChildren,
+  StampRoute: StampRoute,
+  RSlugRoute: RSlugRouteWithChildren,
+  STokenRoute: STokenRoute,
+  UTokenRoute: UTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

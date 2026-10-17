@@ -50,3 +50,12 @@
 
 - User supplied organization org-sweet-wave-28962628, project super-waterfall-31745320, and branch production, and authorized setup. Neon CLI installation and help attempts using npx neon@latest and npm install --global neon@latest stalled without output and were interrupted. No login launched and no database changes were made.
 - The provided services list included auth and optional AI/object-storage/functions. Auth remains deferred per the user's earlier explicit direction; only Postgres is in scope for M0-M2. The requested production branch is an existing live target; apply schema only after a CLI/connection is usable and the ordered migrations can be reviewed against it.
+
+
+## 2026-10-17 - Review fixes to the M0/M2/M3 snapshot
+
+- Added the missing `updateDemo` export, `Repo.update`, and the state fields `pairingCodes`, `otpSendLog`, `pinAttempts`, `pinLockouts` (typed in `src/data/types.ts`, seeded empty). `DemoRepo.reset()` now also persists, otherwise a reload restored the old data.
+- Parent file routes now hand over to child routes through `withChildren()` (`src/lib/nested.tsx`). Wrappers are module-level constants because TanStack's route code-splitter failed on inline `withChildren(...)` expressions.
+- `requireRole` returns true on the server (the demo session only exists in the browser); the `customerId` checks on `/me`, `/me/settings` and `/r/:slug/card` are browser-only too. `/r/:slug/join` switches the demo session to guest instead of redirecting, so a scanned QR opens the join flow. M9 replaces these with real session checks.
+- Verified: member QR decodes (jsQR) to the member URL. Not verified: scanning with a phone camera, iPhone Safari, hydration warnings (React reports server/client text mismatches on pages that read demo state, because the server renders the seed and the browser renders stored state), a React warning about a state update during render on the card page.
+- Known gaps: stamp slots on the card render as small dots, copy bug "7 more for Your next coffee is on us", cron and webhook route files are placeholders that do not export a Route, code style uses very long one-line functions that are hard to review.

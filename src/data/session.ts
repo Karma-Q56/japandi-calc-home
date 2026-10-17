@@ -11,6 +11,11 @@ export function setDemoSession(session: DemoSession) {
   updateDemo(state => ({ ...state, session }));
 }
 
+/**
+ * Demo sessions live in the browser (localStorage), so the server cannot know the role.
+ * Guards therefore only run in the browser; on the server they let the request through
+ * and the client decides after hydration. M9 replaces this with real session checks.
+ */
 export function requireRole(...roles: DemoRole[]) {
-  return (session: DemoSession) => roles.includes(session.role);
+  return (session: DemoSession) => typeof window === 'undefined' || roles.includes(session.role);
 }

@@ -1,5 +1,8 @@
 # Patron task status
 
+> Review 2026-10-17: the snapshot received did not typecheck or build (missing `updateDemo`, missing state fields), and nested pages (`/r/:slug/join`, `/r/:slug/card`, `/me/settings`, `/app/menu`, `/app/qr`, `/ops/restaurants/new` and others) rendered their parent page because parents had no outlet. Role guards also redirected every reload and QR scan to `/demo` because the server cannot read the demo session. All fixed (see docs/decisions.md). Verified by hand in a 390 px browser: demo hub, guest join to card, My cards, operator wizard creating a restaurant and its public page, owner menu and QR print pack, member QR decodes with a real reader. Still placeholders: staff till (M4), owner dashboard (M5), credit (M6), campaigns (M7), PWA/push (M8), M9.
+
+
 Updated 2026-10-16. Work is on `vibe/m1-m3-implementation-ab5f40`, based on the latest fetched Patron branch requested earlier. Authentication remains skipped. The current app is a browser-only demo backed by local storage and seeded data.
 
 ## M0 — Demo foundation

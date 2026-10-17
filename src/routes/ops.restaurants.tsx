@@ -1,10 +1,12 @@
+import { withChildren } from '@/lib/nested';
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { useSyncExternalStore } from 'react';
 import { demoRepo } from '@/data/repo';
 import { requireRole } from '@/data/session';
 import { APP_NAME } from '@/config/app';
 
-export const Route = createFileRoute('/ops/restaurants')({ beforeLoad: () => { if (!requireRole('operator')(demoRepo.read().session)) throw redirect({ to: '/demo' }); }, component: RestaurantList });
+const RestaurantsPage = withChildren(RestaurantList);
+export const Route = createFileRoute('/ops/restaurants')({ beforeLoad: () => { if (!requireRole('operator')(demoRepo.read().session)) throw redirect({ to: '/demo' }); }, component: RestaurantsPage });
 
 function RestaurantList() {
   const state = useSyncExternalStore(demoRepo.subscribe, demoRepo.read, demoRepo.read);
