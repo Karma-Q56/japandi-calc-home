@@ -151,7 +151,7 @@ function GuestCard() {
                     Code {offer.code} · Expires{" "}
                     {new Intl.DateTimeFormat("en-ZA", {
                       dateStyle: "medium",
-                    }).format(new Date(new Date(offer.sentAt).getTime() + 30 * 86400000))}
+                    }).format(new Date(new Date(offer.sentAt ?? offer.createdAt).getTime() + 30 * 86400000))}
                   </small>
                 </span>
                 <button onClick={() => setNotice(`Show code ${offer.code} to the team.`)}>

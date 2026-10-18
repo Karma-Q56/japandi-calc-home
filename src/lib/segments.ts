@@ -64,43 +64,22 @@ export function countSegments(text: string): number {
   }
 
   if (usesGsm7) {
-    // GSM-7 encoding
-    // Each extension char counts as 2, so we need to calculate effective length
+    // GSM-7 encoding. Each extension char counts as 2 septets, and every
+    // segment of a multipart message holds 153 septets (SPEC 9.2 vectors:
+    // 160 -> 1, 161 -> 2, 306 -> 2, 307 -> 3).
     const effectiveLength = text.length + extensionCharCount;
-    
     if (effectiveLength <= 160) {
       return 1;
     }
-    
-    // For multipart: 153 chars per segment, but extension chars still count as 2
-    // Simplified approach: count total bits and divide by bits per segment
-    const SEGMENT_BITS = 1120; // 160 * 7 bits for first segment
-    const MULTIPART_SEGMENT_BITS = 1071; // 153 * 7 bits for subsequent segments
-    
-    let segments = 1;
-    let remainingBits = SEGMENT_BITS;
-    
-    for (const char of text) {
-      const charBits = isGsm7Extension(char) ? 14 : 7;
-      
-      if (charBits > remainingBits) {
-        segments++;
-        remainingBits = MULTIPART_SEGMENT_BITS;
-      }
-      
-      remainingBits -= charBits;
-    }
-    
-    return segments;
+    return Math.ceil(effectiveLength / 153);
   } else {
-    // UCS-2 encoding (Unicode)
-    // 70 chars = 1 segment, 67 chars per additional segment
-    if (text.length <= 70) {
+    // UCS-2 encoding (Unicode), counted in code points per SPEC 9.2:
+    // 70 chars = 1 segment, 67 chars per additional segment.
+    const length = [...text].length;
+    if (length <= 70) {
       return 1;
     }
-    
-    // Calculate segments: first 70, then 67 each
-    return 1 + Math.ceil((text.length - 70) / 67);
+    return 1 + Math.ceil((length - 70) / 67);
   }
 }
 

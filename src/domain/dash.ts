@@ -55,7 +55,7 @@ export function overview(
   ).reverse();
   const campaigns = state.campaigns
     .filter((c) => c.restaurantId === restaurantId)
-    .sort((a, b) => b.sentAt.localeCompare(a.sentAt));
+    .sort((a, b) => (b.sentAt ?? "").localeCompare(a.sentAt ?? ""));
   const last = campaigns[0];
   const stats: OverviewStat[] = [
     {

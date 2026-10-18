@@ -129,27 +129,68 @@ export interface Reward {
   redeemedBy?: string;
   stampId?: string;
 }
+export type CampaignStatus =
+  | "draft"
+  | "pending_approval"
+  | "scheduled"
+  | "sending"
+  | "sent"
+  | "cancelled"
+  | "failed";
+export type CampaignAudience = { type: "all_opted_in" } | { type: "lapsed"; days: number };
 export interface Campaign {
   id: string;
   restaurantId: string;
   name: string;
   body: string;
+  channel: "sms";
+  audience: CampaignAudience;
   code: string;
-  sentAt: string;
+  validFrom?: string;
+  validTo?: string;
+  status: CampaignStatus;
+  requiresApproval: boolean;
+  approvedBy?: string;
+  approvedAt?: string;
+  scheduledAt?: string;
+  sentAt: string | null;
   recipients: number;
   delivered: number;
   failed: number;
   awardStamp?: boolean;
+  createdBy: string;
+  createdAt: string;
+  estRecipients?: number;
+  estSegments?: number;
+  estCostCents?: number;
+  actualCostCents: number;
 }
+export type MessageStatus =
+  | "queued"
+  | "sending"
+  | "sent"
+  | "delivered"
+  | "failed"
+  | "skipped";
 export interface Message {
   id: string;
   restaurantId: string;
   customerId: string;
+  membershipId?: string;
+  campaignId?: string;
+  channel: "sms";
   body: string;
   segments: number;
   costCents: number;
-  status: "queued" | "delivered" | "failed";
+  status: MessageStatus;
+  attempts: number;
+  provider?: string;
+  providerMessageId?: string;
+  errorCode?: string;
+  notBefore?: string;
   createdAt: string;
+  sentAt?: string;
+  deliveredAt?: string;
   campaignCode?: string;
   expiresAt?: string;
 }
@@ -163,20 +204,40 @@ export interface Redemption {
   kind: "reward" | "campaign";
   code?: string;
 }
+export type LedgerEntryType =
+  | "topup"
+  | "reserve"
+  | "release"
+  | "charge"
+  | "refund"
+  | "adjustment";
 export interface LedgerEntry {
   id: string;
   restaurantId: string;
-  type: string;
+  type: LedgerEntryType;
   amountCents: number;
   reference: string;
+  campaignId?: string;
+  messageId?: string;
+  paymentId?: string;
+  note?: string;
+  createdBy?: string;
   createdAt: string;
 }
+export type PaymentStatus = "pending" | "confirmed" | "rejected";
 export interface Payment {
   id: string;
   restaurantId: string;
+  kind: "topup";
   amountCents: number;
-  status: string;
+  status: PaymentStatus;
   reference: string;
+  provider: string;
+  providerRef?: string;
+  requestedBy?: string;
+  confirmedBy?: string;
+  confirmedAt?: string;
+  createdAt: string;
 }
 export interface PushSubscription {
   id: string;
@@ -202,6 +263,13 @@ export interface DataRequest {
   kind: "deletion";
   status: "open" | "done";
   createdAt: string;
+}
+export interface ProviderEvent {
+  id: string;
+  provider: string;
+  eventId: string;
+  receivedAt: string;
+  processedAt?: string;
 }
 export interface RateLimitHit {
   bucket: string;
@@ -279,6 +347,7 @@ export interface DemoState {
   rateLimitHits: RateLimitHit[];
   pairingCodes: PairingCode[];
   otpSendLog: OtpSendLogEntry[];
+  providerEvents: ProviderEvent[];
   pinAttempts: PinAttempt[];
   pinLockouts: PinLockout[];
   onboarding: OnboardingChecklist[];

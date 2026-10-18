@@ -49,6 +49,33 @@ import {
   staffSessionValid,
 } from "@/domain/team";
 import { listAudit } from "@/domain/audit";
+import {
+  approveCampaign,
+  campaignResults,
+  cancelCampaign,
+  checkCopy,
+  confirmCampaign,
+  costPreview,
+  eligibleMemberships,
+  fixCopy,
+  fullBody,
+  listCampaigns,
+  makeOfferCode,
+  messageSegments,
+  refundMessage,
+  runDispatcher,
+  saveDraft,
+  settleCampaign,
+  validOfferCode,
+} from "@/domain/campaigns";
+import {
+  adjustCredit,
+  balanceFor,
+  confirmTopup,
+  listLedger,
+  requestTopup,
+} from "@/domain/credit";
+import { handleDeliveryWebhook, handleInboundWebhook } from "@/domain/webhooks";
 import { overview } from "@/domain/dash";
 import {
   customerProfile,
@@ -121,8 +148,33 @@ export const api = {
     manualStamp,
     remove: removeFromList,
   },
-  campaign: {},
-  credit: {},
+  campaign: {
+    list: listCampaigns,
+    saveDraft,
+    approve: approveCampaign,
+    confirm: confirmCampaign,
+    settle: settleCampaign,
+    cancel: cancelCampaign,
+    refundMessage,
+    results: campaignResults,
+    eligible: eligibleMemberships,
+    runDispatcher,
+    checkCopy,
+    fixCopy,
+    fullBody,
+    messageSegments,
+    costPreview,
+    makeOfferCode,
+    validOfferCode,
+  },
+  credit: {
+    list: listLedger,
+    balance: balanceFor,
+    requestTopup,
+    confirmTopup,
+    adjust: adjustCredit,
+  },
   ops: {},
   sms: fakeSmsProvider,
+  webhooks: { delivery: handleDeliveryWebhook, inbound: handleInboundWebhook },
 };

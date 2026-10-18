@@ -41,10 +41,10 @@ Each item references its source milestone from BUILD_PLAN.md and SPEC.md.
   - Update `plans` array in `src/lib/patron.ts`
   - Update `plannerPlans` for calculator
 
-- [ ] **Choose SMS provider** (M6, §9.1 [UNVERIFIED])
-  - Evaluate: SMSFlow (~14c), WinSMS (~R0.18-0.29), Plivo, Telnyx
+- [ ] **Choose SMS provider** (M6, §9.1 — comparison in `docs/decisions.md`, no choice made)
+  - Evaluate: SMS South Africa (~R0.29 ex VAT entry) vs Sendmode (R0.23 entry, better API docs)
   - Test with your phone number
-  - Document decision in `docs/decisions.md`
+  - Confirm sender-ID options and DLR callbacks with sales before deciding
 
 ### Before Launch (Legal & Operations)
 - [ ] **Legal review of consent wording** (SPEC §12.13, §17.10)
@@ -412,14 +412,13 @@ Reference: BUILD_PLAN.md M3, SPEC.md §5
 11. **M3**: Implement opt-out
 
 ### Phase 2: Owner Experience
-12. **M4**: Implement till pairing and PIN authentication
-13. **M4**: Implement stamping flow
-14. **M5**: Complete owner dashboard
-15. **M6**: Complete credit ledger
-16. **M6**: Choose and integrate SMS provider
+12. **M4**: ✅ till pairing, PIN auth, stamping flow (demo)
+13. **M5**: ✅ owner dashboard (demo)
+14. **M6**: ✅ credit ledger (demo); **you still decide**: SMS provider + real EFT details
+15. **M6**: Choose and integrate SMS provider (stubs throw until then)
 
 ### Phase 3: Advanced Features
-17. **M7**: Complete campaigns
+17. **M7**: ✅ campaigns (demo)
 18. **M8**: Complete PWA and push notifications
 19. **M9**: Complete hardening and launch checklist
 
@@ -433,10 +432,10 @@ Reference: BUILD_PLAN.md M3, SPEC.md §5
 | M1 | Marketing & Leads | 1-2 days | ⚠️ Needs TypeScript fixes |
 | M2 | Restaurants & Onboarding | 2-3 days | ⚠️ Needs database integration |
 | M3 | Guest Join & Cards | 3-4 days | ⚠️ Needs database integration |
-| M4 | Staff Stamping | 2-3 days | ❌ Not started |
-| M5 | Owner Dashboard | 2-3 days | ❌ Not started |
-| M6 | Credit & SMS | 2-3 days | ❌ Not started |
-| M7 | Campaigns | 3-4 days | ❌ Not started |
+| M4 | Staff Stamping | 2-3 days | ✅ Done (demo) |
+| M5 | Owner Dashboard | 2-3 days | ✅ Done (demo) |
+| M6 | Credit & SMS | 2-3 days | ✅ Done (demo; provider + EFT details pending founder) |
+| M7 | Campaigns | 3-4 days | ✅ Done (demo) |
 | M8 | PWA & Push | 2-3 days | ❌ Not started |
 | M9 | Hardening | 4-5 days | ❌ Not started |
 

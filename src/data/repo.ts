@@ -3,7 +3,7 @@ import type { DemoState, Repo } from "./types";
 
 // Bump the key when the demo seed changes shape, so browsers that still hold
 // an older demo snapshot start from the current seed instead of stale data.
-const STORAGE_KEY = "patron-demo-v4";
+const STORAGE_KEY = "patron-demo-v5";
 function load(): DemoState {
   try {
     if (typeof window === "undefined") return createSeed();
@@ -27,6 +27,7 @@ function load(): DemoState {
       rateLimitHits: parsed.rateLimitHits ?? [],
       pairingCodes: parsed.pairingCodes ?? [],
       otpSendLog: parsed.otpSendLog ?? [],
+      providerEvents: parsed.providerEvents ?? [],
       pinAttempts: parsed.pinAttempts ?? [],
       pinLockouts: parsed.pinLockouts ?? [],
       onboarding: parsed.onboarding ?? [],

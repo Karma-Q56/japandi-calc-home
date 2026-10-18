@@ -42,6 +42,8 @@ import { Route as DemoOutboxRouteImport } from './routes/demo.outbox'
 import { Route as DemoStatusRouteImport } from './routes/demo.status'
 import { Route as HealthzDbRouteImport } from './routes/healthz.db'
 import { Route as MeSettingsRouteImport } from './routes/me.settings'
+import { Route as OpsCampaignsRouteImport } from './routes/ops.campaigns'
+import { Route as OpsCreditRouteImport } from './routes/ops.credit'
 import { Route as OpsRestaurantsRouteImport } from './routes/ops.restaurants'
 import { Route as RSlugRouteImport } from './routes/r.$slug'
 import { Route as STokenRouteImport } from './routes/s/$token'
@@ -49,6 +51,8 @@ import { Route as UTokenRouteImport } from './routes/u/$token'
 import { Route as ApiCronDispatchRouteImport } from './routes/api/cron/dispatch'
 import { Route as ApiCronNightlyRouteImport } from './routes/api/cron/nightly'
 import { Route as ApiCronSettleRouteImport } from './routes/api/cron/settle'
+import { Route as AppCampaignsCampaignIdRouteImport } from './routes/app.campaigns.$campaignId'
+import { Route as AppCampaignsNewRouteImport } from './routes/app.campaigns.new'
 import { Route as AppCustomersCustomerIdRouteImport } from './routes/app.customers.$customerId'
 import { Route as DemoAsRoleRouteImport } from './routes/demo.as.$role'
 import { Route as OpsRestaurantsIdRouteImport } from './routes/ops.restaurants.$id'
@@ -224,6 +228,16 @@ const MeSettingsRoute = MeSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => MeRoute,
 } as any)
+const OpsCampaignsRoute = OpsCampaignsRouteImport.update({
+  id: '/campaigns',
+  path: '/campaigns',
+  getParentRoute: () => OpsRoute,
+} as any)
+const OpsCreditRoute = OpsCreditRouteImport.update({
+  id: '/credit',
+  path: '/credit',
+  getParentRoute: () => OpsRoute,
+} as any)
 const OpsRestaurantsRoute = OpsRestaurantsRouteImport.update({
   id: '/restaurants',
   path: '/restaurants',
@@ -258,6 +272,16 @@ const ApiCronSettleRoute = ApiCronSettleRouteImport.update({
   id: '/api/cron/settle',
   path: '/api/cron/settle',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppCampaignsCampaignIdRoute = AppCampaignsCampaignIdRouteImport.update({
+  id: '/$campaignId',
+  path: '/$campaignId',
+  getParentRoute: () => AppCampaignsRoute,
+} as any)
+const AppCampaignsNewRoute = AppCampaignsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AppCampaignsRoute,
 } as any)
 const AppCustomersCustomerIdRoute = AppCustomersCustomerIdRouteImport.update({
   id: '/$customerId',
@@ -326,7 +350,7 @@ export interface FileRoutesByFullPath {
   '/stamp': typeof StampRoute
   '/terms': typeof TermsRoute
   '/app/audit': typeof AppAuditRoute
-  '/app/campaigns': typeof AppCampaignsRoute
+  '/app/campaigns': typeof AppCampaignsRouteWithChildren
   '/app/credit': typeof AppCreditRoute
   '/app/customers': typeof AppCustomersRouteWithChildren
   '/app/loyalty': typeof AppLoyaltyRoute
@@ -339,6 +363,8 @@ export interface FileRoutesByFullPath {
   '/demo/status': typeof DemoStatusRoute
   '/healthz/db': typeof HealthzDbRoute
   '/me/settings': typeof MeSettingsRoute
+  '/ops/campaigns': typeof OpsCampaignsRoute
+  '/ops/credit': typeof OpsCreditRoute
   '/ops/restaurants': typeof OpsRestaurantsRouteWithChildren
   '/r/$slug': typeof RSlugRouteWithChildren
   '/s/$token': typeof STokenRoute
@@ -346,6 +372,8 @@ export interface FileRoutesByFullPath {
   '/api/cron/dispatch': typeof ApiCronDispatchRoute
   '/api/cron/nightly': typeof ApiCronNightlyRoute
   '/api/cron/settle': typeof ApiCronSettleRoute
+  '/app/campaigns/$campaignId': typeof AppCampaignsCampaignIdRoute
+  '/app/campaigns/new': typeof AppCampaignsNewRoute
   '/app/customers/$customerId': typeof AppCustomersCustomerIdRoute
   '/demo/as/$role': typeof DemoAsRoleRoute
   '/ops/restaurants/$id': typeof OpsRestaurantsIdRouteWithChildren
@@ -377,7 +405,7 @@ export interface FileRoutesByTo {
   '/stamp': typeof StampRoute
   '/terms': typeof TermsRoute
   '/app/audit': typeof AppAuditRoute
-  '/app/campaigns': typeof AppCampaignsRoute
+  '/app/campaigns': typeof AppCampaignsRouteWithChildren
   '/app/credit': typeof AppCreditRoute
   '/app/customers': typeof AppCustomersRouteWithChildren
   '/app/loyalty': typeof AppLoyaltyRoute
@@ -390,6 +418,8 @@ export interface FileRoutesByTo {
   '/demo/status': typeof DemoStatusRoute
   '/healthz/db': typeof HealthzDbRoute
   '/me/settings': typeof MeSettingsRoute
+  '/ops/campaigns': typeof OpsCampaignsRoute
+  '/ops/credit': typeof OpsCreditRoute
   '/ops/restaurants': typeof OpsRestaurantsRouteWithChildren
   '/r/$slug': typeof RSlugRouteWithChildren
   '/s/$token': typeof STokenRoute
@@ -397,6 +427,8 @@ export interface FileRoutesByTo {
   '/api/cron/dispatch': typeof ApiCronDispatchRoute
   '/api/cron/nightly': typeof ApiCronNightlyRoute
   '/api/cron/settle': typeof ApiCronSettleRoute
+  '/app/campaigns/$campaignId': typeof AppCampaignsCampaignIdRoute
+  '/app/campaigns/new': typeof AppCampaignsNewRoute
   '/app/customers/$customerId': typeof AppCustomersCustomerIdRoute
   '/demo/as/$role': typeof DemoAsRoleRoute
   '/ops/restaurants/$id': typeof OpsRestaurantsIdRouteWithChildren
@@ -429,7 +461,7 @@ export interface FileRoutesById {
   '/stamp': typeof StampRoute
   '/terms': typeof TermsRoute
   '/app/audit': typeof AppAuditRoute
-  '/app/campaigns': typeof AppCampaignsRoute
+  '/app/campaigns': typeof AppCampaignsRouteWithChildren
   '/app/credit': typeof AppCreditRoute
   '/app/customers': typeof AppCustomersRouteWithChildren
   '/app/loyalty': typeof AppLoyaltyRoute
@@ -442,6 +474,8 @@ export interface FileRoutesById {
   '/demo/status': typeof DemoStatusRoute
   '/healthz/db': typeof HealthzDbRoute
   '/me/settings': typeof MeSettingsRoute
+  '/ops/campaigns': typeof OpsCampaignsRoute
+  '/ops/credit': typeof OpsCreditRoute
   '/ops/restaurants': typeof OpsRestaurantsRouteWithChildren
   '/r/$slug': typeof RSlugRouteWithChildren
   '/s/$token': typeof STokenRoute
@@ -449,6 +483,8 @@ export interface FileRoutesById {
   '/api/cron/dispatch': typeof ApiCronDispatchRoute
   '/api/cron/nightly': typeof ApiCronNightlyRoute
   '/api/cron/settle': typeof ApiCronSettleRoute
+  '/app/campaigns/$campaignId': typeof AppCampaignsCampaignIdRoute
+  '/app/campaigns/new': typeof AppCampaignsNewRoute
   '/app/customers/$customerId': typeof AppCustomersCustomerIdRoute
   '/demo/as/$role': typeof DemoAsRoleRoute
   '/ops/restaurants/$id': typeof OpsRestaurantsIdRouteWithChildren
@@ -495,6 +531,8 @@ export interface FileRouteTypes {
     | '/demo/status'
     | '/healthz/db'
     | '/me/settings'
+    | '/ops/campaigns'
+    | '/ops/credit'
     | '/ops/restaurants'
     | '/r/$slug'
     | '/s/$token'
@@ -502,6 +540,8 @@ export interface FileRouteTypes {
     | '/api/cron/dispatch'
     | '/api/cron/nightly'
     | '/api/cron/settle'
+    | '/app/campaigns/$campaignId'
+    | '/app/campaigns/new'
     | '/app/customers/$customerId'
     | '/demo/as/$role'
     | '/ops/restaurants/$id'
@@ -546,6 +586,8 @@ export interface FileRouteTypes {
     | '/demo/status'
     | '/healthz/db'
     | '/me/settings'
+    | '/ops/campaigns'
+    | '/ops/credit'
     | '/ops/restaurants'
     | '/r/$slug'
     | '/s/$token'
@@ -553,6 +595,8 @@ export interface FileRouteTypes {
     | '/api/cron/dispatch'
     | '/api/cron/nightly'
     | '/api/cron/settle'
+    | '/app/campaigns/$campaignId'
+    | '/app/campaigns/new'
     | '/app/customers/$customerId'
     | '/demo/as/$role'
     | '/ops/restaurants/$id'
@@ -597,6 +641,8 @@ export interface FileRouteTypes {
     | '/demo/status'
     | '/healthz/db'
     | '/me/settings'
+    | '/ops/campaigns'
+    | '/ops/credit'
     | '/ops/restaurants'
     | '/r/$slug'
     | '/s/$token'
@@ -604,6 +650,8 @@ export interface FileRouteTypes {
     | '/api/cron/dispatch'
     | '/api/cron/nightly'
     | '/api/cron/settle'
+    | '/app/campaigns/$campaignId'
+    | '/app/campaigns/new'
     | '/app/customers/$customerId'
     | '/demo/as/$role'
     | '/ops/restaurants/$id'
@@ -877,6 +925,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MeSettingsRouteImport
       parentRoute: typeof MeRoute
     }
+    '/ops/campaigns': {
+      id: '/ops/campaigns'
+      path: '/campaigns'
+      fullPath: '/ops/campaigns'
+      preLoaderRoute: typeof OpsCampaignsRouteImport
+      parentRoute: typeof OpsRoute
+    }
+    '/ops/credit': {
+      id: '/ops/credit'
+      path: '/credit'
+      fullPath: '/ops/credit'
+      preLoaderRoute: typeof OpsCreditRouteImport
+      parentRoute: typeof OpsRoute
+    }
     '/ops/restaurants': {
       id: '/ops/restaurants'
       path: '/restaurants'
@@ -925,6 +987,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/cron/settle'
       preLoaderRoute: typeof ApiCronSettleRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/app/campaigns/$campaignId': {
+      id: '/app/campaigns/$campaignId'
+      path: '/$campaignId'
+      fullPath: '/app/campaigns/$campaignId'
+      preLoaderRoute: typeof AppCampaignsCampaignIdRouteImport
+      parentRoute: typeof AppCampaignsRoute
+    }
+    '/app/campaigns/new': {
+      id: '/app/campaigns/new'
+      path: '/new'
+      fullPath: '/app/campaigns/new'
+      preLoaderRoute: typeof AppCampaignsNewRouteImport
+      parentRoute: typeof AppCampaignsRoute
     }
     '/app/customers/$customerId': {
       id: '/app/customers/$customerId'
@@ -992,6 +1068,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppCampaignsRouteChildren {
+  AppCampaignsCampaignIdRoute: typeof AppCampaignsCampaignIdRoute
+  AppCampaignsNewRoute: typeof AppCampaignsNewRoute
+}
+
+const AppCampaignsRouteChildren: AppCampaignsRouteChildren = {
+  AppCampaignsCampaignIdRoute: AppCampaignsCampaignIdRoute,
+  AppCampaignsNewRoute: AppCampaignsNewRoute,
+}
+
+const AppCampaignsRouteWithChildren = AppCampaignsRoute._addFileChildren(
+  AppCampaignsRouteChildren,
+)
+
 interface AppCustomersRouteChildren {
   AppCustomersCustomerIdRoute: typeof AppCustomersCustomerIdRoute
 }
@@ -1006,7 +1096,7 @@ const AppCustomersRouteWithChildren = AppCustomersRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppAuditRoute: typeof AppAuditRoute
-  AppCampaignsRoute: typeof AppCampaignsRoute
+  AppCampaignsRoute: typeof AppCampaignsRouteWithChildren
   AppCreditRoute: typeof AppCreditRoute
   AppCustomersRoute: typeof AppCustomersRouteWithChildren
   AppLoyaltyRoute: typeof AppLoyaltyRoute
@@ -1019,7 +1109,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAuditRoute: AppAuditRoute,
-  AppCampaignsRoute: AppCampaignsRoute,
+  AppCampaignsRoute: AppCampaignsRouteWithChildren,
   AppCreditRoute: AppCreditRoute,
   AppCustomersRoute: AppCustomersRouteWithChildren,
   AppLoyaltyRoute: AppLoyaltyRoute,
@@ -1095,10 +1185,14 @@ const OpsRestaurantsRouteWithChildren = OpsRestaurantsRoute._addFileChildren(
 )
 
 interface OpsRouteChildren {
+  OpsCampaignsRoute: typeof OpsCampaignsRoute
+  OpsCreditRoute: typeof OpsCreditRoute
   OpsRestaurantsRoute: typeof OpsRestaurantsRouteWithChildren
 }
 
 const OpsRouteChildren: OpsRouteChildren = {
+  OpsCampaignsRoute: OpsCampaignsRoute,
+  OpsCreditRoute: OpsCreditRoute,
   OpsRestaurantsRoute: OpsRestaurantsRouteWithChildren,
 }
 

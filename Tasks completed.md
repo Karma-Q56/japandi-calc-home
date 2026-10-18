@@ -96,9 +96,27 @@ Updated 2026-10-16. Work is on `vibe/m1-m3-implementation-ab5f40`, based on the 
 
 The user explicitly asked to proceed with M2/M3 without blocking on these verification issues and said they will handle any verification blockers.
 
+## M6 — Credit ledger and SMS adapter (2026-10-18 session, demo mode)
+
+- [x] verified (vitest 16/16) Ledger domain `src/domain/credit.ts`: reserve/release/charge/refund/adjustment/topup with unique `reference`, integer cents, balance = sum, never negative; `CREDIT_CONTRACT` table for M9.
+- [x] verified (vitest) Duplicate topup confirmation writes exactly one entry; concurrent reserves never go below zero; adjustments need a note.
+- [x] verified (typecheck/build) `/app/credit` (balance, PAT-{slug}-{4 digits} references, EFT placeholder, plain-English labels) and `/ops/credit` (confirm EFT, adjustments, audit).
+- [x] verified (vitest) SPEC 9.1 `SmsProvider` interface; `SMS_PROVIDER` selection; smssouthafrica/sendmode stubs throw not configured; segment vectors from SPEC 9.2 (fixed two `countSegments` bugs: multipart uses 153 per segment, UCS-2 counts code points).
+- [x] verified (vitest) Webhook idempotency by (provider, event_id); replay is a no-op; inbound STOP withdraws that restaurant only; OTP cost logged per new join.
+- [~] built, not verified Real-browser credit pages at 360px; real provider, EFT details, TEST database.
+
+## M7 — Campaigns (2026-10-18 session, demo mode)
+
+- [x] verified (vitest 11/11) Campaign engine `src/domain/campaigns.ts`: audience presets with caps, merge field, Stop footer in segments, smart-quote/emoji warnings with fix, cost preview, atomic confirm, pure `dispatchBatch`, settlement, refunds, approvals, results.
+- [x] verified (vitest) 84 eligible guests reserve/send/settle with the ledger invariant; consent withdrawn after confirm is skipped and not charged; insufficient credit blocks with a clear message; caps exclude at send time; quiet hours push to 08:00 SAST; operator draft needs approval; dispatcher kill/restart sends nothing twice; double redeem fails.
+- [x] verified (typecheck/build) Composer `/app/campaigns/new` (4 steps, draft each step, typed SEND over 200), list with approval flags, results page with attributable-visits label, `/ops/campaigns` drafts, dispatcher button on `/demo/outbox`, cron routes behind CRON_SECRET (501 in demo).
+- [x] verified (typecheck) Offer redemption reuses `redeemCampaignCode` (now rejects non-sent campaigns); till UI already connected.
+- [x] Seed: one sent campaign result + one draft for The Daily Grind (storage key bumped to patron-demo-v5).
+- [~] built, not verified Real-browser composer/results at 360/390px; Playwright E2E.
+
 ## Not in scope yet
 
-- [ ] M1 marketing milestone is parked; M4–M9 are not started.
+- [ ] M1 marketing milestone is parked; M8–M9 are not started.
 - [ ] Real authentication/OTP, SMS sending, Neon-backed persistence and real object storage remain deferred. M0/M2/M3 data changes are demo-only.
 
 ## GitHub

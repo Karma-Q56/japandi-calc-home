@@ -1,3 +1,4 @@
+import { SMS } from "@/config/app";
 import { getConsentWording } from "@/config/consent";
 import { clock } from "@/lib/clock";
 import { isValidSAMobile, normalizePhone } from "@/lib/phone";
@@ -48,7 +49,9 @@ export function getCard(slug: string, customerId: string) {
     membership,
     stampsGained,
     rewards: state.rewards.filter((item) => item.membershipId === membership.id),
-    offers: state.campaigns.filter((item) => item.restaurantId === restaurant.id),
+    offers: state.campaigns.filter(
+      (item) => item.restaurantId === restaurant.id && item.status === "sent",
+    ),
     visits: state.stamps
       .filter((item) => item.membershipId === membership.id)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
@@ -160,11 +163,19 @@ export function joinRestaurant(input: {
       source: "join_form",
       createdAt: now,
     });
+  const otpEntry = {
+    id: `otp-${crypto.randomUUID()}`,
+    phoneHash: hashPhone(phoneE164),
+    restaurantId: restaurant.id,
+    costCents: SMS.otpCostCents,
+    createdAt: Date.parse(now),
+  };
   updateDemo((current) => ({
     ...current,
     customers: customer ? current.customers : [...current.customers, newCustomer],
     memberships: [...current.memberships, membership],
     consents: [...current.consents, ...consent],
+    otpSendLog: [...current.otpSendLog, otpEntry],
     stamps: initialStamps
       ? [
           ...current.stamps,
@@ -182,6 +193,15 @@ export function joinRestaurant(input: {
     session: { role: "guest", customerId },
   }));
   return success({ customerId, membershipId, alreadyMember: false });
+}
+
+/** Demo-only caller-safe hash for the OTP cost log (never store raw phones there). */
+export function hashPhone(phoneE164: string): string {
+  let hash = 5381;
+  for (const char of `patron-otp:${phoneE164}`) {
+    hash = ((hash << 5) + hash + char.charCodeAt(0)) >>> 0;
+  }
+  return hash.toString(16).padStart(8, "0");
 }
 
 export function setMarketingConsent(membershipId: string, enabled: boolean) {

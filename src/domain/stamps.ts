@@ -266,6 +266,8 @@ export function redeemCampaignCode(input: {
     (c) => c.code.toUpperCase() === input.code.trim().toUpperCase(),
   );
   if (!campaign) return failure("NOT_FOUND", "That offer code was not found.");
+  if (campaign.status !== "sent" || !campaign.sentAt)
+    return failure("INVALID", "That offer is not active yet.");
   if (!scopeCheck(input.session, campaign.restaurantId)) {
     return failure("FORBIDDEN", "That offer belongs to another restaurant.");
   }

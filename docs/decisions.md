@@ -66,3 +66,24 @@
 - Demo hub tunnels are plain deep links (`/demo/as/:role?...&to=...` handled in `beforeLoad`); cron/webhook files export real `Route`s (501 POST); `_demoPlaceholder` moved to components.
 - `FakeSmsProvider` uses `countSegments`; QR capacity covered by `src/lib/qr.test.ts` (20 URLs, version 5-L); privacy covered by `src/test/cross-restaurant.test.ts`.
 - Verified: `npm run typecheck` clean, `npm run lint` 0 errors, `npx vitest run` 28/28, `npm run build` ok. E2E could not run here (Playwright chromium needs `libnspr4.so`, not installable in this VM).
+
+## 2026-10-18 — M6 credit ledger and SMS adapter (demo mode)
+
+- **Ledger is the source of truth:** balance = sum(credit_ledger) in integer cents, never negative (enforced in `planEntries`, mirroring the SQL CHECK). `restaurant.creditCents` is kept in sync as a cache so the M5 dashboard and operator list keep working unchanged.
+- **Duplicate migration found:** `db/migrations/0001_initial_schema.sql` (added in cd317e1) creates the identical object set as `0001_patron_schema.sql` (added in 783aea0, already applied). Fresh `pnpm db:migrate` runs fail with 42710. Local recovery: recorded the duplicate as applied without executing. Every fresh database will hit this until one of the files is removed — flagged for the founder, not changed.
+- **SMS provider comparison (researched 2026-10-18, no choice made):**
+  - SMS South Africa (smssouthafrica.co.za; note smssouthafrica.com does not resolve): ~R0.29 ex VAT per SMS at 500–1,000, down to ~R0.18 at high volume; no setup/monthly fees, credits do not expire, inbound free; documented automatic STOP/DELETE/REMOVE opt-out list; DLR statuses documented for reports but no public API callback spec found; sender-ID options not verifiable from public material. Sources: [pricing](https://www.smssouthafrica.co.za/bulk-sms-pricing/), [FAQ](https://www.smssouthafrica.co.za/frequently-asked-questions/), [API overview](https://www.smssouthafrica.co.za/bulk-sms/).
+  - Sendmode: R0.23 per credit at 1,000 (R230), R0.21 at 5,000; prices exclude VAT; one credit per 160 chars; REST API with access-key auth plus documented delivery-report callbacks; sender names up to 11 chars, registered/approved; STOP via shortcode 88990; replies free. Sources: [pricing](https://www.sendmode.com/pricing), [REST docs](https://developers.sendmode.com/restdocs), [delivery reports](https://developers.sendmode.com/restdocs/deliveryreports), [SA FAQ](https://www.sendmode.co.za/faq).
+  - Neither publishes a separate OTP tariff; use bulk-credit rates for both until sales confirms otherwise.
+  - Open question for the founder: pick smssouthafrica or sendmode (ACTION_ITEMS.md). Stub adapters throw "not configured" until then; `SMS_PROVIDER=console|fake|smssouthafrica|sendmode` (default fake).
+- **Demo SMS facts:** `FakeSmsProvider` implements the SPEC 9.1 interface; webhooks are idempotent by (provider, event_id) in `provider_event`; inbound STOP withdraws marketing for that restaurant's membership only; OTP cost (R0.30, `SMS.otpCostCents`) is logged per new join.
+- **EFT details on /app/credit are placeholders** (Demo Bank, 00-000-0000) pending real banking details.
+
+## 2026-10-18 — M7 campaigns (demo mode)
+
+- **Atomic confirm:** one repo update writes the reserve entry plus one message row per eligible membership (unique campaign+membership+channel); credit re-checked inside the same operation.
+- **Dispatcher is pure** (`dispatchBatch(state, now)`): claims queued rows in batches of 25, re-checks consent/erasure/caps/quiet hours per message, retries with backoff to 3 attempts then failed. Killing mid-batch and restarting sends nothing twice (claim = queued → sending in one state transition).
+- **Quiet hours** 20:00–08:00 Africa/Johannesburg (SAST has no DST, so 08:00 SAST is always 06:00 UTC); scheduled sends inside the window move to 08:00.
+- **Settlement:** release reservation + charge actual when nothing is queued/sending; cancel allowed in scheduled/sending; failed-after-charge gets a `refund:<message_id>` entry.
+- **Attribution wording** is fixed by spec: "visits by recipients after sending; not proof the message caused them".
+- **Unverified:** real-browser walkthrough of composer/results at 360/390px; Playwright cannot run in this VM.

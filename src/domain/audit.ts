@@ -15,7 +15,15 @@ export type AuditAction =
   | "phone_reveal"
   | "export"
   | "remove"
-  | "manual_stamp";
+  | "manual_stamp"
+  | "topup_request"
+  | "topup_confirm"
+  | "adjustment"
+  | "campaign_confirm"
+  | "campaign_settle"
+  | "campaign_cancel"
+  | "campaign_approve"
+  | "sms_webhook";
 
 /** Never pass PINs or full phone numbers — ids only. */
 export function logAudit(input: {

@@ -1,13 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-const PLACEHOLDER_SECRET = "patron-demo-placeholder-secret";
-
-function unauthorized(request: Request): boolean {
-  const env = process.env as Record<string, string | undefined>;
-  const expected = env["CRON_SECRET"];
-  if (expected === undefined) return false;
-  void PLACEHOLDER_SECRET;
-  return request.headers.get("x-cron-secret") !== expected;
+function cronSecret(): string | undefined {
+  return (process.env as Record<string, string | undefined>)["CRON_SECRET"];
 }
 
 export const Route = createFileRoute("/api/cron/dispatch")({
@@ -15,10 +9,15 @@ export const Route = createFileRoute("/api/cron/dispatch")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        if (unauthorized(request)) {
-          return new Response("Not implemented yet", { status: 501 });
+        const expected = cronSecret();
+        if (expected && request.headers.get("x-cron-secret") !== expected) {
+          return new Response("Unauthorized", { status: 401 });
         }
-        return new Response("Not implemented yet", { status: 501 });
+        // Demo mode keeps its state in the browser, so there is nothing to
+        // dispatch here. Run the same dispatchBatch() function from the
+        // "Run dispatcher" button on /demo/outbox instead. M9 connects this
+        // route to the real database behind the same CRON_SECRET check.
+        return new Response("Demo mode: run the dispatcher from /demo/outbox.", { status: 501 });
       },
     },
   },
@@ -28,7 +27,7 @@ function CronDispatchPlaceholder() {
   return (
     <main className="demo-hub page-width">
       <h1>Not implemented yet.</h1>
-      <p>Queued SMS dispatch runs in a later milestone.</p>
+      <p>Queued SMS dispatch runs from the demo outbox until M9.</p>
       <a href="/demo">Back to demo hub</a>
     </main>
   );
