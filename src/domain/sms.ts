@@ -4,7 +4,7 @@ import { countSegments } from "@/lib/segments";
 import { withdrawMarketingConsent } from "./members";
 
 export type DeliveryStatus = "delivered" | "failed";
-export type SmsProviderName = "console" | "fake" | "smssouthafrica" | "sendmode";
+export type SmsProviderName = "console" | "fake" | "smssouthafrica" | "sendmode" | "bulksms";
 
 /** SPEC 9.1 provider contract. Real backends arrive in M9; the demo uses FakeSmsProvider. */
 export interface SmsProvider {
@@ -141,13 +141,15 @@ export const smsSouthAfricaProvider = new UnconfiguredProvider(
   "smssouthafrica",
 );
 export const sendmodeProvider = new UnconfiguredProvider("sendmode", "sendmode");
+/** Chosen provider (founder has a BulkSMS.com account). The real adapter is src/server/sms/BulkSmsProvider.ts. */
+export const bulksmsProvider = new UnconfiguredProvider("bulksms", "bulksms (demo build: real sending arrives with the backend)");
 
 /** SMS_PROVIDER=console|fake|smssouthafrica|sendmode (default fake; console is the demo outbox). */
 export function smsProviderName(): SmsProviderName {
   const raw = ((import.meta as unknown as { env?: Record<string, string | undefined> }).env?.[
     "SMS_PROVIDER"
   ] ?? "fake").toLowerCase();
-  if (raw === "console" || raw === "fake" || raw === "smssouthafrica" || raw === "sendmode") {
+  if (raw === "console" || raw === "fake" || raw === "smssouthafrica" || raw === "sendmode" || raw === "bulksms") {
     return raw;
   }
   return "fake";
@@ -157,5 +159,6 @@ export function getSmsProvider(): SmsProvider {
   const name = smsProviderName();
   if (name === "smssouthafrica") return smsSouthAfricaProvider;
   if (name === "sendmode") return sendmodeProvider;
+  if (name === "bulksms") return bulksmsProvider;
   return fakeSmsProvider;
 }
