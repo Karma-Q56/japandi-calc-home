@@ -2,12 +2,20 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { api } from "@/api";
 import { demoRepo, updateDemo } from "@/data/repo";
+import { getDataModeFn, recordStampFn } from "@/server/live";
 import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
 import type { StampResult } from "@/domain/stamps";
 
 export const Route = createFileRoute("/stamp")({
-  beforeLoad: () => {
+  loader: async () => {
+    const { mode } = await getDataModeFn();
+    return { mode };
+  },
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    // Live mode has no demo session; stamping is guarded by the till PIN.
+    if (mode === "live") return;
     if (!requireRole("staff")(demoRepo.read().session)) {
       throw redirect({ to: "/demo" });
     }
@@ -28,6 +36,7 @@ type Lookup =
     };
 
 function Till() {
+  const { mode } = Route.useLoaderData();
   const state = useDemoState();
   const session = state.session;
   const restaurant =
@@ -96,9 +105,40 @@ function Till() {
     setLastStampId(null);
   };
 
-  const addStamp = () => {
+  const addStamp = async () => {
     if (!lookup?.ok || !session.staffId) return;
     const key = `till-${crypto.randomUUID()}`;
+    if (mode === "live") {
+      // Live mode: the PIN field carries the per-stamp till PIN (verified by
+      // HMAC + lockout on the server); staff identity is still the demo
+      // session until the auth slice binds real staff sessions.
+      const res = await recordStampFn({
+        data: { restaurantId: restaurant.id, membershipId: lookup.membershipId, staffId: session.staffId, key, pin },
+      });
+      if (!res.ok) {
+        say("error", res.message);
+        return;
+      }
+      const outcome = res.outcome;
+      if (outcome.result === "too_soon") {
+        say("error", "Too soon — wait a little before the next stamp.");
+        return;
+      }
+      if (outcome.result === "not_a_member") {
+        say("error", "That member is not on this list.");
+        return;
+      }
+      if (outcome.result === "duplicate_retry") {
+        say("ok", "Already stamped — showing the existing stamp.");
+        return;
+      }
+      say(
+        "ok",
+        `Stamp added — ${outcome.stampsCurrent} of ${restaurant.stampsRequired}.` +
+          (outcome.result === "reward" ? " Reward earned!" : ""),
+      );
+      return;
+    }
     const result = api.stamp.record({
       restaurantId: restaurant.id,
       membershipId: lookup.membershipId,

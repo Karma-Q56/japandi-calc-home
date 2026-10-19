@@ -1,7 +1,9 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { z } from "zod";
 import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
+import { getCardFn, getDataModeFn } from "@/server/live";
 import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
 import { ThemeProvider } from "@/theme";
@@ -11,7 +13,19 @@ import { qrSvg } from "@/lib/qr";
 import { rewardEarned, rewardProgress } from "@/lib/reward-copy";
 
 export const Route = createFileRoute("/r/$slug/card")({
-  beforeLoad: () => {
+  validateSearch: (search) => cardSearchSchema.parse(search),
+  loader: async ({ params, location }) => {
+    const { mode } = await getDataModeFn();
+    const raw = (location.search ?? {}) as { customerId?: unknown };
+    const customerId = typeof raw.customerId === "string" ? raw.customerId : undefined;
+    if (mode !== "live" || !customerId) return { mode, live: null };
+    const { card } = await getCardFn({ data: { slug: params.slug, customerId } });
+    return { mode, live: card };
+  },
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    // Live mode has no demo session; the card is scoped by RLS instead.
+    if (mode === "live") return;
     if (!requireRole("guest")(demoRepo.read().session)) {
       throw redirect({ to: "/demo" });
     }
@@ -24,6 +38,7 @@ export const Route = createFileRoute("/r/$slug/card")({
 
 function GuestCard() {
   const { slug } = Route.useParams();
+  const loaderData = Route.useLoaderData();
   const state = useDemoState();
   const customerId = state.session.customerId;
   const result = customerId ? api.member.card(slug, customerId) : null;
@@ -35,6 +50,8 @@ function GuestCard() {
   useEffect(() => {
     if (membershipId) api.member.markSeen(membershipId);
   }, [membershipId]);
+
+  if (loaderData.live) return <LiveGuestCard slug={slug} card={loaderData.live} />;
 
   if (!customerId) {
     return (
@@ -246,5 +263,41 @@ function GuestCard() {
           </div>
         )}
     </ThemeProvider>
+  );
+}
+
+const cardSearchSchema = z.object({ customerId: z.string().optional() });
+
+type LiveCard = NonNullable<Awaited<ReturnType<typeof getCardFn>>["card"]>;
+
+/** Live-mode guest card (DATA_MODE=live): RLS-scoped rows from Postgres through
+ *  the getCard server function. Demo rendering above is unchanged. */
+function LiveGuestCard({ slug, card }: { slug: string; card: LiveCard }) {
+  const available = card.rewards.filter((r) => r.status === "available");
+  return (
+    <main className="guest-page">
+      <section className="guest-panel">
+        <p className="eyebrow">Loyalty card</p>
+        <h1>{card.restaurant.name}</h1>
+        <p>
+          {card.membership.stampsCurrent} of {card.restaurant.stampsRequired} stamps ·{" "}
+          {card.restaurant.rewardDescription}
+        </p>
+        {available.length > 0 && (
+          <p role="status">
+            Reward ready: {available.map((r) => r.description).join(", ")}
+          </p>
+        )}
+        <h2>Recent visits</h2>
+        <ul>
+          {card.stamps.map((stamp) => (
+            <li key={stamp.id}>{new Date(stamp.createdAt).toLocaleDateString("en-ZA")}</li>
+          ))}
+        </ul>
+        <a className="builder-primary" href={`/r/${slug}`}>
+          View menu &amp; specials
+        </a>
+      </section>
+    </main>
   );
 }

@@ -22,13 +22,15 @@ export interface PublicSpecial {
   active: boolean;
 }
 
+export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+
 export interface PublicPage {
   id: string;
   slug: string;
   name: string;
   suburb: string | null;
-  theme: Record<string, unknown>;
-  hours: Record<string, unknown>;
+  theme: Record<string, JsonValue>;
+  hours: Record<string, JsonValue>;
   stampsRequired: number;
   rewardDescription: string;
   visitWindowMinutes: number;
@@ -52,6 +54,7 @@ export interface LeadInput {
   consent: boolean;
   consentVersion?: string | undefined;
   calculator?: Record<string, unknown> | undefined;
+  notes?: string | undefined;
   website?: string | undefined; // honeypot — must be empty
   ipHash?: string | undefined;
 }

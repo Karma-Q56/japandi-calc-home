@@ -79,7 +79,7 @@ function MyCards() {
                 )
               : null;
             return (
-              <Link key={item.id} to="/r/$slug/card" params={{ slug: item.restaurant.slug }}>
+              <Link key={item.id} to="/r/$slug/card" params={{ slug: item.restaurant.slug }} search={{}}>
                 <LoyaltyCard
                   compact
                   theme={item.restaurant.theme}

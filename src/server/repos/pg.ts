@@ -1,8 +1,9 @@
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { sql, type SQL } from "drizzle-orm";
 import { normalizePhone, isValidSAMobile } from "@/lib/phone";
 import { getConsentWording } from "@/config/consent";
 import { withContext, type DatabaseTransaction } from "@/server/db";
-import type { JoinInput, LeadInput, PatronRepos, PublicPage, StampOutcome } from "./contracts";
+import type { JoinInput, JsonValue, LeadInput, PatronRepos, PublicPage, StampOutcome } from "./contracts";
 
 type Ctx = { databaseUrl: string; restaurantId?: string | null; customerId?: string | null; isOperator?: boolean };
 
@@ -18,8 +19,8 @@ interface RestaurantRow {
   slug: string;
   name: string;
   suburb: string | null;
-  theme: Record<string, unknown> | null;
-  hours: Record<string, unknown> | null;
+  theme: Record<string, JsonValue> | null;
+  hours: Record<string, JsonValue> | null;
   stamps_required: number;
   reward_description: string;
   visit_window_minutes: number;
@@ -35,6 +36,93 @@ interface MenuRow {
   price_cents: number | null;
   available: boolean;
   sort_order: number;
+}
+
+// Lead insert columns. leadValues() must return exactly one value per column;
+// renderLeadInsertSql() renders the same statement for the count test below.
+export const LEAD_COLUMNS = [
+  "kind",
+  "restaurant_name",
+  "contact_name",
+  "phone",
+  "email",
+  "role",
+  "venue_type",
+  "suburb",
+  "quiet_time",
+  "weekly_guests",
+  "plan_interest",
+  "consent",
+  "consent_version",
+  "calculator",
+  "notes",
+] as const;
+
+export function leadValues(input: LeadInput): unknown[] {
+  return [
+    input.kind ?? "waitlist",
+    input.restaurantName,
+    input.contactName,
+    input.phone,
+    input.email ?? null,
+    input.role ?? null,
+    input.venueType ?? null,
+    input.suburb ?? null,
+    input.quietTime ?? null,
+    input.weeklyGuests ?? null,
+    input.planInterest ?? null,
+    true,
+    input.consentVersion ?? "v1",
+    input.calculator ? JSON.stringify(input.calculator) : null,
+    input.notes ?? null,
+  ];
+}
+
+/** Rendered SQL for the lead insert (placeholders $1..$N); the live query
+ *  composes the identical column/value lists through drizzle. */
+export function renderLeadInsertSql(): string {
+  const cols = LEAD_COLUMNS.join(", ");
+  const vals = LEAD_COLUMNS.map((c, i) =>
+    c === "calculator" ? `$${i + 1}::jsonb` : `$${i + 1}`,
+  ).join(", ");
+  return `insert into lead (${cols}) values (${vals}) returning id`;
+}
+
+// Till PIN policy (live mode). No fallback pepper, no skipped checks.
+export const PIN_FAIL_WINDOW_MINUTES = 10;
+export const PIN_LOCK_MINUTES = 15;
+export const PIN_MAX_FAILS = 5;
+
+export function assertPinPresent(pin: string | undefined): asserts pin is string {
+  if (!pin || !/^\d{4}$/.test(pin)) throw new Error("PIN required");
+}
+
+export function requirePinPepper(): string {
+  const pepper = process.env["PIN_PEPPER"];
+  if (!pepper) throw new Error("PIN_PEPPER is not configured.");
+  return pepper;
+}
+
+export function pinHmacHex(pepper: string, restaurantId: string, staffId: string, pin: string): string {
+  return createHmac("sha256", pepper).update(`${restaurantId}:${staffId}:${pin}`).digest("hex");
+}
+
+export function pinMatches(storedHex: string, computedHex: string): boolean {
+  let a: Buffer;
+  let b: Buffer;
+  try {
+    a = Buffer.from(storedHex, "hex");
+    b = Buffer.from(computedHex, "hex");
+  } catch {
+    return false;
+  }
+  if (a.length === 0 || a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
+}
+
+export function isPinLocked(failCount: number, lastFailAtMs: number | null, nowMs: number): boolean {
+  if (failCount < PIN_MAX_FAILS || lastFailAtMs === null) return false;
+  return nowMs - lastFailAtMs < PIN_LOCK_MINUTES * 60_000;
 }
 
 interface SpecialRow {
@@ -101,16 +189,30 @@ export function createPgRepos(ctx: Ctx): PatronRepos {
       if (input.website) throw new Error("Honeypot detected.");
       if (!input.consent) throw new Error("Consent is required.");
       return withContext(ctx, async (tx) => {
-        // Rate limit: max 5 lead posts per phone per hour (3 round trips total).
+        // Rate limit: max 5 lead posts per phone AND per IP per hour.
         const hits = await q<{ n: string | number }>(
           tx,
           sql`select count(*)::int as n from rate_limit_hit where bucket = 'lead' and key = ${input.phone} and created_at > now() - interval '1 hour'`,
         );
         if (Number(hits[0]?.n ?? 0) >= 5) throw new Error("Too many requests. Try again later.");
+        if (input.ipHash) {
+          const ipHits = await q<{ n: string | number }>(
+            tx,
+            sql`select count(*)::int as n from rate_limit_hit where bucket = 'lead-ip' and key = ${input.ipHash} and created_at > now() - interval '1 hour'`,
+          );
+          if (Number(ipHits[0]?.n ?? 0) >= 5) throw new Error("Too many requests. Try again later.");
+        }
         await q<unknown>(tx, sql`insert into rate_limit_hit (bucket, key) values ('lead', ${input.phone})`);
+        if (input.ipHash) {
+          await q<unknown>(tx, sql`insert into rate_limit_hit (bucket, key) values ('lead-ip', ${input.ipHash})`);
+        }
+        const values = leadValues(input);
+        const frags = values.map((v, i) =>
+          LEAD_COLUMNS[i] === "calculator" ? sql`${v}::jsonb` : sql`${v}`,
+        );
         const rows = await q<{ id: string }>(
           tx,
-          sql`insert into lead (kind, restaurant_name, contact_name, phone, email, role, venue_type, suburb, quiet_time, weekly_guests, plan_interest, consent, consent_version, calculator) values (${input.kind ?? "waitlist"}, ${input.restaurantName}, ${input.contactName}, ${input.phone}, ${input.email ?? null}, ${input.role ?? null}, ${input.venueType ?? null}, ${input.suburb ?? null}, ${input.quietTime ?? null}, ${input.weeklyGuests ?? null}, ${input.planInterest ?? null}, true, ${input.consentVersion ?? "v1"}) returning id`,
+          sql`insert into lead (${sql.join(LEAD_COLUMNS.map((c) => sql.identifier(c)), sql`, `)}) values (${sql.join(frags, sql`, `)}) returning id`,
         );
         const id = rows[0]?.id;
         if (!id) throw new Error("Could not submit.");
@@ -243,21 +345,25 @@ export function createPgRepos(ctx: Ctx): PatronRepos {
     },
 
     async recordStamp(input): Promise<StampOutcome> {
+      // PIN is never optional in live mode: validated before any database work.
+      assertPinPresent(input.pin);
+      const pepper = requirePinPepper();
       return withContext({ ...ctx, restaurantId: input.restaurantId }, async (tx) => {
-        // Till PIN HMAC check (3 round trips total with stamp + audit).
-        const staff = await q<{ id: string; pin_hmac: string }>(
+        // Staff row + recent PIN fails in one round trip.
+        const staff = await q<{ id: string; pin_hmac: string; fails: string | number; last_fail: string | null }>(
           tx,
-          sql`select id, pin_hmac from staff_member where id = ${input.staffId} and restaurant_id = ${input.restaurantId} and active = true limit 1`,
+          sql`select s.id, s.pin_hmac, (select count(*)::int from rate_limit_hit where bucket = 'pin' and key = ${input.staffId} and created_at > now() - make_interval(mins => ${PIN_FAIL_WINDOW_MINUTES})) as fails, (select max(created_at) from rate_limit_hit where bucket = 'pin' and key = ${input.staffId} and created_at > now() - make_interval(mins => ${PIN_FAIL_WINDOW_MINUTES})) as last_fail from staff_member s where s.id = ${input.staffId} and s.restaurant_id = ${input.restaurantId} and s.active = true limit 1`,
         );
         if (!staff[0]) throw new Error("Staff member not found.");
-        if (input.pin) {
-          const pepper = process.env["PIN_PEPPER"] ?? "patron-demo-pepper-v1";
-          const { createHmac } = await import("node:crypto");
-          // SEAM: demo pepper default; production sets PIN_PEPPER (never committed).
-          const hmac = createHmac("sha256", pepper)
-            .update(`${input.restaurantId}:${input.staffId}:${input.pin}`)
-            .digest("hex");
-          if (hmac !== staff[0].pin_hmac) throw new Error("Wrong PIN.");
+        const fails = Number(staff[0].fails ?? 0);
+        const lastFailMs = staff[0].last_fail ? Date.parse(staff[0].last_fail) : null;
+        // Locked attempts return the same error as a wrong PIN and are not
+        // recorded, so the lockout expires instead of extending forever.
+        if (isPinLocked(fails, lastFailMs, Date.now())) throw new Error("Wrong PIN.");
+        const ok = pinMatches(staff[0].pin_hmac, pinHmacHex(pepper, input.restaurantId, input.staffId, input.pin));
+        if (!ok) {
+          await q<unknown>(tx, sql`insert into rate_limit_hit (bucket, key) values ('pin', ${input.staffId})`);
+          throw new Error("Wrong PIN.");
         }
         const out = await q<{ out_result: string; out_stamp_id: string | null; out_stamps: number | null; out_reward_id: string | null }>(
           tx,

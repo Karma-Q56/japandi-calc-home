@@ -1,6 +1,8 @@
 import { withChildren } from "@/lib/nested";
 import { createFileRoute } from "@tanstack/react-router";
 import { useDemoState } from "@/data/useDemoState";
+import { getDataModeFn, getPublicPageFn } from "@/server/live";
+import type { PublicPage } from "@/server/repos/contracts";
 import { api } from "@/api";
 import { APP_NAME, TIMEZONE } from "@/config/app";
 import { clock } from "@/lib/clock";
@@ -12,6 +14,12 @@ import dishPhoto from "@/assets/dish.jpg";
 
 const PublicRestaurantPageWithChildren = withChildren(PublicRestaurantPage);
 export const Route = createFileRoute("/r/$slug")({
+  loader: async ({ params }) => {
+    const { mode } = await getDataModeFn();
+    if (mode !== "live") return { mode, live: null as PublicPage | null };
+    const { page } = await getPublicPageFn({ data: { slug: params.slug } });
+    return { mode, live: page };
+  },
   component: PublicRestaurantPageWithChildren,
 });
 
@@ -45,7 +53,9 @@ function openNow(
 
 function PublicRestaurantPage() {
   const { slug } = Route.useParams();
+  const loaderData = Route.useLoaderData();
   const state = useDemoState();
+  if (loaderData.live) return <LivePublicPage page={loaderData.live} slug={slug} />;
   const result = api.restaurant.getBySlug(slug);
   const restaurant = result.ok ? result.data : null;
   if (!restaurant) {
@@ -232,5 +242,71 @@ function PublicRestaurantPage() {
         </footer>
       </main>
     </ThemeProvider>
+  );
+}
+
+/** Live-mode public page (DATA_MODE=live): rendered from Postgres through the
+ *  getPublicPage server function instead of the demo repo. Demo rendering above
+ *  is unchanged. */
+function LivePublicPage({ page, slug }: { page: PublicPage; slug: string }) {
+  const hours = page.hours as Record<string, { open: string; close: string } | null>;
+  const sections = new Map<string, { name: string; items: typeof page.menu }>();
+  for (const item of page.menu) {
+    const key = item.sectionId ?? "menu";
+    const group = sections.get(key) ?? { name: item.sectionName ?? "Menu", items: [] };
+    group.items.push(item);
+    sections.set(key, group);
+  }
+  return (
+    <main className="venue-page">
+      <header className="venue-header">
+        <a href="/">{page.name}</a>
+        {page.suburb && <span>{page.suburb} · Johannesburg</span>}
+      </header>
+      <section className="guest-section">
+        <h2>
+          Collect {page.stampsRequired} stamps, earn {page.rewardDescription}
+        </h2>
+        <a className="venue-button" href={`/r/${slug}/join?src=link`}>
+          Join our card
+        </a>
+      </section>
+      <section className="guest-section">
+        <h2>Hours</h2>
+        <ul>
+          {Object.entries(hours).map(([day, span]) => (
+            <li key={day}>
+              {day}: {span ? `${span.open}–${span.close}` : "Closed"}
+            </li>
+          ))}
+        </ul>
+      </section>
+      {[...sections.values()].map((group) => (
+        <section className="guest-section" key={group.name}>
+          <h2>{group.name}</h2>
+          <ul>
+            {group.items.map((item) => (
+              <li key={item.id}>
+                {item.name}
+                {item.priceCents != null && item.priceCents > 0 ? ` · ${money(item.priceCents)}` : ""}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+      {page.specials.length > 0 && (
+        <section className="guest-section">
+          <h2>Specials</h2>
+          <ul>
+            {page.specials.map((special) => (
+              <li key={special.id}>
+                <strong>{special.title}</strong>
+                {special.body && <p>{special.body}</p>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </main>
   );
 }

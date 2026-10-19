@@ -5,6 +5,7 @@ import { getConsentWording } from "@/config/consent";
 import { DemoControlBar } from "@/components/patron/DemoControlBar";
 import { VerificationStep } from "@/components/patron/VerificationStep";
 import { demoRepo, updateDemo } from "@/data/repo";
+import { getDataModeFn, joinGuestFn } from "@/server/live";
 import { useDemoState } from "@/data/useDemoState";
 import { requireRole, setDemoSession } from "@/data/session";
 import { ThemeProvider } from "@/theme";
@@ -12,6 +13,10 @@ import { isValidSAMobile } from "@/lib/phone";
 import { rewardJoinPitch } from "@/lib/reward-copy";
 
 export const Route = createFileRoute("/r/$slug/join")({
+  loader: async () => {
+    const { mode } = await getDataModeFn();
+    return { mode };
+  },
   beforeLoad: () => {
     if (typeof window !== "undefined") {
       const session = demoRepo.read().session;
@@ -23,6 +28,7 @@ export const Route = createFileRoute("/r/$slug/join")({
 
 function JoinPage() {
   const { slug } = Route.useParams();
+  const { mode } = Route.useLoaderData();
   const state = useDemoState();
   const restaurant = state.restaurants.find(
     (item) => item.slug === slug && item.status === "active",
@@ -72,11 +78,26 @@ function JoinPage() {
     setStep(2);
   };
 
-  const finish = () => {
+  const finish = async () => {
     const source =
       typeof window === "undefined"
         ? "link"
         : new URLSearchParams(window.location.search).get("src") || "link";
+    if (mode === "live") {
+      const res = await joinGuestFn({ data: { slug, name, phone, marketingSms, source } });
+      if (!res.ok) {
+        setError(res.message);
+        return;
+      }
+      // Pre-auth seam: the card page reads customerId from search until the
+      // auth slice binds the server session to the customer.
+      void navigate({
+        to: "/r/$slug/card",
+        params: { slug },
+        search: { customerId: res.customerId },
+      });
+      return;
+    }
     const result = api.member.join({
       slug,
       name,
@@ -89,12 +110,12 @@ function JoinPage() {
       setError(result.error.message);
       return;
     }
-    void navigate({ to: "/r/$slug/card", params: { slug } });
+    void navigate({ to: "/r/$slug/card", params: { slug }, search: {} });
   };
 
   const continueAsGuest = () => {
     if (customer && existingMembership) {
-      void navigate({ to: "/r/$slug/card", params: { slug } });
+      void navigate({ to: "/r/$slug/card", params: { slug }, search: {} });
     } else {
       setStep(1);
     }

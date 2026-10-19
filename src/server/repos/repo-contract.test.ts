@@ -68,6 +68,28 @@ function suite(name: string, make: () => PatronRepos) {
       expect(cards.some((c) => c.membershipId === joined.membershipId)).toBe(true);
     });
 
+    it("two joins with the same phone return the same customer", async () => {
+      const repos = make();
+      const phone = `+2783${String(Math.floor(1000000 + Math.random() * 8999999))}`;
+      const first = await repos.joinGuest({
+        slug: "daily-grind",
+        name: "Same Person",
+        phone,
+        marketingSms: false,
+        source: "qr",
+      });
+      const second = await repos.joinGuest({
+        slug: "sunrise-bakes",
+        name: "Same Person",
+        phone,
+        marketingSms: false,
+        source: "qr",
+      });
+      // One customer row (phone_e164 is unique); one membership per venue.
+      expect(second.customerId).toBe(first.customerId);
+      expect(second.membershipId).not.toBe(first.membershipId);
+    });
+
     it("guest join rejects bad phone", async () => {
       const repos = make();
       await expect(

@@ -18,7 +18,8 @@ const leadSubmitSchema = z.object({
   planInterest: z.string().optional().or(z.literal('')),
   consent: z.boolean(),
   consentVersion: z.string().optional(),
-  calculator: z.record(z.any()).optional(),
+  calculator: z.record(z.string(), z.unknown()).optional(),
+  notes: z.string().optional(),
   website: z.string().optional(),
 });
 
@@ -46,6 +47,7 @@ export const submit = async (input: z.infer<typeof leadSubmitSchema>) => {
       consent: parsed.consent,
       consentVersion: parsed.consentVersion ?? "v1",
       calculator: parsed.calculator as Record<string, unknown> | undefined,
+      notes: parsed.notes || undefined,
       website: parsed.website || undefined,
     });
     return { success: true, id };

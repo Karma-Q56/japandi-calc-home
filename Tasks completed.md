@@ -140,6 +140,16 @@ The user explicitly asked to proceed with M2/M3 without blocking on these verifi
 - [x] verified (this session) `tsc --noEmit` clean, `eslint` 0 errors (repo-wide: 0 errors, 11 pre-existing warnings), full vitest 118 passed / 3 skipped (skips need dev `DATABASE_URL`), `pnpm build` ok.
 - [ ] Not run: seed/live queries/RLS/SQL `record_stamp` against the dev branch (needs dev `DATABASE_URL` + `DATABASE_URL_MIGRATE`); production branch never touched.
 
+## Neon fixes (2026-10-19 session, built, not verified vs live DB)
+
+- [x] verified (vitest) `submitLead` calculator value restored (15 cols/15 vals; count test in `lead-insert.test.ts`); lead rate limit per phone AND per IP (demo + live).
+- [x] verified (vitest) Till PIN never skipped: empty/non-4-digit throws "PIN required", missing `PIN_PEPPER` throws, constant-time HMAC compare, `rate_limit_hit` lockout (5 fails/10 min → 15 min lock, same "Wrong PIN." error, locked attempts unrecorded). Live wrong-PIN/lockout tests skip without dev DB.
+- [x] verified (guards run, exit 1, no DB touched) `db:seed:dev` runs in one tx with `app.is_operator`, refuses unless target host differs from `PROD_DB_HOST` + `DEV_SEED_CONFIRM=yes` + dev `SEED_BRANCH`; seeds full themes/hours, 60 guests, memberships, consents, stamps, rewards, staff PINs, ledger topups.
+- [x] verified (typecheck/lint/build) Live UI path: `src/server/live.ts` (`createServerFn`, `isOperator` always false server-side, IP hashed server-side) wired into `/r/:slug`, join, card, till stamp and `LeadForm`; demo default unchanged.
+- [x] verified (vitest, demo) Two joins with the same phone return the same customer; `join:<phone>`/`seed:<phone>` documented as auth placeholders in `docs/decisions.md`.
+- [x] verified (this session) `tsc --noEmit` clean, `eslint` 0 errors, full vitest 126 passed / 5 skipped (skips need dev DB URLs), `pnpm build` ok.
+- [ ] Not run against a real dev database: seed contents, live page/join/card/stamp flows, SQL `record_stamp`, RLS isolation. Production branch never touched.
+
 ## Not in scope yet
 
 - [ ] M1 marketing milestone is parked; M8–M9 are not started.

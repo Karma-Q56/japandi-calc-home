@@ -1,7 +1,7 @@
 import { demoRepo } from "@/data/repo";
 import { getCard as demoGetCard, joinRestaurant, customerCards } from "@/domain/members";
 import { recordStamp as demoRecordStamp } from "@/domain/stamps";
-import type { JoinInput, LeadInput, PatronRepos } from "./contracts";
+import type { JoinInput, JsonValue, LeadInput, PatronRepos } from "./contracts";
 
 type StampResultLike =
   | { result: "stamped"; stampId: string; stampsCurrent: number; rewardId: string | null }
@@ -45,8 +45,8 @@ export function createDemoRepos(): PatronRepos {
         slug: r.slug,
         name: r.name,
         suburb: r.suburb ?? null,
-        theme: r.theme as unknown as Record<string, unknown>,
-        hours: r.hours as unknown as Record<string, unknown>,
+        theme: r.theme as unknown as Record<string, JsonValue>,
+        hours: r.hours as unknown as Record<string, JsonValue>,
         stampsRequired: r.stampsRequired,
         rewardDescription: r.rewardDescription,
         visitWindowMinutes: r.visitWindowMinutes,
@@ -60,6 +60,15 @@ export function createDemoRepos(): PatronRepos {
       if (input.website) throw new Error("Honeypot detected.");
       if (!input.consent) throw new Error("Consent is required.");
       const s = demoRepo.read();
+      const hourAgo = s.now - 3600_000;
+      const recent = (s.rateLimitHits ?? []).filter((h) => h.createdAt > hourAgo);
+      // Rate limit per phone AND per IP (mirrors the live adapter).
+      if (recent.filter((h) => h.bucket === "lead" && h.key === input.phone).length >= 5) {
+        throw new Error("Too many requests. Try again later.");
+      }
+      if (input.ipHash && recent.filter((h) => h.bucket === "lead-ip" && h.key === input.ipHash).length >= 5) {
+        throw new Error("Too many requests. Try again later.");
+      }
       const id = `lead-${crypto.randomUUID()}`;
       demoRepo.write({
         ...s,
@@ -73,7 +82,11 @@ export function createDemoRepos(): PatronRepos {
             createdAt: new Date(s.now).toISOString(),
           } as never,
         ],
-        rateLimitHits: [...(s.rateLimitHits ?? []), { bucket: "lead", key: input.phone, createdAt: s.now } as never],
+        rateLimitHits: [
+          ...(s.rateLimitHits ?? []),
+          { bucket: "lead", key: input.phone, createdAt: s.now } as never,
+          ...(input.ipHash ? [{ bucket: "lead-ip", key: input.ipHash, createdAt: s.now } as never] : []),
+        ],
       });
       return { id };
     },
