@@ -55,7 +55,19 @@ function MyCards() {
   const memberships = result.ok ? result.data : [];
   return (
     <GuestShell title={customer.name}>
+      <p className="gx-hello">Hi {customer.name.split(" ")[0]} 👋</p>
       <h1>My cards.</h1>
+      {memberships.length > 0 && (
+        <p className="gx-summary">
+          <span>
+            <b>{memberships.length}</b> {memberships.length === 1 ? "card" : "cards"}
+          </span>
+          <span>
+            <b>{memberships.filter((m) => m.rewards.some((r) => !r.redeemedAt)).length}</b> reward
+            ready
+          </span>
+        </p>
+      )}
       {memberships.length ? (
         <div className="gx-cards">
           {memberships.map((item) => {

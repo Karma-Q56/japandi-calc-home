@@ -103,3 +103,9 @@
 - Overview credit shows rand, not cents. The demo pill moves above the bottom tab bars on phones.
 - Stamp card: empty slots now show a ghost glyph and number, filled stamps get an ink-stamp look.
 - Campaign composer: stepper, option cards, phone-bubble preview, cost tiles, back buttons.
+
+## 2026-10-19 — Neon status check (read-only) and backend plan
+
+- **Checked via the Neon connection:** project WallStamp (`super-waterfall-31745320`, aws-eu-central-1, Postgres 18, free plan). Branches: `production` (default), `vercel-dev`, and a preview branch for this Freebuff session. The schema is applied (`patron_migrations` has 3 rows; all SPEC tables and the `restaurant_credit_balance` view exist), Neon Auth tables exist, and the `app_user` role exists, so role creation on the free plan works. Row counts: 0 restaurants, 0 customers, 0 memberships, 0 stamps, and 2 leads already captured.
+- **The app itself does not read or write any of it yet.** Every screen runs on the browser-only demo repo.
+- **Plan (not started, needs `DATABASE_URL` for `app_user` in `.dev.vars` and on the Worker):** (1) make the repo contract async and add a Postgres implementation next to the demo one, chosen by an env flag; (2) move slices in this order: public restaurant page, join + card, stamp (`record_stamp`), owner dashboard, credit/campaigns; (3) seed the three demo venues into a dev branch, never production; (4) switch auth on last (Neon Auth or Better Auth, passwords per the founder). Each slice keeps the demo implementation passing the same contract tests.

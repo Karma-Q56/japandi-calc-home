@@ -252,10 +252,13 @@ function Till() {
           <label className="builder-field">
             PIN
             <input
+              type="password"
+              className="pin-input"
               value={pin}
               onChange={(event) => setPin(event.target.value.replace(/\D/g, "").slice(0, 4))}
               inputMode="numeric"
               autoComplete="off"
+              maxLength={4}
               placeholder="••••"
             />
           </label>
@@ -306,30 +309,49 @@ function Till() {
         </button>
       </header>
       <section className="guest-panel">
-        <label className="builder-field">
-          Member code or phone
-          <input
-            value={code}
-            onChange={(event) => setCode(event.target.value)}
-            placeholder="PT… or +27…"
-            autoComplete="off"
-          />
-        </label>
-        <button className="builder-secondary" onClick={doLookup}>
-          Look up
-        </button>
+        <form
+          className="till-lookup"
+          onSubmit={(event) => {
+            event.preventDefault();
+            doLookup();
+          }}
+        >
+          <label className="builder-field">
+            Member code or phone
+            <input
+              value={code}
+              onChange={(event) => setCode(event.target.value.toUpperCase())}
+              placeholder="PT… or +27…"
+              autoComplete="off"
+              autoCapitalize="characters"
+            />
+          </label>
+          <button className="builder-primary" type="submit">
+            Look up
+          </button>
+        </form>
       </section>
       {lookup && !lookup.ok && (
-        <p role="alert" className="field-error">
+        <p role="alert" className="till-toast is-error">
           {lookup.message}
         </p>
       )}
       {lookup?.ok && (
         <section className="guest-panel">
-          <h2>{lookup.firstName}</h2>
-          <p>
-            {lookup.stampsCurrent} of {lookup.stampsRequired} stamps
-          </p>
+          <div className="till-member">
+            <h2>{lookup.firstName}</h2>
+            <strong>
+              {lookup.stampsCurrent}
+              <i> / {lookup.stampsRequired}</i>
+            </strong>
+          </div>
+          <div className="till-bar-track" aria-hidden>
+            <span
+              style={{
+                width: `${Math.min(100, Math.round((lookup.stampsCurrent / lookup.stampsRequired) * 100))}%`,
+              }}
+            />
+          </div>
           {lookup.rewards.length > 0 && (
             <p>
               {lookup.rewards.length} reward
@@ -364,7 +386,7 @@ function Till() {
         </section>
       )}
       {feedback && (
-        <p role="status" className={feedback.kind === "ok" ? "new-stamps-note" : "field-error"}>
+        <p role="status" className={`till-toast ${feedback.kind === "ok" ? "is-ok" : "is-error"}`}>
           {feedback.text}
         </p>
       )}

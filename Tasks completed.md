@@ -12,6 +12,9 @@ Updated 2026-10-16. Work is on `vibe/m1-m3-implementation-ab5f40`, based on the 
 - [x] verified (browser) Stamp card: ghost glyph + number in empty slots, ink-stamp look for filled ones; homepage stamp bar still fills on scroll (0/8 -> 5/8 -> 8/8).
 - [x] verified Brand fonts self-hosted (`@fontsource-variable/*`); Overview credit shows rand; demo pill moved above bottom tab bars.
 - [x] verified (vitest 101/101, typecheck clean, lint 0 errors, build ok) BulkSMS.com adapter `src/server/sms/BulkSmsProvider.ts` with tests; not yet run against a real account.
+- [x] verified (browser) Operator restaurant table has Look & feel / View page / QR actions per row.
+- [x] verified (browser) Till: dotted PIN field, lookup form (Enter works), member progress, styled success/error toasts, full-width till bar. My cards: greeting, summary chips, reward badge.
+- [x] verified (read-only Neon check) Schema is applied on Neon production; app_user role exists; 2 leads captured; app not yet connected (see decisions.md).
 - [ ] Not verified: iPhone Safari, phone-camera QR scan, real SMS send, Neon (the app is still demo-only and never touches the database).
 
 How to run: `npm install` then `npm run dev` and open http://localhost:5173/demo. Note: the dev server needs about 450 MB; kill old `vite dev` processes before starting a new one, otherwise the machine runs out of memory and the site shows "can't be reached".

@@ -2118,3 +2118,144 @@ input[type="range"] {
   text-decoration: underline;
   color: inherit;
 }
+
+/* operator restaurant row actions */
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.row-action {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  font: 600 13px var(--font-sans);
+  color: var(--foreground);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.row-action.is-primary {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.row-action:hover {
+  border-color: var(--primary);
+}
+
+/* ---------- staff till ---------- */
+.guest-header.till-bar {
+  width: calc(100% + 32px);
+  margin: 0 -16px 16px;
+  border-radius: 0 0 18px 18px;
+}
+.till-lookup {
+  display: grid;
+  gap: 12px;
+}
+.pin-input {
+  letter-spacing: 0.6em;
+  text-align: center;
+  font-size: 22px;
+}
+.till-member {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.till-member h2 {
+  margin: 0;
+  font-size: 28px;
+}
+.till-member strong {
+  font: 700 30px var(--font-display);
+  color: var(--primary);
+}
+.till-member strong i {
+  font-style: normal;
+  font-size: 16px;
+  color: var(--muted-foreground);
+}
+.till-bar-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--secondary);
+}
+.till-bar-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary);
+  transition: width 0.6s var(--ease-out);
+}
+.till-toast {
+  margin: 12px 0;
+  padding: 14px 16px;
+  border-radius: 14px;
+  font: 600 15px var(--font-sans);
+}
+.till-toast.is-ok {
+  background: var(--sage);
+  color: var(--sage-foreground);
+}
+.till-toast.is-error {
+  background: oklch(0.95 0.04 40);
+  color: oklch(0.42 0.14 30);
+}
+.staff-button {
+  min-height: 72px;
+  font-size: 22px;
+}
+
+/* ---------- guest: My cards ---------- */
+.gx-hello {
+  margin: 4px 0 0;
+  font: 500 15px var(--font-sans);
+  color: var(--muted-foreground);
+}
+.gx-summary {
+  display: flex;
+  gap: 10px;
+  margin: 0 0 16px;
+}
+.gx-summary span {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--secondary);
+  font: 500 13px var(--font-sans);
+  color: var(--ink-soft);
+}
+.gx-summary b {
+  font-weight: 700;
+  color: var(--foreground);
+}
+.gx-cards > a {
+  position: relative;
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  transition: transform 0.25s var(--ease-out);
+}
+.gx-cards > a:active {
+  transform: scale(0.985);
+}
+.gx-cards .gx-badge {
+  position: absolute;
+  right: 6px;
+  bottom: 0;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font: 700 12px var(--font-sans);
+  box-shadow: 0 4px 12px oklch(0.528 0.139 36 / 0.3);
+}
+.demo-hub .demo-intro + .builder-primary {
+  margin-top: 16px;
+}
