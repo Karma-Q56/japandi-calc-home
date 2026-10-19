@@ -348,23 +348,35 @@ export function createPgRepos(ctx: Ctx): PatronRepos {
       // PIN is never optional in live mode: validated before any database work.
       assertPinPresent(input.pin);
       const pepper = requirePinPepper();
-      return withContext({ ...ctx, restaurantId: input.restaurantId }, async (tx) => {
+      // Transaction 1 (committed on its own): staff lookup + PIN check. The
+      // wrong-PIN failure insert MUST commit here — inserting it inside the
+      // stamp transaction and then throwing rolled it back, so the lockout
+      // never triggered. This block returns a result value and never throws
+      // for wrong/locked PINs, so the failure insert survives.
+      const pinCheck = await withContext({ ...ctx, restaurantId: input.restaurantId }, async (tx) => {
         // Staff row + recent PIN fails in one round trip.
         const staff = await q<{ id: string; pin_hmac: string; fails: string | number; last_fail: string | null }>(
           tx,
           sql`select s.id, s.pin_hmac, (select count(*)::int from rate_limit_hit where bucket = 'pin' and key = ${input.staffId} and created_at > now() - make_interval(mins => ${PIN_FAIL_WINDOW_MINUTES})) as fails, (select max(created_at) from rate_limit_hit where bucket = 'pin' and key = ${input.staffId} and created_at > now() - make_interval(mins => ${PIN_FAIL_WINDOW_MINUTES})) as last_fail from staff_member s where s.id = ${input.staffId} and s.restaurant_id = ${input.restaurantId} and s.active = true limit 1`,
         );
-        if (!staff[0]) throw new Error("Staff member not found.");
+        if (!staff[0]) return { status: "no_staff" } as const;
         const fails = Number(staff[0].fails ?? 0);
         const lastFailMs = staff[0].last_fail ? Date.parse(staff[0].last_fail) : null;
         // Locked attempts return the same error as a wrong PIN and are not
         // recorded, so the lockout expires instead of extending forever.
-        if (isPinLocked(fails, lastFailMs, Date.now())) throw new Error("Wrong PIN.");
+        if (isPinLocked(fails, lastFailMs, Date.now())) return { status: "locked" } as const;
         const ok = pinMatches(staff[0].pin_hmac, pinHmacHex(pepper, input.restaurantId, input.staffId, input.pin));
         if (!ok) {
           await q<unknown>(tx, sql`insert into rate_limit_hit (bucket, key) values ('pin', ${input.staffId})`);
-          throw new Error("Wrong PIN.");
+          return { status: "wrong" } as const;
         }
+        return { status: "ok" } as const;
+      });
+      // Thrown AFTER transaction 1 commits, so the failure insert is kept.
+      if (pinCheck.status === "no_staff") throw new Error("Staff member not found.");
+      if (pinCheck.status !== "ok") throw new Error("Wrong PIN.");
+      // Transaction 2 runs only when the PIN is correct.
+      return withContext({ ...ctx, restaurantId: input.restaurantId }, async (tx) => {
         const out = await q<{ out_result: string; out_stamp_id: string | null; out_stamps: number | null; out_reward_id: string | null }>(
           tx,
           sql`select * from record_stamp(${input.restaurantId}::uuid, ${input.membershipId}::uuid, ${input.staffId}::uuid, ${input.key})`,

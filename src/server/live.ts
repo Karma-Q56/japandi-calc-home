@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
+import { z } from "zod";
 import { getDataMode } from "./db/mode";
 import { getRepos } from "./repos";
 
@@ -13,6 +14,31 @@ import { getRepos } from "./repos";
 // row ids); the RLS policies plus the till PIN are the authority, not the
 // caller. Full session binding (signed-in customer/staff) arrives with the
 // auth slice; until then these ids are claims confined by RLS.
+//
+// Input validation: every function validates with a real zod schema (trimmed
+// strings with max lengths, slug pattern, uuids, E.164 phones, 4-digit PIN,
+// bounded key). Bad input is rejected with a clear error before any database
+// work.
+
+const slugSchema = z
+  .string()
+  .trim()
+  .regex(/^[a-z0-9-]{1,60}$/, "Invalid restaurant link.");
+
+const uuidSchema = z.string().uuid("Invalid id.");
+
+// E.164 (+country, 8–15 digits). Spaces/dashes typed by users are stripped
+// first; anything else that is not E.164 is rejected.
+const e164Schema = z.preprocess(
+  (v) => (typeof v === "string" ? v.replace(/[\s-]/g, "") : v),
+  z.string().regex(/^\+[1-9]\d{7,14}$/, "Enter a valid phone number in international format."),
+);
+
+const pinSchema = z.string().regex(/^\d{4}$/, "PIN required.");
+
+const keySchema = z.string().trim().min(1, "Key required.").max(64);
+
+const shortText = (max: number) => z.string().trim().max(max).optional();
 
 function serverEnv() {
   return {
@@ -21,12 +47,23 @@ function serverEnv() {
   };
 }
 
-/** Hash the caller IP for rate limiting (SHA-256, never the raw address). */
+/**
+ * Hash the caller IP for rate limiting (SHA-256, never the raw address).
+ * Trusts cf-connecting-ip first (Cloudflare sets it and clients cannot
+ * spoof it). x-forwarded-for / x-real-ip are only honored when DATA_MODE is
+ * not production, where any proxy or client can spoof them.
+ */
 function requestIpHash(): string | undefined {
   try {
     const headers = getRequestHeaders();
-    const raw =
-      headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? headers.get("x-real-ip")?.trim();
+    const cf = headers.get("cf-connecting-ip")?.trim();
+    let raw = cf || undefined;
+    if (!raw && (process.env["DATA_MODE"] ?? "").toLowerCase() !== "production") {
+      raw =
+        headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+        headers.get("x-real-ip")?.trim() ||
+        undefined;
+    }
     if (!raw) return undefined;
     return createHash("sha256").update(`patron-lead:${raw}`).digest("hex");
   } catch {
@@ -39,7 +76,7 @@ export const getDataModeFn = createServerFn({ method: "GET" }).handler(() => ({
 }));
 
 export const getPublicPageFn = createServerFn({ method: "GET" })
-  .validator((d: { slug: string }) => d)
+  .validator(z.object({ slug: slugSchema }))
   .handler(async ({ data }) => {
     const { repos } = getRepos(serverEnv());
     return { page: await repos.getPublicPage(data.slug) };
@@ -47,22 +84,22 @@ export const getPublicPageFn = createServerFn({ method: "GET" })
 
 export const submitLeadFn = createServerFn({ method: "POST" })
   .validator(
-    (d: {
-      restaurantName: string;
-      contactName: string;
-      phone: string;
-      email?: string | undefined;
-      role?: string | undefined;
-      venueType?: string | undefined;
-      suburb?: string | undefined;
-      quietTime?: string | undefined;
-      weeklyGuests?: string | undefined;
-      planInterest?: string | undefined;
-      consent: boolean;
-      consentVersion?: string | undefined;
-      notes?: string | undefined;
-      website?: string | undefined;
-    }) => d,
+    z.object({
+      restaurantName: z.string().trim().min(1, "Restaurant name required.").max(200),
+      contactName: z.string().trim().min(1, "Your name required.").max(120),
+      phone: e164Schema,
+      email: z.string().trim().email("Invalid email.").max(254).optional(),
+      role: shortText(120),
+      venueType: shortText(120),
+      suburb: shortText(200),
+      quietTime: shortText(120),
+      weeklyGuests: shortText(120),
+      planInterest: shortText(120),
+      consent: z.boolean(),
+      consentVersion: shortText(32),
+      notes: shortText(2000),
+      website: shortText(2000),
+    }),
   )
   .handler(async ({ data }) => {
     const { repos } = getRepos(serverEnv());
@@ -76,11 +113,23 @@ export const submitLeadFn = createServerFn({ method: "POST" })
 
 export const joinGuestFn = createServerFn({ method: "POST" })
   .validator(
-    (d: { slug: string; name: string; phone: string; marketingSms: boolean; source: string }) => d,
+    z.object({
+      slug: slugSchema,
+      name: z.string().trim().min(1, "Enter your first name.").max(40),
+      phone: e164Schema,
+      marketingSms: z.boolean(),
+      source: z.string().trim().min(1).max(64),
+    }),
   )
   .handler(async ({ data }) => {
     const { repos } = getRepos(serverEnv());
     try {
+      // No real phone verification exists yet: joins stay disabled unless the
+      // demo bypass is explicitly enabled (DEMO_OTP_BYPASS=true). See
+      // docs/decisions.md ("Phone verification (OTP) gate").
+      if (process.env["DEMO_OTP_BYPASS"] !== "true") {
+        return { ok: false as const, message: "Phone verification is not enabled yet." };
+      }
       const result = await repos.joinGuest({ ...data, otpVerified: true });
       return { ok: true as const, ...result };
     } catch (error) {
@@ -92,14 +141,14 @@ export const joinGuestFn = createServerFn({ method: "POST" })
   });
 
 export const getCardFn = createServerFn({ method: "GET" })
-  .validator((d: { slug: string; customerId: string }) => d)
+  .validator(z.object({ slug: slugSchema, customerId: uuidSchema }))
   .handler(async ({ data }) => {
     const { repos } = getRepos(serverEnv());
     return { card: await repos.getCard(data.slug, data.customerId) };
   });
 
 export const listCardsFn = createServerFn({ method: "GET" })
-  .validator((d: { customerId: string }) => d)
+  .validator(z.object({ customerId: uuidSchema }))
   .handler(async ({ data }) => {
     const { repos } = getRepos(serverEnv());
     return { cards: await repos.listCards(data.customerId) };
@@ -107,7 +156,13 @@ export const listCardsFn = createServerFn({ method: "GET" })
 
 export const recordStampFn = createServerFn({ method: "POST" })
   .validator(
-    (d: { restaurantId: string; membershipId: string; staffId: string; key: string; pin: string }) => d,
+    z.object({
+      restaurantId: uuidSchema,
+      membershipId: uuidSchema,
+      staffId: uuidSchema,
+      key: keySchema,
+      pin: pinSchema,
+    }),
   )
   .handler(async ({ data }) => {
     const { repos } = getRepos(serverEnv());

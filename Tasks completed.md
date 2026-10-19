@@ -158,3 +158,5 @@ The user explicitly asked to proceed with M2/M3 without blocking on these verifi
 ## GitHub
 
 - [x] M0/M2/M3 implementation pushed to `vibe/m1-m3-implementation-ab5f40` in `Karma-Q56/japandi-calc-home` at commit `ddae6f7`.
+
+- [~] PIN lockout is "fixed, not verified against a real dev database": the wrong-PIN `rate_limit_hit` insert now commits in its own transaction before the throw (previously it rolled back with the stamp transaction, so the lockout never triggered). Proven by `src/server/repos/pin-commit.test.ts` (mocked `withContext` with rollback semantics); the 6th-attempt-with-correct-PIN live assertion in `pin-live.test.ts` still needs a real dev database (`DATABASE_URL` + `DATABASE_URL_MIGRATE`).

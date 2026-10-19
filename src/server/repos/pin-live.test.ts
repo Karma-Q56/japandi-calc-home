@@ -46,7 +46,9 @@ describe.skipIf(!appUrl || !ownerUrl)("till PIN live (dev branch)", () => {
       for (let i = 0; i < 5; i++) {
         await expect(stamp(membershipA, "0000", `k-lock-${i}`)).rejects.toThrow("Wrong PIN.");
       }
-      // Locked: even the correct PIN returns the same wrong-PIN error.
+      // Locked: the 6th attempt with the CORRECT PIN is still rejected with
+      // the same wrong-PIN error (5 failures committed in tx 1 triggered the
+      // 15-minute lockout; locked attempts are not recorded).
       await expect(stamp(membershipA, "1234", "k-locked-out")).rejects.toThrow("Wrong PIN.");
     } finally {
       if (saved === undefined) delete process.env["PIN_PEPPER"];

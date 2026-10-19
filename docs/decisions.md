@@ -129,3 +129,9 @@
 - **Seed rewritten:** one tx with `app.is_operator`, real guard (`PROD_DB_HOST` hostname comparison + `DEV_SEED_CONFIRM=yes` + dev `SEED_BRANCH`), full themes/hours/60 guests/memberships/consents/stamps/rewards/staff/ledger topups mirrored from `src/data/seed.ts`. Guard refusals verified (exit 1, no connection opened).
 - **Live UI path:** `src/server/live.ts` (`createServerFn`; `isOperator: false` hard-coded server-side, never from client input; lead IP hashed server-side) wired into `/r/:slug`, join, card (search `customerId` pre-auth seam), till stamp (PIN field = per-stamp till PIN in live mode) and `LeadForm`. Demo default unchanged; staff/card `beforeLoad` demo-session redirects skipped only in live mode.
 - **Verified:** typecheck clean, lint 0 errors, vitest 126/126 runnable pass (5 live-DB tests skip), build ok. **Not verified:** everything against a real dev database.
+
+## 2026-10-19 — Phone verification (OTP) gate on live join
+
+- **No real phone verification exists yet.** `joinGuestFn` (`src/server/live.ts`) no longer hard-codes `otpVerified: true`.
+- Joins stay disabled unless `DEMO_OTP_BYPASS=true` (default false). When disabled and no OTP check exists, the function returns `{ ok: false, message: "Phone verification is not enabled yet." }` instead of creating a membership.
+- Set `DEMO_OTP_BYPASS=true` only for local demo testing against a dev database. The auth slice replaces this gate with a real OTP check.
