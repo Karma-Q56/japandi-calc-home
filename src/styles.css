@@ -1,12 +1,15 @@
 @import "tailwindcss" source(none);
 @import "tw-animate-css";
+@import "@fontsource-variable/bricolage-grotesque";
+@import "@fontsource-variable/dm-sans";
+@import "@fontsource-variable/lora/wght-italic.css";
 @source "../src";
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: "DM Sans", sans-serif;
-  --font-display: "Bricolage Grotesque", sans-serif;
-  --font-editorial: "Lora", serif;
+  --font-sans: "DM Sans Variable", "DM Sans", sans-serif;
+  --font-display: "Bricolage Grotesque Variable", "Bricolage Grotesque", sans-serif;
+  --font-editorial: "Lora Variable", "Lora", serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);

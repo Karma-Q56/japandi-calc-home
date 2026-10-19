@@ -87,3 +87,19 @@
 - **Settlement:** release reservation + charge actual when nothing is queued/sending; cancel allowed in scheduled/sending; failed-after-charge gets a `refund:<message_id>` entry.
 - **Attribution wording** is fixed by spec: "visits by recipients after sending; not proof the message caused them".
 - **Unverified:** real-browser walkthrough of composer/results at 360/390px; Playwright cannot run in this VM.
+
+## 2026-10-19 — SMS provider: BulkSMS.com
+
+- **Decision:** the founder uses BulkSMS.com. Adapter: `src/server/sms/BulkSmsProvider.ts` (REST v1, `POST https://api.bulksms.com/v1/messages`, Basic auth with an API token id + secret).
+- **Webhooks:** BulkSMS does not sign requests. Per its webhook guide, create two webhooks (`triggerScope` SENT for status reports, RECEIVED for incoming messages), add `?secret=<SMS_WEBHOOK_SECRET>` to the URL, and make the URL return 200 to an empty `[]` POST before registering. Handlers must tolerate duplicate and out-of-order events and answer within 30 seconds. Source IPs are dynamic, so no IP allowlist.
+- **Unverified (needs a live account):** terminal `status.type` values beyond DELIVERED/FAILED/SENT, whether an alphanumeric sender ID is allowed on this account and route, how inbound STOP is delivered (dedicated number vs shared route), and the credit-to-rand price. `costCents` is only set if `randPerCredit` is configured.
+- **Demo build:** `SMS_PROVIDER=bulksms` still resolves to a "not configured" stub in the browser-only demo. Real sending is wired in M9 with the backend.
+
+## 2026-10-19 — Design pass (screens that looked broken)
+
+- `.guest-step` was defined twice with different meanings (join-step panel vs a progress bar in `ui.css`), which collapsed every join step to 5px tall. The old rule is removed; the join flow, header and stepper are restyled.
+- `/app/campaigns` had no outlet for its children, so `/app/campaigns/new` and `/app/campaigns/:id` rendered the list. Fixed with `withChildren`.
+- The three brand fonts are now self-hosted (`@fontsource-variable/*`) so a blocked or slow Google Fonts request cannot change the look. Google Fonts remains only for other venue theme fonts.
+- Overview credit shows rand, not cents. The demo pill moves above the bottom tab bars on phones.
+- Stamp card: empty slots now show a ghost glyph and number, filled stamps get an ink-stamp look.
+- Campaign composer: stepper, option cards, phone-bubble preview, cost tiles, back buttons.

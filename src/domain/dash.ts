@@ -6,6 +6,8 @@ export interface OverviewStat {
   key: string;
   label: string;
   value: number;
+  /** Optional display text, e.g. a currency amount. */
+  display?: string;
   tooltip: string;
 }
 
@@ -114,8 +116,9 @@ export function overview(
     },
     {
       key: "credit",
-      label: "Credit (cents)",
+      label: "SMS credit",
       value: restaurant.creditCents,
+      display: `R${(restaurant.creditCents / 100).toFixed(2)}`,
       tooltip: "Prepaid SMS credit balance.",
     },
   ];

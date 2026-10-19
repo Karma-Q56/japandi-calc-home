@@ -5,7 +5,8 @@ import { demoRepo } from "@/data/repo";
 import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
 import { ThemeProvider } from "@/theme";
-import { StampSlots } from "@/components/patron/StampSlots";
+import { LoyaltyCard } from "@/components/patron/LoyaltyCard";
+import { GuestShell } from "@/components/patron/GuestShell";
 import { qrSvg } from "@/lib/qr";
 import { rewardEarned, rewardProgress } from "@/lib/reward-copy";
 
@@ -73,46 +74,31 @@ function GuestCard() {
       : `${window.location.origin}/s/${customer.qrToken}`;
   const stampsLeft = restaurant.stampsRequired - membership.stampsCurrent;
 
+  const waiting = rewards.filter((item) => !item.redeemedAt);
   return (
     <ThemeProvider theme={restaurant.theme}>
-      <main className="guest-page">
-        <header className="guest-header">
-          <a href="/me">My cards</a>
-          <a href="/me/settings">Settings</a>
-        </header>
-        <section className="guest-card-content">
-          <p className="eyebrow">{restaurant.name} · Demo card</p>
-          <article className="guest-loyalty-card">
-            {restaurant.theme.logo && (
-              <img className="venue-logo" src={restaurant.theme.logo} alt="" />
-            )}
-            <span className="guest-card-tagline">{restaurant.theme.tagline}</span>
-            <h1>{restaurant.name}</h1>
-            <p>{customer.name}</p>
-            <StampSlots
-              filled={membership.stampsCurrent}
-              total={restaurant.stampsRequired}
-              theme={restaurant.theme}
-              newlyGained={stampsGained}
-            />
-            <strong>
-              {membership.stampsCurrent} of {restaurant.stampsRequired} stamps
-            </strong>
-            <p>{rewardProgress(stampsLeft, restaurant.rewardDescription)}</p>
-            {restaurant.welcomeStamp && <small>Welcome stamp included</small>}
-          </article>
-          {stampsGained > 0 && (
-            <p className="new-stamps-note" role="status">
-              {stampsGained} new {stampsGained === 1 ? "stamp" : "stamps"} since your last look.
-            </p>
-          )}
-          <article className="member-code-panel">
-            <h2>Your member code</h2>
-            <div className="member-qr" dangerouslySetInnerHTML={{ __html: qrSvg(tokenUrl) }} />
-            <strong className="member-code">{customer.memberCode}</strong>
-            <small>Show this at the till · Demo data</small>
-          </article>
-          <section className="guest-section">
+      <GuestShell back={{ to: "/me", label: "My cards" }}>
+        <LoyaltyCard
+          theme={restaurant.theme}
+          name={restaurant.name}
+          memberName={customer.name}
+          filled={membership.stampsCurrent}
+          total={restaurant.stampsRequired}
+          newlyGained={stampsGained}
+          footnote={rewardProgress(stampsLeft, restaurant.rewardDescription)}
+        />
+        {stampsGained > 0 && (
+          <p className="gx-note" role="status">
+            {stampsGained} new {stampsGained === 1 ? "stamp" : "stamps"} since your last visit.
+          </p>
+        )}
+        <section className="gx-panel gx-code">
+          <h2>Show this at the till</h2>
+          <div className="member-qr" dangerouslySetInnerHTML={{ __html: qrSvg(tokenUrl) }} />
+          <strong>{customer.memberCode}</strong>
+          <small className="gx-note">Staff scan it or type the code. Demo data.</small>
+        </section>
+          <section className="gx-panel">
             <div className="guest-section-heading">
               <h2>Rewards waiting</h2>
               <span>{rewards.filter((item) => !item.redeemedAt).length}</span>
@@ -140,7 +126,7 @@ function GuestCard() {
               </p>
             )}
           </section>
-          <section className="guest-section">
+          <section className="gx-panel">
             <h2>Offers for you</h2>
             {offers.map((offer) => (
               <article className="guest-list-item" key={offer.id}>
@@ -160,12 +146,12 @@ function GuestCard() {
               </article>
             ))}
           </section>
-          <section className="guest-section guest-shortcuts">
+          <section className="gx-panel guest-shortcuts">
             <a href={`/r/${slug}`}>View menu &amp; specials</a>
             <a href="/me">See all my cards</a>
             <a href="/me/settings">Consent &amp; settings</a>
           </section>
-          <section className="guest-section">
+          <section className="gx-panel">
             <div className="guest-section-heading">
               <h2>Offers by SMS</h2>
               <label className="consent-toggle">
@@ -216,7 +202,7 @@ function GuestCard() {
               </p>
             ))}
           </section>
-          <section className="guest-section">
+          <section className="gx-panel">
             <h2>Recent visits</h2>
             {visits.length ? (
               visits.map((visit) => (
@@ -234,15 +220,15 @@ function GuestCard() {
               <p>No visits yet.</p>
             )}
           </section>
-          <small className="demo-data-note">
+          <small className="gx-note">
             Add to home screen tip: use your browser menu to add this card to your home screen.
           </small>
           {notice && (
-            <p role="status" className="demo-data-note">
+            <p role="status" className="gx-note">
               {notice}
             </p>
           )}
-        </section>
+        </GuestShell>
         {openReward && (
           <div
             className="reward-fullscreen"
@@ -259,7 +245,6 @@ function GuestCard() {
             <p>Demo redemption code · Ask a team member to confirm.</p>
           </div>
         )}
-      </main>
     </ThemeProvider>
   );
 }

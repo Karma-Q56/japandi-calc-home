@@ -107,117 +107,200 @@ function ComposerPage() {
     void navigate({ to: "/app/campaigns/$campaignId", params: { campaignId: draftId } });
   };
 
+  const preview = body.replaceAll("{first_name}", sampleName);
+  const short = balance < costPreviewCents(eligible.length, segments);
+  const steps = ["Audience", "Message", "Cost", "Confirm"];
+  const back = step > 1 ? (
+    <button className="cmp-back" onClick={() => setStep(step - 1)}>
+      ← Back
+    </button>
+  ) : null;
+
   return (
-    <main className="demo-hub page-width">
+    <main className="demo-hub page-width cmp">
       <p className="eyebrow">
         <span className="eyebrow-line" />
-        {restaurant.name} · Step {step} of 4
+        {restaurant.name} · New campaign
       </p>
-      <h1>New campaign.</h1>
+      <h1>Bring them back.</h1>
+      <ol className="cmp-steps" aria-label={`Step ${step} of 4`}>
+        {steps.map((label, index) => (
+          <li
+            key={label}
+            className={index + 1 === step ? "is-now" : index + 1 < step ? "is-done" : ""}
+          >
+            <i>{index + 1 < step ? "✓" : index + 1}</i>
+            {label}
+          </li>
+        ))}
+      </ol>
       {step === 1 && (
-        <section className="guest-panel">
-          <h2>1 · Audience</h2>
+        <section className="cmp-card">
+          <h2>Who should hear from you?</h2>
           <label className="builder-field">
             Campaign name
-            <input value={name} onChange={(event) => setName(event.target.value)} />
-          </label>
-          <label className="builder-field">
             <input
-              type="radio"
-              name="audience"
-              checked={preset === "all"}
-              onChange={() => setPreset("all")}
-            />{" "}
-            All opted-in guests ({countFor("all")})
+              value={name}
+              placeholder="e.g. We miss you"
+              onChange={(event) => setName(event.target.value)}
+            />
           </label>
-          <label className="builder-field">
-            <input
-              type="radio"
-              name="audience"
-              checked={preset === "lapsed"}
-              onChange={() => setPreset("lapsed")}
-            />{" "}
-            Lapsed 30+ days ({countFor("lapsed")})
-          </label>
+          <div className="cmp-options" role="radiogroup" aria-label="Audience">
+            {(
+              [
+                ["all", "All opted-in guests", "Everyone who said yes to offers by SMS."],
+                ["lapsed", "Lapsed 30+ days", "Guests who have not visited in a month. Best for win-backs."],
+              ] as const
+            ).map(([key, title, hint]) => (
+              <button
+                key={key}
+                type="button"
+                role="radio"
+                aria-checked={preset === key}
+                className={`cmp-option${preset === key ? " is-on" : ""}`}
+                onClick={() => setPreset(key)}
+              >
+                <b>{title}</b>
+                <span>{hint}</span>
+                <strong>{countFor(key)} guests</strong>
+              </button>
+            ))}
+          </div>
           <button className="builder-primary" onClick={() => save(2)}>
-            Continue →
+            Continue
           </button>
         </section>
       )}
       {step === 2 && (
-        <section className="guest-panel">
-          <h2>2 · Message</h2>
+        <section className="cmp-card">
+          {back}
+          <h2>What do you want to say?</h2>
           <label className="builder-field">
-            Message (use {"{first_name}"} for a personal touch; the Stop footer is added
-            automatically)
+            Your message
             <textarea value={body} onChange={(event) => setBody(event.target.value)} rows={4} />
+            <small>
+              Use {"{first_name}"} to personalise. The Stop line is added for you.
+            </small>
           </label>
-          <p className="demo-data-note">
-            {segments} segment{segments === 1 ? "" : "s"} · {eligible.length} recipients · preview:{" "}
-            {body.replaceAll("{first_name}", sampleName)}
-            {"\n"}Reply STOP to opt out.
-          </p>
+          <div className="cmp-meter">
+            <span>
+              {segments} SMS segment{segments === 1 ? "" : "s"}
+            </span>
+            <span>{eligible.length} recipients</span>
+          </div>
           {warnings.map((warning) => (
-            <p className="demo-data-note" key={warning.kind}>
+            <p className="cmp-warn" key={warning.kind}>
               {warning.message}{" "}
               {warning.fixable && (
                 <button onClick={() => setBody(fixCopy(body))}>Fix it for me</button>
               )}
             </p>
           ))}
-          <label className="builder-field">
-            Offer code (auto)
-            <input value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} placeholder="Auto-generated" />
-          </label>
-          <label className="builder-field">
-            Valid from
-            <input
-              type="date"
-              value={validFrom}
-              onChange={(event) => setValidFrom(event.target.value)}
-            />
-          </label>
-          <label className="builder-field">
-            Valid to
-            <input type="date" value={validTo} onChange={(event) => setValidTo(event.target.value)} />
-          </label>
+          <div className="cmp-phone" aria-label="Message preview">
+            <small>Preview · {restaurant.name}</small>
+            <p>
+              {preview}
+              <br />
+              <span>Reply STOP to opt out.</span>
+            </p>
+          </div>
+          <div className="cmp-row">
+            <label className="builder-field">
+              Offer code
+              <input
+                value={code}
+                onChange={(event) => setCode(event.target.value.toUpperCase())}
+                placeholder="Auto"
+              />
+            </label>
+            <label className="builder-field">
+              Valid from
+              <input
+                type="date"
+                value={validFrom}
+                onChange={(event) => setValidFrom(event.target.value)}
+              />
+            </label>
+            <label className="builder-field">
+              Valid to
+              <input
+                type="date"
+                value={validTo}
+                onChange={(event) => setValidTo(event.target.value)}
+              />
+            </label>
+          </div>
           <button className="builder-primary" onClick={() => save(3)}>
-            Continue →
+            Continue
           </button>
         </section>
       )}
       {step === 3 && (
-        <section className="guest-panel">
-          <h2>3 · Cost</h2>
-          <p className="demo-intro">
+        <section className="cmp-card">
+          {back}
+          <h2>What it will cost</h2>
+          <div className="cmp-tiles">
+            <div>
+              <small>Guests</small>
+              <strong>{eligible.length}</strong>
+            </div>
+            <div>
+              <small>Segments each</small>
+              <strong>{segments}</strong>
+            </div>
+            <div className={short ? "is-bad" : ""}>
+              <small>Your credit</small>
+              <strong>{zar(balance)}</strong>
+            </div>
+          </div>
+          <p className={short ? "cmp-warn" : "cmp-note"}>
             {costPreview({ recipients: eligible.length, segments, creditCents: balance })}
           </p>
-          <p className="demo-data-note">
-            The estimate is reserved from your credit on confirm and the actual cost is settled
-            after sending. Balance: {zar(balance)}.
+          <p className="cmp-note">
+            The estimate is held from your credit when you confirm. You are only charged for
+            messages actually sent.
           </p>
           <button className="builder-primary" onClick={() => save(4)}>
-            Continue →
+            Continue
           </button>
         </section>
       )}
       {step === 4 && (
-        <section className="guest-panel">
-          <h2>4 · Confirm</h2>
-          <label className="builder-field">
-            <input type="radio" name="when" checked={sendNow} onChange={() => setSendNow(true)} /> Send
-            now
-          </label>
-          <label className="builder-field">
-            <input type="radio" name="when" checked={!sendNow} onChange={() => setSendNow(false)} />{" "}
-            Schedule
-            <input
-              type="datetime-local"
-              value={scheduledAt}
-              onChange={(event) => setScheduledAt(event.target.value)}
-              disabled={sendNow}
-            />
-          </label>
+        <section className="cmp-card">
+          {back}
+          <h2>Ready to send?</h2>
+          <div className="cmp-options" role="radiogroup" aria-label="When">
+            <button
+              type="button"
+              role="radio"
+              aria-checked={sendNow}
+              className={`cmp-option${sendNow ? " is-on" : ""}`}
+              onClick={() => setSendNow(true)}
+            >
+              <b>Send now</b>
+              <span>Goes out straight away, outside quiet hours (20:00 to 08:00).</span>
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={!sendNow}
+              className={`cmp-option${!sendNow ? " is-on" : ""}`}
+              onClick={() => setSendNow(false)}
+            >
+              <b>Schedule</b>
+              <span>Pick a time. Sends inside quiet hours move to 08:00.</span>
+            </button>
+          </div>
+          {!sendNow && (
+            <label className="builder-field">
+              When
+              <input
+                type="datetime-local"
+                value={scheduledAt}
+                onChange={(event) => setScheduledAt(event.target.value)}
+              />
+            </label>
+          )}
           {eligible.length > 200 && (
             <label className="builder-field">
               Type SEND to confirm ({eligible.length} recipients)
@@ -230,10 +313,15 @@ function ComposerPage() {
         </section>
       )}
       {notice && (
-        <p className="demo-data-note" role="status">
+        <p className="cmp-warn" role="status">
           {notice}
         </p>
       )}
     </main>
   );
+}
+
+const SEGMENT_CENTS = 35;
+function costPreviewCents(recipients: number, segments: number) {
+  return recipients * segments * SEGMENT_CENTS;
 }

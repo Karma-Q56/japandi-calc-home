@@ -3,12 +3,15 @@ import { useSyncExternalStore } from "react";
 import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
+import { withChildren } from "@/lib/nested";
+
+const CampaignsWithChildren = withChildren(CampaignsPage);
 
 export const Route = createFileRoute("/app/campaigns")({
   beforeLoad: () => {
     if (!requireRole("owner", "manager")(demoRepo.read().session)) throw redirect({ to: "/demo" });
   },
-  component: CampaignsPage,
+  component: CampaignsWithChildren,
 });
 
 function CampaignsPage() {

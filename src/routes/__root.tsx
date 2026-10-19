@@ -12,6 +12,7 @@ import { type ReactNode } from "react";
 import { DemoControlBar } from "../components/patron/DemoControlBar";
 
 import appCss from "../styles.css?url";
+import uiCss from "../ui.css?url";
 
 function NotFoundComponent() {
   return (
@@ -87,6 +88,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
+      { rel: "stylesheet", href: uiCss },
       { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },

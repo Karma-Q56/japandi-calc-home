@@ -6,7 +6,9 @@ import { APP_NAME, TIMEZONE } from "@/config/app";
 import { clock } from "@/lib/clock";
 import { ThemeProvider } from "@/theme";
 import { clientRegistry } from "@/clients/registry";
-import { DailyGrindHero, DailyGrindStamp } from "@/clients/daily-grind";
+import { LoyaltyCard } from "@/components/patron/LoyaltyCard";
+import cafePhoto from "@/assets/cafe-hero.jpg";
+import dishPhoto from "@/assets/dish.jpg";
 
 const PublicRestaurantPageWithChildren = withChildren(PublicRestaurantPage);
 export const Route = createFileRoute("/r/$slug")({
@@ -78,26 +80,27 @@ function PublicRestaurantPage() {
   const renderBlock = (type: string) => {
     switch (type) {
       case "hero":
-        return isCustom ? (
-          <DailyGrindHero
+        return (
+          <section
+            className="vp-hero venue-hero-photo"
             key={type}
-            name={restaurant.name}
-            tagline={restaurant.theme.tagline}
-            join={join}
-          />
-        ) : (
-          <section className="venue-hero" key={type}>
-            <div>
+            style={{ ["--vp-photo" as string]: `url(${isCustom ? cafePhoto : dishPhoto})` }}
+          >
+            <div className="vp-hero-inner">
               {restaurant.theme.logo && (
                 <img className="venue-logo" src={restaurant.theme.logo} alt="" />
               )}
+              <span className={`open-status ${openNow(restaurant.hours, now) ? "is-open" : ""}`}>
+                {openNow(restaurant.hours, now) ? "Open now" : "Closed now"} · {restaurant.suburb}
+              </span>
               <h1>{restaurant.name}</h1>
               <p>{restaurant.theme.tagline}</p>
-              <p className="venue-suburb">{restaurant.suburb} · Johannesburg</p>
-              {join}
-              <span className="open-status">
-                {openNow(restaurant.hours, now) ? "Open now" : "Closed now"}
-              </span>
+              <div className="vp-actions">
+                {join}
+                <a className="vp-ghost" href="#menu">
+                  See the menu
+                </a>
+              </div>
             </div>
           </section>
         );
@@ -129,7 +132,7 @@ function PublicRestaurantPage() {
         );
       case "menu":
         return (
-          <section className="venue-section" key={type}>
+          <section className="venue-section" id="menu" key={type}>
             <span className="eyebrow">On the menu</span>
             <h2>House favourites.</h2>
             {restaurant.menuSectionIds.map((sectionId) => {
@@ -176,8 +179,15 @@ function PublicRestaurantPage() {
       case "join":
         return (
           <section className="venue-join" key={type}>
-            <span className="eyebrow">A little perk for your next visit</span>
-            <h2>Good to see you again soon.</h2>
+            <h2>Collect stamps. Get {restaurant.rewardDescription}.</h2>
+            <p>Join with your phone number. No app to download.</p>
+            <LoyaltyCard
+              theme={restaurant.theme}
+              name={restaurant.name}
+              filled={3}
+              total={restaurant.stampsRequired}
+              footnote="Your card looks like this"
+            />
             {join}
           </section>
         );
@@ -216,17 +226,6 @@ function PublicRestaurantPage() {
           <span>{restaurant.suburb} · Johannesburg</span>
         </header>
         {blocks.map((block) => renderBlock(block.type))}
-        {isCustom && (
-          <section className="venue-card-preview">
-            <span className="eyebrow">Your loyalty card</span>
-            <div className="venue-stamp-grid">
-              {Array.from({ length: restaurant.stampsRequired }, (_, index) => (
-                <DailyGrindStamp key={index} filled={index < 5} />
-              ))}
-            </div>
-            <small>5 of {restaurant.stampsRequired} stamps · Demo data</small>
-          </section>
-        )}
         <footer className="venue-footer">
           {restaurant.address && <span>{restaurant.address}</span>}
           <span>Demo data · Powered by {APP_NAME}</span>

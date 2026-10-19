@@ -5,6 +5,8 @@ import { APP_NAME } from "@/config/app";
 import { demoRepo } from "@/data/repo";
 import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
+import { OwnerSideNav, OwnerTabs } from "@/components/patron/OwnerNav";
+import { LoyaltyCard } from "@/components/patron/LoyaltyCard";
 
 export const Route = createFileRoute("/app")({
   beforeLoad: () => {
@@ -15,51 +17,42 @@ export const Route = createFileRoute("/app")({
   component: OwnerShell,
 });
 
-const NAV = [
-  { to: "/app", label: "Overview", end: true },
-  { to: "/app/customers", label: "Customers", end: false },
-  { to: "/app/loyalty", label: "Loyalty", end: false },
-  { to: "/app/campaigns", label: "Campaigns", end: false },
-  { to: "/app/credit", label: "Credit", end: false },
-  { to: "/app/team", label: "Team", end: false },
-  { to: "/app/menu", label: "Menu", end: false },
-  { to: "/app/qr", label: "QR", end: false },
-  { to: "/app/audit", label: "Audit", end: false },
-  { to: "/app/settings", label: "Settings", end: false },
-];
-
 function OwnerShell() {
   const state = useDemoState();
   const children = useChildMatches();
   const restaurant =
     state.restaurants.find((item) => item.id === state.session.restaurantId) ??
     state.restaurants[0]!;
+  const initials = restaurant.name
+    .split(/\s+/)
+    .filter((w) => !/^(the|a|an)$/i.test(w))
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("");
+  const brand = (
+    <div className="ox-brand">
+      <span className="ox-brand-mark">{initials}</span>
+      <span>
+        <strong>{restaurant.name}</strong>
+        <small>Owner view</small>
+      </span>
+    </div>
+  );
   return (
-    <div className="owner-shell">
-      <aside className="owner-side">
-        <p className="eyebrow">
-          <span className="eyebrow-line" />
-          {restaurant.name}
+    <div className="ox">
+      <aside className="ox-side">
+        {brand}
+        <OwnerSideNav />
+        <p className="ox-foot">
+          Powered by {APP_NAME}.<br />
+          Demo data. Nothing is sent to real guests.
         </p>
-        <nav aria-label="Owner sections">
-          {NAV.map((item) => (
-            <a key={item.to} href={item.to}>
-              {item.label}
-            </a>
-          ))}
-        </nav>
-        <p className="demo-data-note">Powered by {APP_NAME} · Demo data</p>
       </aside>
-      <div className="owner-main">
-        <nav className="owner-bottom" aria-label="Owner sections">
-          {NAV.map((item) => (
-            <a key={item.to} href={item.to}>
-              {item.label}
-            </a>
-          ))}
-        </nav>
+      <div className="ox-main">
+        <header className="ox-top">{brand}</header>
         {children.length > 0 ? <Outlet /> : <Overview restaurantId={restaurant.id} />}
       </div>
+      <OwnerTabs />
     </div>
   );
 }
@@ -91,7 +84,7 @@ function Overview({ restaurantId }: { restaurantId: string }) {
       <div className="stat-grid">
         {result.data.stats.map((stat) => (
           <article className="stat-card" key={stat.key} title={stat.tooltip}>
-            <strong>{stat.value}</strong>
+            <strong>{stat.display ?? stat.value}</strong>
             <span>{stat.label}</span>
             <small>{stat.tooltip}</small>
           </article>
@@ -120,7 +113,7 @@ function Overview({ restaurantId }: { restaurantId: string }) {
             {result.data.lastCampaign.failed} failed.
           </p>
         ) : (
-          <p>No campaigns yet — that arrives in M7.</p>
+          <p>No campaigns yet. Send your first offer from Campaigns.</p>
         )}
       </section>
     </main>

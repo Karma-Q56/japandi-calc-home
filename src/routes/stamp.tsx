@@ -297,7 +297,7 @@ function Till() {
 
   return (
     <main className="guest-page">
-      <header className="guest-header">
+      <header className="guest-header till-bar">
         <span>
           Till · {signedInStaff?.displayName} · {restaurant.name}
         </span>
@@ -368,8 +368,8 @@ function Till() {
           {feedback.text}
         </p>
       )}
-      <section className="guest-section">
-        <h2>Recent stamps</h2>
+      <section className="gx-panel">
+        <h2>Stamped today</h2>
         {recent.length === 0 && <p>No stamps yet this demo.</p>}
         {recent.map((stamp) => (
           <p className="visit-row" key={stamp.id}>
@@ -379,7 +379,12 @@ function Till() {
                 timeStyle: "short",
               }).format(new Date(stamp.createdAt))}
             </span>
-            <strong>{stamp.id.slice(0, 13)}…</strong>
+            <strong>
+              {state.customers.find(
+                (c) =>
+                  c.id === state.memberships.find((m) => m.id === stamp.membershipId)?.customerId,
+              )?.name ?? "Guest"}
+            </strong>
           </p>
         ))}
       </section>
