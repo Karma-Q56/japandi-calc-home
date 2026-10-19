@@ -24,32 +24,57 @@ const setConsentSchema = z.object({
 /**
  * Get customer's cards
  */
-export const myCards = async () => {
-  // In production, query database for customer's memberships
-  return { memberships: [], total: 0 };
+export const myCards = async (input?: { customerId?: string }) => {
+  // Slice 2: demo by default; live reads memberships for the customer ctx.
+  try {
+    const { getRepos } = await import("@/server/repos");
+    const { repos } = getRepos({ customerId: input?.customerId });
+    if (!input?.customerId) return { memberships: [], total: 0 };
+    const cards = await repos.listCards(input.customerId);
+    return { memberships: cards, total: cards.length };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Could not load cards." };
+  }
 };
 
 /**
  * Get card data for a restaurant
  */
-export const card = async (input: z.infer<typeof cardSchema>) => {
-  // In production, get membership, stamps, rewards, restaurant info
-  return { error: 'Not implemented' };
+export const card = async (input: z.infer<typeof cardSchema> & { customerId?: string }) => {
+  try {
+    const { getRepos } = await import("@/server/repos");
+    const parsed = cardSchema.parse(input);
+    const { repos } = getRepos({ customerId: input.customerId });
+    if (!input.customerId) return { error: "Sign in to view your card." };
+    const view = await repos.getCard(parsed.slug, input.customerId);
+    if (!view) return { error: "You have not joined this restaurant yet." };
+    return { card: view };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Could not load card." };
+  }
 };
 
 /**
  * Join a restaurant's loyalty program
  */
-export const join = async (input: z.infer<typeof joinSchema>) => {
-  // In production:
-  // 1. Normalize phone
-  // 2. Check/create customer
-  // 3. Create membership
-  // 4. Store consent
-  // 5. Generate QR token
-
-  console.log('[Member] Join:', input);
-  return { success: true, membershipId: 'placeholder-membership' };
+export const join = async (input: z.infer<typeof joinSchema> & { slug?: string; name?: string; phone?: string; source?: string }) => {
+  // Slice 2: shared phone normaliser, consent_event rows with wording text/version.
+  // DEMO OTP SEAM: input.otp is accepted as-is in demo; real OTP is out of scope.
+  try {
+    const { getRepos } = await import("@/server/repos");
+    const { repos } = getRepos();
+    const result = await repos.joinGuest({
+      slug: input.slug ?? "",
+      name: input.name ?? "",
+      phone: input.phone ?? "",
+      marketingSms: input.marketingSms ?? false,
+      source: input.source ?? "qr",
+      otpVerified: true,
+    });
+    return { success: true, ...result };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : "Could not join." };
+  }
 };
 
 /**

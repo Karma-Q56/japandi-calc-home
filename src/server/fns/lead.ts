@@ -26,19 +26,32 @@ const leadSubmitSchema = z.object({
  * Submit a lead from the marketing form
  */
 export const submit = async (input: z.infer<typeof leadSubmitSchema>) => {
-  // In production, this would:
-  // 1. Validate the input
-  // 2. Check honeypot field
-  // 3. Check rate limiting
-  // 4. Store the lead in the database
-  // 5. Return success or error
-
-  if (input.website) {
-    return { error: 'Honeypot detected' };
+  // Slice 1: honeypot + rate limit run in both modes. Demo writes the local
+  // repo; live inserts into `lead` + `rate_limit_hit` inside withContext.
+  try {
+    const { getRepos } = await import("@/server/repos");
+    const { repos } = getRepos();
+    const parsed = leadSubmitSchema.parse(input);
+    const { id } = await repos.submitLead({
+      restaurantName: parsed.restaurantName,
+      contactName: parsed.contactName,
+      phone: parsed.phone,
+      email: parsed.email || undefined,
+      role: parsed.role || undefined,
+      venueType: parsed.venueType || undefined,
+      suburb: parsed.suburb || undefined,
+      quietTime: parsed.quietTime || undefined,
+      weeklyGuests: parsed.weeklyGuests || undefined,
+      planInterest: parsed.planInterest || undefined,
+      consent: parsed.consent,
+      consentVersion: parsed.consentVersion ?? "v1",
+      calculator: parsed.calculator as Record<string, unknown> | undefined,
+      website: parsed.website || undefined,
+    });
+    return { success: true, id };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Could not submit." };
   }
-
-  console.log('[Lead] Submitted:', input);
-  return { success: true, id: 'placeholder' };
 };
 
 /**

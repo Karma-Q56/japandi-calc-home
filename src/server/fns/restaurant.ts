@@ -21,8 +21,16 @@ const createSchema = z.object({
  * Get public restaurant info
  */
 export const getPublic = async (input: z.infer<typeof getPublicSchema>) => {
-  // In production, query database for restaurant info
-  return { error: 'Not implemented' };
+  // Slice 1: demo repo by default; live reads restaurant/theme/hours/menu/specials.
+  try {
+    const { getRepos } = await import("@/server/repos");
+    const { repos } = getRepos();
+    const page = await repos.getPublicPage(getPublicSchema.parse(input).slug);
+    if (!page) return { error: "We could not find that restaurant." };
+    return { restaurant: page };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Could not load." };
+  }
 };
 
 /**

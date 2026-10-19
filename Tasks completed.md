@@ -129,6 +129,17 @@ The user explicitly asked to proceed with M2/M3 without blocking on these verifi
 - [x] Seed: one sent campaign result + one draft for The Daily Grind (storage key bumped to patron-demo-v5).
 - [~] built, not verified Real-browser composer/results at 360/390px; Playwright E2E.
 
+## Neon slices 1–3 (2026-10-19 session, built, not verified vs live DB)
+
+- [x] built, not verified (vitest 17/17 pass vs demo; pg tests skip without dev DATABASE_URL) Async repo contract (`src/server/repos/contracts.ts`) + demo adapter + Postgres adapter (`withContext`, ≤3 round trips, cents/timestamptz) + `DATA_MODE=demo|live` switch. Demo mode unchanged.
+- [x] built, not verified `npm run db:seed:dev` seeds Daily Grind / Sunrise Bakes / Oak Table (+menus/specials) into the DEV branch only; refuses production.
+- [x] built, not verified Slice 1: public `/r/:slug` page + `lead.submit` (honeypot + rate limit) wired through `src/server/fns/`.
+- [x] built, not verified Slice 2: guest join (phone normaliser, consent_event wording text/version) + card + My cards. Demo OTP kept as a marked seam; no real auth.
+- [x] built, not verified Slice 3: stamping via `record_stamp` SQL function (stamped/too_soon/duplicate_retry/reward), `audit_event` rows, till PIN HMAC check.
+- [x] built, not verified Cross-tenant RLS test (skips without dev DB; `scripts/rls-check.mjs` still the canonical check), record_stamp path tests, withContext grep test (SPEC 8.1).
+- [x] verified (this session) `tsc --noEmit` clean, `eslint` 0 errors (repo-wide: 0 errors, 11 pre-existing warnings), full vitest 118 passed / 3 skipped (skips need dev `DATABASE_URL`), `pnpm build` ok.
+- [ ] Not run: seed/live queries/RLS/SQL `record_stamp` against the dev branch (needs dev `DATABASE_URL` + `DATABASE_URL_MIGRATE`); production branch never touched.
+
 ## Not in scope yet
 
 - [ ] M1 marketing milestone is parked; M8–M9 are not started.

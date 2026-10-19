@@ -31,15 +31,24 @@ export const lookup = async (input: z.infer<typeof lookupSchema>) => {
 /**
  * Record a stamp
  */
-export const record = async (input: z.infer<typeof recordSchema>) => {
-  // In production:
-  // 1. Check if member can receive stamp (time window)
-  // 2. Record stamp in database
-  // 3. Check if reward earned
-  // 4. Return result
-
-  console.log('[Stamp] Record:', input);
-  return { success: true, stampsCurrent: 1, rewardEarned: false };
+export const record = async (input: z.infer<typeof recordSchema> & { key?: string; pin?: string }) => {
+  // Slice 3: demo engine by default; live calls the record_stamp SQL function
+  // (stamped/too_soon/duplicate_retry/reward/undo) + audit_event + PIN HMAC.
+  try {
+    const { getRepos } = await import("@/server/repos");
+    const parsed = recordSchema.parse(input);
+    const { repos } = getRepos({ restaurantId: parsed.restaurantId });
+    const outcome = await repos.recordStamp({
+      restaurantId: parsed.restaurantId,
+      membershipId: parsed.membershipId,
+      staffId: parsed.staffId,
+      key: input.key ?? `${Date.now()}-${parsed.membershipId}`,
+      pin: input.pin ?? "",
+    });
+    return { success: true, ...outcome };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : "Could not stamp." };
+  }
 };
 
 /**

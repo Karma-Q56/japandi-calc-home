@@ -16,6 +16,7 @@
     "test:e2e": "playwright test",
     "test:watch": "vitest",
     "db:migrate": "node scripts/migrate.mjs",
+    "db:seed:dev": "node scripts/seed-dev.mjs",
     "db:role": "node scripts/provision-app-role.mjs",
     "db:reset": "node scripts/reset-db.mjs",
     "cf-typegen": "wrangler types",
