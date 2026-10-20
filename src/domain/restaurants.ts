@@ -2,7 +2,7 @@ import { DEFAULT_REWARD_DESCRIPTION, DEFAULT_STAMPS_REQUIRED, DEFAULT_VISIT_WIND
 import { clock } from '@/lib/clock';
 import { createSeed } from '@/data/seed';
 import { demoRepo, updateDemo } from '@/data/repo';
-import type { MenuItem, Restaurant } from '@/data/types';
+import type { MenuItem, Restaurant, Special } from '@/data/types';
 import { failure, success } from './demo';
 
 export const slugify = (name: string) => name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -25,7 +25,8 @@ export function createRestaurant(input: { name: string; slug: string; suburb: st
   if ((input.stampsRequired ?? DEFAULT_STAMPS_REQUIRED) < 2 || (input.stampsRequired ?? DEFAULT_STAMPS_REQUIRED) > 30) return failure('INVALID', 'Stamps required must be between 2 and 30.');
   const seed = createSeed(clock.now()); const theme = input.theme ?? seed.restaurants[0]!.theme;
   const id = `rest-${crypto.randomUUID()}`; const sectionId = `section-${crypto.randomUUID()}`;
-  const restaurant: Restaurant = { id, slug: slugCheck.normalized, name, status: input.status ?? 'draft', plan: input.plan ?? 'starter', suburb: input.suburb.trim(), hours: input.hours ?? seed.restaurants[0]!.hours, stampsRequired: input.stampsRequired ?? DEFAULT_STAMPS_REQUIRED, rewardDescription: input.rewardDescription?.trim() || DEFAULT_REWARD_DESCRIPTION, visitWindowMinutes: input.visitWindowMinutes ?? DEFAULT_VISIT_WINDOW_MINUTES, welcomeStamp: input.welcomeStamp ?? true, theme, pageConfig: ['hero','about','hours','menu','special','join'].map(type => ({ type, enabled: true })), menuSectionIds: [sectionId], specialIds: [], createdAt: new Date(clock.now()).toISOString(), creditCents: input.starterCreditCents ?? 0, senderName: slugCheck.normalized.slice(0, 11), smsCapRestaurant: 3, smsCapMember: 2, contact: '' };
+  const welcomeStamps = Math.max(0, Math.min((input.stampsRequired ?? DEFAULT_STAMPS_REQUIRED) - 1, input.welcomeStamp === false ? 0 : 1));
+  const restaurant: Restaurant = { id, slug: slugCheck.normalized, name, status: input.status ?? 'draft', plan: input.plan ?? 'starter', suburb: input.suburb.trim(), hours: input.hours ?? seed.restaurants[0]!.hours, stampsRequired: input.stampsRequired ?? DEFAULT_STAMPS_REQUIRED, rewardDescription: input.rewardDescription?.trim() || DEFAULT_REWARD_DESCRIPTION, visitWindowMinutes: input.visitWindowMinutes ?? DEFAULT_VISIT_WINDOW_MINUTES, welcomeStamp: welcomeStamps > 0, welcomeStamps, theme, pageTemplate: 'classic', pageConfig: ['hero','about','hours','menu','special','join'].map(type => ({ type, enabled: true })), menuSectionIds: [sectionId], specialIds: [], createdAt: new Date(clock.now()).toISOString(), creditCents: input.starterCreditCents ?? 0, senderName: slugCheck.normalized.slice(0, 11), smsCapRestaurant: 3, smsCapMember: 2, contact: '', tiers: { regular: 3, vip: 8 }, mysteryEveryVisits: 0, birthdayReward: true, spin: { enabled: false, segments: [], weeklyBudgetCents: 0, earnEveryVisits: 5, earnAtMilestone: false, rules: '' } };
   const section = { id: sectionId, restaurantId: id, name: 'Favourites', sortOrder: 0 };
   const items: MenuItem[] = (input.starterMenu ?? []).map((item, index) => ({ id: `item-${crypto.randomUUID()}`, restaurantId: id, sectionId, name: item.name, description: '', priceCents: Math.round(item.priceCents), available: true, sortOrder: index }));
   const ledger = restaurant.creditCents ? [{ id: `ledger-${crypto.randomUUID()}`, restaurantId: id, type: 'topup' as const, amountCents: restaurant.creditCents, reference: `demo-starter-${id}`, createdAt: restaurant.createdAt }] : [];
@@ -69,9 +70,14 @@ export function hideMenuItem(id: string, hidden = true) {
   updateDemo(state => ({ ...state, items: state.items.map(item => item.id === id ? { ...item, available: !hidden } : item) }));
   return success(true);
 }
-export function saveSpecial(input: { id?: string; restaurantId: string; title: string; body: string; startsAt: string; endsAt: string; active: boolean }) {
+export function saveSpecial(input: { id?: string; restaurantId: string; title: string; body: string; startsAt: string; endsAt: string; active: boolean; kind?: Special['kind']; code?: string; minTier?: Special['minTier']; createdAt?: string }) {
   if (!input.title.trim() || (input.startsAt && input.endsAt && input.endsAt < input.startsAt)) return failure('INVALID', 'Check the special title and dates.');
-  const special = { ...input, id: input.id ?? `special-${crypto.randomUUID()}`, title: input.title.trim() };
+  const kind = input.kind ?? 'public';
+  if (kind === 'targeted' && input.id) {
+    // Targeted specials keep their issued codes; only content can change.
+  }
+  const sharedCode = input.code?.trim().toUpperCase();
+  const special: Special = { ...input, kind, minTier: input.minTier ?? null, id: input.id ?? `special-${crypto.randomUUID()}`, title: input.title.trim(), ...(kind !== 'targeted' && sharedCode ? { code: sharedCode } : {}) };
   updateDemo(state => ({ ...state, specials: input.id ? state.specials.map(item => item.id === input.id ? special : item) : [...state.specials, special], restaurants: state.restaurants.map(restaurant => restaurant.id === input.restaurantId && !restaurant.specialIds.includes(special.id) ? { ...restaurant, specialIds: [...restaurant.specialIds, special.id] } : restaurant) }));
   return success(special);
 }

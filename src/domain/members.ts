@@ -125,7 +125,13 @@ export function joinRestaurant(input: {
     memberCode: generateMemberCode(),
     qrToken: crypto.randomUUID(),
   };
-  const initialStamps = restaurant.welcomeStamp ? 1 : 0;
+  // Welcome stamps: granted once at join, bounded below the reward threshold.
+  const initialStamps = Math.max(
+    0,
+    Math.min(restaurant.stampsRequired - 1, restaurant.welcomeStamps ?? (restaurant.welcomeStamp ? 1 : 0)),
+  );
+  const loyaltyWording = getConsentWording("loyalty", restaurant.name);
+  const marketingWording = getConsentWording("marketing_sms", restaurant.name);
   const membership: Membership = {
     id: membershipId,
     restaurantId: restaurant.id,
@@ -134,8 +140,8 @@ export function joinRestaurant(input: {
     source: input.source,
     stampsCurrent: initialStamps,
     stampsTotal: initialStamps,
-    lastVisitAt: initialStamps ? now : null,
-    welcomeStamp: restaurant.welcomeStamp,
+    lastVisitAt: null,
+    welcomeStamp: initialStamps > 0,
     marketingSms: input.marketingSms,
     marketingPush: false,
     lastSeenStamps: 0,
@@ -146,8 +152,8 @@ export function joinRestaurant(input: {
       membershipId,
       purpose: "loyalty",
       action: "granted",
-      wordingVersion: "v1",
-      wordingText: getConsentWording("loyalty", restaurant.name).text,
+      wordingVersion: loyaltyWording.version,
+      wordingText: loyaltyWording.text,
       source: "join_form",
       createdAt: now,
     },
@@ -158,8 +164,8 @@ export function joinRestaurant(input: {
       membershipId,
       purpose: "marketing_sms",
       action: "granted",
-      wordingVersion: "v1",
-      wordingText: getConsentWording("marketing_sms", restaurant.name).text,
+      wordingVersion: marketingWording.version,
+      wordingText: marketingWording.text,
       source: "join_form",
       createdAt: now,
     });
@@ -179,15 +185,16 @@ export function joinRestaurant(input: {
     stamps: initialStamps
       ? [
           ...current.stamps,
-          {
+          ...Array.from({ length: initialStamps }, (_, index) => ({
             id: crypto.randomUUID(),
             restaurantId: restaurant.id,
             membershipId,
             staffId: null,
-            key: null,
+            key: `welcome:${membershipId}:${index}`,
             createdAt: now,
-            status: "valid",
-          },
+            status: "valid" as const,
+            reason: "welcome" as const,
+          })),
         ]
       : current.stamps,
     session: { role: "guest", customerId },
@@ -235,6 +242,32 @@ function changeConsent(membershipId: string, action: "granted" | "withdrawn", so
     consents: [...current.consents, event],
   }));
   return success(event);
+}
+
+export function optOutAllForCustomer(customerId: string, source = "inbound_stopall") {
+  const state = demoRepo.read();
+  const memberships = state.memberships.filter((item) => item.customerId === customerId);
+  if (memberships.length === 0) return failure("NOT_FOUND", "Membership not found.");
+  const wording = getConsentWording("marketing_sms", "Patron");
+  const now = new Date(state.now).toISOString();
+  const events: ConsentEvent[] = memberships.map((membership) => ({
+    id: crypto.randomUUID(),
+    membershipId: membership.id,
+    purpose: "marketing_sms" as const,
+    action: "withdrawn" as const,
+    wordingVersion: wording.version,
+    wordingText: wording.text,
+    source,
+    createdAt: now,
+  }));
+  updateDemo((current) => ({
+    ...current,
+    memberships: current.memberships.map((item) =>
+      item.customerId === customerId ? { ...item, marketingSms: false, marketingPush: false } : item,
+    ),
+    consents: [...current.consents, ...events],
+  }));
+  return success({ membershipIds: memberships.map((item) => item.id) });
 }
 
 export function rateLimit(

@@ -4,6 +4,7 @@ import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
 import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
+import { withChildren } from "@/lib/nested";
 import type { CustomerFilter, CustomerSort } from "@/domain/customers";
 
 const FILTERS: CustomerFilter[] = [
@@ -18,13 +19,15 @@ const FILTERS: CustomerFilter[] = [
 
 const SORTS: CustomerSort[] = ["recent", "stamps", "name"];
 
+const CustomersWithChildren = withChildren(Customers);
+
 export const Route = createFileRoute("/app/customers")({
   beforeLoad: () => {
     if (!requireRole("owner", "manager")(demoRepo.read().session)) {
       throw redirect({ to: "/demo" });
     }
   },
-  component: Customers,
+  component: CustomersWithChildren,
 });
 
 function Customers() {
@@ -127,8 +130,13 @@ function Customers() {
               <strong>{row.name}</strong>
               <small>{row.maskedPhone}</small>
             </span>
-            <span>
-              {row.stampsCurrent} stamps · {row.rewardsWaiting} waiting
+            <span className="customer-row-meta">
+              <span>{row.stampsCurrent} stamps</span>
+              {row.rewardsWaiting > 0 && (
+                <span className="reward-pill">
+                  {row.rewardsWaiting} reward{row.rewardsWaiting === 1 ? "" : "s"} ready
+                </span>
+              )}
             </span>
             <small>
               {row.lastVisitAt

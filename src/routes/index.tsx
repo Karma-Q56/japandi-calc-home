@@ -118,6 +118,9 @@ function HomePage() {
       <a href="#pricing" onClick={close}>
         Pricing
       </a>
+      <a href="/for-diners" onClick={close}>
+        For diners
+      </a>
     </>
   );
   const wa = whatsappLink(visitMessage);
@@ -129,6 +132,7 @@ function HomePage() {
           <nav className="nav-links" aria-label="Main navigation">
             {nav}
             <a href="/app">Product preview</a>
+            <a href="/login">Log in</a>
           </nav>
           <Button variant="patron" className="header-book" asChild>
             <a href="#visit">
@@ -151,6 +155,9 @@ function HomePage() {
             {nav}
             <a href="/app" onClick={close}>
               Product preview
+            </a>
+            <a href="/login" onClick={close}>
+              Log in
             </a>
             <Button variant="patron" asChild>
               <a href="#visit" onClick={close}>
@@ -501,6 +508,8 @@ function HomePage() {
             <nav className="footer-links" aria-label="Footer navigation">
               <a href="#how-it-works">How it works</a>
               <a href="#pricing">Pricing</a>
+              <a href="/for-diners">For diners</a>
+              <a href="/login">Log in</a>
               <a href="#visit">Book a visit</a>
               <a href="/demo/status">Demo status</a>
               <a href="/privacy">Privacy</a>

@@ -1,4 +1,4 @@
-import type { DemoState, Restaurant, Theme } from "./types";
+import type { DemoState, Restaurant, Special, Theme } from "./types";
 
 const themes: Theme[] = [
   {
@@ -77,19 +77,39 @@ const baseRestaurants: Restaurant[] = [
     rewardDescription: "a free coffee",
     visitWindowMinutes: 240,
     welcomeStamp: true,
+    welcomeStamps: 2,
     theme: themes[0]!,
+    pageTemplate: "hero",
     pageConfig: ["hero", "about", "hours", "menu", "special", "join"].map((type) => ({
       type,
       enabled: true,
     })),
     menuSectionIds: ["sec-coffee", "sec-bakes"],
-    specialIds: ["special-daily"],
+    specialIds: ["special-daily", "special-daily-members"],
     createdAt: "2026-01-05T08:00:00.000Z",
     creditCents: 4200,
     senderName: "DailyGrind",
     smsCapRestaurant: 3,
     smsCapMember: 2,
     contact: "hello@dailygrind.co.za",
+    tiers: { regular: 3, vip: 8 },
+    mysteryEveryVisits: 7,
+    birthdayReward: true,
+    spin: {
+      enabled: true,
+      segments: [
+        { id: "spin-1", label: "Free filter coffee", weight: 30, valueCents: 300 },
+        { id: "spin-2", label: "R20 off your next visit", weight: 25, valueCents: 2000, cap: { period: "week", max: 10 } },
+        { id: "spin-3", label: "Slice of banana bread", weight: 20, valueCents: 450 },
+        { id: "spin-4", label: "Double stamps today", weight: 15, valueCents: 0 },
+        { id: "spin-5", label: "Try again tomorrow", weight: 10, valueCents: 0 },
+      ],
+      weeklyBudgetCents: 15000,
+      earnEveryVisits: 5,
+      earnAtMilestone: true,
+      rules:
+        "One spin is earned every five visits and at each reward milestone. No purchase is required to earn spins. Prizes are personal, single-use offers valid for 30 days and cannot be exchanged for cash.",
+    },
   },
   {
     id: "rest-sunrise-bakes",
@@ -104,7 +124,9 @@ const baseRestaurants: Restaurant[] = [
     rewardDescription: "A pastry of your choice",
     visitWindowMinutes: 240,
     welcomeStamp: true,
+    welcomeStamps: 1,
     theme: themes[1]!,
+    pageTemplate: "menu-first",
     pageConfig: ["hero", "about", "hours", "menu", "special", "join"].map((type) => ({
       type,
       enabled: true,
@@ -117,6 +139,17 @@ const baseRestaurants: Restaurant[] = [
     smsCapRestaurant: 3,
     smsCapMember: 2,
     contact: "hello@sunrisebakes.co.za",
+    tiers: { regular: 2, vip: 6 },
+    mysteryEveryVisits: 0,
+    birthdayReward: true,
+    spin: {
+      enabled: false,
+      segments: [],
+      weeklyBudgetCents: 0,
+      earnEveryVisits: 5,
+      earnAtMilestone: false,
+      rules: "",
+    },
   },
   {
     id: "rest-oak-table",
@@ -130,20 +163,33 @@ const baseRestaurants: Restaurant[] = [
     stampsRequired: 10,
     rewardDescription: "a free main",
     visitWindowMinutes: 240,
-    welcomeStamp: true,
+    welcomeStamp: false,
+    welcomeStamps: 0,
     theme: themes[2]!,
+    pageTemplate: "minimal",
     pageConfig: ["hero", "about", "hours", "menu", "special", "join"].map((type) => ({
       type,
       enabled: true,
     })),
     menuSectionIds: ["sec-lunch"],
-    specialIds: ["special-oak"],
+    specialIds: ["special-oak", "special-oak-vip"],
     createdAt: "2026-01-07T08:00:00.000Z",
     creditCents: 6100,
     senderName: "OakTable",
     smsCapRestaurant: 3,
     smsCapMember: 2,
     contact: "hello@oaktable.co.za",
+    tiers: { regular: 4, vip: 10 },
+    mysteryEveryVisits: 0,
+    birthdayReward: false,
+    spin: {
+      enabled: false,
+      segments: [],
+      weeklyBudgetCents: 0,
+      earnEveryVisits: 5,
+      earnAtMilestone: false,
+      rules: "",
+    },
   },
 ];
 
@@ -202,6 +248,7 @@ export function createSeed(now = Date.UTC(2026, 9, 1, 8)): DemoState {
       key: null,
       createdAt: new Date(now - ((i * 13) % 90) * 86400000).toISOString(),
       status: "valid" as const,
+      reason: "visit" as const,
     };
   });
   const sections = [
@@ -227,7 +274,7 @@ export function createSeed(now = Date.UTC(2026, 9, 1, 8)): DemoState {
     available: true,
     sortOrder: i,
   }));
-  const specials = restaurants.map((r, i) => ({
+  const specials: Special[] = restaurants.map((r, i) => ({
     id: `special-${["daily", "sunrise", "oak"][i]}`,
     restaurantId: r.id,
     title: ["Tuesday coffee and breakfast", "Morning bun special", "Neighbourhood lunch"][i]!,
@@ -239,6 +286,60 @@ export function createSeed(now = Date.UTC(2026, 9, 1, 8)): DemoState {
     startsAt: new Date(now - 86400000).toISOString(),
     endsAt: new Date(now + 14 * 86400000).toISOString(),
     active: true,
+    kind: "public" as const,
+    code: ["DAILY10", "MORNING", "LUNCH10"][i]!,
+    minTier: null,
+    createdAt: new Date(now - 3 * 86400000).toISOString(),
+  }));
+  specials.push(
+    {
+      id: "special-daily-members",
+      restaurantId: restaurants[0]!.id,
+      title: "Regulars' Friday flat white",
+      body: "Members who visit often get a flat white on us every Friday.",
+      startsAt: new Date(now - 86400000).toISOString(),
+      endsAt: new Date(now + 21 * 86400000).toISOString(),
+      active: true,
+      kind: "members" as const,
+      code: "REGULARS",
+      minTier: "regular" as const,
+      createdAt: new Date(now - 2 * 86400000).toISOString(),
+    },
+    {
+      id: "special-oak-vip",
+      restaurantId: restaurants[2]!.id,
+      title: "VIP tasting plate",
+      body: "Our regulars get a small tasting plate with any main.",
+      startsAt: new Date(now - 86400000).toISOString(),
+      endsAt: new Date(now + 21 * 86400000).toISOString(),
+      active: true,
+      kind: "members" as const,
+      code: "OAKVIP",
+      minTier: "vip" as const,
+      createdAt: new Date(now - 2 * 86400000).toISOString(),
+    },
+    {
+      id: "special-oak-targeted",
+      restaurantId: restaurants[2]!.id,
+      title: "A thank you, just for you",
+      body: "One shared dessert on us. This code is yours alone.",
+      startsAt: new Date(now - 86400000).toISOString(),
+      endsAt: new Date(now + 30 * 86400000).toISOString(),
+      active: true,
+      kind: "targeted" as const,
+      minTier: null,
+      createdAt: new Date(now - 86400000).toISOString(),
+    },
+  );
+  // Targeted specials get one unique, single-use code per chosen member.
+  const oakMembers = memberships.filter((m) => m.restaurantId === restaurants[2]!.id).slice(0, 6);
+  const specialCodes = oakMembers.map((m, i) => ({
+    id: `special-code-${i + 1}`,
+    restaurantId: restaurants[2]!.id,
+    specialId: "special-oak-targeted",
+    membershipId: m.id,
+    code: `OAKTHANKS${i + 1}`,
+    issuedAt: new Date(now - 86400000).toISOString(),
   }));
   const rewards = memberships
     .filter((_, i) => i % 9 === 0)
@@ -295,7 +396,7 @@ export function createSeed(now = Date.UTC(2026, 9, 1, 8)): DemoState {
         name: "A little Tuesday treat",
         body: "We miss you! Pop by for a neighbourhood special.",
         channel: "sms" as const,
-        audience: { type: "all_opted_in" } as { type: "all_opted_in" },
+        audience: { type: "everyone" } as { type: "everyone" },
         code: ["TUESDAY", "BUNDAY", "LUNCHCLUB"][i]!,
         status: "sent" as const,
         requiresApproval: false,
@@ -317,7 +418,7 @@ export function createSeed(now = Date.UTC(2026, 9, 1, 8)): DemoState {
         name: "Weekend family lunch",
         body: "Bring the family this Saturday for a shared dessert.",
         channel: "sms" as const,
-        audience: { type: "all_opted_in" } as { type: "all_opted_in" },
+        audience: { type: "everyone" } as { type: "everyone" },
         code: "WEEKEND",
         status: "draft" as const,
         requiresApproval: false,
@@ -333,6 +434,44 @@ export function createSeed(now = Date.UTC(2026, 9, 1, 8)): DemoState {
     ],
     messages,
     redemptions: [],
+    specialCodes,
+    spins: [],
+    challenges: [
+      {
+        id: "challenge-daily-3in14",
+        restaurantId: restaurants[0]!.id,
+        title: "Three visits in 14 days",
+        visits: 3,
+        windowDays: 14,
+        bonusStamps: 1,
+        active: true,
+        createdAt: new Date(now - 20 * 86400000).toISOString(),
+      },
+      {
+        id: "challenge-sunrise-5in30",
+        restaurantId: restaurants[1]!.id,
+        title: "Five weekend visits in 30 days",
+        visits: 5,
+        windowDays: 30,
+        bonusStamps: 2,
+        active: false,
+        createdAt: new Date(now - 20 * 86400000).toISOString(),
+      },
+    ],
+    savedLists: [
+      {
+        id: "list-daily-regulars",
+        restaurantId: restaurants[0]!.id,
+        name: "Friday regulars",
+        membershipIds: memberships
+          .filter((m) => m.restaurantId === restaurants[0]!.id)
+          .slice(0, 8)
+          .map((m) => m.id),
+        createdAt: new Date(now - 12 * 86400000).toISOString(),
+        updatedAt: new Date(now - 4 * 86400000).toISOString(),
+      },
+    ],
+    smsReplies: [],
     ledger: restaurants.map((r, i) => ({
       id: `ledger-${i + 1}`,
       restaurantId: r.id,

@@ -6,7 +6,7 @@ import { demoRepo } from "@/data/repo";
 import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
 import { OwnerSideNav, OwnerTabs } from "@/components/patron/OwnerNav";
-import { LoyaltyCard } from "@/components/patron/LoyaltyCard";
+import { markOutletComponent } from "@/lib/nested";
 
 export const Route = createFileRoute("/app")({
   beforeLoad: () => {
@@ -14,7 +14,7 @@ export const Route = createFileRoute("/app")({
       throw redirect({ to: "/demo" });
     }
   },
-  component: OwnerShell,
+  component: markOutletComponent(OwnerShell),
 });
 
 function OwnerShell() {
@@ -81,13 +81,22 @@ function Overview({ restaurantId }: { restaurantId: string }) {
         Overview
       </p>
       <h1>Your week at a glance.</h1>
-      <div className="stat-grid">
+      <div className="page-actions">
+        <a className="builder-primary" href="/stamp">
+          Open the till
+        </a>
+        <a className="builder-secondary" href="/app/campaigns/new">
+          New campaign
+        </a>
+      </div>
+      <div className="stat-grid stat-grid--five">
         {result.data.stats.map((stat) => (
-          <article className="stat-card" key={stat.key} title={stat.tooltip}>
+          <a className="stat-card" key={stat.key} title={stat.tooltip} href={stat.href}>
             <strong>{stat.display ?? stat.value}</strong>
             <span>{stat.label}</span>
             <small>{stat.tooltip}</small>
-          </article>
+            <em>{stat.action} →</em>
+          </a>
         ))}
       </div>
       <section className="builder-panel">

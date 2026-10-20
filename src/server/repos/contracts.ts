@@ -20,6 +20,19 @@ export interface PublicSpecial {
   startsAt: string | null;
   endsAt: string | null;
   active: boolean;
+  kind: "public" | "members" | "targeted";
+  code?: string | null;
+  minTier?: string | null;
+}
+
+export interface SpecialOfferView {
+  id: string;
+  title: string;
+  body: string | null;
+  kind: "public" | "members" | "targeted";
+  code: string | null;
+  minTier: string | null;
+  redeemed: boolean;
 }
 
 export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
@@ -35,6 +48,8 @@ export interface PublicPage {
   rewardDescription: string;
   visitWindowMinutes: number;
   welcomeStamp: boolean;
+  welcomeStamps: number;
+  pageTemplate: string;
   menu: PublicMenuItem[];
   specials: PublicSpecial[];
 }
@@ -111,4 +126,13 @@ export interface PatronRepos {
     key: string;
     pin: string;
   }): Promise<StampOutcome>;
+  /** Public, members and targeted offers a membership may see. */
+  getSpecialOffers(membershipId: string): Promise<SpecialOfferView[]>;
+  /** Redeem a typed/scanned special code at the till. */
+  redeemSpecial(input: {
+    restaurantId: string;
+    membershipId: string;
+    code: string;
+    actorId: string;
+  }): Promise<{ ok: true; title: string; code: string } | { ok: false; message: string }>;
 }

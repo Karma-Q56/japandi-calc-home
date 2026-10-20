@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { demoRepo } from "@/data/repo";
+import { demoRepo, updateDemo } from "@/data/repo";
 import { clock } from "@/lib/clock";
 import {
   computeStamp,
@@ -155,6 +155,16 @@ describe("stamp rule engine", () => {
 
 describe("undo", () => {
   it("voids the stamp, reconciles counters, and voids its reward", () => {
+    // Isolate the undo arithmetic from visit extras, which add their own stamps.
+    updateDemo((state) => ({
+      ...state,
+      challenges: [],
+      restaurants: state.restaurants.map((restaurant) =>
+        restaurant.id === staff.restaurantId
+          ? { ...restaurant, mysteryEveryVisits: 0, birthdayReward: false }
+          : restaurant,
+      ),
+    }));
     const { membership, restaurant } = membershipFixture();
     const needed = restaurant.stampsRequired - membership.stampsCurrent;
     let lastId = "";

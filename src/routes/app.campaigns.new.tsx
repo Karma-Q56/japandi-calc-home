@@ -10,7 +10,7 @@ import {
 } from "@/domain/campaigns";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
-import type { CampaignAudience } from "@/data/types";
+import type { CampaignAudience, SegmentType } from "@/data/types";
 
 export const Route = createFileRoute("/app/campaigns/new")({
   beforeLoad: () => {
@@ -20,6 +20,14 @@ export const Route = createFileRoute("/app/campaigns/new")({
 });
 
 const zar = (cents: number) => `R${(cents / 100).toFixed(2)}`;
+const SEGMENT_CHOICES: Array<{ type: SegmentType; title: string; hint: string }> = [
+  { type: "everyone", title: "Everyone opted in", hint: "Everyone who said yes to SMS offers." },
+  { type: "new", title: "New guests", hint: "Joined in the last 14 days." },
+  { type: "lapsed30", title: "Lapsed 30+ days", hint: "No visit in a month. Best for win-backs." },
+  { type: "close_to_reward", title: "Close to a reward", hint: "Within 2 stamps of a reward." },
+  { type: "weekday", title: "Visited on a weekday", hint: "Pick the day that needs filling." },
+  { type: "saved_list", title: "A saved list", hint: "A named list you built earlier." },
+];
 
 function ComposerPage() {
   const state = useSyncExternalStore(demoRepo.subscribe, demoRepo.read, demoRepo.read);
@@ -28,7 +36,10 @@ function ComposerPage() {
   const [step, setStep] = useState(1);
   const [draftId, setDraftId] = useState<string | null>(null);
   const [name, setName] = useState("");
-  const [preset, setPreset] = useState<"all" | "lapsed">("all");
+  const [segment, setSegment] = useState<SegmentType>("everyone");
+  const [weekday, setWeekday] = useState(3);
+  const [listId, setListId] = useState("");
+  const [specialId, setSpecialId] = useState("");
   const [body, setBody] = useState("Hi {first_name}, we miss you! Pop by this week.");
   const [code, setCode] = useState("");
   const [validFrom, setValidFrom] = useState("");
@@ -37,6 +48,10 @@ function ComposerPage() {
   const [scheduledAt, setScheduledAt] = useState("");
   const [typed, setTyped] = useState("");
   const [notice, setNotice] = useState("");
+  const [newListName, setNewListName] = useState("");
+  const [editingListId, setEditingListId] = useState<string | null>(null);
+  const [editingIds, setEditingIds] = useState<string[]>([]);
+  const [editingName, setEditingName] = useState("");
 
   const restaurant = state.restaurants.find((r) => r.id === restaurantId);
   if (!restaurant) {
@@ -47,23 +62,35 @@ function ComposerPage() {
       </main>
     );
   }
+  const savedLists = api.audience.lists(restaurant.id);
+  const specials = api.special.ownerList(restaurant.id);
   const audience: CampaignAudience =
-    preset === "lapsed" ? { type: "lapsed", days: 30 } : { type: "all_opted_in" };
-  const countFor = (kind: "all" | "lapsed") =>
-    eligibleMemberships(
-      state,
-      restaurant.id,
-      kind === "lapsed" ? { type: "lapsed", days: 30 } : { type: "all_opted_in" },
-    ).length;
+    segment === "saved_list"
+      ? { type: "saved_list", listId }
+      : segment === "weekday"
+        ? { type: "weekday", weekday }
+        : segment === "new"
+          ? { type: "new", days: 14 }
+          : segment === "lapsed30"
+            ? { type: "lapsed30", days: 30 }
+            : segment === "close_to_reward"
+              ? { type: "close_to_reward", remaining: 2 }
+              : { type: "everyone" };
   const eligible = eligibleMemberships(state, restaurant.id, audience);
+  const rawCount = api.audience.count(restaurant.id, audience);
   const sampleName =
     state.customers.find((c) => c.id === eligible[0]?.customerId)?.name.split(" ")[0] ?? "friend";
   const segments = messageSegments(body || "Hi", sampleName);
   const creditResult = api.credit.list(restaurant.id);
   const balance = creditResult.ok ? creditResult.data.balanceCents : 0;
   const warnings = checkCopy(body);
+  const selectedSpecial = specials.find((row) => row.special.id === specialId)?.special;
 
   const save = (nextStep: number) => {
+    if (segment === "saved_list" && !listId) {
+      setNotice("Choose a saved list, or build one from a segment.");
+      return;
+    }
     const saved = api.campaign.saveDraft({
       restaurantId: restaurant.id,
       actor: "owner",
@@ -74,6 +101,7 @@ function ComposerPage() {
         body,
         audience,
         ...(code ? { code } : {}),
+        ...(specialId ? { specialId } : {}),
         ...(validFrom ? { validFrom } : {}),
         ...(validTo ? { validTo } : {}),
       },
@@ -91,7 +119,7 @@ function ComposerPage() {
   const confirm = () => {
     if (!draftId) return;
     if (eligible.length > 200 && typed.trim().toUpperCase() !== "SEND") {
-      setNotice('Type SEND to confirm a send to more than 200 guests.');
+      setNotice("Type SEND to confirm a send to more than 200 guests.");
       return;
     }
     const confirmed = api.campaign.confirm({
@@ -107,14 +135,51 @@ function ComposerPage() {
     void navigate({ to: "/app/campaigns/$campaignId", params: { campaignId: draftId } });
   };
 
+  const createListFromSegment = () => {
+    const created = api.audience.listFromSegment({
+      restaurantId: restaurant.id,
+      name: newListName || `Segment ${new Date().toLocaleDateString("en-ZA")}`,
+      audience,
+    });
+    if (!created.ok) {
+      setNotice(created.error.message);
+      return;
+    }
+    setNotice(`Saved “${created.data.name}” with ${created.data.membershipIds.length} guests.`);
+    setNewListName("");
+    setListId(created.data.id);
+    setSegment("saved_list");
+  };
+
+  const startEditingList = (id: string) => {
+    const list = savedLists.find((item) => item.id === id);
+    if (!list) return;
+    setEditingListId(id);
+    setEditingIds(list.membershipIds);
+    setEditingName(list.name);
+  };
+
+  const saveEditingList = () => {
+    if (!editingListId) return;
+    const saved = api.audience.saveList({
+      id: editingListId,
+      restaurantId: restaurant.id,
+      name: editingName,
+      membershipIds: editingIds,
+    });
+    setNotice(saved.ok ? "List saved." : saved.error.message);
+    if (saved.ok) setEditingListId(null);
+  };
+
   const preview = body.replaceAll("{first_name}", sampleName);
   const short = balance < costPreviewCents(eligible.length, segments);
   const steps = ["Audience", "Message", "Cost", "Confirm"];
-  const back = step > 1 ? (
-    <button className="cmp-back" onClick={() => setStep(step - 1)}>
-      ← Back
-    </button>
-  ) : null;
+  const back =
+    step > 1 ? (
+      <button className="cmp-back" onClick={() => setStep(step - 1)}>
+        ← Back
+      </button>
+    ) : null;
 
   return (
     <main className="demo-hub page-width cmp">
@@ -134,6 +199,7 @@ function ComposerPage() {
           </li>
         ))}
       </ol>
+
       {step === 1 && (
         <section className="cmp-card">
           <h2>Who should hear from you?</h2>
@@ -145,32 +211,143 @@ function ComposerPage() {
               onChange={(event) => setName(event.target.value)}
             />
           </label>
-          <div className="cmp-options" role="radiogroup" aria-label="Audience">
-            {(
-              [
-                ["all", "All opted-in guests", "Everyone who said yes to offers by SMS."],
-                ["lapsed", "Lapsed 30+ days", "Guests who have not visited in a month. Best for win-backs."],
-              ] as const
-            ).map(([key, title, hint]) => (
+          <div className="cmp-options" role="radiogroup" aria-label="Audience segment">
+            {SEGMENT_CHOICES.map((choice) => (
               <button
-                key={key}
+                key={choice.type}
                 type="button"
                 role="radio"
-                aria-checked={preset === key}
-                className={`cmp-option${preset === key ? " is-on" : ""}`}
-                onClick={() => setPreset(key)}
+                aria-checked={segment === choice.type}
+                className={`cmp-option${segment === choice.type ? " is-on" : ""}`}
+                onClick={() => setSegment(choice.type)}
               >
-                <b>{title}</b>
-                <span>{hint}</span>
-                <strong>{countFor(key)} guests</strong>
+                <b>{choice.title}</b>
+                <span>{choice.hint}</span>
+                <strong>
+                  {segment === choice.type ? rawCount : api.audience.count(restaurant.id, segmentAudience(choice.type, weekday, listId))}{" "}
+                  guests
+                </strong>
               </button>
             ))}
           </div>
+          {segment === "weekday" && (
+            <label className="builder-field">
+              Which weekday?
+              <select value={weekday} onChange={(event) => setWeekday(Number(event.target.value))}>
+                {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map(
+                  (day, index) => (
+                    <option key={day} value={index}>
+                      {day}
+                    </option>
+                  ),
+                )}
+              </select>
+            </label>
+          )}
+          {segment === "saved_list" && (
+            <label className="builder-field">
+              Saved list
+              <select value={listId} onChange={(event) => setListId(event.target.value)}>
+                <option value="">Choose a list…</option>
+                {savedLists.map((list) => (
+                  <option key={list.id} value={list.id}>
+                    {list.name} · {list.membershipIds.length}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <div className="live-count" role="status">
+            <strong>{rawCount}</strong> guests in this segment get this SMS once the campaign sends.
+          </div>
+
+          <details className="saved-lists">
+            <summary>Saved lists ({savedLists.length})</summary>
+            <p className="gx-note">
+              Save a segment now, then edit it later by ticking guests. Saved lists can be reused
+              in any campaign.
+            </p>
+            <div className="saved-list-create">
+              <input
+                value={newListName}
+                placeholder="Name this list, e.g. Friday regulars"
+                onChange={(event) => setNewListName(event.target.value)}
+              />
+              <button className="builder-secondary" onClick={createListFromSegment}>
+                Save current segment
+              </button>
+            </div>
+            {savedLists.map((list) => (
+              <div className="saved-list-row" key={list.id}>
+                <div>
+                  <strong>{list.name}</strong>
+                  <small>{list.membershipIds.length} guests</small>
+                </div>
+                <button
+                  className="builder-secondary"
+                  onClick={() => {
+                    setListId(list.id);
+                    setSegment("saved_list");
+                  }}
+                >
+                  Use
+                </button>
+                <button className="guest-back" onClick={() => startEditingList(list.id)}>
+                  Edit
+                </button>
+              </div>
+            ))}
+            {editingListId && (
+              <div className="list-editor">
+                <label className="builder-field">
+                  List name
+                  <input
+                    value={editingName}
+                    onChange={(event) => setEditingName(event.target.value)}
+                  />
+                </label>
+                <div className="list-editor-guests">
+                  {state.memberships
+                    .filter((membership) => membership.restaurantId === restaurant.id)
+                    .map((membership) => {
+                      const customer = state.customers.find(
+                        (item) => item.id === membership.customerId,
+                      );
+                      return (
+                        <label key={membership.id} className="list-editor-guest">
+                          <input
+                            type="checkbox"
+                            checked={editingIds.includes(membership.id)}
+                            onChange={(event) =>
+                              setEditingIds((current) =>
+                                event.target.checked
+                                  ? [...current, membership.id]
+                                  : current.filter((id) => id !== membership.id),
+                              )
+                            }
+                          />
+                          {customer?.name || "(removed)"}
+                        </label>
+                      );
+                    })}
+                </div>
+                <div className="page-actions">
+                  <button className="builder-primary" onClick={saveEditingList}>
+                    Save list
+                  </button>
+                  <button className="guest-back" onClick={() => setEditingListId(null)}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </details>
           <button className="builder-primary" onClick={() => save(2)}>
             Continue
           </button>
         </section>
       )}
+
       {step === 2 && (
         <section className="cmp-card">
           {back}
@@ -179,7 +356,7 @@ function ComposerPage() {
             Your message
             <textarea value={body} onChange={(event) => setBody(event.target.value)} rows={4} />
             <small>
-              Use {"{first_name}"} to personalise. The Stop line is added for you.
+              Use {"{first_name}"} to personalise. The STOP line is added for you.
             </small>
           </label>
           <div className="cmp-meter">
@@ -202,8 +379,32 @@ function ComposerPage() {
               {preview}
               <br />
               <span>Reply STOP to opt out.</span>
+              {selectedSpecial?.kind === "targeted" && (
+                <>
+                  <br />
+                  <span>Your code: {"{unique code}"}</span>
+                </>
+              )}
             </p>
           </div>
+          <label className="builder-field">
+            Attach a special (optional)
+            <select value={specialId} onChange={(event) => setSpecialId(event.target.value)}>
+              <option value="">No special</option>
+              {specials.map(({ special }) => (
+                <option key={special.id} value={special.id}>
+                  {special.title} · {special.kind}
+                </option>
+              ))}
+            </select>
+            <small>
+              {selectedSpecial?.kind === "targeted"
+                ? "Each recipient gets their own single-use code."
+                : selectedSpecial
+                  ? `Shared code ${selectedSpecial.code}. One redemption per member.`
+                  : "Public and members specials use one shared code; targeted specials are personal."}
+            </small>
+          </label>
           <div className="cmp-row">
             <label className="builder-field">
               Offer code
@@ -235,6 +436,7 @@ function ComposerPage() {
           </button>
         </section>
       )}
+
       {step === 3 && (
         <section className="cmp-card">
           {back}
@@ -265,6 +467,7 @@ function ComposerPage() {
           </button>
         </section>
       )}
+
       {step === 4 && (
         <section className="cmp-card">
           {back}
@@ -301,6 +504,9 @@ function ComposerPage() {
               />
             </label>
           )}
+          <p className="cmp-note">
+            Audience: {api.audience.label(audience)}. {eligible.length} recipients.
+          </p>
           {eligible.length > 200 && (
             <label className="builder-field">
               Type SEND to confirm ({eligible.length} recipients)
@@ -319,6 +525,15 @@ function ComposerPage() {
       )}
     </main>
   );
+}
+
+function segmentAudience(type: SegmentType, weekday: number, listId: string): CampaignAudience {
+  if (type === "saved_list") return { type: "saved_list", listId };
+  if (type === "weekday") return { type: "weekday", weekday };
+  if (type === "new") return { type: "new", days: 14 };
+  if (type === "lapsed30") return { type: "lapsed30", days: 30 };
+  if (type === "close_to_reward") return { type: "close_to_reward", remaining: 2 };
+  return { type: "everyone" };
 }
 
 const SEGMENT_CENTS = 35;

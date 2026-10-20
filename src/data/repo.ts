@@ -3,7 +3,7 @@ import type { DemoState, Repo } from "./types";
 
 // Bump the key when the demo seed changes shape, so browsers that still hold
 // an older demo snapshot start from the current seed instead of stale data.
-const STORAGE_KEY = "patron-demo-v5";
+const STORAGE_KEY = "patron-demo-v6";
 function load(): DemoState {
   try {
     if (typeof window === "undefined") return createSeed();
@@ -16,14 +16,46 @@ function load(): DemoState {
     return {
       ...fresh,
       ...parsed,
-      restaurants: parsed.restaurants.map((r) => ({
-        ...freshById.get(r.id),
-        ...r,
-        senderName: r.senderName ?? freshById.get(r.id)?.senderName ?? r.slug,
-        smsCapRestaurant: r.smsCapRestaurant ?? 3,
-        smsCapMember: r.smsCapMember ?? 2,
-        contact: r.contact ?? "",
+      restaurants: parsed.restaurants.map((r) => {
+        const seedRow = freshById.get(r.id);
+        const welcomeStamps =
+          typeof r.welcomeStamps === "number"
+            ? r.welcomeStamps
+            : r.welcomeStamp
+              ? Math.min(1, r.stampsRequired - 1)
+              : 0;
+        return {
+          ...seedRow,
+          ...r,
+          senderName: r.senderName ?? seedRow?.senderName ?? r.slug,
+          smsCapRestaurant: r.smsCapRestaurant ?? 3,
+          smsCapMember: r.smsCapMember ?? 2,
+          contact: r.contact ?? "",
+          welcomeStamps,
+          welcomeStamp: welcomeStamps > 0,
+          pageTemplate: r.pageTemplate ?? seedRow?.pageTemplate ?? "classic",
+          tiers: r.tiers ?? seedRow?.tiers ?? { regular: 3, vip: 8 },
+          mysteryEveryVisits: r.mysteryEveryVisits ?? seedRow?.mysteryEveryVisits ?? 0,
+          birthdayReward: r.birthdayReward ?? seedRow?.birthdayReward ?? false,
+          spin: r.spin ?? seedRow?.spin ?? {
+            enabled: false,
+            segments: [],
+            weeklyBudgetCents: 0,
+            earnEveryVisits: 5,
+            earnAtMilestone: false,
+            rules: "",
+          },
+        };
+      }),
+      specials: parsed.specials.map((special) => ({
+        ...special,
+        kind: special.kind ?? "public",
       })),
+      specialCodes: parsed.specialCodes ?? [],
+      spins: parsed.spins ?? [],
+      challenges: parsed.challenges ?? [],
+      savedLists: parsed.savedLists ?? [],
+      smsReplies: parsed.smsReplies ?? [],
       rateLimitHits: parsed.rateLimitHits ?? [],
       pairingCodes: parsed.pairingCodes ?? [],
       otpSendLog: parsed.otpSendLog ?? [],

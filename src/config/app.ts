@@ -63,7 +63,7 @@ export const APP_URL = (import.meta.env as { APP_URL?: string }).APP_URL || 'htt
 // Reserved slugs that cannot be used by restaurants
 export const RESERVED_SLUGS = new Set([
   'app', 'me', 'stamp', 'ops', 'u', 'api', 'login', 'r', 's',
-  'privacy', 'terms', 'healthz', 'sw', 'manifest',
+  'privacy', 'terms', 'healthz', 'sw', 'manifest', 'for-diners',
 ]);
 
 // PWA configuration

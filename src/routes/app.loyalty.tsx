@@ -1,10 +1,10 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
-import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
 import { StampSlots } from "@/components/patron/StampSlots";
+import type { SpinConfig, SpinSegment } from "@/data/types";
 
 export const Route = createFileRoute("/app/loyalty")({
   beforeLoad: () => {
@@ -15,16 +15,38 @@ export const Route = createFileRoute("/app/loyalty")({
   component: Loyalty,
 });
 
+function blankSegment(): SpinSegment {
+  return {
+    id: `segment-${crypto.randomUUID()}`,
+    label: "",
+    weight: 10,
+    valueCents: 0,
+  };
+}
+
 function Loyalty() {
-  const state = useDemoState();
+  const state = useSyncExternalStore(demoRepo.subscribe, demoRepo.read, demoRepo.read);
   const restaurant =
     state.restaurants.find((item) => item.id === state.session.restaurantId) ??
     state.restaurants[0]!;
   const [stampsRequired, setStampsRequired] = useState(restaurant.stampsRequired);
   const [reward, setReward] = useState(restaurant.rewardDescription);
   const [windowMinutes, setWindowMinutes] = useState(restaurant.visitWindowMinutes);
-  const [welcome, setWelcome] = useState(restaurant.welcomeStamp);
+  const [welcomeStamps, setWelcomeStamps] = useState(restaurant.welcomeStamps);
+  const [regular, setRegular] = useState(restaurant.tiers.regular);
+  const [vip, setVip] = useState(restaurant.tiers.vip);
+  const [mystery, setMystery] = useState(restaurant.mysteryEveryVisits);
+  const [birthday, setBirthday] = useState(restaurant.birthdayReward);
+  const [spin, setSpin] = useState<SpinConfig>(restaurant.spin);
   const [notice, setNotice] = useState("");
+  const [challengeTitle, setChallengeTitle] = useState("Three visits in 14 days");
+  const [challengeVisits, setChallengeVisits] = useState(3);
+  const [challengeDays, setChallengeDays] = useState(14);
+  const [challengeBonus, setChallengeBonus] = useState(1);
+
+  const challenges = state.challenges.filter(
+    (item) => item.restaurantId === restaurant.id,
+  );
 
   const save = () => {
     if (stampsRequired < 2 || stampsRequired > 30) {
@@ -35,13 +57,50 @@ function Loyalty() {
       setNotice("Reward text must be 1 to 80 characters.");
       return;
     }
+    if (welcomeStamps < 0 || welcomeStamps > stampsRequired - 1) {
+      setNotice(`Welcome stamps must be 0 to ${stampsRequired - 1}.`);
+      return;
+    }
+    if (regular < 1 || vip <= regular) {
+      setNotice("VIP visits must be higher than Regular visits.");
+      return;
+    }
     const result = api.restaurant.update(restaurant.id, {
       stampsRequired,
       rewardDescription: reward.trim(),
       visitWindowMinutes: windowMinutes,
-      welcomeStamp: welcome,
+      welcomeStamps,
+      welcomeStamp: welcomeStamps > 0,
+      tiers: { regular, vip },
+      mysteryEveryVisits: mystery,
+      birthdayReward: birthday,
     });
     setNotice(result.ok ? "Loyalty rules saved." : result.error.message);
+  };
+
+  const saveSpin = () => {
+    const result = api.spin.saveConfig({ restaurantId: restaurant.id, config: spin });
+    setNotice(result.ok ? "Spin wheel saved." : result.error.message);
+  };
+
+  const setSegment = (id: string, patch: Partial<SpinSegment>) => {
+    setSpin((current) => ({
+      ...current,
+      segments: current.segments.map((segment) =>
+        segment.id === id ? { ...segment, ...patch } : segment,
+      ),
+    }));
+  };
+
+  const addChallenge = () => {
+    const result = api.loyalty.saveChallenge({
+      restaurantId: restaurant.id,
+      title: challengeTitle,
+      visits: challengeVisits,
+      windowDays: challengeDays,
+      bonusStamps: challengeBonus,
+    });
+    setNotice(result.ok ? "Challenge saved." : result.error.message);
   };
 
   return (
@@ -55,57 +114,332 @@ function Loyalty() {
         Changing rules never alters rewards already earned. Stamps above a lowered threshold convert
         on the next stamp.
       </p>
-      <div className="builder-fields">
-        <label className="builder-field">
-          Stamps required (2–30)
-          <input
-            type="number"
-            min={2}
-            max={30}
-            value={stampsRequired}
-            onChange={(event) => setStampsRequired(Number(event.target.value))}
+
+      <section className="builder-panel">
+        <h2>Card</h2>
+        <div className="builder-fields">
+          <label className="builder-field">
+            Stamps required (2–30)
+            <input
+              type="number"
+              min={2}
+              max={30}
+              value={stampsRequired}
+              onChange={(event) => setStampsRequired(Number(event.target.value))}
+            />
+          </label>
+          <label className="builder-field">
+            Reward (noun phrase, 80 chars)
+            <input
+              value={reward}
+              maxLength={80}
+              onChange={(event) => setReward(event.target.value)}
+            />
+          </label>
+          <label className="builder-field">
+            Visit window (minutes)
+            <input
+              type="number"
+              min={30}
+              value={windowMinutes}
+              onChange={(event) => setWindowMinutes(Number(event.target.value))}
+            />
+          </label>
+          <label className="builder-field">
+            Welcome stamps (0–{Math.max(0, stampsRequired - 1)})
+            <input
+              type="number"
+              min={0}
+              max={Math.max(0, stampsRequired - 1)}
+              value={welcomeStamps}
+              onChange={(event) => setWelcomeStamps(Number(event.target.value))}
+            />
+            <small>
+              Granted once when a guest joins, as welcome stamp events. The join screen shows “You
+              start with {welcomeStamps} stamp{welcomeStamps === 1 ? "" : "s"}.”
+            </small>
+          </label>
+        </div>
+        <div className="live-preview">
+          <StampSlots
+            filled={Math.min(welcomeStamps, stampsRequired - 1)}
+            total={stampsRequired}
+            theme={restaurant.theme}
           />
-        </label>
-        <label className="builder-field">
-          Reward (noun phrase, 80 chars)
-          <input
-            value={reward}
-            maxLength={80}
-            onChange={(event) => setReward(event.target.value)}
-          />
-        </label>
-        <label className="builder-field">
-          Visit window (minutes)
-          <input
-            type="number"
-            min={30}
-            value={windowMinutes}
-            onChange={(event) => setWindowMinutes(Number(event.target.value))}
-          />
-        </label>
+          <p>
+            {stampsRequired} stamps to {reward || "…"}
+            {welcomeStamps > 0 ? ` · welcome starts at ${welcomeStamps}` : ""}
+          </p>
+        </div>
+      </section>
+
+      <section className="builder-panel">
+        <h2>Tiers &amp; extras</h2>
+        <div className="builder-fields">
+          <label className="builder-field">
+            Regular tier at (visits in 90 days)
+            <input
+              type="number"
+              min={1}
+              value={regular}
+              onChange={(event) => setRegular(Number(event.target.value))}
+            />
+          </label>
+          <label className="builder-field">
+            VIP tier at (visits in 90 days)
+            <input
+              type="number"
+              min={2}
+              value={vip}
+              onChange={(event) => setVip(Number(event.target.value))}
+            />
+          </label>
+          <label className="builder-field">
+            Mystery stamp every N visits (0 = off)
+            <input
+              type="number"
+              min={0}
+              max={50}
+              value={mystery}
+              onChange={(event) => setMystery(Number(event.target.value))}
+            />
+          </label>
+          <label className="guest-consent">
+            <input
+              type="checkbox"
+              checked={birthday}
+              onChange={(event) => setBirthday(event.target.checked)}
+            />
+            <span>Birthday bonus stamp (once a year, in the birthday week)</span>
+          </label>
+        </div>
+        <p className="demo-data-note">
+          Tiers unlock members-only and targeted specials. VIP members can be the only ones who see
+          a particular offer.
+        </p>
+        <button className="builder-primary" onClick={save}>
+          Save loyalty rules
+        </button>
+      </section>
+
+      <section className="builder-panel">
+        <h2>Spin wheel</h2>
         <label className="guest-consent">
           <input
             type="checkbox"
-            checked={welcome}
-            onChange={(event) => setWelcome(event.target.checked)}
+            checked={spin.enabled}
+            onChange={(event) => setSpin({ ...spin, enabled: event.target.checked })}
           />
-          <span>Welcome stamp for new members</span>
+          <span>Show the spin wheel to guests</span>
         </label>
-      </div>
-      <button className="builder-primary" onClick={save}>
-        Save rules
-      </button>
-      <section className="builder-panel">
-        <h2>Live preview</h2>
-        <StampSlots
-          filled={Math.min(5, stampsRequired - 1)}
-          total={stampsRequired}
-          theme={restaurant.theme}
-        />
-        <p>
-          {stampsRequired} stamps to {reward || "…"}
+        <p className="demo-data-note">
+          Guests earn spins from visits — never from spending. Results are picked on the server and
+          logged. Prizes become personal single-use offers.
+        </p>
+        <div className="builder-fields">
+          <label className="builder-field">
+            One spin every N visits
+            <input
+              type="number"
+              min={1}
+              max={50}
+              value={spin.earnEveryVisits}
+              onChange={(event) =>
+                setSpin({ ...spin, earnEveryVisits: Number(event.target.value) })
+              }
+            />
+          </label>
+          <label className="builder-field">
+            Weekly prize budget (R)
+            <input
+              type="number"
+              min={0}
+              step="0.01"
+              value={spin.weeklyBudgetCents / 100}
+              onChange={(event) =>
+                setSpin({
+                  ...spin,
+                  weeklyBudgetCents: Math.round(Number(event.target.value) * 100),
+                })
+              }
+            />
+          </label>
+          <label className="guest-consent">
+            <input
+              type="checkbox"
+              checked={spin.earnAtMilestone}
+              onChange={(event) =>
+                setSpin({ ...spin, earnAtMilestone: event.target.checked })
+              }
+            />
+            <span>Also award a spin at each reward milestone</span>
+          </label>
+        </div>
+        <div className="spin-segments">
+          <h3>Segments</h3>
+          {spin.segments.map((segment) => (
+            <div className="spin-segment-row" key={segment.id}>
+              <input
+                value={segment.label}
+                placeholder="Prize"
+                aria-label="Prize label"
+                onChange={(event) => setSegment(segment.id, { label: event.target.value })}
+              />
+              <label>
+                Weight
+                <input
+                  type="number"
+                  min={0}
+                  value={segment.weight}
+                  onChange={(event) =>
+                    setSegment(segment.id, { weight: Number(event.target.value) })
+                  }
+                />
+              </label>
+              <label>
+                Value R
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={segment.valueCents / 100}
+                  onChange={(event) =>
+                    setSegment(segment.id, {
+                      valueCents: Math.round(Number(event.target.value) * 100),
+                    })
+                  }
+                />
+              </label>
+              <label>
+                Daily cap
+                <input
+                  type="number"
+                  min={0}
+                  value={segment.cap?.period === "day" ? segment.cap.max : 0}
+                  onChange={(event) => {
+                    const value = Number(event.target.value);
+                    const next: SpinSegment = { ...segment };
+                    if (value > 0) next.cap = { period: "day", max: value };
+                    else delete next.cap;
+                    setSegment(segment.id, next);
+                  }}
+                />
+              </label>
+              <button
+                type="button"
+                className="guest-back"
+                onClick={() =>
+                  setSpin({
+                    ...spin,
+                    segments: spin.segments.filter((item) => item.id !== segment.id),
+                  })
+                }
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            className="builder-secondary"
+            onClick={() => setSpin({ ...spin, segments: [...spin.segments, blankSegment()] })}
+          >
+            Add segment
+          </button>
+        </div>
+        <label className="builder-field">
+          Rules and T&amp;Cs shown to guests
+          <textarea
+            rows={5}
+            value={spin.rules}
+            onChange={(event) => setSpin({ ...spin, rules: event.target.value })}
+          />
+        </label>
+        <div className="page-actions">
+          <button className="builder-primary" onClick={saveSpin}>
+            Save spin wheel
+          </button>
+          <button
+            className="builder-secondary"
+            onClick={() =>
+              setSpin({
+                ...spin,
+                rules: api.spin.rulesText({ ...restaurant, spin }),
+              })
+            }
+          >
+            Generate rules text
+          </button>
+        </div>
+        <p className="demo-data-note">
+          The published rules always include “No purchase is required to earn spins.” Only show the
+          notice where the rules apply.
         </p>
       </section>
+
+      <section className="builder-panel">
+        <h2>Visit challenges</h2>
+        {challenges.map((challenge) => (
+          <div className="challenge-owner-row" key={challenge.id}>
+            <div>
+              <strong>{challenge.title}</strong>
+              <small>
+                {challenge.visits} visits in {challenge.windowDays} days · +{challenge.bonusStamps}{" "}
+                bonus stamp{challenge.bonusStamps === 1 ? "" : "s"}
+              </small>
+            </div>
+            <button
+              className="builder-secondary"
+              onClick={() =>
+                api.loyalty.setChallengeActive(challenge.id, !challenge.active)
+              }
+            >
+              {challenge.active ? "Pause" : "Resume"}
+            </button>
+          </div>
+        ))}
+        <div className="builder-fields">
+          <label className="builder-field">
+            Challenge name
+            <input
+              value={challengeTitle}
+              onChange={(event) => setChallengeTitle(event.target.value)}
+            />
+          </label>
+          <label className="builder-field">
+            Visits
+            <input
+              type="number"
+              min={2}
+              value={challengeVisits}
+              onChange={(event) => setChallengeVisits(Number(event.target.value))}
+            />
+          </label>
+          <label className="builder-field">
+            Within days
+            <input
+              type="number"
+              min={1}
+              value={challengeDays}
+              onChange={(event) => setChallengeDays(Number(event.target.value))}
+            />
+          </label>
+          <label className="builder-field">
+            Bonus stamps
+            <input
+              type="number"
+              min={1}
+              max={5}
+              value={challengeBonus}
+              onChange={(event) => setChallengeBonus(Number(event.target.value))}
+            />
+          </label>
+        </div>
+        <button className="builder-secondary" onClick={addChallenge}>
+          Add challenge
+        </button>
+      </section>
+
       {notice && (
         <p role="status" className="demo-data-note">
           {notice}

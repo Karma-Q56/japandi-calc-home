@@ -126,7 +126,27 @@ export function LoyaltyCard({
               }${last ? " reward" : ""}`}
               style={{ "--i": index } as CSSProperties}
             >
-              {on ? (
+              {theme.logoStamp ? (
+                on ? (
+                  <img
+                    className="lcard-stamp-art"
+                    src={theme.logoStamp.filled}
+                    alt=""
+                    width={compact ? 20 : 26}
+                    height={compact ? 20 : 26}
+                  />
+                ) : last ? (
+                  <GiftGlyph size={compact ? 16 : 22} />
+                ) : (
+                  <img
+                    className="lcard-stamp-art is-empty"
+                    src={theme.logoStamp.empty}
+                    alt=""
+                    width={compact ? 18 : 24}
+                    height={compact ? 18 : 24}
+                  />
+                )
+              ) : on ? (
                 <StampGlyph shape={theme.stampShape} size={compact ? 18 : 24} />
               ) : last ? (
                 <GiftGlyph size={compact ? 16 : 22} />

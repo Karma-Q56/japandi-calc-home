@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useDemoState } from "@/data/useDemoState";
 import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
@@ -23,6 +23,12 @@ function GuestSettings() {
   const [name, setName] = useState(customer?.name ?? "");
   const [birthday, setBirthday] = useState(customer?.birthday ?? "");
   const [notice, setNotice] = useState("");
+  // Fill the form once the demo session/customer is available after hydration.
+  useEffect(() => {
+    if (!customer) return;
+    setName(customer.name);
+    setBirthday(customer.birthday ?? "");
+  }, [customer]);
   if (!customer)
     return (
       <main className="guest-page">
@@ -101,30 +107,43 @@ function GuestSettings() {
             </button>
           </section>
         )}
-        <section className="guest-section">
-          <h2>Offers by restaurant</h2>
+        <section className="guest-section" id="messages">
+          <h2>Messages</h2>
+          <p className="gx-note">
+            Each restaurant you&apos;ve joined has its own switch. Your loyalty cards work either
+            way.
+          </p>
+          {memberships.length === 0 && (
+            <p className="demo-data-note">Join a restaurant to manage its messages here.</p>
+          )}
           {memberships.map((membership) => {
             const restaurant = state.restaurants.find(
               (item) => item.id === membership.restaurantId,
             )!;
             return (
-              <article className="consent-setting" key={membership.id}>
+              <article className="consent-setting consent-setting--messages" key={membership.id}>
                 <div>
                   <strong>{restaurant.name}</strong>
-                  <small>Marketing SMS · Your card works either way.</small>
+                  <small>SMS offers from {restaurant.name}.</small>
                 </div>
-                <label className="consent-toggle">
-                  <span>{membership.marketingSms ? "On" : "Off"}</span>
-                  <input
-                    type="checkbox"
-                    checked={membership.marketingSms}
-                    onChange={(event) => {
-                      const result = api.member.setConsent(membership.id, event.target.checked);
-                      setNotice(result.ok ? "Preference saved." : result.error.message);
-                    }}
-                    aria-label={`Marketing SMS from ${restaurant.name}`}
-                  />
-                </label>
+                <div className="message-toggles">
+                  <label className="consent-toggle">
+                    <span>{membership.marketingSms ? "SMS on" : "SMS off"}</span>
+                    <input
+                      type="checkbox"
+                      checked={membership.marketingSms}
+                      onChange={(event) => {
+                        const result = api.member.setConsent(membership.id, event.target.checked);
+                        setNotice(result.ok ? "Preference saved." : result.error.message);
+                      }}
+                      aria-label={`SMS offers from ${restaurant.name}`}
+                    />
+                  </label>
+                  <label className="consent-toggle is-disabled" title="Push arrives later">
+                    <span>Push · coming soon</span>
+                    <input type="checkbox" checked={false} disabled aria-label="Push (coming soon)" />
+                  </label>
+                </div>
               </article>
             );
           })}

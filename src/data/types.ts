@@ -4,6 +4,24 @@ export type DemoRole = "guest" | "staff" | "owner" | "manager" | "operator";
 export type ConsentPurpose = "loyalty" | "marketing_sms" | "marketing_push";
 export type ConsentAction = "granted" | "withdrawn";
 
+/** Public page layouts. A venue that customises nothing gets "classic". */
+export type PageTemplate = "classic" | "hero" | "menu-first" | "minimal";
+
+/** Visit tiers unlock members-only and targeted specials. */
+export type TierName = "new" | "regular" | "vip";
+
+/** Three kinds of special, one redemption engine. */
+export type SpecialKind = "public" | "members" | "targeted";
+
+export type StampReason = "visit" | "welcome" | "campaign" | "challenge" | "mystery" | "birthday" | "bonus";
+
+/** Pixelated logo stamp art produced in the browser from the uploaded logo. */
+export interface LogoStamp {
+  grid: number;
+  filled: string;
+  empty: string;
+}
+
 export interface Theme {
   ink: string;
   paper: string;
@@ -17,6 +35,7 @@ export interface Theme {
   stampShape: "circle" | "square" | "pixel-star" | "coffee-cup" | "croissant" | "custom-svg";
   cardBackground: "flat" | "paper" | "gradient" | "photo";
   logo?: string;
+  logoStamp?: LogoStamp;
   tagline: string;
 }
 export interface Restaurant {
@@ -31,8 +50,12 @@ export interface Restaurant {
   stampsRequired: number;
   rewardDescription: string;
   visitWindowMinutes: number;
+  /** Legacy boolean kept for old snapshots; derive from welcomeStamps. */
   welcomeStamp: boolean;
+  /** Welcome stamps granted once at join (0 .. stampsRequired - 1). */
+  welcomeStamps: number;
   theme: Theme;
+  pageTemplate: PageTemplate;
   pageConfig: { type: string; enabled: boolean }[];
   menuSectionIds: string[];
   specialIds: string[];
@@ -42,6 +65,14 @@ export interface Restaurant {
   smsCapRestaurant: number;
   smsCapMember: number;
   contact: string;
+  /** Visit counts (last 90 days) that unlock Regular and VIP. */
+  tiers: { regular: number; vip: number };
+  /** Every Nth visit earns a surprise bonus stamp. 0 turns mystery stamps off. */
+  mysteryEveryVisits: number;
+  /** Grant one bonus stamp in the guest's birthday week. */
+  birthdayReward: boolean;
+  /** Spin wheel settings. Disabled by default so guests only see it when the owner opts in. */
+  spin: SpinConfig;
 }
 export interface StaffMember {
   id: string;
@@ -74,6 +105,24 @@ export interface Special {
   startsAt: string;
   endsAt: string;
   active: boolean;
+  kind: SpecialKind;
+  /** Shared code for public/members specials. Targeted codes live in SpecialCode. */
+  code?: string;
+  /** Members specials can require a tier. */
+  minTier?: TierName | null;
+  createdAt?: string;
+}
+
+/** One unique, single-use code issued to a guest for a targeted special. */
+export interface SpecialCode {
+  id: string;
+  restaurantId: string;
+  specialId: string;
+  membershipId: string;
+  code: string;
+  issuedAt: string;
+  redeemedAt?: string;
+  redeemedBy?: string;
 }
 export interface Customer {
   id: string;
@@ -118,6 +167,8 @@ export interface StampEvent {
   status: "valid" | "undone";
   undoneAt?: string;
   undoneBy?: string;
+  /** Why the stamp was granted. Missing means a normal visit. */
+  reason?: StampReason;
 }
 export interface Reward {
   id: string;
@@ -137,7 +188,77 @@ export type CampaignStatus =
   | "sent"
   | "cancelled"
   | "failed";
-export type CampaignAudience = { type: "all_opted_in" } | { type: "lapsed"; days: number };
+export type SegmentType =
+  | "everyone"
+  | "new"
+  | "lapsed30"
+  | "close_to_reward"
+  | "weekday"
+  | "saved_list";
+
+export type CampaignAudience =
+  | { type: "everyone" }
+  | { type: "new"; days: number }
+  | { type: "lapsed30"; days: number }
+  | { type: "close_to_reward"; remaining: number }
+  | { type: "weekday"; weekday: number }
+  | { type: "saved_list"; listId: string }
+  // Legacy snapshots.
+  | { type: "all_opted_in" }
+  | { type: "lapsed"; days: number };
+
+export interface SavedList {
+  id: string;
+  restaurantId: string;
+  name: string;
+  membershipIds: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SpinSegment {
+  id: string;
+  label: string;
+  /** Relative weight; higher wins more often. */
+  weight: number;
+  /** Value of the prize in cents, counted against the weekly budget. */
+  valueCents: number;
+  /** Optional cap, e.g. at most 3 a day. */
+  cap?: { period: "day" | "week"; max: number };
+}
+
+export interface SpinConfig {
+  enabled: boolean;
+  segments: SpinSegment[];
+  weeklyBudgetCents: number;
+  /** Guests earn one spin every N visits. */
+  earnEveryVisits: number;
+  /** Also award a spin at every reward milestone. */
+  earnAtMilestone: boolean;
+  rules: string;
+}
+
+export interface SpinResult {
+  id: string;
+  restaurantId: string;
+  membershipId: string;
+  segmentId: string;
+  label: string;
+  valueCents: number;
+  wonAt: string;
+  prizeSpecialId?: string;
+}
+
+export interface Challenge {
+  id: string;
+  restaurantId: string;
+  title: string;
+  visits: number;
+  windowDays: number;
+  bonusStamps: number;
+  active: boolean;
+  createdAt: string;
+}
 export interface Campaign {
   id: string;
   restaurantId: string;
@@ -164,6 +285,8 @@ export interface Campaign {
   estSegments?: number;
   estCostCents?: number;
   actualCostCents: number;
+  /** A campaign can attach one special; targeted sends issue a unique code per guest. */
+  specialId?: string;
 }
 export type MessageStatus =
   | "queued"
@@ -201,8 +324,10 @@ export interface Redemption {
   rewardId: string;
   redeemedAt: string;
   redeemedBy?: string;
-  kind: "reward" | "campaign";
+  kind: "reward" | "campaign" | "special";
   code?: string;
+  specialId?: string;
+  specialCodeId?: string;
 }
 export type LedgerEntryType =
   | "topup"
@@ -264,6 +389,15 @@ export interface DataRequest {
   status: "open" | "done";
   createdAt: string;
 }
+export interface SmsReply {
+  id: string;
+  restaurantId: string | null;
+  toPhoneE164: string;
+  body: string;
+  kind: "stop" | "stopall" | "info";
+  createdAt: string;
+}
+
 export interface ProviderEvent {
   id: string;
   provider: string;
@@ -338,6 +472,11 @@ export interface DemoState {
   campaigns: Campaign[];
   messages: Message[];
   redemptions: Redemption[];
+  specialCodes: SpecialCode[];
+  spins: SpinResult[];
+  challenges: Challenge[];
+  savedLists: SavedList[];
+  smsReplies: SmsReply[];
   ledger: LedgerEntry[];
   payments: Payment[];
   pushSubscriptions: PushSubscription[];

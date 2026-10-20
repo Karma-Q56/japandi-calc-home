@@ -1,7 +1,7 @@
 import { demoRepo, updateDemo } from "@/data/repo";
 import { logAudit } from "./audit";
 import { failure, success } from "./demo";
-import { withdrawMarketingConsent } from "./members";
+import { optOutAllForCustomer, withdrawMarketingConsent } from "./members";
 import type { DeliveryStatus } from "./sms";
 
 function recordEvent(provider: string, eventId: string): "new" | "duplicate" {
@@ -71,29 +71,113 @@ export function handleDeliveryWebhook(input: {
 
 const STOP_WORDS = ["stop", "unsubscribe", "remove", "opt out", "optout", "end", "cancel"];
 
-/** Inbound STOP withdraws marketing for that restaurant's membership only. */
+function recordReply(input: {
+  restaurantId: string | null;
+  toPhoneE164: string;
+  body: string;
+  kind: "stop" | "stopall" | "info";
+  now: number;
+}) {
+  updateDemo((current) => ({
+    ...current,
+    smsReplies: [
+      ...current.smsReplies,
+      {
+        id: `reply-${crypto.randomUUID()}`,
+        restaurantId: input.restaurantId,
+        toPhoneE164: input.toPhoneE164,
+        body: input.body,
+        kind: input.kind,
+        createdAt: new Date(input.now).toISOString(),
+      },
+    ],
+  }));
+}
+
+/**
+ * Inbound STOP opts the guest out of the venue that messaged them most
+ * recently and replies with the exact next step. STOPALL opts out of every
+ * venue. Both are idempotent by (provider, eventId).
+ */
 export function handleInboundWebhook(input: {
   provider: string;
   eventId: string;
   fromPhoneE164: string;
   body: string;
-  restaurantId: string;
+  /** Legacy hint only; STOP now targets the most recent sender. */
+  restaurantId?: string;
 }) {
   if (recordEvent(input.provider, input.eventId) === "duplicate") {
     return success({ deduped: true as const });
   }
-  const normalized = input.body.trim().toLowerCase();
-  const isStop = STOP_WORDS.some(
-    (word) => normalized === word || normalized.startsWith(`${word} `),
-  );
-  if (!isStop) return success({ deduped: false as const, ignored: true as const });
+  const normalized = input.body.trim().toLowerCase().replace(/[.!]+$/, "");
+  const isStopAll = normalized === "stopall" || normalized === "stop all";
+  const isStop =
+    !isStopAll &&
+    STOP_WORDS.some((word) => normalized === word || normalized.startsWith(`${word} `));
+  if (!isStop && !isStopAll) {
+    return success({ deduped: false as const, ignored: true as const });
+  }
   const state = demoRepo.read();
-  const membership = state.memberships.find((item) => {
-    if (item.restaurantId !== input.restaurantId) return false;
-    const customer = state.customers.find((candidate) => candidate.id === item.customerId);
-    return customer?.phoneE164 === input.fromPhoneE164;
+  const customer = state.customers.find(
+    (candidate) => candidate.phoneE164 === input.fromPhoneE164,
+  );
+  if (!customer) return success({ deduped: false as const, unknownMember: true as const });
+
+  if (isStopAll) {
+    const all = optOutAllForCustomer(customer.id, "inbound_stopall");
+    if (!all.ok) return success({ deduped: false as const, unknownMember: true as const });
+    const body = "You're opted out of all Patron venues.";
+    recordReply({
+      restaurantId: null,
+      toPhoneE164: input.fromPhoneE164,
+      body,
+      kind: "stopall",
+      now: state.now,
+    });
+    return success({
+      deduped: false as const,
+      kind: "stopall" as const,
+      membershipIds: all.data.membershipIds,
+      reply: body,
+    });
+  }
+
+  // Most recent outbound message to this phone decides which venue STOP targets.
+  const mine = state.memberships.filter((item) => item.customerId === customer.id);
+  const messages = state.messages
+    .filter(
+      (message) =>
+        message.customerId === customer.id &&
+        (message.status === "sent" || message.status === "delivered") &&
+        mine.some((membership) => membership.id === message.membershipId),
+    )
+    .sort((a, b) =>
+      (b.sentAt ?? b.createdAt).localeCompare(a.sentAt ?? a.createdAt),
+    );
+  const last = messages[0];
+  const target =
+    mine.find((item) => item.id === last?.membershipId) ??
+    mine.find((item) => item.restaurantId === input.restaurantId) ??
+    [...mine].sort((a, b) => b.joinedAt.localeCompare(a.joinedAt))[0];
+  if (!target) return success({ deduped: false as const, unknownMember: true as const });
+  withdrawMarketingConsent(target.id, "sms_reply");
+  const restaurant = state.restaurants.find((item) => item.id === target.restaurantId);
+  const body = restaurant
+    ? `You're opted out of ${restaurant.name}. Reply STOPALL to opt out of all Patron venues.`
+    : "You're opted out. Reply STOPALL to opt out of all Patron venues.";
+  recordReply({
+    restaurantId: target.restaurantId,
+    toPhoneE164: input.fromPhoneE164,
+    body,
+    kind: "stop",
+    now: state.now,
   });
-  if (!membership) return success({ deduped: false as const, unknownMember: true as const });
-  withdrawMarketingConsent(membership.id, "sms_reply");
-  return success({ deduped: false as const, membershipId: membership.id });
+  return success({
+    deduped: false as const,
+    kind: "stop" as const,
+    membershipId: target.id,
+    restaurantId: target.restaurantId,
+    reply: body,
+  });
 }

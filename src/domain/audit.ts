@@ -23,7 +23,10 @@ export type AuditAction =
   | "campaign_settle"
   | "campaign_cancel"
   | "campaign_approve"
-  | "sms_webhook";
+  | "sms_webhook"
+  | "special_create"
+  | "spin"
+  | "challenge_award";
 
 /** Never pass PINs or full phone numbers — ids only. */
 export function logAudit(input: {

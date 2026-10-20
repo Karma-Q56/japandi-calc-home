@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { CreditCard, UserRound, ChevronLeft } from "lucide-react";
+import { CreditCard, MapPin, UserRound, ChevronLeft } from "lucide-react";
 
 export function GuestShell({
   children,
@@ -13,6 +13,8 @@ export function GuestShell({
 }) {
   const path = useRouterState({ select: (state) => state.location.pathname });
   const onCards = path === "/me" || path.endsWith("/card");
+  const onRestaurants = path.startsWith("/me/restaurants");
+  const onMe = path === "/me/settings";
   return (
     <div className="gx">
       <header className="gx-top">
@@ -29,9 +31,12 @@ export function GuestShell({
       <main className="gx-body">{children}</main>
       <nav className="gx-tabs" aria-label="Guest sections">
         <Link to="/me" className={`gx-tab${onCards ? " is-active" : ""}`}>
-          <CreditCard /> My cards
+          <CreditCard /> Cards
         </Link>
-        <Link to="/me/settings" className={`gx-tab${path === "/me/settings" ? " is-active" : ""}`}>
+        <Link to="/me/restaurants" className={`gx-tab${onRestaurants ? " is-active" : ""}`}>
+          <MapPin /> Restaurants
+        </Link>
+        <Link to="/me/settings" className={`gx-tab${onMe ? " is-active" : ""}`}>
           <UserRound /> Me
         </Link>
       </nav>

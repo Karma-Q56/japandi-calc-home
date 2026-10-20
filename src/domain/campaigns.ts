@@ -10,8 +10,10 @@ import type {
 } from "@/data/types";
 import { countSegments, sanitizeForGsm7 } from "@/lib/segments";
 import { logAudit } from "./audit";
+import { segmentMemberships } from "./audiences";
 import { balanceFor, planEntries, type NewEntry } from "./credit";
 import { failure, success } from "./demo";
+import { issueTargetedCodes } from "./specials";
 
 export const COST_PER_SEGMENT_CENTS = 35;
 export const STOP_FOOTER = "\nReply STOP to opt out.";
@@ -57,7 +59,7 @@ function memberReceivedCount(state: DemoState, membership: Membership, now: numb
   }).length;
 }
 
-/** Opted-in SMS, not erased, and under the member weekly cap. */
+/** Opted-in SMS, not erased, under the member weekly cap, inside the segment. */
 export function eligibleMemberships(
   state: DemoState,
   restaurantId: string,
@@ -66,18 +68,11 @@ export function eligibleMemberships(
 ): Membership[] {
   const restaurant = state.restaurants.find((r) => r.id === restaurantId);
   const cap = restaurant?.smsCapMember ?? 2;
-  return state.memberships.filter((membership) => {
-    if (membership.restaurantId !== restaurantId || !membership.marketingSms) return false;
+  return segmentMemberships(state, restaurantId, audience).filter((membership) => {
+    if (!membership.marketingSms) return false;
     const customer = state.customers.find((c) => c.id === membership.customerId);
     if (!customer || customer.deleted) return false;
     if (memberReceivedCount(state, membership, now) >= cap) return false;
-    if (audience.type === "lapsed") {
-      const cutoff = now - audience.days * DAY;
-      const last = membership.lastVisitAt ? new Date(membership.lastVisitAt).getTime() : null;
-      const joined = new Date(membership.joinedAt).getTime();
-      if (last !== null) return last < cutoff;
-      return joined < cutoff;
-    }
     return true;
   });
 }
@@ -170,6 +165,7 @@ export function saveDraft(input: {
     code?: string;
     validFrom?: string;
     validTo?: string;
+    specialId?: string;
   };
 }) {
   const state = demoRepo.read();
@@ -189,6 +185,12 @@ export function saveDraft(input: {
   const code = (input.fields.code ?? "").trim().toUpperCase() || makeOfferCode(taken);
   if (!validOfferCode(code)) return failure("INVALID", "Offer codes are 3 to 12 A-Z/0-9 characters.");
   if (taken.has(code)) return failure("INVALID", "That offer code is already used here.");
+  if (input.fields.specialId) {
+    const special = state.specials.find(
+      (item) => item.id === input.fields.specialId && item.restaurantId === input.restaurantId,
+    );
+    if (!special) return failure("INVALID", "Choose a special from this restaurant.");
+  }
   const requiresApproval = input.actorRole === "operator";
   if (!input.draftId) {
     const now = new Date(state.now).toISOString();
@@ -200,6 +202,7 @@ export function saveDraft(input: {
       channel: "sms",
       audience: input.fields.audience,
       code,
+      ...(input.fields.specialId ? { specialId: input.fields.specialId } : {}),
       ...(input.fields.validFrom ? { validFrom: input.fields.validFrom } : {}),
       ...(input.fields.validTo ? { validTo: input.fields.validTo } : {}),
       status: "draft",
@@ -219,7 +222,14 @@ export function saveDraft(input: {
   if (!existing || existing.status !== "draft") {
     return failure("INVALID", "Only drafts can be edited.");
   }
-  let updated: Campaign = { ...existing, name, body, audience: input.fields.audience, code };
+  let updated: Campaign = {
+    ...existing,
+    name,
+    body,
+    audience: input.fields.audience,
+    code,
+    ...(input.fields.specialId ? { specialId: input.fields.specialId } : {}),
+  };
   if (input.fields.validFrom) updated = { ...updated, validFrom: input.fields.validFrom };
   if (input.fields.validTo) updated = { ...updated, validTo: input.fields.validTo };
   updateDemo((current) => ({
@@ -276,11 +286,30 @@ export function confirmCampaign(input: {
   if (eligible.length === 0) {
     return failure("INVALID", "No eligible guests: everyone opted out, was erased, or hit the weekly cap.");
   }
+  const special = campaign.specialId
+    ? state.specials.find((item) => item.id === campaign.specialId)
+    : undefined;
+  const codeByMembership = new Map<string, string>();
+  if (special?.kind === "targeted") {
+    issueTargetedCodes(
+      special.id,
+      eligible.map((membership) => membership.id),
+    );
+    for (const issued of demoRepo.read().specialCodes) {
+      if (issued.specialId === special.id) {
+        codeByMembership.set(issued.membershipId, issued.code);
+      }
+    }
+  }
   const sample = state.memberships.find((m) => m.id === eligible[0]?.id);
   const sampleName = sample
     ? (state.customers.find((c) => c.id === sample.customerId)?.name.split(" ")[0] ?? "friend")
     : "friend";
-  const segments = messageSegments(campaign.body, sampleName);
+  const sampleCode = codeByMembership.get(eligible[0]?.id ?? "");
+  const segments = messageSegments(
+    sampleCode ? `${campaign.body}\nYour code: ${sampleCode}` : campaign.body,
+    sampleName,
+  );
   const estCost = eligible.length * segments * COST_PER_SEGMENT_CENTS;
   const balance = balanceFor(state, campaign.restaurantId);
   if (estCost > balance) {
@@ -316,6 +345,10 @@ export function confirmCampaign(input: {
     if (existingKeys.has(`${membership.id}:sms`)) continue;
     const customer = state.customers.find((c) => c.id === membership.customerId)!;
     const firstName = customer.name.split(" ")[0] ?? customer.name;
+    const personalCode = codeByMembership.get(membership.id);
+    const body = `${renderBody(campaign.body, firstName)}${
+      personalCode ? `\nYour code: ${personalCode}` : ""
+    }`;
     created.push({
       id: `message-${crypto.randomUUID()}`,
       restaurantId: campaign.restaurantId,
@@ -323,9 +356,9 @@ export function confirmCampaign(input: {
       membershipId: membership.id,
       campaignId: campaign.id,
       channel: "sms",
-      body: renderBody(campaign.body, firstName),
-      segments,
-      costCents: segments * COST_PER_SEGMENT_CENTS,
+      body,
+      segments: Math.max(1, countSegments(`${body}${STOP_FOOTER}`)),
+      costCents: Math.max(1, countSegments(`${body}${STOP_FOOTER}`)) * COST_PER_SEGMENT_CENTS,
       status: "queued",
       attempts: 0,
       provider: "fake",
@@ -682,11 +715,18 @@ export function campaignResults(state: DemoState, campaignId: string): CampaignR
   const rows = state.messages.filter((message) => message.campaignId === campaignId);
   const count = (status: Message["status"]) => rows.filter((m) => m.status === status).length;
   const sent = count("sent") + count("delivered");
-  const redemptions = state.redemptions.filter(
-    (r) => r.kind === "campaign" && r.rewardId === campaignId,
-  ).length;
-  const sentAt = campaign.sentAt ? Date.parse(campaign.sentAt) : null;
   const recipientIds = new Set(rows.map((m) => m.membershipId));
+  const redemptions =
+    state.redemptions.filter((r) => r.kind === "campaign" && r.rewardId === campaignId).length +
+    (campaign.specialId
+      ? state.redemptions.filter(
+          (r) =>
+            r.kind === "special" &&
+            r.specialId === campaign.specialId &&
+            recipientIds.has(r.membershipId),
+        ).length
+      : 0);
+  const sentAt = campaign.sentAt ? Date.parse(campaign.sentAt) : null;
   const attributableVisits =
     sentAt === null
       ? 0

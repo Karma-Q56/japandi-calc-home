@@ -1,6 +1,7 @@
 import { demoRepo } from "@/data/repo";
 import { getCard as demoGetCard, joinRestaurant, customerCards } from "@/domain/members";
 import { recordStamp as demoRecordStamp } from "@/domain/stamps";
+import { offersForMembership, redeemSpecial as demoRedeemSpecial } from "@/domain/specials";
 import type { JoinInput, JsonValue, LeadInput, PatronRepos } from "./contracts";
 
 type StampResultLike =
@@ -39,6 +40,9 @@ export function createDemoRepos(): PatronRepos {
           startsAt: x.startsAt ?? null,
           endsAt: x.endsAt ?? null,
           active: x.active,
+          kind: x.kind ?? "public",
+          code: x.code ?? null,
+          minTier: x.minTier ?? null,
         }));
       return {
         id: r.id,
@@ -51,6 +55,8 @@ export function createDemoRepos(): PatronRepos {
         rewardDescription: r.rewardDescription,
         visitWindowMinutes: r.visitWindowMinutes,
         welcomeStamp: r.welcomeStamp,
+        welcomeStamps: r.welcomeStamps ?? 0,
+        pageTemplate: r.pageTemplate ?? "classic",
         menu,
         specials,
       };
@@ -163,6 +169,35 @@ export function createDemoRepos(): PatronRepos {
       if (!res.ok) return [];
       const list = res.value ?? res.data ?? [];
       return list.map((m) => ({ membershipId: m.id, restaurantSlug: m.restaurant.slug }));
+    },
+
+    async getSpecialOffers(membershipId) {
+      const res = offersForMembership(membershipId) as
+        | { ok: true; data: { offers: Array<{ special: { id: string; title: string; body: string; kind: "public" | "members" | "targeted"; code?: string; minTier?: string | null }; code: { code: string } | null; redeemed: boolean }> } }
+        | { ok: false };
+      if (!res.ok) return [];
+      return res.data.offers.map(({ special, code, redeemed }) => ({
+        id: special.id,
+        title: special.title,
+        body: special.body,
+        kind: special.kind,
+        code: code?.code ?? special.code ?? null,
+        minTier: special.minTier ?? null,
+        redeemed,
+      }));
+    },
+
+    async redeemSpecial(input) {
+      const res = demoRedeemSpecial({
+        restaurantId: input.restaurantId,
+        membershipId: input.membershipId,
+        code: input.code,
+        actorId: input.actorId,
+        session: { role: "staff", restaurantId: input.restaurantId },
+      });
+      return res.ok
+        ? { ok: true as const, title: res.special.title, code: res.code }
+        : { ok: false as const, message: res.error.message };
     },
 
     async recordStamp(input) {

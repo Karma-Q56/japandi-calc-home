@@ -4,6 +4,7 @@ import { getRequestHeaders } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { getDataMode } from "./db/mode";
 import { getRepos } from "./repos";
+import { verifyScanToken } from "@/lib/scan";
 
 // Live-path server functions. The UI calls these instead of reading demoRepo
 // directly when DATA_MODE=live (demo stays the default).
@@ -138,6 +139,31 @@ export const joinGuestFn = createServerFn({ method: "POST" })
         message: error instanceof Error ? error.message : "Could not join.",
       };
     }
+  });
+
+/** Verify a signed card token on the server (live mode). The secret never
+ *  reaches the browser; a missing secret fails closed. */
+export const verifyScanFn = createServerFn({ method: "POST" })
+  .validator(z.object({ token: z.string().trim().min(1).max(200) }))
+  .handler(async ({ data }) => {
+    const secret = process.env["SCAN_TOKEN_SECRET"];
+    if (!secret) {
+      return {
+        ok: false as const,
+        message: "Card scanning is not configured on this server. Type the member code.",
+      };
+    }
+    const check = await verifyScanToken(data.token, { secret });
+    if (!check.ok) {
+      return {
+        ok: false as const,
+        message:
+          check.reason === "expired"
+            ? "That card code has expired. Ask the guest to refresh it and scan again."
+            : "That card code is not valid.",
+      };
+    }
+    return { ok: true as const, memberCode: check.memberCode };
   });
 
 export const getCardFn = createServerFn({ method: "GET" })

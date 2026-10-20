@@ -1,10 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { withChildren } from '@/lib/nested';
+
+const HealthPage = withChildren(HealthCheck);
 
 export const Route = createFileRoute('/healthz')({
   loader: async () => {
     return { status: 'ok', timestamp: new Date().toISOString() };
   },
-  component: HealthCheck,
+  component: HealthPage,
 });
 
 function HealthCheck() {

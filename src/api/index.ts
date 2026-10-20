@@ -78,6 +78,45 @@ import {
 import { handleDeliveryWebhook, handleInboundWebhook } from "@/domain/webhooks";
 import { overview } from "@/domain/dash";
 import {
+  codesForMembership,
+  createPrizeOffer,
+  createSpecial,
+  issueTargetedCodes,
+  listOwnerSpecials,
+  offersForMembership,
+  publicSpecialsFor,
+  redeemSpecial,
+  updateSpecial,
+} from "@/domain/specials";
+import {
+  listSpins,
+  saveSpinConfig,
+  spendForWeek,
+  spinRulesText,
+  spinState,
+  spinWheel,
+} from "@/domain/spins";
+import {
+  SEGMENTS,
+  deleteSavedList,
+  listSavedLists,
+  recipientCount,
+  saveSavedList,
+  savedListFromSegment,
+  segmentLabel,
+  segmentMemberships,
+} from "@/domain/audiences";
+import {
+  awardBirthdayIfDue,
+  challengeProgress,
+  evaluateChallenges,
+  saveChallenge,
+  setChallengeActive,
+  tierFor,
+  tierLabel,
+  tierState,
+} from "@/domain/loyalty";
+import {
   customerProfile,
   exportCsv,
   listCustomers,
@@ -140,6 +179,45 @@ export const api = {
   },
   audit: { list: listAudit },
   dash: { overview },
+  special: {
+    create: createSpecial,
+    update: updateSpecial,
+    issueCodes: issueTargetedCodes,
+    codesFor: codesForMembership,
+    offersFor: offersForMembership,
+    publicFor: publicSpecialsFor,
+    ownerList: listOwnerSpecials,
+    redeem: redeemSpecial,
+    prizeOffer: createPrizeOffer,
+  },
+  spin: {
+    state: spinState,
+    wheel: spinWheel,
+    saveConfig: saveSpinConfig,
+    rulesText: spinRulesText,
+    list: listSpins,
+    spentThisWeek: spendForWeek,
+  },
+  audience: {
+    segments: SEGMENTS,
+    label: segmentLabel,
+    count: recipientCount,
+    members: segmentMemberships,
+    lists: listSavedLists,
+    saveList: saveSavedList,
+    deleteList: deleteSavedList,
+    listFromSegment: savedListFromSegment,
+  },
+  loyalty: {
+    tier: tierFor,
+    tierState,
+    tierLabel,
+    challenges: challengeProgress,
+    evaluate: evaluateChallenges,
+    birthdayIfDue: awardBirthdayIfDue,
+    saveChallenge,
+    setChallengeActive,
+  },
   customers: {
     list: listCustomers,
     profile: customerProfile,

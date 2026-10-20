@@ -170,3 +170,37 @@ The user explicitly asked to proceed with M2/M3 without blocking on these verifi
 - [x] verified (dev branch) `DATA_MODE=live` scripted exercises, all as asserted: public pages for daily-grind/sunrise-bakes/oak-table; fresh join + card; correct-PIN stamp → `stamped`; same idempotency key → `duplicate_retry`; 5 wrong PINs then the CORRECT PIN → rejected during lockout (throwaway staffer, cleaned up with its rate rows); near-threshold member stamps to `reward`; cross-venue `getCard` returns null while own-venue card reads fine.
 - [x] verified (this session) `tsc --noEmit` clean. Test-harness fixes (no assertions touched): hoisted `await import()` out of test bodies in `pin-commit`/`pin-live`/`rls-live` (dynamic import inside the body blew the 5s default timeout on this machine) and added `{ timeout: 120_000 }` to live-Neon tests (sequential EU roundtrips exceed 5s from here).
 - [~] could not run: `vitest --pool=forks` — the forks pool hangs on this Windows machine even for a single 1-test file (no output before the timeout), while the default threads pool runs the same file fine; the full 24-file suite also exceeds a 550 s budget here (per-file runs used instead). Full-suite green on this machine is still outstanding.
+
+## Phase A + B — engagement pass (2026-10-20 session)
+
+Verified in the local demo browser at 375 px and 1280 px unless marked built-only. Screenshots for every changed screen are in `screenshots/` (30 screens × 2 widths), including all 3 venues × 4 public templates at both widths.
+
+### Phase A — routing, consent, offers, diner app, public pages, dashboard, audiences
+
+- [x] verified (vitest + browser) Nested routes render children: `/app/customers/:id` now shows the profile, not the list. Audited every parent route; `withChildren` was missing on `healthz` (so `/healthz/db` rendered the parent) and is now fixed. New `src/test/route-children.test.tsx` walks the route tree and renders each app/me/ops/r child URL.
+- [x] verified (browser) Customer list uses an "N rewards ready" pill only when N > 0; clicking a row opens the profile.
+- [x] verified (vitest join/card, browser) Welcome stamps 0…stampsRequired−1, stored once as `reason: "welcome"` events, previewed on the join screen and in the owner card preview. Seed: Daily Grind 2, Sunrise 1, Oak Table 0.
+- [x] verified (vitest) Signed member QR token (HMAC, 60 s) with refresh; till `Scan card` uses BarcodeDetector with a jsQR/zxing fallback and a no-camera message; typing a code still works. Manual camera scan not tested in this environment.
+- [x] verified (vitest STOP/STOPALL) One consent line on join; per-restaurant Messages toggles in `/me/settings`; STOP opts out of the most recent venue and STOPALL of all venues, with exact replies. Every SMS keeps the STOP footer.
+- [x] verified (browser) Marketing `/for-diners`, main nav link and `/login` portal chooser (Diner, Restaurant owner, Staff till, Patron admin) with a clear demo/real-sign-in note. Mobile header now has a working menu; fixed page-width padding reset by `.diners-hero`/`login-page`.
+- [x] verified (vitest specials) Three special kinds: public and members shared codes redeem once per membership; targeted codes are unique, single-use and member-bound (forwarded code returns "This offer is for another member."). Owner create/status/redemption list; till typed code or scanned QR.
+- [x] verified (browser) Diner `/me` tabs Cards, Restaurants, Me; each restaurant page shows menu, public specials and eligible member/targeted offers.
+- [x] verified (browser) Four public templates (Classic, Hero, Menu-first, Minimal) with Classic as the default; screenshots for 3 venues × 4 templates at 375/1280.
+- [x] verified (browser) Owner dashboard trimmed to five stats (today's stamps, returning guests, rewards ready, SMS credit, next campaign); primary actions sit at the top of each page; customer rows link to profiles.
+- [x] verified (vitest + browser) Campaign audience step replaced with segments (everyone, new, lapsed 30+, close to reward, weekday, saved list) and live recipient counts; saved lists are searchable/tickable and reusable.
+
+### Phase B — logos, spins, challenges/tiers, diner view
+
+- [x] built, not verified with a real upload Logo stamps: PNG/JPG/SVG, 300 KB limit, 24/32 grid browser pixelation, palette quantisation, filled + empty SVG art stored on the theme and shown on card/public page. Screenshot covers the editor; actual file upload not exercised.
+- [x] verified (vitest + browser) Spin wheel: server-side weighted pick, weekly prize budget, per-segment daily/weekly caps, spins earned only from visits/milestones, every prize becomes a personal single-use targeted offer; rules text generated with "No purchase is required to earn spins."
+- [x] verified (browser) Visit challenges, birthday/mystery bonuses, Regular/VIP tiers that gate member/targeted specials; owner editor and guest progress in the card.
+- [x] verified (browser) Diner card and Restaurants show spins ready, challenge progress and tier.
+
+### Checks
+
+- `npx tsc --noEmit` clean.
+- `npm run lint` 0 errors (11 existing warnings in shadcn UI/theme files).
+- `npx vitest run` 152 passed, 5 skipped (live-Postgres tests need dev DB URLs; production never touched).
+- `npm run build` succeeded.
+- Screenshot inspection found and fixed: missing mobile nav, zero page padding on `/for-diners` and `/login`, stretched special status pills, blank profile name on `/me/settings` after hydration.
+- Not verified: real phone camera scan, real SMS delivery, real logo upload, live Postgres for the new engagement tables (dev-only migration `db/migrations/0003_engagement_dev.sql` is present).

@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { api } from "@/api";
-import { getConsentWording } from "@/config/consent";
 import { DemoControlBar } from "@/components/patron/DemoControlBar";
 import { VerificationStep } from "@/components/patron/VerificationStep";
 import { demoRepo, updateDemo } from "@/data/repo";
@@ -45,8 +44,7 @@ function JoinPage() {
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("+27 ");
-  const [loyaltyConsent, setLoyaltyConsent] = useState(false);
-  const [marketingSms, setMarketingSms] = useState(false);
+  const [agreed, setAgreed] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
@@ -59,8 +57,7 @@ function JoinPage() {
       </main>
     );
   }
-  const loyalty = getConsentWording("loyalty", restaurant.name);
-  const marketing = getConsentWording("marketing_sms", restaurant.name);
+  const welcome = restaurant.welcomeStamps ?? 0;
 
   const details = () => {
     setError("");
@@ -83,14 +80,16 @@ function JoinPage() {
       typeof window === "undefined"
         ? "link"
         : new URLSearchParams(window.location.search).get("src") || "link";
+    if (!agreed) {
+      setError("Please agree to the terms to join.");
+      return;
+    }
     if (mode === "live") {
-      const res = await joinGuestFn({ data: { slug, name, phone, marketingSms, source } });
+      const res = await joinGuestFn({ data: { slug, name, phone, marketingSms: true, source } });
       if (!res.ok) {
         setError(res.message);
         return;
       }
-      // Pre-auth seam: the card page reads customerId from search until the
-      // auth slice binds the server session to the customer.
       void navigate({
         to: "/r/$slug/card",
         params: { slug },
@@ -102,8 +101,8 @@ function JoinPage() {
       slug,
       name,
       phone,
-      marketingSms,
-      loyaltyConsent,
+      marketingSms: true,
+      loyaltyConsent: agreed,
       source,
     });
     if (!result.ok) {
@@ -129,6 +128,21 @@ function JoinPage() {
     setStep(1);
   };
 
+  const consentLineNode = (
+    <label className="join-consent-line">
+      <input
+        type="checkbox"
+        checked={agreed}
+        onChange={(event) => setAgreed(event.target.checked)}
+      />
+      <span>
+        By joining you agree to our <a href="/terms">Terms</a>,{" "}
+        <a href="/privacy">Privacy Policy</a> and to receive {restaurant.name}&apos;s loyalty
+        offers. Reply STOP anytime.
+      </span>
+    </label>
+  );
+
   return (
     <ThemeProvider theme={restaurant.theme}>
       <main className="guest-page">
@@ -137,8 +151,8 @@ function JoinPage() {
           <a href="/demo">Demo home</a>
         </header>
         <section className="guest-flow">
-          <div className="guest-progress" aria-label={`Step ${step + 1} of 4`}>
-            {["Welcome", "Details", "Consent", "Verification"].map((label, index) => (
+          <div className="guest-progress" aria-label={`Step ${step + 1} of 3`}>
+            {["Welcome", "Details", "Verification"].map((label, index) => (
               <span className={index === step ? "active" : ""} key={label}>
                 {index + 1} {label}
               </span>
@@ -150,6 +164,14 @@ function JoinPage() {
                 <span className="eyebrow">Good food · familiar faces</span>
                 <h1>Join the regulars at {restaurant.name}.</h1>
                 <p>{rewardJoinPitch(restaurant.rewardDescription)}.</p>
+                {welcome > 0 && (
+                  <p className="welcome-stamp-note" role="status">
+                    <strong>
+                      You start with {welcome} stamp{welcome === 1 ? "" : "s"}.
+                    </strong>{" "}
+                    That leaves {restaurant.stampsRequired - welcome} to {restaurant.rewardDescription}.
+                  </p>
+                )}
                 {customer && (
                   <p className="demo-data-note">
                     You’re browsing as {customer.name}.
@@ -158,9 +180,12 @@ function JoinPage() {
                       : " This join will use a new card."}
                   </p>
                 )}
-                <button className="builder-primary" onClick={continueAsGuest}>
-                  {customer ? `Continue as ${customer.name}` : "Join"}
-                </button>
+                <div className="join-button-row">
+                  <button className="builder-primary" onClick={continueAsGuest}>
+                    {customer ? `Continue as ${customer.name}` : `Join ${restaurant.name}`}
+                  </button>
+                  {consentLineNode}
+                </div>
                 {customer && (
                   <button className="guest-back" onClick={joinAsSomeoneElse}>
                     Not you? Join as someone else
@@ -191,48 +216,14 @@ function JoinPage() {
                     placeholder="+27 82 123 4567"
                   />
                 </label>
-                <button className="builder-primary" onClick={details}>
-                  Continue
-                </button>
+                <div className="join-button-row">
+                  <button className="builder-primary" onClick={details}>
+                    Continue
+                  </button>
+                </div>
               </section>
             )}
-            {step === 2 && (
-              <section className="guest-step">
-                <span className="eyebrow">Your choices</span>
-                <h2>Your card works either way.</h2>
-                <label className="guest-consent">
-                  <input
-                    type="checkbox"
-                    checked={loyaltyConsent}
-                    onChange={(event) => setLoyaltyConsent(event.target.checked)}
-                  />
-                  <span>
-                    {loyalty.text} <small>Required · {loyalty.version}</small>
-                  </span>
-                </label>
-                <label className="guest-consent">
-                  <input
-                    type="checkbox"
-                    checked={marketingSms}
-                    onChange={(event) => setMarketingSms(event.target.checked)}
-                  />
-                  <span>
-                    {marketing.text} <small>Optional · {marketing.version}</small>
-                  </span>
-                </label>
-                <button
-                  className="builder-primary"
-                  disabled={!loyaltyConsent}
-                  onClick={() => {
-                    setError("");
-                    setStep(3);
-                  }}
-                >
-                  Continue
-                </button>
-              </section>
-            )}
-            {step === 3 && <VerificationStep phone={phone} onVerified={finish} />}
+            {step === 2 && <VerificationStep phone={phone} onVerified={finish} />}
             {error && (
               <p className="field-error" role="alert">
                 {error}
@@ -250,7 +241,7 @@ function JoinPage() {
               </button>
             )}
           </div>
-          <small className="demo-data-note">Demo data · No SMS is sent</small>
+          <small className="demo-data-note">Demo data · No SMS is sent.</small>
         </section>
         <DemoControlBar />
       </main>

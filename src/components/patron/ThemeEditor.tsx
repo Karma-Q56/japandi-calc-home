@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createSeed } from "@/data/seed";
-import type { Theme } from "@/data/types";
+import type { PageTemplate, Theme } from "@/data/types";
+import { LOGO_STAMP_GRIDS, buildLogoStamp, validateLogoFile } from "@/lib/logo-stamp";
 import { ThemeProvider, themeHasAccessibleContrast } from "@/theme";
 import cafePhoto from "@/assets/cafe-hero.jpg";
 import { LoyaltyCard } from "./LoyaltyCard";
@@ -105,12 +106,20 @@ export function ThemeEditor({
   theme,
   onChange,
   name = "Your restaurant",
+  template,
+  onTemplateChange,
 }: {
   theme: Theme;
   onChange: (theme: Theme) => void;
   name?: string;
+  template?: PageTemplate;
+  onTemplateChange?: (template: PageTemplate) => void;
 }) {
   const [view, setView] = useState<"card" | "page">("card");
+  const [grid, setGrid] = useState<number>(theme.logoStamp?.grid ?? LOGO_STAMP_GRIDS[0]);
+  const [stampBusy, setStampBusy] = useState(false);
+  const [stampError, setStampError] = useState("");
+  const [pendingLogo, setPendingLogo] = useState<File | null>(null);
   const set = <K extends keyof Theme>(key: K, value: Theme[K]) => onChange({ ...theme, [key]: value });
   const color = (label: string, key: keyof Theme) => (
     <label className="builder-field theme-color-field">
@@ -135,8 +144,37 @@ export function ThemeEditor({
     reader.readAsDataURL(file);
   };
   const removeLogo = () => {
-    const { logo: _logo, ...rest } = theme;
+    const { logo: _logo, logoStamp: _logoStamp, ...rest } = theme;
     onChange(rest);
+  };
+
+  const makeStampArt = async (file: File | null, nextGrid = grid) => {
+    if (!file) return;
+    const invalid = validateLogoFile(file);
+    if (invalid) {
+      setStampError(invalid);
+      return;
+    }
+    setStampBusy(true);
+    setStampError("");
+    try {
+      const logoStamp = await buildLogoStamp({
+        file,
+        grid: nextGrid,
+        palette: {
+          ink: theme.ink,
+          accent: theme.accent,
+          paper: theme.paper,
+          stampEmpty: theme.stampEmpty,
+        },
+      });
+      setPendingLogo(file);
+      onChange({ ...theme, logoStamp });
+    } catch (error) {
+      setStampError(error instanceof Error ? error.message : "Could not process that logo.");
+    } finally {
+      setStampBusy(false);
+    }
   };
 
   return (
@@ -223,6 +261,99 @@ export function ThemeEditor({
             />
           </label>
         </section>
+
+        <section className="te-group">
+          <h3>Logo stamp</h3>
+          <p className="te-help">
+            Upload your logo and we pixelate it into the stamp grid, in your palette. It appears
+            on every card and on your public page.
+          </p>
+          <label className="builder-field">
+            Logo file · PNG, JPG or SVG · up to 300 KB
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/svg+xml"
+              onChange={(event) => {
+                const file = event.target.files?.[0] ?? null;
+                if (file) void makeStampArt(file);
+              }}
+            />
+          </label>
+          <label className="builder-field">
+            Grid size
+            <select
+              value={grid}
+              onChange={(event) => {
+                const next = Number(event.target.value);
+                setGrid(next);
+                if (pendingLogo) void makeStampArt(pendingLogo, next);
+              }}
+            >
+              {LOGO_STAMP_GRIDS.map((size) => (
+                <option key={size} value={size}>
+                  {size} × {size}
+                </option>
+              ))}
+            </select>
+          </label>
+          {stampBusy && <p className="te-help">Pixelating…</p>}
+          {stampError && (
+            <p className="theme-warning" role="alert">
+              {stampError}
+            </p>
+          )}
+          {theme.logoStamp && (
+            <div className="logo-stamp-preview">
+              <figure>
+                <img src={theme.logoStamp.filled} alt="Filled stamp art" width={64} height={64} />
+                <figcaption>Filled</figcaption>
+              </figure>
+              <figure>
+                <img src={theme.logoStamp.empty} alt="Empty stamp art" width={64} height={64} />
+                <figcaption>Empty</figcaption>
+              </figure>
+              <button
+                type="button"
+                className="builder-secondary"
+                onClick={() => {
+                  const { logoStamp: _stamp, ...rest } = theme;
+                  setPendingLogo(null);
+                  onChange(rest);
+                }}
+              >
+                Remove stamp art
+              </button>
+            </div>
+          )}
+        </section>
+
+        {onTemplateChange && (
+          <section className="te-group">
+            <h3>Public page template</h3>
+            <div className="te-presets">
+              {([
+                ["classic", "Classic"],
+                ["hero", "Hero"],
+                ["menu-first", "Menu first"],
+                ["minimal", "Minimal"],
+              ] as const).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  aria-pressed={template === id}
+                  style={
+                    template === id
+                      ? { borderColor: "var(--primary)", color: "var(--primary)" }
+                      : undefined
+                  }
+                  onClick={() => onTemplateChange(id)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className="te-group">
           <h3>Words and type</h3>

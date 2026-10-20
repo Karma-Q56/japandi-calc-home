@@ -2,6 +2,8 @@ import { clock } from "@/lib/clock";
 import { demoRepo, updateDemo } from "@/data/repo";
 import { failure, success } from "./demo";
 import { logAudit } from "./audit";
+import { awardBirthdayIfDue, awardMysteryIfDue, evaluateChallenges } from "./loyalty";
+import { isScanTokenShape } from "@/lib/scan";
 
 export type StampResult =
   | { result: "stamped"; stampId: string; stampsCurrent: number; rewardId: string | null }
@@ -86,6 +88,7 @@ export function recordStamp(input: {
         key: input.key,
         createdAt: now,
         status: "valid" as const,
+        reason: "visit" as const,
       },
     ];
     let rewards = current.rewards;
@@ -123,7 +126,19 @@ export function recordStamp(input: {
     restaurantId: input.restaurantId,
     object: stampId,
   });
-  return success({ result: "stamped", stampId, stampsCurrent, rewardId } as StampResult);
+  // Visit-driven extras: challenge bonuses, mystery stamps and birthday rewards.
+  evaluateChallenges(input.membershipId);
+  awardMysteryIfDue(input.membershipId);
+  awardBirthdayIfDue(input.membershipId);
+  const after = demoRepo
+    .read()
+    .memberships.find((item) => item.id === input.membershipId);
+  return success({
+    result: "stamped",
+    stampId,
+    stampsCurrent: after?.stampsCurrent ?? stampsCurrent,
+    rewardId,
+  } as StampResult);
 }
 
 export function lookupMember(input: {
@@ -136,6 +151,12 @@ export function lookupMember(input: {
   }
   const state = demoRepo.read();
   const raw = input.code.trim();
+  if (isScanTokenShape(raw)) {
+    return failure(
+      "INVALID",
+      "This card code has expired. Ask the guest to refresh the code and scan again.",
+    );
+  }
   const needle = raw.toUpperCase();
   const needleDigits = needle.replace(/\D/g, "");
   const customer = state.customers.find(
@@ -150,12 +171,33 @@ export function lookupMember(input: {
   );
   if (!membership) return failure("NOT_FOUND", "That member is not on this list.");
   const rewards = state.rewards.filter((r) => r.membershipId === membership.id && !r.redeemedAt);
-  const campaigns = state.campaigns.filter((c) => c.restaurantId === input.restaurantId);
+  const campaigns = state.campaigns.filter(
+    (c) => c.restaurantId === input.restaurantId && c.status === "sent",
+  );
   return success({
     firstName: customer.name.split(" ")[0] ?? customer.name,
     membership,
     rewards,
     campaigns,
+    offers: state.specials
+      .filter((special) => special.restaurantId === input.restaurantId)
+      .filter((special) => {
+        const code = state.specialCodes.find(
+          (item) => item.specialId === special.id && item.membershipId === membership.id,
+        );
+        return special.kind !== "targeted" || !!code;
+      })
+      .map((special) => ({
+        id: special.id,
+        title: special.title,
+        kind: special.kind,
+        code:
+          special.kind === "targeted"
+            ? (state.specialCodes.find(
+                (item) => item.specialId === special.id && item.membershipId === membership.id,
+              )?.code ?? null)
+            : (special.code ?? null),
+      })),
   });
 }
 

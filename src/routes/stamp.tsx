@@ -2,9 +2,11 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { api } from "@/api";
 import { demoRepo, updateDemo } from "@/data/repo";
-import { getDataModeFn, recordStampFn } from "@/server/live";
+import { getDataModeFn, recordStampFn, verifyScanFn } from "@/server/live";
 import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
+import { isScanTokenShape, verifyScanToken } from "@/lib/scan";
+import { CardScanner } from "@/components/patron/CardScanner";
 import type { StampResult } from "@/domain/stamps";
 
 export const Route = createFileRoute("/stamp")({
@@ -59,6 +61,7 @@ function Till() {
   const [lastStampId, setLastStampId] = useState<string | null>(null);
   const [pairingCode, setPairingCode] = useState("");
   const [redeemCode, setRedeemCode] = useState("");
+  const [scanning, setScanning] = useState(false);
 
   const say = (kind: "ok" | "error", text: string) => {
     setFeedback({ kind, text });
@@ -81,11 +84,12 @@ function Till() {
     setPin("");
   };
 
-  const doLookup = () => {
-    if (!code.trim()) return;
+  const runLookup = (value: string) => {
+    if (!value.trim()) return;
+    setCode(value.toUpperCase());
     const result = api.stamp.lookup({
       restaurantId: restaurant.id,
-      code,
+      code: value,
       session: { role: session.role, restaurantId: session.restaurantId },
     });
     if (!result.ok) {
@@ -103,6 +107,36 @@ function Till() {
       campaigns: result.data.campaigns,
     });
     setLastStampId(null);
+  };
+
+  const doLookup = () => runLookup(code);
+
+  /** A scan goes through the same lookup as typing the printed member code. */
+  const handleScan = async (value: string) => {
+    setScanning(false);
+    if (!isScanTokenShape(value)) {
+      runLookup(value);
+      return;
+    }
+    const check =
+      mode === "live"
+        ? await verifyScanFn({ data: { token: value } })
+        : await verifyScanToken(value).then((result) =>
+            result.ok
+              ? { ok: true as const, memberCode: result.memberCode }
+              : {
+                  ok: false as const,
+                  message:
+                    result.reason === "expired"
+                      ? "That card code has expired. Ask the guest to refresh it and scan again."
+                      : "That card code is not valid.",
+                },
+          );
+    if (!check.ok) {
+      say("error", check.message);
+      return;
+    }
+    runLookup(check.memberCode);
   };
 
   const addStamp = async () => {
@@ -204,13 +238,31 @@ function Till() {
 
   const redeemOffer = () => {
     if (!lookup?.ok || !session.staffId || !redeemCode.trim()) return;
+    // Campaign codes and the three special kinds share one till field.
+    const special = api.special.redeem({
+      restaurantId: restaurant.id,
+      code: redeemCode,
+      membershipId: lookup.membershipId,
+      actorId: session.staffId,
+      session: { role: session.role, restaurantId: session.restaurantId },
+    });
+    if (special.ok) {
+      say("ok", `${special.special.title} redeemed.`);
+      setRedeemCode("");
+      return;
+    }
     const result = api.stamp.redeemCampaign({
       code: redeemCode,
       membershipId: lookup.membershipId,
       actorId: session.staffId,
       session: { role: session.role, restaurantId: session.restaurantId },
     });
-    say(result.ok ? "ok" : "error", result.ok ? "Offer redeemed." : result.error.message);
+    if (result.ok) {
+      say("ok", "Offer redeemed.");
+      setRedeemCode("");
+      return;
+    }
+    say("error", special.error.code === "NOT_FOUND" ? result.error.message : special.error.message);
     setRedeemCode("");
   };
 
@@ -369,8 +421,26 @@ function Till() {
           <button className="builder-primary" type="submit">
             Look up
           </button>
+          <button
+            className="builder-secondary"
+            type="button"
+            onClick={() => setScanning(true)}
+          >
+            Scan card
+          </button>
         </form>
+        {!("mediaDevices" in navigator) && (
+          <p className="demo-data-note">
+            This device has no camera. Type the member code instead.
+          </p>
+        )}
       </section>
+      {scanning && (
+        <CardScanner
+          onCode={(value) => void handleScan(value)}
+          onClose={() => setScanning(false)}
+        />
+      )}
       {lookup && !lookup.ok && (
         <p role="alert" className="till-toast is-error">
           {lookup.message}

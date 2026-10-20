@@ -4,6 +4,7 @@ import { normalizePhone, isValidSAMobile } from "@/lib/phone";
 import { getConsentWording } from "@/config/consent";
 import { withContext, type DatabaseTransaction } from "@/server/db";
 import type { JoinInput, JsonValue, LeadInput, PatronRepos, PublicPage, StampOutcome } from "./contracts";
+import { pgGetSpecialOffers, pgRedeemSpecial } from "./special-offers-pg";
 
 type Ctx = { databaseUrl: string; restaurantId?: string | null; customerId?: string | null; isOperator?: boolean };
 
@@ -25,6 +26,8 @@ interface RestaurantRow {
   reward_description: string;
   visit_window_minutes: number;
   welcome_stamp: boolean;
+  welcome_stamps: number;
+  page_template: string | null;
 }
 
 interface MenuRow {
@@ -132,6 +135,9 @@ interface SpecialRow {
   starts_at: string | null;
   ends_at: string | null;
   active: boolean;
+  kind: "public" | "members" | "targeted";
+  code: string | null;
+  min_tier: string | null;
 }
 
 export function createPgRepos(ctx: Ctx): PatronRepos {
@@ -140,7 +146,7 @@ export function createPgRepos(ctx: Ctx): PatronRepos {
       return withContext(ctx, async (tx) => {
         const rRows = await q<RestaurantRow>(
           tx,
-          sql`select id, slug, name, suburb, theme, hours, stamps_required, reward_description, visit_window_minutes, welcome_stamp from restaurant where slug = ${slug} and status = 'active' limit 1`,
+          sql`select id, slug, name, suburb, theme, hours, stamps_required, reward_description, visit_window_minutes, welcome_stamp, welcome_stamps, page_template from restaurant where slug = ${slug} and status = 'active' limit 1`,
         );
         const r = rRows[0];
         if (!r) return null;
@@ -150,7 +156,7 @@ export function createPgRepos(ctx: Ctx): PatronRepos {
         );
         const specRes = await q<SpecialRow>(
           tx,
-          sql`select id, title, body, starts_at, ends_at, active from special where restaurant_id = ${r.id} and active = true order by created_at desc`,
+          sql`select id, title, body, starts_at, ends_at, active, kind, code, min_tier from special where restaurant_id = ${r.id} and active = true order by created_at desc`,
         );
         return {
           id: r.id,
@@ -163,6 +169,8 @@ export function createPgRepos(ctx: Ctx): PatronRepos {
           rewardDescription: r.reward_description,
           visitWindowMinutes: r.visit_window_minutes,
           welcomeStamp: r.welcome_stamp,
+          welcomeStamps: r.welcome_stamps ?? 0,
+          pageTemplate: r.page_template ?? "classic",
           menu: menuRes.map((m) => ({
             id: m.id,
             sectionId: m.section_id,
@@ -180,6 +188,9 @@ export function createPgRepos(ctx: Ctx): PatronRepos {
             startsAt: x.starts_at ? new Date(x.starts_at).toISOString() : null,
             endsAt: x.ends_at ? new Date(x.ends_at).toISOString() : null,
             active: x.active,
+            kind: x.kind ?? "public",
+            code: x.code,
+            minTier: x.min_tier,
           })),
         };
       });
@@ -235,9 +246,14 @@ export function createPgRepos(ctx: Ctx): PatronRepos {
       // server runs this tx as operator (never exposed to clients).
       const sys: Ctx = { ...ctx, isOperator: true };
       return withContext(sys, async (tx) => {
-        const rRows = await q<{ id: string; name: string }>(
+        const rRows = await q<{
+          id: string;
+          name: string;
+          stamps_required: number;
+          welcome_stamps: number;
+        }>(
           tx,
-          sql`select id, name, welcome_stamp from restaurant where slug = ${input.slug} and status = 'active' limit 1`,
+          sql`select id, name, stamps_required, welcome_stamps from restaurant where slug = ${input.slug} and status = 'active' limit 1`,
         );
         const r = rRows[0];
         if (!r) throw new Error("We could not find that restaurant.");
@@ -266,6 +282,23 @@ export function createPgRepos(ctx: Ctx): PatronRepos {
         );
         const membershipId = mem[0]?.id;
         if (!membershipId) throw new Error("Could not join.");
+        // Welcome stamps: once at join, never at or above the reward threshold.
+        const welcomeStamps = Math.max(
+          0,
+          Math.min((r.stamps_required ?? 8) - 1, r.welcome_stamps ?? 0),
+        );
+        for (let index = 0; index < welcomeStamps; index++) {
+          await q<unknown>(
+            tx,
+            sql`insert into stamp_event (restaurant_id, membership_id, idempotency_key, reason) values (${r.id}, ${membershipId}, ${`welcome:${membershipId}:${index}`}, 'welcome') on conflict do nothing`,
+          );
+        }
+        if (welcomeStamps > 0) {
+          await q<unknown>(
+            tx,
+            sql`update membership set stamps_current = stamps_current + ${welcomeStamps}, stamps_total = stamps_total + ${welcomeStamps} where id = ${membershipId}`,
+          );
+        }
         const loyalty = getConsentWording("loyalty", r.name);
         await q<unknown>(
           tx,
@@ -349,6 +382,14 @@ export function createPgRepos(ctx: Ctx): PatronRepos {
         );
         return rows.map((x) => ({ membershipId: x.membership_id, restaurantSlug: x.slug }));
       });
+    },
+
+    async getSpecialOffers(membershipId) {
+      return pgGetSpecialOffers(ctx, membershipId);
+    },
+
+    async redeemSpecial(input) {
+      return pgRedeemSpecial(ctx, input);
     },
 
     async recordStamp(input): Promise<StampOutcome> {

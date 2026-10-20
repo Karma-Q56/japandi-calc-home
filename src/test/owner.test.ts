@@ -13,36 +13,66 @@ beforeEach(() => {
 });
 
 describe("overview", () => {
-  it("equals hand-computed seed values", () => {
+  it("equals hand-computed seed values and keeps at most five stats", () => {
     const result = overview("rest-daily-grind", owner);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
+    expect(result.data.stats).toHaveLength(5);
+    expect(result.data.stats.map((s) => s.key)).toEqual([
+      "today",
+      "returning",
+      "ready",
+      "credit",
+      "campaign",
+    ]);
     const get = (key: string) => result.data.stats.find((s) => s.key === key)!.value;
     const state = demoRepo.read();
-    expect(get("members")).toBe(
-      state.memberships.filter((m) => m.restaurantId === "rest-daily-grind").length,
+    const valid = state.stamps.filter(
+      (s) => s.restaurantId === "rest-daily-grind" && s.status === "valid",
     );
-    expect(get("push")).toBe(0);
+    const dayStart = Math.floor((state.now + 2 * 3600000) / 86400000) * 86400000 - 2 * 3600000;
+    expect(get("today")).toBe(
+      valid.filter((stamp) => new Date(stamp.createdAt).getTime() >= dayStart).length,
+    );
+    const visits = new Map<string, number>();
+    for (const stamp of valid) visits.set(stamp.membershipId, (visits.get(stamp.membershipId) ?? 0) + 1);
+    expect(get("returning")).toBe(
+      state.memberships.filter(
+        (m) => m.restaurantId === "rest-daily-grind" && (visits.get(m.id) ?? 0) >= 2,
+      ).length,
+    );
+    expect(get("ready")).toBe(
+      state.rewards.filter((r) => r.restaurantId === "rest-daily-grind" && !r.redeemedAt).length,
+    );
     expect(get("credit")).toBe(4200);
+    expect(result.data.stats.find((s) => s.key === "campaign")!.display).toBe(
+      "Weekend family lunch",
+    );
     expect(result.data.weeklyVisits).toHaveLength(8);
     expect(result.data.lastCampaign?.name).toBe("A little Tuesday treat");
   });
 
   it("lapsed count rises after 30 days and matches the filter", () => {
-    const before = overview("rest-daily-grind", owner);
-    expect(before.ok && before.data.stats.find((s) => s.key === "lapsed")!.value).toBeGreaterThan(
-      0,
-    );
+    const countLapsed = () => {
+      const filtered = listCustomers({
+        restaurantId: "rest-daily-grind",
+        filter: "lapsed30",
+        session: owner,
+        now: clock.now(),
+      });
+      return filtered.ok ? filtered.data.total : 0;
+    };
+    const state = demoRepo.read();
+    const lapsed = state.memberships.filter(
+      (m) =>
+        m.restaurantId === "rest-daily-grind" &&
+        m.lastVisitAt !== null &&
+        state.now - new Date(m.lastVisitAt).getTime() >= 30 * 86400000,
+    ).length;
+    expect(lapsed).toBeGreaterThan(0);
+    expect(countLapsed()).toBeGreaterThanOrEqual(lapsed);
     clock.advance(30 * 86400000);
-    const after = overview("rest-daily-grind", owner);
-    const lapsed = after.ok && after.data.stats.find((s) => s.key === "lapsed")!.value;
-    const filtered = listCustomers({
-      restaurantId: "rest-daily-grind",
-      filter: "lapsed30",
-      session: owner,
-      now: clock.now(),
-    });
-    expect(filtered.ok && filtered.data.total).toBe(lapsed);
+    expect(countLapsed()).toBeGreaterThan(lapsed);
   });
 });
 
