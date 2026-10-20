@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { randomUUID } from "node:crypto";
+import postgres from "postgres";
+import { createPgRepos, pinHmacHex } from "./pg";
 
 // Live till-PIN tests against the DEV branch only (skipped without
 // DATABASE_URL + DATABASE_URL_MIGRATE). Never touches production.
@@ -6,11 +9,8 @@ const appUrl = process.env["DATABASE_URL"];
 const ownerUrl = process.env["DATABASE_URL_MIGRATE"];
 
 describe.skipIf(!appUrl || !ownerUrl)("till PIN live (dev branch)", () => {
-  it("rejects empty PIN, wrong PIN, and locks out after 5 attempts", async () => {
-    const { createPgRepos } = await import("./pg");
-    const { pinHmacHex } = await import("./pg");
-    const { randomUUID } = await import("node:crypto");
-    const { default: postgres } = await import("postgres");
+  // Live Neon roundtrips need longer than vitest's 5s default timeout.
+  it("rejects empty PIN, wrong PIN, and locks out after 5 attempts", { timeout: 120_000 }, async () => {
     const owner = postgres(ownerUrl!, { max: 1, prepare: false });
     const suffix = randomUUID().replaceAll("-", "").slice(0, 20);
     const staffId = randomUUID();

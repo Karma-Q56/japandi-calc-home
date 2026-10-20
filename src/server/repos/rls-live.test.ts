@@ -1,4 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { randomUUID } from "node:crypto";
+import postgres from "postgres";
+import { sql } from "drizzle-orm";
+import { withContext } from "@/server/db";
 
 // Cross-tenant RLS is enforced by scripts/rls-check.mjs against the DEV branch.
 // This wrapper runs the same assertion through withContext when DATABASE_URL
@@ -6,16 +10,14 @@ import { describe, expect, it } from "vitest";
 const url = process.env["DATABASE_URL"];
 
 describe.skipIf(!url)("rls cross-tenant (dev branch)", () => {
-  it("restaurant A context sees zero B rows", async () => {
-    const { withContext } = await import("@/server/db");
-    const { randomUUID } = await import("node:crypto");
+  // Live Neon roundtrips need longer than vitest's 5s default timeout.
+  it("restaurant A context sees zero B rows", { timeout: 120_000 }, async () => {
     const suffix = randomUUID().replaceAll("-", "");
     const ownerUrl = process.env["DATABASE_URL_MIGRATE"];
     if (!ownerUrl) {
       console.warn("skip: DATABASE_URL_MIGRATE not set");
       return;
     }
-    const { default: postgres } = await import("postgres");
     const owner = postgres(ownerUrl, { max: 1, prepare: false });
     let a: string | null = null;
     let b: string | null = null;
@@ -27,7 +29,6 @@ describe.skipIf(!url)("rls cross-tenant (dev branch)", () => {
       b = rb[0].id;
       const bId: string = b;
       await withContext({ databaseUrl: url ?? "", restaurantId: a }, async (tx) => {
-        const { sql } = await import("drizzle-orm");
         const countRes = (await tx.execute(
           sql`select count(*)::int as n from membership where restaurant_id = ${bId}`,
         )) as unknown as { rows: { n: string | number }[] };

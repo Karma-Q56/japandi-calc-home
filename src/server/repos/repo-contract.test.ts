@@ -38,7 +38,8 @@ function suite(name: string, make: () => PatronRepos) {
       expect(ok.id).toBeTruthy();
     });
 
-    it("guest join + card + my cards round-trip", async () => {
+    // The postgres run of this suite needs longer than vitest's 5s default timeout.
+    it("guest join + card + my cards round-trip", { timeout: 120_000 }, async () => {
       const repos = make();
       const phone = `+2782${String(Math.floor(1000000 + Math.random() * 8999999))}`;
       const joined = await repos.joinGuest({
@@ -68,7 +69,7 @@ function suite(name: string, make: () => PatronRepos) {
       expect(cards.some((c) => c.membershipId === joined.membershipId)).toBe(true);
     });
 
-    it("two joins with the same phone return the same customer", async () => {
+    it("two joins with the same phone return the same customer", { timeout: 120_000 }, async () => {
       const repos = make();
       const phone = `+2783${String(Math.floor(1000000 + Math.random() * 8999999))}`;
       const first = await repos.joinGuest({

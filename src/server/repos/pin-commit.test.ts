@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createPgRepos, pinHmacHex, PIN_MAX_FAILS } from "./pg";
 
 // Proves the wrong-PIN failure insert is COMMITTED even though the call
 // rejects: the mock rolls back inserts when a transaction callback throws,
@@ -52,7 +53,6 @@ describe("wrong-PIN failure insert commits", () => {
   });
 
   it("wrong PIN rejects but the failure insert survives, and record_stamp never runs", async () => {
-    const { createPgRepos, pinHmacHex } = await import("./pg");
     mockDb.storedHmac = pinHmacHex("test-pepper-commit", "rest-1", "staff-1", "1234");
     const repos = createPgRepos({ databaseUrl: "postgres://mock:5432/db" });
 
@@ -74,7 +74,6 @@ describe("wrong-PIN failure insert commits", () => {
   });
 
   it("locked staff rejects even the correct PIN without recording another failure", async () => {
-    const { createPgRepos, pinHmacHex, PIN_MAX_FAILS } = await import("./pg");
     mockDb.storedHmac = pinHmacHex("test-pepper-commit", "rest-1", "staff-1", "1234");
     mockDb.fails = String(PIN_MAX_FAILS);
     mockDb.lastFail = new Date().toISOString();

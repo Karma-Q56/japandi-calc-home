@@ -188,7 +188,14 @@ export function createPgRepos(ctx: Ctx): PatronRepos {
     async submitLead(input: LeadInput) {
       if (input.website) throw new Error("Honeypot detected.");
       if (!input.consent) throw new Error("Consent is required.");
-      return withContext(ctx, async (tx) => {
+      // Trusted server insert: the lead row is written by the server after
+      // honeypot/consent/rate-limit checks, so this tx runs as operator
+      // (never exposed to clients). A public ctx cannot use `returning id`
+      // because lead SELECT is operator-only and RLS rejects RETURNING rows
+      // that fail the SELECT policy — the public insert policy alone is not
+      // enough.
+      const sys: Ctx = { ...ctx, isOperator: true };
+      return withContext(sys, async (tx) => {
         // Rate limit: max 5 lead posts per phone AND per IP per hour.
         const hits = await q<{ n: string | number }>(
           tx,

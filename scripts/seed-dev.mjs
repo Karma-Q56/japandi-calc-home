@@ -113,7 +113,7 @@ async function bulkInsert(tx, table, columns, rows, chunk = 100) {
     const values = slice
       .map((row, r) => `(${row.map((v) => { params.push(v); return `$${params.length}`; }).join(", ")})`)
       .join(", ");
-    await tx.unsafe(`insert into ${table} (${columns.join(", ")}) values ${values} on conflict do nothing`);
+    await tx.unsafe(`insert into ${table} (${columns.join(", ")}) values ${values} on conflict do nothing`, params);
   }
 }
 
