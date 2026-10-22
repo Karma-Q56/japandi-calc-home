@@ -35,6 +35,7 @@ export interface Theme {
   stampShape: "circle" | "square" | "pixel-star" | "coffee-cup" | "croissant" | "custom-svg";
   cardBackground: "flat" | "paper" | "gradient" | "photo";
   logo?: string;
+  coverPhoto?: string;
   logoStamp?: LogoStamp;
   tagline: string;
 }
@@ -229,6 +230,8 @@ export interface SpinSegment {
 
 export interface SpinConfig {
   enabled: boolean;
+  modes?: Array<"welcome" | "reward_decider" | "daily_surprise">;
+  dailyPool?: string[];
   segments: SpinSegment[];
   weeklyBudgetCents: number;
   /** Guests earn one spin every N visits. */
@@ -246,6 +249,8 @@ export interface SpinResult {
   label: string;
   valueCents: number;
   wonAt: string;
+  mode?: "welcome" | "reward_decider" | "daily_surprise" | "visit";
+  code?: string;
   prizeSpecialId?: string;
 }
 
@@ -264,7 +269,7 @@ export interface Campaign {
   restaurantId: string;
   name: string;
   body: string;
-  channel: "sms";
+  channel: "sms" | "push" | "push_then_sms";
   audience: CampaignAudience;
   code: string;
   validFrom?: string;
@@ -301,7 +306,7 @@ export interface Message {
   customerId: string;
   membershipId?: string;
   campaignId?: string;
-  channel: "sms";
+  channel: "sms" | "push";
   body: string;
   segments: number;
   costCents: number;
@@ -367,7 +372,13 @@ export interface Payment {
 export interface PushSubscription {
   id: string;
   customerId: string;
+  membershipId?: string;
+  restaurantId?: string;
   endpoint: string;
+  p256dh?: string;
+  auth?: string;
+  createdAt?: string;
+  lastUsedAt?: string;
 }
 export interface AuditEvent {
   id: string;

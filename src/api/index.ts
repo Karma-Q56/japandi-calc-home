@@ -101,6 +101,7 @@ import {
   deleteSavedList,
   listSavedLists,
   recipientCount,
+  removeSavedListMember,
   saveSavedList,
   savedListFromSegment,
   segmentLabel,
@@ -120,6 +121,7 @@ import {
   customerProfile,
   exportCsv,
   listCustomers,
+  matchingCustomerMembershipIds,
   manualStamp,
   removeFromList,
   revealPhone,
@@ -206,6 +208,7 @@ export const api = {
     lists: listSavedLists,
     saveList: saveSavedList,
     deleteList: deleteSavedList,
+    removeMember: removeSavedListMember,
     listFromSegment: savedListFromSegment,
   },
   loyalty: {
@@ -220,6 +223,7 @@ export const api = {
   },
   customers: {
     list: listCustomers,
+    matchingMembershipIds: matchingCustomerMembershipIds,
     profile: customerProfile,
     reveal: revealPhone,
     export: exportCsv,

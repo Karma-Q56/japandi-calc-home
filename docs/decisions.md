@@ -130,6 +130,16 @@
 - **Live UI path:** `src/server/live.ts` (`createServerFn`; `isOperator: false` hard-coded server-side, never from client input; lead IP hashed server-side) wired into `/r/:slug`, join, card (search `customerId` pre-auth seam), till stamp (PIN field = per-stamp till PIN in live mode) and `LeadForm`. Demo default unchanged; staff/card `beforeLoad` demo-session redirects skipped only in live mode.
 - **Verified:** typecheck clean, lint 0 errors, vitest 126/126 runnable pass (5 live-DB tests skip), build ok. **Not verified:** everything against a real dev database.
 
+## 2026-10-21 — Phase C engagement, messaging, and responsive fixes
+
+- **Timezone:** public venue hours use one supplied instant and `Africa/Johannesburg` for both weekday and open status; campaign weekday segments and daily-spin availability use the venue calendar day.
+- **Public pages and brand:** venue pages support compact/full hours, uploaded cover imagery with a palette-based fallback, restored product/venue wordmarks, and improved mobile layouts.
+- **Messaging and preferences:** added push subscription opt-in/out UI, push-aware campaign channels and demo outbox records, copy/quiet-hour/cost and dispatch handling, plus campaign composition for push and push-with-SMS fallback. No live push provider is configured; delivery remains demo-only.
+- **Customers and audiences:** supports matching customer membership IDs for selection, saved-list membership removal, emptying an existing saved list, and customer-list selection workflows.
+- **Spin modes:** earned visit/milestone spins, reward-decider spins and daily Johannesburg surprise spins are represented in owner configuration and guest UI; daily surprises issue personal codes from active specials. These remain demo-repository backed and are not a persisted live-DB feature.
+- **Verification (local working tree, 2026-10-22):** `pnpm typecheck` passed; `pnpm lint` exited 0 with 11 existing warnings; full `pnpm exec vitest run` passed 161 tests with 5 skipped (live DB tests); `pnpm build` succeeded. The threads worker timed out starting `src/test/route-children.test.tsx` on the first full run; the file passed when run alone. Browser checks at 375px and 1280px measured DOM layout (no screenshots): landing, `/for-diners`, `/login`, `/demo` owner entry, owner overview, `/app/customers` (20 guests), `/app/campaigns/new`, `/app/loyalty` and `/me/settings` have no horizontal page overflow, and the owner sidebar/tab-bar switch at the two widths. `/r/:slug` could not be exercised locally because `.dev.vars` selects `DATA_MODE=live` and its database is unreachable (500); the demo composer logs a hydration mismatch since demo session state is browser-only. External provider, authentication, live database and staging behavior remain unverified.
+- **No external actions:** no provider account was created, no production database was modified, and no deployment was performed.
+
 ## 2026-10-19 — Phone verification (OTP) gate on live join
 
 - **No real phone verification exists yet.** `joinGuestFn` (`src/server/live.ts`) no longer hard-codes `otpVerified: true`.

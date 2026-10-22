@@ -275,6 +275,46 @@ function Loyalty() {
             <span>Also award a spin at each reward milestone</span>
           </label>
         </div>
+        <div className="spin-mode-options">
+          <h3>Guest spin modes</h3>
+          {([
+            ["welcome", "Earned spins", "Guests earn one every N recorded visits."],
+            ["reward_decider", "Reward decider", "Let a guest choose a prize for an unredeemed reward already earned."],
+            ["daily_surprise", "Daily surprise", "One complimentary surprise per guest each Johannesburg calendar day."],
+          ] as const).map(([mode, title, description]) => (
+            <label className="guest-consent" key={mode}>
+              <input
+                type="checkbox"
+                checked={(spin.modes ?? ["welcome"]).includes(mode)}
+                onChange={(event) => {
+                  const modes = new Set<NonNullable<SpinConfig["modes"]>[number]>(spin.modes ?? ["welcome"]);
+                  if (event.target.checked) modes.add(mode);
+                  else modes.delete(mode);
+                  setSpin({ ...spin, modes: [...modes] });
+                }}
+              />
+              <span><strong>{title}</strong><small>{description}</small></span>
+            </label>
+          ))}
+        </div>
+        {((spin.modes ?? ["welcome"]).includes("reward_decider") || (spin.modes ?? ["welcome"]).includes("daily_surprise")) && (
+          <p className="demo-data-note">Reward decider only changes the description of a reward already earned. Daily surprises require an active, in-date special. If all modes are off, the wheel is hidden.</p>
+        )}
+        {(spin.modes ?? ["welcome"]).includes("daily_surprise") && (
+          <label className="builder-field">
+            Daily surprise specials
+            <select
+              multiple
+              value={spin.dailyPool ?? []}
+              onChange={(event) => setSpin({ ...spin, dailyPool: Array.from(event.target.selectedOptions, (option) => option.value) })}
+            >
+              {state.specials.filter((special) => special.restaurantId === restaurant.id && special.active).map((special) => (
+                <option key={special.id} value={special.id}>{special.title}</option>
+              ))}
+            </select>
+            <small>Select one or more active specials. Hold Ctrl/⌘ to select multiple.</small>
+          </label>
+        )}
         <div className="spin-segments">
           <h3>Segments</h3>
           {spin.segments.map((segment) => (

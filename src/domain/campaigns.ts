@@ -5,6 +5,7 @@ import type {
   CampaignAudience,
   CampaignStatus,
   DemoState,
+  LedgerEntry,
   Membership,
   Message,
 } from "@/data/types";
@@ -53,7 +54,7 @@ function memberReceivedCount(state: DemoState, membership: Membership, now: numb
       message.membershipId === membership.id ||
       (message.customerId === membership.customerId &&
         message.restaurantId === membership.restaurantId);
-    if (!mine || (message.status !== "sent" && message.status !== "delivered")) return false;
+    if (!mine || message.channel !== "sms" || (message.status !== "sent" && message.status !== "delivered")) return false;
     const at = message.sentAt ?? message.createdAt;
     return now - new Date(at).getTime() < 7 * DAY;
   }).length;
@@ -74,6 +75,23 @@ export function eligibleMemberships(
     if (!customer || customer.deleted) return false;
     if (memberReceivedCount(state, membership, now) >= cap) return false;
     return true;
+  });
+}
+
+/** Guests with an opted-in browser subscription, scoped to this restaurant. */
+export function eligiblePushMemberships(
+  state: DemoState,
+  restaurantId: string,
+  audience: CampaignAudience,
+): Membership[] {
+  return segmentMemberships(state, restaurantId, audience).filter((membership) => {
+    if (!membership.marketingPush) return false;
+    const customer = state.customers.find((item) => item.id === membership.customerId);
+    if (!customer || customer.deleted) return false;
+    return state.pushSubscriptions.some((subscription) =>
+      (subscription.membershipId === membership.id || subscription.customerId === membership.customerId) &&
+      (!subscription.restaurantId || subscription.restaurantId === restaurantId),
+    );
   });
 }
 
@@ -166,6 +184,7 @@ export function saveDraft(input: {
     validFrom?: string;
     validTo?: string;
     specialId?: string;
+    channel?: Campaign["channel"];
   };
 }) {
   const state = demoRepo.read();
@@ -199,7 +218,7 @@ export function saveDraft(input: {
       restaurantId: input.restaurantId,
       name,
       body,
-      channel: "sms",
+      channel: input.fields.channel ?? "sms",
       audience: input.fields.audience,
       code,
       ...(input.fields.specialId ? { specialId: input.fields.specialId } : {}),
@@ -227,6 +246,7 @@ export function saveDraft(input: {
     name,
     body,
     audience: input.fields.audience,
+    channel: input.fields.channel ?? existing.channel ?? "sms",
     code,
     ...(input.fields.specialId ? { specialId: input.fields.specialId } : {}),
   };
@@ -282,9 +302,17 @@ export function confirmCampaign(input: {
   if (campaign.requiresApproval && !campaign.approvedBy) {
     return failure("INVALID", "An owner or manager must approve this campaign first.");
   }
-  const eligible = eligibleMemberships(state, campaign.restaurantId, campaign.audience, state.now);
+  const pushEligible = campaign.channel === "sms"
+    ? []
+    : eligiblePushMemberships(state, campaign.restaurantId, campaign.audience);
+  const pushMembershipIds = new Set(pushEligible.map((membership) => membership.id));
+  const smsEligible = campaign.channel === "push"
+    ? []
+    : eligibleMemberships(state, campaign.restaurantId, campaign.audience, state.now)
+        .filter((membership) => campaign.channel !== "push_then_sms" || !pushMembershipIds.has(membership.id));
+  const eligible = [...pushEligible, ...smsEligible];
   if (eligible.length === 0) {
-    return failure("INVALID", "No eligible guests: everyone opted out, was erased, or hit the weekly cap.");
+    return failure("INVALID", "No eligible guests for the selected channel: check consent and device subscriptions.");
   }
   const special = campaign.specialId
     ? state.specials.find((item) => item.id === campaign.specialId)
@@ -301,7 +329,7 @@ export function confirmCampaign(input: {
       }
     }
   }
-  const sample = state.memberships.find((m) => m.id === eligible[0]?.id);
+  const sample = state.memberships.find((m) => m.id === (smsEligible[0] ?? eligible[0])?.id);
   const sampleName = sample
     ? (state.customers.find((c) => c.id === sample.customerId)?.name.split(" ")[0] ?? "friend")
     : "friend";
@@ -310,7 +338,7 @@ export function confirmCampaign(input: {
     sampleCode ? `${campaign.body}\nYour code: ${sampleCode}` : campaign.body,
     sampleName,
   );
-  const estCost = eligible.length * segments * COST_PER_SEGMENT_CENTS;
+  const estCost = smsEligible.length * segments * COST_PER_SEGMENT_CENTS;
   const balance = balanceFor(state, campaign.restaurantId);
   if (estCost > balance) {
     return failure(
@@ -318,7 +346,7 @@ export function confirmCampaign(input: {
       `Insufficient credit: this send needs R${(estCost / 100).toFixed(2)} but the balance is R${(balance / 100).toFixed(2)}. Top up first.`,
     );
   }
-  const planned = planEntries(state, campaign.restaurantId, [
+  const planned = estCost > 0 ? planEntries(state, campaign.restaurantId, [
     {
       type: "reserve",
       amountCents: -estCost,
@@ -326,7 +354,7 @@ export function confirmCampaign(input: {
       campaignId: campaign.id,
       createdBy: input.actor,
     },
-  ]);
+  ]) : { ok: true as const, entries: [] as LedgerEntry[] };
   if (!planned.ok) return failure("INVALID", planned.reason);
   let scheduledAt = input.scheduledAt;
   if (scheduledAt && inQuietHours(Date.parse(scheduledAt))) {
@@ -338,10 +366,29 @@ export function confirmCampaign(input: {
   const existingKeys = new Set(
     state.messages
       .filter((message) => message.campaignId === campaign.id)
-      .map((message) => `${message.membershipId}:sms`),
+      .map((message) => `${message.membershipId}:${message.channel}`),
   );
   const created: Message[] = [];
-  for (const membership of eligible) {
+  for (const membership of pushEligible) {
+    if (existingKeys.has(`${membership.id}:push`)) continue;
+    const customer = state.customers.find((item) => item.id === membership.customerId)!;
+    created.push({
+      id: `message-${crypto.randomUUID()}`,
+      restaurantId: campaign.restaurantId,
+      customerId: membership.customerId,
+      membershipId: membership.id,
+      campaignId: campaign.id,
+      channel: "push",
+      body: renderBody(campaign.body, customer.name.split(" ")[0] ?? customer.name),
+      segments: 0,
+      costCents: 0,
+      status: "queued",
+      attempts: 0,
+      provider: "demo-outbox",
+      createdAt: now,
+    });
+  }
+  for (const membership of smsEligible) {
     if (existingKeys.has(`${membership.id}:sms`)) continue;
     const customer = state.customers.find((c) => c.id === membership.customerId)!;
     const firstName = customer.name.split(" ")[0] ?? customer.name;
@@ -474,13 +521,22 @@ export function dispatchBatch(
       return { ...message, status: "skipped", errorCode };
     };
     if (!campaign || !restaurant || !membership || !customer) return skip("missing_target");
-    if (!membership.marketingSms) return skip("consent_withdrawn");
     if (customer.deleted) return skip("erased");
-    if (memberReceivedCount(next, membership, nowMs) >= (restaurant.smsCapMember ?? 2)) {
-      return skip("member_cap");
-    }
-    if (broadcasts(restaurant.id) >= (restaurant.smsCapRestaurant ?? 3)) {
-      return skip("restaurant_cap");
+    if (message.channel === "push") {
+      if (!membership.marketingPush) return skip("push_consent_withdrawn");
+      const subscribed = next.pushSubscriptions.some((subscription) =>
+        (subscription.membershipId === membership.id || subscription.customerId === membership.customerId) &&
+        (!subscription.restaurantId || subscription.restaurantId === restaurant.id),
+      );
+      if (!subscribed) return skip("push_subscription_missing");
+    } else {
+      if (!membership.marketingSms) return skip("consent_withdrawn");
+      if (memberReceivedCount(next, membership, nowMs) >= (restaurant.smsCapMember ?? 2)) {
+        return skip("member_cap");
+      }
+      if (broadcasts(restaurant.id) >= (restaurant.smsCapRestaurant ?? 3)) {
+        return skip("restaurant_cap");
+      }
     }
     if (inQuietHours(nowMs)) {
       report.held += 1;
@@ -540,7 +596,7 @@ export function settleCampaign(input: { campaignId: string; actor: string }) {
     return failure("INVALID", "Messages are still in flight.");
   }
   const actual = rows
-    .filter((message) => message.status === "sent" || message.status === "delivered")
+    .filter((message) => message.channel === "sms" && (message.status === "sent" || message.status === "delivered"))
     .reduce((sum, message) => sum + message.costCents, 0);
   const batch: NewEntry[] = [
     {
@@ -560,11 +616,9 @@ export function settleCampaign(input: { campaignId: string; actor: string }) {
       createdBy: input.actor,
     });
   }
-  const validated = planEntries(
-    state,
-    campaign.restaurantId,
-    batch.filter((entry) => entry.amountCents !== 0),
-  );
+  const validated = batch.some((entry) => entry.amountCents !== 0)
+    ? planEntries(state, campaign.restaurantId, batch.filter((entry) => entry.amountCents !== 0))
+    : { ok: true as const, entries: [] as LedgerEntry[] };
   if (!validated.ok) return failure("INVALID", validated.reason);
   const failed = rows.filter((m) => m.status === "failed").length;
   const delivered = rows.filter((m) => m.status === "delivered").length;

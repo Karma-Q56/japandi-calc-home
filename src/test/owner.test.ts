@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { demoRepo } from "@/data/repo";
 import { clock } from "@/lib/clock";
 import { overview } from "@/domain/dash";
-import { exportCsv, listCustomers, removeFromList, revealPhone } from "@/domain/customers";
+import { exportCsv, listCustomers, matchingCustomerMembershipIds, removeFromList, revealPhone } from "@/domain/customers";
 
 const owner = { role: "owner", restaurantId: "rest-daily-grind" };
 const manager = { role: "manager", restaurantId: "rest-daily-grind" };
@@ -87,6 +87,29 @@ describe("customers", () => {
     });
     expect(searched.ok && searched.data.total).toBeGreaterThan(0);
     expect(searched.ok && searched.data.rows.every((r) => r.name.includes("Thandi"))).toBe(true);
+  });
+
+  it("selects every matching guest across pages and preserves search/filter behavior", () => {
+    const matches = matchingCustomerMembershipIds({
+      restaurantId: "rest-daily-grind",
+      search: "Thandi",
+      session: owner,
+    });
+    expect(matches.ok).toBe(true);
+    if (!matches.ok) return;
+    expect(matches.data.length).toBeGreaterThan(1);
+    expect(new Set(matches.data).size).toBe(matches.data.length);
+
+    const smsMatches = matchingCustomerMembershipIds({
+      restaurantId: "rest-daily-grind",
+      filter: "sms",
+      session: owner,
+    });
+    expect(smsMatches.ok).toBe(true);
+    if (!smsMatches.ok) return;
+    expect(smsMatches.data.length).toBe(
+      demoRepo.read().memberships.filter((item) => item.restaurantId === "rest-daily-grind" && item.marketingSms).length,
+    );
   });
 
   it("phone reveal and CSV export write audit events", () => {

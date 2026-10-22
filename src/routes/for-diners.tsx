@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { MarketingShell } from "@/components/patron/MarketingShell";
 import { ArrowRight, Stamp, Smartphone, MapPin, Sparkles } from "lucide-react";
 import { createSeed } from "@/data/seed";
+import { PatronBrand } from "@/lib/patron-brand";
 
 export const Route = createFileRoute("/for-diners")({
   head: () => ({
@@ -50,6 +51,7 @@ function ForDiners() {
     <MarketingShell current="diners">
       <section className="diners-hero page-width">
         <div className="diners-hero-copy">
+          <PatronBrand />
           <span className="eyebrow">
             <span className="eyebrow-line" /> For diners
           </span>

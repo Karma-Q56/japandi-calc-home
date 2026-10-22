@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { MarketingShell } from "@/components/patron/MarketingShell";
 import { updateDemo } from "@/data/repo";
 import { useDemoState } from "@/data/useDemoState";
+import { PatronBrand } from "@/lib/patron-brand";
 import {
   CreditCard,
   Store,
@@ -94,6 +95,7 @@ function LoginPage() {
   return (
     <MarketingShell current="login">
       <section className="login-page page-width">
+        <PatronBrand />
         <span className="eyebrow">
           <span className="eyebrow-line" /> Log in
         </span>

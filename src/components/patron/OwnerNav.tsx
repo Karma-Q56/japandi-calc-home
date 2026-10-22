@@ -3,6 +3,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   Users,
+  List,
   Gift,
   Megaphone,
   Tag,
@@ -29,6 +30,7 @@ export const OWNER_NAV: Item[] = [
   { to: "/app/team", label: "Team", icon: UserCog },
   { to: "/app/audit", label: "Activity log", icon: ScrollText },
   { to: "/app/settings", label: "Settings", icon: Settings },
+  { to: "/app/lists", label: "Lists", icon: List },
 ];
 
 const PRIMARY = OWNER_NAV.slice(0, 4);

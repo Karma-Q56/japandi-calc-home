@@ -5,6 +5,7 @@ import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
 import { maskPhone } from "@/lib/phone";
+import { enableBrowserPush, disableBrowserPush, showLocalPushTest } from "@/lib/web-push-client";
 
 export const Route = createFileRoute("/me/settings")({
   beforeLoad: () => {
@@ -23,6 +24,7 @@ function GuestSettings() {
   const [name, setName] = useState(customer?.name ?? "");
   const [birthday, setBirthday] = useState(customer?.birthday ?? "");
   const [notice, setNotice] = useState("");
+  const [pushBusy, setPushBusy] = useState<string | null>(null);
   // Fill the form once the demo session/customer is available after hydration.
   useEffect(() => {
     if (!customer) return;
@@ -122,14 +124,12 @@ function GuestSettings() {
             )!;
             return (
               <article className="consent-setting consent-setting--messages" key={membership.id}>
-                <div>
-                  <strong>{restaurant.name}</strong>
-                  <small>SMS offers from {restaurant.name}.</small>
-                </div>
+                <div className="message-restaurant-name"><strong>{restaurant.name}</strong></div>
                 <div className="message-toggles">
-                  <label className="consent-toggle">
-                    <span>{membership.marketingSms ? "SMS on" : "SMS off"}</span>
+                  <label className="consent-switch-row">
+                    <span>SMS offers</span>
                     <input
+                      role="switch"
                       type="checkbox"
                       checked={membership.marketingSms}
                       onChange={(event) => {
@@ -139,10 +139,44 @@ function GuestSettings() {
                       aria-label={`SMS offers from ${restaurant.name}`}
                     />
                   </label>
-                  <label className="consent-toggle is-disabled" title="Push arrives later">
-                    <span>Push · coming soon</span>
-                    <input type="checkbox" checked={false} disabled aria-label="Push (coming soon)" />
+                  <label className="consent-switch-row">
+                    <span>Push notifications</span>
+                    <input
+                      role="switch"
+                      type="checkbox"
+                      checked={membership.marketingPush}
+                      disabled={pushBusy === membership.id}
+                      onChange={async (event) => {
+                        const enabled = event.target.checked;
+                        setPushBusy(membership.id);
+                        try {
+                          if (enabled) {
+                            const subscription = await enableBrowserPush(import.meta.env["VITE_VAPID_PUBLIC_KEY"] ?? "");
+                            demoRepo.update((current) => ({
+                              ...current,
+                              memberships: current.memberships.map((item) => item.id === membership.id ? { ...item, marketingPush: true } : item),
+                              pushSubscriptions: [...current.pushSubscriptions.filter((item) => item.endpoint !== subscription.endpoint), { id: `push-${crypto.randomUUID()}`, customerId, membershipId: membership.id, restaurantId: restaurant.id, endpoint: subscription.endpoint, p256dh: subscription.keys.p256dh, auth: subscription.keys.auth, createdAt: new Date(current.now).toISOString() }],
+                            }));
+                            setNotice("Push enabled on this device.");
+                          } else {
+                            const endpoint = await disableBrowserPush();
+                            demoRepo.update((current) => ({
+                              ...current,
+                              memberships: current.memberships.map((item) => item.id === membership.id ? { ...item, marketingPush: false } : item),
+                              pushSubscriptions: current.pushSubscriptions.filter((item) => item.endpoint !== endpoint),
+                            }));
+                            setNotice("Push disabled on this device.");
+                          }
+                        } catch (error) {
+                          setNotice(error instanceof Error ? error.message : "Could not update push preference.");
+                        } finally {
+                          setPushBusy(null);
+                        }
+                      }}
+                      aria-label={`Push notifications from ${restaurant.name}`}
+                    />
                   </label>
+                  {membership.marketingPush && <button type="button" className="builder-secondary push-test-button" onClick={() => void showLocalPushTest().then(() => setNotice("Test notification shown on this device.")).catch((error: unknown) => setNotice(error instanceof Error ? error.message : "Could not show test notification."))}>Send me a test notification</button>}
                 </div>
               </article>
             );

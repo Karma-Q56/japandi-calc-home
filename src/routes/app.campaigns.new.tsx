@@ -1,10 +1,11 @@
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate, useSearch } from "@tanstack/react-router";
 import { useState, useSyncExternalStore } from "react";
 import { api } from "@/api";
 import {
   checkCopy,
   costPreview,
   eligibleMemberships,
+  eligiblePushMemberships,
   fixCopy,
   messageSegments,
 } from "@/domain/campaigns";
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/app/campaigns/new")({
   beforeLoad: () => {
     if (!requireRole("owner", "manager")(demoRepo.read().session)) throw redirect({ to: "/demo" });
   },
+  validateSearch: (search: Record<string, unknown>) => ({ listId: typeof search["listId"] === "string" ? search["listId"] : undefined }),
   component: ComposerPage,
 });
 
@@ -32,13 +34,15 @@ const SEGMENT_CHOICES: Array<{ type: SegmentType; title: string; hint: string }>
 function ComposerPage() {
   const state = useSyncExternalStore(demoRepo.subscribe, demoRepo.read, demoRepo.read);
   const navigate = useNavigate();
+  const { listId: initialListId } = useSearch({ from: "/app/campaigns/new" });
   const restaurantId = state.session.restaurantId;
   const [step, setStep] = useState(1);
   const [draftId, setDraftId] = useState<string | null>(null);
   const [name, setName] = useState("");
-  const [segment, setSegment] = useState<SegmentType>("everyone");
+  const [segment, setSegment] = useState<SegmentType>(initialListId ? "saved_list" : "everyone");
+  const [channel, setChannel] = useState<"sms" | "push" | "push_then_sms">("sms");
   const [weekday, setWeekday] = useState(3);
-  const [listId, setListId] = useState("");
+  const [listId, setListId] = useState(initialListId ?? "");
   const [specialId, setSpecialId] = useState("");
   const [body, setBody] = useState("Hi {first_name}, we miss you! Pop by this week.");
   const [code, setCode] = useState("");
@@ -76,7 +80,10 @@ function ComposerPage() {
             : segment === "close_to_reward"
               ? { type: "close_to_reward", remaining: 2 }
               : { type: "everyone" };
-  const eligible = eligibleMemberships(state, restaurant.id, audience);
+  const pushEligible = channel === "sms" ? [] : eligiblePushMemberships(state, restaurant.id, audience);
+  const pushIds = new Set(pushEligible.map((membership) => membership.id));
+  const smsEligible = channel === "push" ? [] : eligibleMemberships(state, restaurant.id, audience).filter((membership) => channel !== "push_then_sms" || !pushIds.has(membership.id));
+  const eligible = [...pushEligible, ...smsEligible];
   const rawCount = api.audience.count(restaurant.id, audience);
   const sampleName =
     state.customers.find((c) => c.id === eligible[0]?.customerId)?.name.split(" ")[0] ?? "friend";
@@ -100,6 +107,7 @@ function ComposerPage() {
         name: name || "Untitled campaign",
         body,
         audience,
+        channel,
         ...(code ? { code } : {}),
         ...(specialId ? { specialId } : {}),
         ...(validFrom ? { validFrom } : {}),
@@ -172,7 +180,7 @@ function ComposerPage() {
   };
 
   const preview = body.replaceAll("{first_name}", sampleName);
-  const short = balance < costPreviewCents(eligible.length, segments);
+  const short = balance < costPreviewCents(smsEligible.length, segments);
   const steps = ["Audience", "Message", "Cost", "Confirm"];
   const back =
     step > 1 ? (
@@ -211,6 +219,17 @@ function ComposerPage() {
               onChange={(event) => setName(event.target.value)}
             />
           </label>
+          <fieldset className="campaign-channel-picker">
+            <legend>Send by</legend>
+            {([
+              ["push", "Push only"],
+              ["sms", "SMS only"],
+              ["push_then_sms", "Push first, then SMS without push"],
+            ] as const).map(([value, label]) => (
+              <label key={value}><input type="radio" name="campaign-channel" checked={channel === value} onChange={() => setChannel(value)} />{label}</label>
+            ))}
+            <p>{pushEligible.length} push recipients · {smsEligible.length} SMS recipients. Push is free; SMS only is charged from credit.</p>
+          </fieldset>
           <div className="cmp-options" role="radiogroup" aria-label="Audience segment">
             {SEGMENT_CHOICES.map((choice) => (
               <button
@@ -258,7 +277,7 @@ function ComposerPage() {
             </label>
           )}
           <div className="live-count" role="status">
-            <strong>{rawCount}</strong> guests in this segment get this SMS once the campaign sends.
+            <strong>{eligible.length}</strong> eligible guests · {pushEligible.length} push / {smsEligible.length} SMS.
           </div>
 
           <details className="saved-lists">
@@ -361,9 +380,9 @@ function ComposerPage() {
           </label>
           <div className="cmp-meter">
             <span>
-              {segments} SMS segment{segments === 1 ? "" : "s"}
+              {segments} SMS segment{segments === 1 ? "" : "s"} × {smsEligible.length} SMS guests
             </span>
-            <span>{eligible.length} recipients</span>
+            <span>{pushEligible.length} push · {smsEligible.length} SMS recipients</span>
           </div>
           {warnings.map((warning) => (
             <p className="cmp-warn" key={warning.kind}>
@@ -456,7 +475,7 @@ function ComposerPage() {
             </div>
           </div>
           <p className={short ? "cmp-warn" : "cmp-note"}>
-            {costPreview({ recipients: eligible.length, segments, creditCents: balance })}
+            {costPreview({ recipients: smsEligible.length, segments, creditCents: balance })}
           </p>
           <p className="cmp-note">
             The estimate is held from your credit when you confirm. You are only charged for
@@ -505,7 +524,7 @@ function ComposerPage() {
             </label>
           )}
           <p className="cmp-note">
-            Audience: {api.audience.label(audience)}. {eligible.length} recipients.
+            Audience: {api.audience.label(audience)}. {pushEligible.length} push recipients and {smsEligible.length} SMS recipients.
           </p>
           {eligible.length > 200 && (
             <label className="builder-field">

@@ -3,8 +3,8 @@ import { useDemoState } from "@/data/useDemoState";
 import { getDataModeFn, getPublicPageFn } from "@/server/live";
 import type { PublicPage } from "@/server/repos/contracts";
 import { api } from "@/api";
-import { APP_NAME, TIMEZONE } from "@/config/app";
-import { clock } from "@/lib/clock";
+import { APP_NAME } from "@/config/app";
+import { johannesburgTime, venueIsOpenNow } from "@/lib/johannesburg-time";
 import { ThemeProvider } from "@/theme";
 import { withChildren } from "@/lib/nested";
 import { PublicTemplate, type VenueSection } from "@/components/patron/PublicTemplates";
@@ -27,27 +27,6 @@ const money = (cents: number) =>
     maximumFractionDigits: cents % 100 === 0 ? 0 : 2,
   }).format(cents / 100);
 
-function todayName(now: number): string {
-  return new Intl.DateTimeFormat("en-US", {
-    timeZone: TIMEZONE,
-    weekday: "long",
-  }).format(new Date(now));
-}
-
-function openNow(
-  hours: Record<string, { open: string; close: string } | null>,
-  now: number,
-): boolean {
-  const time = new Intl.DateTimeFormat("en-GB", {
-    timeZone: TIMEZONE,
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  }).format(new Date(now));
-  const today = hours[todayName(now)];
-  return !!today && time >= today.open && time < today.close;
-}
-
 function PublicRestaurantPage() {
   const { slug } = Route.useParams();
   const loaderData = Route.useLoaderData();
@@ -67,7 +46,10 @@ function PublicRestaurantPage() {
       </main>
     );
   }
-  const now = clock.now();
+  // useDemoState provides the same seed snapshot on the server and first
+  // client render; use it for venue time so the highlighted day cannot drift
+  // during hydration. Later browser state updates carry the persisted demo clock.
+  const now = state.now;
   const publicSpecials = api.special.publicFor(restaurant.id);
   const special =
     publicSpecials.find((item) => item.title && item.active) ?? null;
@@ -105,7 +87,7 @@ function PublicRestaurantPage() {
         restaurant={restaurant}
         sections={sections}
         special={special}
-        open={openNow(restaurant.hours, now)}
+        open={venueIsOpenNow(restaurant.hours, now)}
         now={now}
         joinHref={`/r/${slug}/join?src=link`}
         memberOffers={memberOffers}

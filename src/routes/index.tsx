@@ -28,6 +28,7 @@ import { Planner } from "@/components/patron/Planner";
 import { MenuSection, SeeItWorking } from "@/components/patron/MenuAndScreens";
 import { LeadForm } from "@/components/patron/LeadForm";
 import cafeHero from "@/assets/cafe-hero.jpg";
+import { PatronBrand } from "@/lib/patron-brand";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -61,15 +62,7 @@ function PixelStamp() {
   );
 }
 function Wordmark() {
-  return (
-    <a className="wordmark" href="#" aria-label="Patron home">
-      <PixelStamp />
-      <span>
-        {brand.name}
-        <span className="wordmark-dot">.</span>
-      </span>
-    </a>
-  );
+  return <PatronBrand href="/" />;
 }
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (

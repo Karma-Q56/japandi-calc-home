@@ -1,8 +1,8 @@
 import type { MenuItem, PageTemplate, Restaurant, Special } from "@/data/types";
 import { APP_NAME } from "@/config/app";
+import { PatronBrand } from "@/lib/patron-brand";
+import { johannesburgTime, venueIsOpenNow } from "@/lib/johannesburg-time";
 import { LoyaltyCard } from "./LoyaltyCard";
-import cafePhoto from "@/assets/cafe-hero.jpg";
-import dishPhoto from "@/assets/dish.jpg";
 
 export interface VenueSection {
   id: string;
@@ -33,13 +33,27 @@ const dateLabel = (iso: string) =>
     timeZone: "Africa/Johannesburg",
   }).format(new Date(iso));
 
-function Hours({ restaurant, compact = false }: { restaurant: Restaurant; compact?: boolean }) {
-  const today = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Africa/Johannesburg",
-    weekday: "long",
-  }).format(new Date());
+function Hours({ restaurant, compact = false, now }: { restaurant: Restaurant; compact?: boolean; now: number }) {
+  const today = johannesburgTime(now).weekday;
+  const todayHours = restaurant.hours[today];
+  if (compact) {
+    return (
+      <div className="pt-hours pt-hours--compact">
+        <p className="pt-hours-today"><strong>Today · {today.slice(0, 3)}</strong><span>{todayHours ? `${todayHours.open}–${todayHours.close}` : "Closed"}</span></p>
+        <details>
+          <summary>Full week</summary>
+          {Object.entries(restaurant.hours).map(([day, span]) => (
+            <div key={day} className={day === today ? "is-today" : undefined}>
+              <span>{day.slice(0, 3)}</span>
+              <strong>{span ? `${span.open}–${span.close}` : "Closed"}</strong>
+            </div>
+          ))}
+        </details>
+      </div>
+    );
+  }
   return (
-    <div className={`pt-hours${compact ? " pt-hours--compact" : ""}`}>
+    <div className="pt-hours">
       {Object.entries(restaurant.hours).map(([day, span]) => (
         <div key={day} className={day === today ? "is-today" : undefined}>
           <span>{day.slice(0, 3)}</span>
@@ -158,13 +172,10 @@ function Footer({ restaurant }: { restaurant: Restaurant }) {
 function Masthead({ restaurant, open }: { restaurant: Restaurant; open: boolean }) {
   return (
     <header className="pt-masthead">
-      <a href={`/r/${restaurant.slug}`} className="pt-wordmark">
-        {restaurant.theme.logo ? (
-          <img src={restaurant.theme.logo} alt="" width={32} height={32} />
-        ) : (
-          restaurant.name
-        )}
-      </a>
+      <div className="pt-masthead-brands">
+        <a href={`/r/${restaurant.slug}`} className="pt-venue-wordmark">{restaurant.name}</a>
+        <PatronBrand className="pt-product-wordmark" />
+      </div>
       <span className={`pt-open${open ? " is-open" : ""}`}>
         {open ? "Open now" : "Closed now"} · {restaurant.suburb}
       </span>
@@ -173,12 +184,13 @@ function Masthead({ restaurant, open }: { restaurant: Restaurant; open: boolean 
 }
 
 export function PublicTemplate({ template, ...props }: VenueTemplateProps & { template: PageTemplate }) {
-  const { restaurant, sections, special, open, now, joinHref, memberOffers = [] } = props;
-  const photo = restaurant.theme.cardBackground === "photo" ? cafePhoto : dishPhoto;
-  const today = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Africa/Johannesburg",
-    weekday: "long",
-  }).format(new Date(now));
+  const { restaurant, sections, special, now, joinHref, memberOffers = [] } = props;
+  // Derive open status from the same instant used for the highlighted weekday.
+  const open = venueIsOpenNow(restaurant.hours, now);
+  const today = johannesburgTime(now).weekday;
+  const heroStyle = restaurant.theme.coverPhoto
+    ? { ["--pt-photo" as string]: `url(${restaurant.theme.coverPhoto})`, ["--pt-hero-ink" as string]: restaurant.theme.ink }
+    : { ["--pt-hero-accent" as string]: restaurant.theme.accent, ["--pt-hero-paper" as string]: restaurant.theme.paper };
 
   if (template === "minimal") {
     return (
@@ -208,7 +220,7 @@ export function PublicTemplate({ template, ...props }: VenueTemplateProps & { te
           )}
           <section className="pt-min-block">
             <h2>Hours</h2>
-            <Hours restaurant={restaurant} compact />
+            <Hours restaurant={restaurant} compact now={now} />
             <p className="pt-today">Today is {today}.</p>
           </section>
           <MemberOffers offers={memberOffers} />
@@ -236,30 +248,24 @@ export function PublicTemplate({ template, ...props }: VenueTemplateProps & { te
     return (
       <main className="pt pt--menu-first" data-template="menu-first">
         <Masthead restaurant={restaurant} open={open} />
-        <div className="pt-mf-head">
+        <section className="pt-mf-head">
           <div>
             <span className="pt-kicker">{restaurant.suburb} · Johannesburg</span>
             <h1>{restaurant.name}</h1>
             <p>{restaurant.theme.tagline}</p>
-            <a className="pt-button" href={joinHref}>
-              Join the card
-            </a>
-            {restaurant.welcomeStamps > 0 && (
-              <small className="pt-note">
-                You start with {restaurant.welcomeStamps} stamp
-                {restaurant.welcomeStamps === 1 ? "" : "s"}.
-              </small>
-            )}
           </div>
-          <div className="pt-mf-aside">
-            <Hours restaurant={restaurant} compact />
-            <SpecialCard special={special} />
+          <div className="pt-mf-aside" aria-hidden="true">
+            <span>{restaurant.suburb} · Johannesburg</span>
           </div>
-        </div>
+        </section>
         <section className="pt-mf-menu">
           <h2>On the menu</h2>
           <Menu sections={sections} />
         </section>
+        <div className="pt-mf-after-menu">
+          <Hours restaurant={restaurant} compact now={now} />
+          <SpecialCard special={special} />
+        </div>
         <MemberOffers offers={memberOffers} />
         <JoinBlock restaurant={restaurant} href={joinHref} />
         <Footer restaurant={restaurant} />
@@ -272,8 +278,8 @@ export function PublicTemplate({ template, ...props }: VenueTemplateProps & { te
       <main className="pt pt--hero" data-template="hero">
         <Masthead restaurant={restaurant} open={open} />
         <section
-          className="pt-hero-photo"
-          style={{ ["--pt-photo" as string]: `url(${photo})` }}
+          className={`pt-hero-photo${restaurant.theme.coverPhoto ? " has-uploaded-photo" : ""}`}
+          style={heroStyle}
         >
           <div className="pt-hero-photo-inner">
             <span className="pt-kicker">
@@ -303,7 +309,7 @@ export function PublicTemplate({ template, ...props }: VenueTemplateProps & { te
             </div>
             <div>
               <span className="pt-kicker">Opening hours</span>
-              <Hours restaurant={restaurant} />
+              <Hours restaurant={restaurant} now={now} />
             </div>
           </section>
           <section className="pt-block" id="pt-menu">
@@ -351,7 +357,8 @@ export function PublicTemplate({ template, ...props }: VenueTemplateProps & { te
             </div>
           </div>
           <div className="pt-classic-card">
-            <Hours restaurant={restaurant} />
+            <JoinBlock restaurant={restaurant} href={joinHref} />
+            <Hours restaurant={restaurant} compact now={now} />
           </div>
         </section>
         <section className="pt-block">
@@ -371,7 +378,6 @@ export function PublicTemplate({ template, ...props }: VenueTemplateProps & { te
           </div>
         </div>
         <MemberOffers offers={memberOffers} />
-        <JoinBlock restaurant={restaurant} href={joinHref} />
       </div>
       <Footer restaurant={restaurant} />
     </main>

@@ -133,7 +133,7 @@ export function saveSavedList(input: {
   const ids = [...new Set(input.membershipIds)].filter((id) =>
     state.memberships.some((item) => item.id === id && item.restaurantId === input.restaurantId),
   );
-  if (ids.length === 0) return failure("INVALID", "Tick at least one guest for this list.");
+  if (ids.length === 0 && !input.id) return failure("INVALID", "Tick at least one guest for this list.");
   const now = new Date(state.now).toISOString();
   if (input.id) {
     const existing = state.savedLists.find((item) => item.id === input.id);
@@ -164,16 +164,30 @@ export function saveSavedList(input: {
   return success(list);
 }
 
-export function deleteSavedList(id: string) {
+export function deleteSavedList(input: { id: string; restaurantId: string }) {
   const state = demoRepo.read();
-  if (!state.savedLists.some((item) => item.id === id)) {
+  if (!state.savedLists.some((item) => item.id === input.id && item.restaurantId === input.restaurantId)) {
     return failure("NOT_FOUND", "List not found.");
   }
   updateDemo((current) => ({
     ...current,
-    savedLists: current.savedLists.filter((item) => item.id !== id),
+    savedLists: current.savedLists.filter((item) => item.id !== input.id),
   }));
   return success(true);
+}
+
+/** Remove one guest from a named list without withdrawing their message consent. */
+export function removeSavedListMember(input: { listId: string; restaurantId: string; membershipId: string }) {
+  const state = demoRepo.read();
+  const list = state.savedLists.find((item) => item.id === input.listId && item.restaurantId === input.restaurantId);
+  if (!list) return failure("NOT_FOUND", "List not found.");
+  if (!state.memberships.some((item) => item.id === input.membershipId && item.restaurantId === input.restaurantId)) {
+    return failure("NOT_FOUND", "Guest not found in this restaurant.");
+  }
+  if (!list.membershipIds.includes(input.membershipId)) return failure("NOT_FOUND", "Guest is not in this list.");
+  const updated = { ...list, membershipIds: list.membershipIds.filter((id) => id !== input.membershipId), updatedAt: new Date(state.now).toISOString() };
+  updateDemo((current) => ({ ...current, savedLists: current.savedLists.map((item) => item.id === list.id ? updated : item) }));
+  return success(updated);
 }
 
 /** Build a saved list from a segment in one step. */

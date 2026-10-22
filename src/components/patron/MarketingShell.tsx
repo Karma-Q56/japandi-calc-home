@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowUpRight, Heart, Menu, X } from "lucide-react";
-import { brand } from "@/lib/patron";
+import { PatronBrand } from "@/lib/patron-brand";
 import { APP_NAME } from "@/config/app";
 
 export function MarketingShell({
@@ -17,12 +17,7 @@ export function MarketingShell({
     <>
       <header className="site-header">
         <div className="page-width header-inner">
-          <a className="wordmark" href="/" aria-label={`${brand.name} home`}>
-            <span>
-              {APP_NAME}
-              <span className="wordmark-dot">.</span>
-            </span>
-          </a>
+          <PatronBrand />
           <nav className="nav-links" aria-label="Main navigation">
             <a href="/#how-it-works">For restaurants</a>
             <a href="/for-diners" aria-current={current === "diners" ? "page" : undefined}>
@@ -68,12 +63,7 @@ export function MarketingShell({
         <div className="page-width">
           <div className="footer-top">
             <div>
-              <a className="wordmark" href="/">
-                <span>
-                  {APP_NAME}
-                  <span className="wordmark-dot">.</span>
-                </span>
-              </a>
+              <PatronBrand />
               <p>A little loyalty goes a long way.</p>
             </div>
             <nav className="footer-links" aria-label="Footer navigation">

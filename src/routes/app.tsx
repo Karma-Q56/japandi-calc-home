@@ -7,6 +7,7 @@ import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
 import { OwnerSideNav, OwnerTabs } from "@/components/patron/OwnerNav";
 import { markOutletComponent } from "@/lib/nested";
+import { PatronBrand } from "@/lib/patron-brand";
 
 export const Route = createFileRoute("/app")({
   beforeLoad: () => {
@@ -23,15 +24,9 @@ function OwnerShell() {
   const restaurant =
     state.restaurants.find((item) => item.id === state.session.restaurantId) ??
     state.restaurants[0]!;
-  const initials = restaurant.name
-    .split(/\s+/)
-    .filter((w) => !/^(the|a|an)$/i.test(w))
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("");
   const brand = (
     <div className="ox-brand">
-      <span className="ox-brand-mark">{initials}</span>
+      <PatronBrand className="ox-brand-wordmark" />
       <span>
         <strong>{restaurant.name}</strong>
         <small>Owner view</small>
@@ -114,15 +109,15 @@ function Overview({ restaurantId }: { restaurantId: string }) {
           ))}
         </div>
       </section>
-      <section className="builder-panel">
-        <h2>Last campaign</h2>
+      <section className="builder-panel dashboard-next-campaign">
+        <h2>Next campaign</h2>
         {result.data.lastCampaign ? (
-          <p>
-            {result.data.lastCampaign.name} · {result.data.lastCampaign.delivered} delivered,{" "}
-            {result.data.lastCampaign.failed} failed.
+          <p className="dashboard-next-campaign-row">
+            <span className="dashboard-campaign-name">{result.data.lastCampaign.name}</span>
+            <span>{result.data.lastCampaign.delivered} delivered, {result.data.lastCampaign.failed} failed.</span>
           </p>
         ) : (
-          <p>No campaigns yet. Send your first offer from Campaigns.</p>
+          <p>No upcoming campaigns. Send your first offer from Campaigns.</p>
         )}
       </section>
     </main>

@@ -69,8 +69,10 @@ export function ThemePreview({
           ) : (
             <>
               <section
-                className="vp-hero"
-                style={{ ["--vp-photo" as string]: `url(${theme.logo ? theme.logo : cafePhoto})` }}
+                className={`vp-hero${theme.coverPhoto ? " has-uploaded-photo" : ""}`}
+                style={theme.coverPhoto
+                  ? { ["--vp-photo" as string]: `url(${theme.coverPhoto})` }
+                  : { ["--vp-hero-accent" as string]: theme.accent, ["--vp-hero-paper" as string]: theme.paper }}
               >
                 <p>Johannesburg</p>
                 <h2>{name}</h2>
@@ -120,6 +122,8 @@ export function ThemeEditor({
   const [stampBusy, setStampBusy] = useState(false);
   const [stampError, setStampError] = useState("");
   const [pendingLogo, setPendingLogo] = useState<File | null>(null);
+  const [coverError, setCoverError] = useState("");
+  const [coverBusy, setCoverBusy] = useState(false);
   const set = <K extends keyof Theme>(key: K, value: Theme[K]) => onChange({ ...theme, [key]: value });
   const color = (label: string, key: keyof Theme) => (
     <label className="builder-field theme-color-field">
@@ -145,6 +149,48 @@ export function ThemeEditor({
   };
   const removeLogo = () => {
     const { logo: _logo, logoStamp: _logoStamp, ...rest } = theme;
+    onChange(rest);
+  };
+
+  const uploadCover = async (file?: File) => {
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 2 * 1024 * 1024) {
+      setCoverError("Choose a JPG, PNG or WebP image no larger than 2 MB.");
+      return;
+    }
+    setCoverError("");
+    setCoverBusy(true);
+    try {
+      const image = await createImageBitmap(file);
+      const scale = Math.min(1, 1600 / Math.max(image.width, image.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(image.width * scale));
+      canvas.height = Math.max(1, Math.round(image.height * scale));
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("Image processing is not available in this browser.");
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      image.close();
+      const blob = await new Promise<Blob>((resolve, reject) =>
+        canvas.toBlob((value) => value ? resolve(value) : reject(new Error("Could not resize this image.")), "image/webp", 0.82),
+      );
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === "string") set("coverPhoto", reader.result);
+        setCoverBusy(false);
+      };
+      reader.onerror = () => {
+        setCoverError("Could not read this image.");
+        setCoverBusy(false);
+      };
+      reader.readAsDataURL(blob);
+    } catch (error) {
+      setCoverError(error instanceof Error ? error.message : "Could not process this image.");
+      setCoverBusy(false);
+    }
+  };
+
+  const removeCover = () => {
+    const { coverPhoto: _coverPhoto, ...rest } = theme;
     onChange(rest);
   };
 
@@ -356,6 +402,18 @@ export function ThemeEditor({
         )}
 
         <section className="te-group">
+          <h3>Public hero photo</h3>
+          <p className="te-help">Your own venue photo only. Without one, the page uses a calm pattern in your palette.</p>
+          <label className="builder-field">
+            Cover photo · JPG, PNG or WebP · up to 2 MB
+            <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void uploadCover(event.target.files?.[0])} />
+          </label>
+          {coverBusy && <p className="te-help">Resizing photo…</p>}
+          {coverError && <p className="theme-warning" role="alert">{coverError}</p>}
+          {theme.coverPhoto && <button type="button" className="builder-secondary" onClick={removeCover}>Remove cover photo</button>}
+        </section>
+
+        <section className="te-group">
           <h3>Words and type</h3>
           <label className="builder-field">
             Tagline
@@ -382,8 +440,8 @@ export function ThemeEditor({
             </select>
           </label>
           <label className="builder-field">
-            Logo · optional · up to 300 KB
-            <input type="file" accept="image/*" onChange={(event) => uploadLogo(event.target.files?.[0])} />
+            Stamp logo · optional · up to 300 KB
+            <input type="file" accept="image/png,image/jpeg,image/svg+xml" onChange={(event) => uploadLogo(event.target.files?.[0])} />
             {theme.logo && (
               <button type="button" className="builder-secondary" onClick={removeLogo}>
                 Remove logo

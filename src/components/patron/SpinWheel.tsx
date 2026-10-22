@@ -10,14 +10,22 @@ export function SpinWheel({ membershipId }: { membershipId: string }) {
   const [result, setResult] = useState<SpinResult | null>(null);
   const [error, setError] = useState("");
   const [spinning, setSpinning] = useState(false);
+  const [mode, setMode] = useState<"welcome" | "reward_decider" | "daily_surprise">("welcome");
   const state = api.spin.state(membershipId);
   if (!state.enabled) return null;
+  const availableModes = [
+    ...(state.welcomeEnabled ? (["welcome"] as const) : []),
+    ...(state.rewardDeciderEnabled && state.rewardReady ? (["reward_decider"] as const) : []),
+    ...(state.dailySurpriseEnabled && !state.dailyAlreadyUsed ? (["daily_surprise"] as const) : []),
+  ];
+  const activeMode = availableModes.includes(mode) ? mode : availableModes[0] ?? mode;
 
   const spin = () => {
+    if (spinning) return;
     setError("");
     setSpinning(true);
     window.setTimeout(() => {
-      const outcome = api.spin.wheel({ restaurantId: restaurantIdFor(), membershipId });
+      const outcome = api.spin.wheel({ restaurantId: restaurantIdFor(), membershipId, mode: activeMode });
       setSpinning(false);
       if (!outcome.ok) {
         setError(outcome.error.message);
@@ -47,15 +55,43 @@ export function SpinWheel({ membershipId }: { membershipId: string }) {
         </strong>
       </div>
       <p className="gx-note">
-        You&apos;ve made {state.visits} visits. Spins come from visits, never from spending.
+        {activeMode === "welcome"
+          ? `You’ve made ${state.visits} visits. Spins come from visits, never from spending.`
+          : activeMode === "reward_decider"
+            ? "Choose the prize for a reward you’ve already earned."
+            : "One daily surprise is available per Johannesburg day."}
       </p>
+      {availableModes.length > 1 && (
+        <label className="builder-field">
+          Spin type
+          <select value={activeMode} onChange={(event) => setMode(event.target.value as typeof mode)}>
+            {availableModes.map((option) => (
+              <option key={option} value={option}>
+                {option === "welcome" ? "Earned spin" : option === "reward_decider" ? "Choose my reward" : "Daily surprise"}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <button
         type="button"
         className="builder-primary spin-button"
-        disabled={state.earned <= 0 || spinning}
+        disabled={
+          spinning ||
+          availableModes.length === 0 ||
+          (activeMode === "welcome" && state.earned <= 0) ||
+          (activeMode === "reward_decider" && !state.rewardReady) ||
+          (activeMode === "daily_surprise" && state.dailyAlreadyUsed)
+        }
         onClick={spin}
       >
-        {spinning ? "Spinning…" : state.earned > 0 ? "Spin the wheel" : "No spins yet"}
+        {spinning
+          ? "Spinning…"
+          : activeMode === "reward_decider"
+            ? "Choose a reward"
+            : activeMode === "daily_surprise"
+              ? state.dailyAlreadyUsed ? "Daily surprise used" : "Reveal today’s surprise"
+              : state.earned > 0 ? "Spin the wheel" : "No spins yet"}
       </button>
       {error && (
         <p className="field-error" role="alert">
@@ -65,10 +101,17 @@ export function SpinWheel({ membershipId }: { membershipId: string }) {
       {result && (
         <div className="spin-result" role="status">
           <strong>{result.label}</strong>
-          {prizeCode ? (
+          {result.mode === "reward_decider" ? (
+            <p>Your earned reward is now {result.label}.</p>
+          ) : prizeCode ? (
             <>
               <p>Your personal code is in Offers. Show it at the till.</p>
               <code>{prizeCode.code}</code>
+            </>
+          ) : result.code ? (
+            <>
+              <p>Your daily surprise is ready. Show this code at the till.</p>
+              <code>{result.code}</code>
             </>
           ) : (
             <p>No prize this time. Visit again for another spin.</p>

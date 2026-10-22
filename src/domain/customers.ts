@@ -7,7 +7,7 @@ import { logAudit, requireScope } from "./audit";
 export type CustomerFilter =
   "all" | "new14" | "regulars" | "lapsed30" | "lapsed45" | "lapsed60" | "sms";
 
-export type CustomerSort = "recent" | "stamps" | "name";
+export type CustomerSort = "recent" | "stamps" | "fewest_stamps" | "visits" | "name";
 
 export interface CustomerRow {
   customerId: string;
@@ -27,7 +27,11 @@ const DAY = 86400000;
 function rowsFor(restaurantId: string, now: number): CustomerRow[] {
   const state = demoRepo.read();
   return state.memberships
-    .filter((m) => m.restaurantId === restaurantId)
+    .filter(
+      (membership) =>
+        membership.restaurantId === restaurantId &&
+        state.customers.some((customer) => customer.id === membership.customerId && !customer.deleted),
+    )
     .map((m) => {
       const customer = state.customers.find((c) => c.id === m.customerId)!;
       const visits60 = state.stamps.filter(
@@ -67,12 +71,18 @@ export function listCustomers(input: {
   const filter = input.filter ?? "all";
   const sort = input.sort ?? "recent";
   const page = Math.max(1, input.page ?? 1);
+  const state = demoRepo.read();
   const needle = (input.search ?? "").trim().toLowerCase();
   let rows = rowsFor(input.restaurantId, now);
   if (needle) {
-    rows = rows.filter(
-      (r) => r.name.toLowerCase().includes(needle) || r.maskedPhone.toLowerCase().includes(needle),
-    );
+    rows = rows.filter((row) => {
+      const customer = state.customers.find((item) => item.id === row.customerId);
+      return (
+        row.name.toLowerCase().includes(needle) ||
+        row.maskedPhone.toLowerCase().includes(needle) ||
+        customer?.phoneE164.toLowerCase().includes(needle) === true
+      );
+    });
   }
   const daysSince = (iso: string | null) =>
     iso === null ? Infinity : (now - new Date(iso).getTime()) / DAY;
@@ -91,10 +101,54 @@ export function listCustomers(input: {
   }
   if (sort === "name") rows.sort((a, b) => a.name.localeCompare(b.name));
   else if (sort === "stamps") rows.sort((a, b) => b.stampsCurrent - a.stampsCurrent);
+  else if (sort === "fewest_stamps") rows.sort((a, b) => a.stampsCurrent - b.stampsCurrent);
+  else if (sort === "visits") rows.sort((a, b) => b.visits60 - a.visits60);
   else rows.sort((a, b) => (b.lastVisitAt ?? "").localeCompare(a.lastVisitAt ?? ""));
   const total = rows.length;
   const pageRows = rows.slice((page - 1) * 25, page * 25);
   return success({ rows: pageRows, total, page });
+}
+
+export function matchingCustomerMembershipIds(input: {
+  restaurantId: string;
+  search?: string;
+  filter?: CustomerFilter;
+  sort?: CustomerSort;
+  session: { role: string; restaurantId?: string | undefined };
+  now?: number;
+}) {
+  const scoped = requireScope(input.session.role, input.session.restaurantId, input.restaurantId);
+  if (!scoped.ok) return scoped;
+  const now = input.now ?? demoRepo.read().now;
+  const filter = input.filter ?? "all";
+  const sort = input.sort ?? "recent";
+  const state = demoRepo.read();
+  const needle = (input.search ?? "").trim().toLowerCase();
+  const rows = rowsFor(input.restaurantId, now).filter((row) => {
+    if (needle) {
+      const customer = state.customers.find((item) => item.id === row.customerId);
+      if (
+        !row.name.toLowerCase().includes(needle) &&
+        !row.maskedPhone.toLowerCase().includes(needle) &&
+        customer?.phoneE164.toLowerCase().includes(needle) !== true
+      ) return false;
+    }
+    const daysSince = (iso: string | null) =>
+      iso === null ? Infinity : (now - new Date(iso).getTime()) / DAY;
+    if (filter === "new14" && now - Date.parse(row.joinedAt) > 14 * DAY) return false;
+    if (filter === "regulars" && row.visits60 < 4) return false;
+    if (filter === "lapsed30" && daysSince(row.lastVisitAt) < 30) return false;
+    if (filter === "lapsed45" && daysSince(row.lastVisitAt) < 45) return false;
+    if (filter === "lapsed60" && daysSince(row.lastVisitAt) < 60) return false;
+    if (filter === "sms" && !row.smsOptedIn) return false;
+    return true;
+  });
+  if (sort === "name") rows.sort((a, b) => a.name.localeCompare(b.name));
+  else if (sort === "stamps") rows.sort((a, b) => b.stampsCurrent - a.stampsCurrent);
+  else if (sort === "fewest_stamps") rows.sort((a, b) => a.stampsCurrent - b.stampsCurrent);
+  else if (sort === "visits") rows.sort((a, b) => b.visits60 - a.visits60);
+  else rows.sort((a, b) => (b.lastVisitAt ?? "").localeCompare(a.lastVisitAt ?? ""));
+  return success(rows.map((row) => row.membershipId));
 }
 
 export function revealPhone(input: {
