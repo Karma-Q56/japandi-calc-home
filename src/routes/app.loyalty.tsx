@@ -4,7 +4,9 @@ import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
 import { StampSlots } from "@/components/patron/StampSlots";
-import type { SpinConfig, SpinSegment } from "@/data/types";
+import { Switch } from "@/components/patron/Switch";
+import { SPIN_MODES } from "@/domain/spins";
+import type { SpinConfig, SpinMode, SpinSegment } from "@/data/types";
 
 export const Route = createFileRoute("/app/loyalty")({
   beforeLoad: () => {
@@ -204,14 +206,12 @@ function Loyalty() {
               onChange={(event) => setMystery(Number(event.target.value))}
             />
           </label>
-          <label className="guest-consent">
-            <input
-              type="checkbox"
-              checked={birthday}
-              onChange={(event) => setBirthday(event.target.checked)}
-            />
-            <span>Birthday bonus stamp (once a year, in the birthday week)</span>
-          </label>
+          <Switch
+            label="Birthday bonus stamp"
+            hint="Once a year, in the birthday week"
+            checked={birthday}
+            onChange={setBirthday}
+          />
         </div>
         <p className="demo-data-note">
           Tiers unlock members-only and targeted specials. VIP members can be the only ones who see
@@ -224,14 +224,11 @@ function Loyalty() {
 
       <section className="builder-panel">
         <h2>Spin wheel</h2>
-        <label className="guest-consent">
-          <input
-            type="checkbox"
-            checked={spin.enabled}
-            onChange={(event) => setSpin({ ...spin, enabled: event.target.checked })}
-          />
-          <span>Show the spin wheel to guests</span>
-        </label>
+        <Switch
+          label="Show the spin wheel to guests"
+          checked={spin.enabled}
+          onChange={(next) => setSpin({ ...spin, enabled: next })}
+        />
         <p className="demo-data-note">
           Guests earn spins from visits — never from spending. Results are picked on the server and
           logged. Prizes become personal single-use offers.
@@ -264,43 +261,54 @@ function Loyalty() {
               }
             />
           </label>
-          <label className="guest-consent">
-            <input
-              type="checkbox"
-              checked={spin.earnAtMilestone}
-              onChange={(event) =>
-                setSpin({ ...spin, earnAtMilestone: event.target.checked })
-              }
-            />
-            <span>Also award a spin at each reward milestone</span>
-          </label>
+          <Switch
+            label="Also award a spin at each reward milestone"
+            checked={spin.earnAtMilestone}
+            onChange={(next) => setSpin({ ...spin, earnAtMilestone: next })}
+          />
         </div>
         <div className="spin-mode-options">
           <h3>Guest spin modes</h3>
-          {([
-            ["welcome", "Earned spins", "Guests earn one every N recorded visits."],
-            ["reward_decider", "Reward decider", "Let a guest choose a prize for an unredeemed reward already earned."],
-            ["daily_surprise", "Daily surprise", "One complimentary surprise per guest each Johannesburg calendar day."],
-          ] as const).map(([mode, title, description]) => (
-            <label className="guest-consent" key={mode}>
-              <input
-                type="checkbox"
-                checked={(spin.modes ?? ["welcome"]).includes(mode)}
-                onChange={(event) => {
-                  const modes = new Set<NonNullable<SpinConfig["modes"]>[number]>(spin.modes ?? ["welcome"]);
-                  if (event.target.checked) modes.add(mode);
-                  else modes.delete(mode);
-                  setSpin({ ...spin, modes: [...modes] });
-                }}
-              />
-              <span><strong>{title}</strong><small>{description}</small></span>
-            </label>
+          {SPIN_MODES.map(({ mode, title, description }) => (
+            <Switch
+              key={mode}
+              label={title}
+              hint={description}
+              checked={(spin.modes ?? ["earned"]).includes(mode)}
+              onChange={(next) => {
+                const modes = new Set<SpinMode>(spin.modes ?? ["earned"]);
+                if (next) modes.add(mode);
+                else modes.delete(mode);
+                setSpin({ ...spin, modes: [...modes] });
+              }}
+            />
           ))}
         </div>
-        {((spin.modes ?? ["welcome"]).includes("reward_decider") || (spin.modes ?? ["welcome"]).includes("daily_surprise")) && (
-          <p className="demo-data-note">Reward decider only changes the description of a reward already earned. Daily surprises require an active, in-date special. If all modes are off, the wheel is hidden.</p>
+        {(spin.modes ?? ["earned"]).includes("reward_decider") && (
+          <label className="builder-field">
+            Advertised reward value (R)
+            <input
+              type="number"
+              min={0}
+              step="0.01"
+              value={(spin.rewardFloorCents ?? 0) / 100}
+              onChange={(event) =>
+                setSpin({
+                  ...spin,
+                  rewardFloorCents: Math.round(Number(event.target.value) * 100),
+                })
+              }
+            />
+            <small>
+              The reward decider never draws a prize worth less than this — it keeps “
+              {reward || "your advertised reward"}” as the floor.
+            </small>
+          </label>
         )}
-        {(spin.modes ?? ["welcome"]).includes("daily_surprise") && (
+        {((spin.modes ?? ["earned"]).includes("reward_decider") || (spin.modes ?? ["earned"]).includes("daily_surprise")) && (
+          <p className="demo-data-note">Reward decider draws from your prize list at random when a card completes; the guest never chooses, and nothing below the advertised reward is awarded. Daily surprises require an active, in-date special. If all modes are off, the wheel is hidden.</p>
+        )}
+        {(spin.modes ?? ["earned"]).includes("daily_surprise") && (
           <label className="builder-field">
             Daily surprise specials
             <select
@@ -348,6 +356,22 @@ function Loyalty() {
                       valueCents: Math.round(Number(event.target.value) * 100),
                     })
                   }
+                />
+              </label>
+              <label>
+                Bonus stamps
+                <input
+                  type="number"
+                  min={0}
+                  max={5}
+                  value={segment.bonusStamps ?? 0}
+                  onChange={(event) => {
+                    const value = Number(event.target.value);
+                    const next: SpinSegment = { ...segment };
+                    if (value > 0) next.bonusStamps = value;
+                    else delete next.bonusStamps;
+                    setSegment(segment.id, next);
+                  }}
                 />
               </label>
               <label>

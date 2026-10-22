@@ -97,18 +97,20 @@ const baseRestaurants: Restaurant[] = [
     birthdayReward: true,
     spin: {
       enabled: true,
+      modes: ["join", "earned", "reward_decider"],
       segments: [
         { id: "spin-1", label: "Free filter coffee", weight: 30, valueCents: 300 },
         { id: "spin-2", label: "R20 off your next visit", weight: 25, valueCents: 2000, cap: { period: "week", max: 10 } },
         { id: "spin-3", label: "Slice of banana bread", weight: 20, valueCents: 450 },
-        { id: "spin-4", label: "Double stamps today", weight: 15, valueCents: 0 },
+        { id: "spin-4", label: "Two bonus stamps", weight: 15, valueCents: 0, bonusStamps: 2 },
         { id: "spin-5", label: "Try again tomorrow", weight: 10, valueCents: 0 },
       ],
       weeklyBudgetCents: 15000,
       earnEveryVisits: 5,
       earnAtMilestone: true,
+      rewardFloorCents: 300,
       rules:
-        "One spin is earned every five visits and at each reward milestone. No purchase is required to earn spins. Prizes are personal, single-use offers valid for 30 days and cannot be exchanged for cash.",
+        "One welcome spin when you join, and one earned spin every five visits or reward milestone. When a card completes, the venue draws your reward from its prize list at random, never below the advertised reward. No purchase is required to earn spins. Prizes are personal, single-use offers valid for 30 days and cannot be exchanged for cash.",
     },
   },
   {

@@ -1,11 +1,41 @@
 import { demoRepo, updateDemo } from "@/data/repo";
-import type { Restaurant, SpinConfig, SpinResult, SpinSegment } from "@/data/types";
+import type { Restaurant, SpinConfig, SpinMode, SpinResult, SpinSegment } from "@/data/types";
 import { failure, success } from "./demo";
 import { logAudit } from "./audit";
-import { allVisits } from "./grants";
+import { allVisits, grantStampEvents } from "./grants";
 import { createPrizeOffer } from "./specials";
 
 const DAY = 86400000;
+const ALL_MODES: SpinMode[] = ["join", "earned", "reward_decider", "daily_surprise"];
+
+/** Mode copy shared by the owner page, the guest card and the published rules. */
+export const SPIN_MODES: Array<{ mode: SpinMode; title: string; description: string }> = [
+  {
+    mode: "join",
+    title: "Welcome spin",
+    description: "One spin when a guest joins — bonus stamps or a personal offer.",
+  },
+  {
+    mode: "earned",
+    title: "Earned spins",
+    description: "Guests earn one spin every N recorded visits.",
+  },
+  {
+    mode: "reward_decider",
+    title: "Reward decider",
+    description:
+      "When a card completes, the house draws the reward from your prize list. The guest never picks, and never gets less than the advertised reward.",
+  },
+  {
+    mode: "daily_surprise",
+    title: "Daily surprise",
+    description: "One complimentary surprise per guest each Johannesburg calendar day.",
+  },
+];
+
+export function spinModeLabel(mode: SpinMode): string {
+  return SPIN_MODES.find((item) => item.mode === mode)?.title ?? mode;
+}
 
 export interface SpinState {
   enabled: boolean;
@@ -15,19 +45,32 @@ export interface SpinState {
   visits: number;
   rules: string;
   segments: Array<{ id: string; label: string }>;
-  welcomeEnabled: boolean;
+  joinEnabled: boolean;
+  joinAvailable: boolean;
+  earnedEnabled: boolean;
   rewardDeciderEnabled: boolean;
   dailySurpriseEnabled: boolean;
   dailyAlreadyUsed: boolean;
   rewardReady: boolean;
+  /** Advertised card reward, the floor for the reward decider. */
+  advertisedReward: string;
 }
 
+/** Modes from a saved config, including the legacy "welcome" id for earned spins. */
+export function configuredModes(config: SpinConfig | undefined): SpinMode[] {
+  if (!config?.modes) return ["earned"];
+  const saved = (config.modes as string[]).map((mode) => (mode === "welcome" ? "earned" : mode));
+  return ALL_MODES.filter((mode) => saved.includes(mode));
+}
+
+/** Spins earned from visits. Join spins and the other modes are counted separately. */
+const isEarnedSpin = (mode: SpinResult["mode"]) =>
+  mode === undefined || mode === "earned" || mode === "welcome" || mode === "visit";
+
 export function spinsUsed(membershipId: string): number {
-  return demoRepo.read().spins.filter(
-    (item) =>
-      item.membershipId === membershipId &&
-      (item.mode === undefined || item.mode === "welcome" || item.mode === "visit"),
-  ).length;
+  return demoRepo
+    .read()
+    .spins.filter((item) => item.membershipId === membershipId && isEarnedSpin(item.mode)).length;
 }
 
 function spinsUsedForState(
@@ -35,9 +78,7 @@ function spinsUsedForState(
   membershipId: string,
 ): number {
   return state.spins.filter(
-    (item) =>
-      item.membershipId === membershipId &&
-      (item.mode === undefined || item.mode === "welcome" || item.mode === "visit"),
+    (item) => item.membershipId === membershipId && isEarnedSpin(item.mode),
   ).length;
 }
 
@@ -53,10 +94,23 @@ function localDateKey(epochMs: number): string {
   return `${value("year")}-${value("month")}-${value("day")}`;
 }
 
-function modeEnabled(config: SpinConfig | undefined, mode: NonNullable<SpinConfig["modes"]>[number]): boolean {
+function modeEnabled(config: SpinConfig | undefined, mode: SpinMode): boolean {
   if (!config?.enabled) return false;
-  // Older saved demo snapshots predate modes; preserve their original welcome wheel.
-  return config.modes ? config.modes.includes(mode) : mode === "welcome";
+  // Older saved demo snapshots predate modes; preserve their original earned wheel.
+  return configuredModes(config).includes(mode);
+}
+
+function joinSpinUsedFor(
+  state: ReturnType<typeof demoRepo.read>,
+  membershipId: string,
+): boolean {
+  return state.spins.some((spin) => spin.membershipId === membershipId && spin.mode === "join");
+}
+
+/** A segment that hands over something real; "try again" segments are not prizes. */
+function isPrizeSegment(segment: SpinSegment): boolean {
+  if ((segment.bonusStamps ?? 0) > 0) return true;
+  return !/try again|nothing|no prize/i.test(segment.label);
 }
 
 function dailyAlreadyUsedFor(state: ReturnType<typeof demoRepo.read>, membershipId: string): boolean {
@@ -112,12 +166,9 @@ export function spinState(membershipId: string): SpinState {
           !reward.redeemedAt,
       )
     : false;
+  const joinEnabled = !!membership && modeEnabled(config, "join");
   return {
-    enabled: !!config?.enabled && (
-      modeEnabled(config, "welcome") ||
-      modeEnabled(config, "reward_decider") ||
-      modeEnabled(config, "daily_surprise")
-    ),
+    enabled: ALL_MODES.some((mode) => modeEnabled(config, mode)),
     earned,
     used: spinsUsed(membershipId),
     available: earned,
@@ -127,11 +178,14 @@ export function spinState(membershipId: string): SpinState {
       id: segment.id,
       label: segment.label,
     })),
-    welcomeEnabled: modeEnabled(config, "welcome"),
+    joinEnabled,
+    joinAvailable: joinEnabled && !!membership && !joinSpinUsedFor(state, membership.id),
+    earnedEnabled: modeEnabled(config, "earned"),
     rewardDeciderEnabled: modeEnabled(config, "reward_decider"),
     dailySurpriseEnabled: modeEnabled(config, "daily_surprise"),
     dailyAlreadyUsed,
     rewardReady,
+    advertisedReward: restaurant?.rewardDescription ?? "",
   };
 }
 
@@ -192,7 +246,7 @@ export function spinWheel(input: {
   restaurantId: string;
   membershipId: string;
   actor?: string;
-  mode?: "welcome" | "reward_decider" | "daily_surprise";
+  mode?: SpinMode;
 }) {
   const state = demoRepo.read();
   const restaurant = state.restaurants.find((item) => item.id === input.restaurantId);
@@ -201,20 +255,67 @@ export function spinWheel(input: {
   );
   if (!restaurant || !membership) return failure("NOT_FOUND", "Membership not found.");
   const config = restaurant.spin;
-  const mode = input.mode ?? "welcome";
+  const mode: SpinMode = input.mode ?? "earned";
   if (!modeEnabled(config, mode)) {
     return failure("INVALID", "This spin mode is not enabled for this restaurant.");
   }
-  if (mode === "welcome" && spinsEarned(state, membership.id, config) <= 0) {
+  if (mode === "join" && joinSpinUsedFor(state, membership.id)) {
+    return failure("INVALID", "Your welcome spin has already been used.");
+  }
+  if (mode === "earned" && spinsEarned(state, membership.id, config) <= 0) {
     return failure("INVALID", "Earn a spin with more visits first.");
   }
-  const rewardToDecide = mode === "reward_decider"
-    ? state.rewards
-        .filter((reward) => reward.membershipId === membership.id && reward.restaurantId === restaurant.id && !reward.redeemedAt)
-        .sort((a, b) => a.earnedAt.localeCompare(b.earnedAt))[0]
-    : undefined;
-  if (mode === "reward_decider" && !rewardToDecide) {
-    return failure("INVALID", "Complete your card to spin for a reward.");
+  if (mode === "reward_decider") {
+    const rewardToDecide = state.rewards
+      .filter(
+        (reward) =>
+          reward.membershipId === membership.id &&
+          reward.restaurantId === restaurant.id &&
+          !reward.redeemedAt,
+      )
+      .sort((a, b) => a.earnedAt.localeCompare(b.earnedAt))[0];
+    if (!rewardToDecide) {
+      return failure("INVALID", "Complete your card to unlock a reward.");
+    }
+    // The house draws the prize; the guest has no say. Only prizes at or above
+    // the advertised reward's value qualify, so the outcome is never worse.
+    const floor = Math.max(0, config.rewardFloorCents ?? 0);
+    const pool = config.segments.filter(
+      (segment) =>
+        segment.weight > 0 &&
+        isPrizeSegment(segment) &&
+        segment.valueCents >= floor &&
+        segmentAllowed(state, restaurant.id, segment, state.now),
+    );
+    const picked = pool.length > 0 ? pool[Math.floor(cryptoRandom() * pool.length)] : undefined;
+    const wonAt = new Date(state.now).toISOString();
+    if (picked) {
+      updateDemo((current) => ({
+        ...current,
+        rewards: current.rewards.map((reward) =>
+          reward.id === rewardToDecide.id ? { ...reward, description: picked.label } : reward,
+        ),
+      }));
+    }
+    const result: SpinResult = {
+      id: `spin-${crypto.randomUUID()}`,
+      restaurantId: restaurant.id,
+      membershipId: membership.id,
+      segmentId: picked?.id ?? `advertised-${rewardToDecide.id}`,
+      label: picked?.label ?? rewardToDecide.description,
+      valueCents: picked?.valueCents ?? floor,
+      wonAt,
+      mode,
+      ...(picked ? {} : { keptAdvertisedReward: true }),
+    };
+    updateDemo((current) => ({ ...current, spins: [...current.spins, result] }));
+    logAudit({
+      actor: input.actor ?? membership.customerId,
+      action: "spin",
+      restaurantId: restaurant.id,
+      object: result.id,
+    });
+    return success(result);
   }
   if (mode === "daily_surprise") {
     if (dailyAlreadyUsedFor(state, membership.id)) {
@@ -272,42 +373,34 @@ export function spinWheel(input: {
   }
   if (config.segments.length === 0) return failure("INVALID", "The spin wheel has no prize segments configured.");
   const budget = budgetLeft(state, restaurant.id, config, state.now);
-  const isPrizeSegment = (segment: SpinSegment) => !/try again|nothing|no prize/i.test(segment.label);
-  const candidates = config.segments.filter(
-    (segment) =>
-      segment.weight > 0 &&
-      (mode === "reward_decider"
-        ? isPrizeSegment(segment)
-        : !isPrizeSegment(segment) || segment.valueCents <= budget) &&
-      segmentAllowed(state, restaurant.id, segment, state.now),
-  );
+  const candidates = config.segments.filter((segment) => {
+    if (segment.weight <= 0) return false;
+    if (!segmentAllowed(state, restaurant.id, segment, state.now)) return false;
+    // A welcome spin always hands something over; an earned spin may still land
+    // on a "try again" segment.
+    if (mode === "join") return isPrizeSegment(segment) && segment.valueCents <= budget;
+    return !isPrizeSegment(segment) || segment.valueCents <= budget;
+  });
   if (candidates.length === 0) {
-    return failure(
-      "INVALID",
-      mode === "reward_decider"
-        ? "No reward choices are available right now. Try again next week."
-        : "No prizes are available right now. Try again next week.",
-    );
+    return failure("INVALID", "No prizes are available right now. Try again next week.");
   }
-  const eligibleSegments = mode === "reward_decider"
-    ? candidates
-    : candidates.filter((segment) => !isPrizeSegment(segment) || segment.valueCents <= budget);
-  const segment = pickSegment(eligibleSegments, cryptoRandom);
+  const segment = pickSegment(candidates, cryptoRandom);
   if (!segment) return failure("INVALID", "The wheel is empty right now.");
   const wonAt = new Date(state.now).toISOString();
+  const spinId = `spin-${crypto.randomUUID()}`;
   let prizeSpecialId: string | undefined;
-  const isPrize = !/try again|nothing|no prize/i.test(segment.label);
-  if (mode === "reward_decider" && !isPrize) {
-    return failure("INVALID", "The reward wheel needs at least one prize segment.");
-  }
-  if (mode === "reward_decider" && rewardToDecide) {
-    updateDemo((current) => ({
-      ...current,
-      rewards: current.rewards.map((reward) =>
-        reward.id === rewardToDecide.id ? { ...reward, description: segment.label } : reward,
-      ),
-    }));
-  } else if (isPrize) {
+  let bonusStamps: number | undefined;
+  const stampPrize = segment.bonusStamps ?? 0;
+  if (isPrizeSegment(segment) && stampPrize > 0) {
+    bonusStamps = stampPrize;
+    grantStampEvents({
+      restaurantId: restaurant.id,
+      membershipId: membership.id,
+      count: stampPrize,
+      reason: "bonus",
+      keyBase: `spin:${spinId}`,
+    });
+  } else if (isPrizeSegment(segment)) {
     const prize = createPrizeOffer({
       restaurantId: restaurant.id,
       membershipId: membership.id,
@@ -317,7 +410,7 @@ export function spinWheel(input: {
     prizeSpecialId = prize.special.id;
   }
   const result: SpinResult = {
-    id: `spin-${crypto.randomUUID()}`,
+    id: spinId,
     restaurantId: restaurant.id,
     membershipId: membership.id,
     segmentId: segment.id,
@@ -326,6 +419,7 @@ export function spinWheel(input: {
     wonAt,
     mode,
     ...(prizeSpecialId ? { prizeSpecialId } : {}),
+    ...(bonusStamps ? { bonusStamps } : {}),
   };
   updateDemo((current) => ({ ...current, spins: [...current.spins, result] }));
   logAudit({
@@ -338,12 +432,25 @@ export function spinWheel(input: {
 }
 
 /** Plain-language rules/T&Cs the owner can copy onto their page. */
-export function spinRulesText(restaurant: Pick<Restaurant, "name" | "spin">): string {
+export function spinRulesText(
+  restaurant: Pick<Restaurant, "name" | "spin" | "rewardDescription">,
+): string {
   const config = restaurant.spin;
+  const modes = configuredModes(config);
   const lines = [
     `${restaurant.name} Spin & Win — rules`,
-    `• Modes: ${(config.modes ?? ["welcome"]).join(", ") || "none"}.`,
-    `• Welcome spins are earned every ${config.earnEveryVisits} recorded visits${config.earnAtMilestone ? " and at every reward milestone" : ""}.`,
+    `• Modes: ${modes.map(spinModeLabel).join(", ") || "none"}.`,
+    ...(modes.includes("join")
+      ? ["• One welcome spin per guest, unlocked when they join. It lands as bonus stamps or a personal offer."]
+      : []),
+    ...(modes.includes("earned")
+      ? [`• Earned spins: one every ${config.earnEveryVisits} recorded visits${config.earnAtMilestone ? " and at every reward milestone" : ""}.`]
+      : []),
+    ...(modes.includes("reward_decider")
+      ? [
+          `• Reward decider: when a card completes, the venue draws a prize from its prize list at random. The advertised reward (${restaurant.rewardDescription}) is the floor — the draw never gives less — and guests do not choose the prize.`,
+        ]
+      : []),
     ...(config.dailyPool?.length ? ["• Daily surprise specials: " + config.dailyPool.map((id) => demoRepo.read().specials.find((special) => special.id === id)?.title ?? "Unavailable special").join(", ") + ". One per guest per Johannesburg calendar day."] : []),
     "• No purchase is required to earn spins. Spins have no cash value and cannot be bought, sold or transferred.",
     `• Prizes are personal, single-use offers, valid for 30 days, and are limited by a weekly prize budget of R${(config.weeklyBudgetCents / 100).toFixed(2)}.`,
@@ -366,8 +473,9 @@ export function saveSpinConfig(input: {
   }
   const config: SpinConfig = {
     ...input.config,
-    modes: input.config.modes ?? ["welcome"],
+    modes: configuredModes(input.config),
     dailyPool: input.config.dailyPool ?? [],
+    rewardFloorCents: input.config.rewardFloorCents ?? 0,
   };
   if (!Number.isInteger(config.weeklyBudgetCents) || config.weeklyBudgetCents < 0) {
     return failure("INVALID", "The weekly budget must be a non-negative whole number of cents.");
@@ -375,7 +483,12 @@ export function saveSpinConfig(input: {
   if (!Number.isInteger(config.earnEveryVisits) || config.earnEveryVisits < 1 || config.earnEveryVisits > 50) {
     return failure("INVALID", "Spins per visits must be a whole number between 1 and 50.");
   }
-  if ((config.modes ?? []).some((mode) => !["welcome", "reward_decider", "daily_surprise"].includes(mode))) return failure("INVALID", "Choose a supported wheel mode.");
+  if ((input.config.modes as string[] | undefined)?.some((mode) => ![...ALL_MODES, "welcome"].includes(mode))) {
+    return failure("INVALID", "Choose a supported wheel mode.");
+  }
+  if (!Number.isInteger(config.rewardFloorCents) || (config.rewardFloorCents ?? 0) < 0) {
+    return failure("INVALID", "The advertised reward value must be a non-negative whole number of cents.");
+  }
   if ((config.modes ?? []).includes("daily_surprise")) {
     const pool = (config.dailyPool ?? []).filter((id) =>
       activeSpecial(state, id, input.restaurantId),
@@ -384,13 +497,16 @@ export function saveSpinConfig(input: {
       return failure("INVALID", "Choose at least one active special for the daily surprise pool.");
     }
   }
-  if ((config.modes ?? []).includes("welcome") && config.segments.length === 0) {
-    return failure("INVALID", "Add at least one prize segment for welcome spins.");
+  if (((config.modes ?? []) as SpinMode[]).some((mode) => mode === "earned" || mode === "join") && config.segments.length === 0) {
+    return failure("INVALID", "Add at least one prize segment for the wheel.");
   }
   for (const segment of config.segments) {
     if (!segment.label.trim()) return failure("INVALID", "Every segment needs a prize name.");
     if (!Number.isFinite(segment.weight) || segment.weight < 0) return failure("INVALID", "Weights must be non-negative numbers.");
     if (!Number.isInteger(segment.valueCents) || segment.valueCents < 0) return failure("INVALID", "Prize values must be non-negative whole cents.");
+    if (segment.bonusStamps !== undefined && (!Number.isInteger(segment.bonusStamps) || segment.bonusStamps < 1 || segment.bonusStamps > 5)) {
+      return failure("INVALID", "Bonus stamps must be a whole number between 1 and 5.");
+    }
     if (segment.cap && (!Number.isInteger(segment.cap.max) || segment.cap.max < 1)) {
       return failure("INVALID", "Prize caps must be at least one spin.");
     }

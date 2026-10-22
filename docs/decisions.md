@@ -145,3 +145,10 @@
 - **No real phone verification exists yet.** `joinGuestFn` (`src/server/live.ts`) no longer hard-codes `otpVerified: true`.
 - Joins stay disabled unless `DEMO_OTP_BYPASS=true` (default false). When disabled and no OTP check exists, the function returns `{ ok: false, message: "Phone verification is not enabled yet." }` instead of creating a membership.
 - Set `DEMO_OTP_BYPASS=true` only for local demo testing against a dev database. The auth slice replaces this gate with a real OTP check.
+
+## 2026-10-23 — Wheel modes, reward floor, and campaign panels
+
+- **Welcome vs earned spins:** the welcome spin is a separate mode (`join`) from the visit-earned wheel. The original mode id `welcome` is kept as the legacy name for earned spins and normalised on read and save, so local snapshots written before this change keep their wheel.
+- **Reward decider is server-only:** the house draws uniformly from the owner's prize segments whose `valueCents` is at or above `spin.rewardFloorCents` (the value the owner attaches to the advertised card reward). The draw ignores any segment passed by a caller, never selects a "try again" segment, and leaves the advertised reward untouched (with `keptAdvertisedReward: true`) when no segment qualifies, so the outcome can never be worse than the card promised.
+- **Bonus stamps:** `SpinSegment.bonusStamps` lets a wheel prize pay stamps instead of an offer; stamps go through `grantStampEvents` with a `spin:<spinId>` key, so a retried request cannot pay twice. The spin config stays in the existing JSONB `spin` column, so no migration was needed.
+- **Dashboard campaign split:** a campaign name belongs in body text, not in a stat card's display value, so the overview's campaign stat became a "Campaigns sent" count and the next/last campaign details moved into their own panels with status, date and links.

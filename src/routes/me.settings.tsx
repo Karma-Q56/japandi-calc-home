@@ -5,6 +5,7 @@ import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
 import { maskPhone } from "@/lib/phone";
+import { Switch } from "@/components/patron/Switch";
 import { enableBrowserPush, disableBrowserPush, showLocalPushTest } from "@/lib/web-push-client";
 
 export const Route = createFileRoute("/me/settings")({
@@ -112,8 +113,8 @@ function GuestSettings() {
         <section className="guest-section" id="messages">
           <h2>Messages</h2>
           <p className="gx-note">
-            Each restaurant you&apos;ve joined has its own switch. Your loyalty cards work either
-            way.
+            Each restaurant you&apos;ve joined has its own SMS and push switches. Your loyalty cards
+            work either way.
           </p>
           {memberships.length === 0 && (
             <p className="demo-data-note">Join a restaurant to manage its messages here.</p>
@@ -123,62 +124,53 @@ function GuestSettings() {
               (item) => item.id === membership.restaurantId,
             )!;
             return (
-              <article className="consent-setting consent-setting--messages" key={membership.id}>
-                <div className="message-restaurant-name"><strong>{restaurant.name}</strong></div>
-                <div className="message-toggles">
-                  <label className="consent-switch-row">
-                    <span>SMS offers</span>
-                    <input
-                      role="switch"
-                      type="checkbox"
-                      checked={membership.marketingSms}
-                      onChange={(event) => {
-                        const result = api.member.setConsent(membership.id, event.target.checked);
-                        setNotice(result.ok ? "Preference saved." : result.error.message);
-                      }}
-                      aria-label={`SMS offers from ${restaurant.name}`}
-                    />
-                  </label>
-                  <label className="consent-switch-row">
-                    <span>Push notifications</span>
-                    <input
-                      role="switch"
-                      type="checkbox"
-                      checked={membership.marketingPush}
-                      disabled={pushBusy === membership.id}
-                      onChange={async (event) => {
-                        const enabled = event.target.checked;
-                        setPushBusy(membership.id);
-                        try {
-                          if (enabled) {
-                            const subscription = await enableBrowserPush(import.meta.env["VITE_VAPID_PUBLIC_KEY"] ?? "");
-                            demoRepo.update((current) => ({
-                              ...current,
-                              memberships: current.memberships.map((item) => item.id === membership.id ? { ...item, marketingPush: true } : item),
-                              pushSubscriptions: [...current.pushSubscriptions.filter((item) => item.endpoint !== subscription.endpoint), { id: `push-${crypto.randomUUID()}`, customerId, membershipId: membership.id, restaurantId: restaurant.id, endpoint: subscription.endpoint, p256dh: subscription.keys.p256dh, auth: subscription.keys.auth, createdAt: new Date(current.now).toISOString() }],
-                            }));
-                            setNotice("Push enabled on this device.");
-                          } else {
-                            const endpoint = await disableBrowserPush();
-                            demoRepo.update((current) => ({
-                              ...current,
-                              memberships: current.memberships.map((item) => item.id === membership.id ? { ...item, marketingPush: false } : item),
-                              pushSubscriptions: current.pushSubscriptions.filter((item) => item.endpoint !== endpoint),
-                            }));
-                            setNotice("Push disabled on this device.");
-                          }
-                        } catch (error) {
-                          setNotice(error instanceof Error ? error.message : "Could not update push preference.");
-                        } finally {
-                          setPushBusy(null);
+              <div className="msg-row" role="group" aria-label={restaurant.name} key={membership.id}>
+                <div className="msg-row-name">{restaurant.name}</div>
+                <div className="msg-row-switches">
+                  <Switch
+                    label="SMS"
+                    hint="Offers by text"
+                    checked={membership.marketingSms}
+                    onChange={(next) => {
+                      const result = api.member.setConsent(membership.id, next);
+                      setNotice(result.ok ? "Preference saved." : result.error.message);
+                    }}
+                  />
+                  <Switch
+                    label="Push"
+                    hint={membership.marketingPush ? "On for this device" : "Offers in the browser"}
+                    checked={membership.marketingPush}
+                    disabled={pushBusy === membership.id}
+                    onChange={async (enabled) => {
+                      setPushBusy(membership.id);
+                      try {
+                        if (enabled) {
+                          const subscription = await enableBrowserPush(import.meta.env["VITE_VAPID_PUBLIC_KEY"] ?? "");
+                          demoRepo.update((current) => ({
+                            ...current,
+                            memberships: current.memberships.map((item) => item.id === membership.id ? { ...item, marketingPush: true } : item),
+                            pushSubscriptions: [...current.pushSubscriptions.filter((item) => item.endpoint !== subscription.endpoint), { id: `push-${crypto.randomUUID()}`, customerId, membershipId: membership.id, restaurantId: restaurant.id, endpoint: subscription.endpoint, p256dh: subscription.keys.p256dh, auth: subscription.keys.auth, createdAt: new Date(current.now).toISOString() }],
+                          }));
+                          setNotice("Push enabled on this device.");
+                        } else {
+                          const endpoint = await disableBrowserPush();
+                          demoRepo.update((current) => ({
+                            ...current,
+                            memberships: current.memberships.map((item) => item.id === membership.id ? { ...item, marketingPush: false } : item),
+                            pushSubscriptions: current.pushSubscriptions.filter((item) => item.endpoint !== endpoint),
+                          }));
+                          setNotice("Push disabled on this device.");
                         }
-                      }}
-                      aria-label={`Push notifications from ${restaurant.name}`}
-                    />
-                  </label>
+                      } catch (error) {
+                        setNotice(error instanceof Error ? error.message : "Could not update push preference.");
+                      } finally {
+                        setPushBusy(null);
+                      }
+                    }}
+                  />
                   {membership.marketingPush && <button type="button" className="builder-secondary push-test-button" onClick={() => void showLocalPushTest().then(() => setNotice("Test notification shown on this device.")).catch((error: unknown) => setNotice(error instanceof Error ? error.message : "Could not show test notification."))}>Send me a test notification</button>}
                 </div>
-              </article>
+              </div>
             );
           })}
           {state.consents

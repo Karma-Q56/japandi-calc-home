@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { demoRepo, updateDemo } from "@/data/repo";
 import { pickSegment, saveSpinConfig, spinState, spinWheel } from "@/domain/spins";
 import { createSpecial } from "@/domain/specials";
-import type { SpinConfig } from "@/data/types";
+import type { SpinConfig, SpinMode } from "@/data/types";
 
 beforeEach(() => {
   demoRepo.reset();
@@ -171,6 +171,148 @@ describe("spin wheel", () => {
     const spun = spinWheel({ restaurantId: restaurant.id, membershipId: membership.id, mode: "reward_decider" });
     expect(spun.ok).toBe(true);
     if (spun.ok) expect(spun.data.label).toBe("Free tea");
+  });
+
+  function addReward(restaurantId: string, membershipId: string, description: string) {
+    const reward = {
+      id: `reward-${crypto.randomUUID()}`,
+      restaurantId,
+      membershipId,
+      description,
+      earnedAt: new Date(demoRepo.read().now).toISOString(),
+    };
+    updateDemo((current) => ({ ...current, rewards: [...current.rewards, reward] }));
+    return reward;
+  }
+
+  it("keeps one welcome spin per guest and awards bonus stamps instead of an offer", () => {
+    const { restaurant, membership } = spinFixture({
+      modes: ["join"],
+      segments: [
+        { id: "join-stamps", label: "Two bonus stamps", weight: 1, valueCents: 0, bonusStamps: 2 },
+      ],
+    });
+    const before = demoRepo.read().memberships.find((item) => item.id === membership.id)!;
+    const earnedBefore = spinState(membership.id).earned;
+    const spun = spinWheel({
+      restaurantId: restaurant.id,
+      membershipId: membership.id,
+      mode: "join",
+    });
+    expect(spun.ok).toBe(true);
+    if (!spun.ok) return;
+    expect(spun.data.bonusStamps).toBe(2);
+    expect(spun.data.prizeSpecialId).toBeUndefined();
+    const after = demoRepo.read().memberships.find((item) => item.id === membership.id)!;
+    expect(after.stampsTotal).toBe(before.stampsTotal + 2);
+    expect(demoRepo.read().stamps.filter((stamp) => stamp.reason === "bonus")).toHaveLength(2);
+    // A join spin is not an earned visit spin and does not eat into those.
+    expect(spinState(membership.id).earned).toBe(earnedBefore);
+    expect(spinState(membership.id).used).toBe(0);
+    expect(spinState(membership.id).joinAvailable).toBe(false);
+    const second = spinWheel({
+      restaurantId: restaurant.id,
+      membershipId: membership.id,
+      mode: "join",
+    });
+    expect(second.ok).toBe(false);
+    expect(demoRepo.read().spins.filter((spin) => spin.mode === "join")).toHaveLength(1);
+  });
+
+  it("welcome spin can hand over a personal offer", () => {
+    const { restaurant, membership } = spinFixture({
+      modes: ["join"],
+      segments: [{ id: "join-offer", label: "Free filter coffee", weight: 1, valueCents: 300 }],
+    });
+    const spun = spinWheel({
+      restaurantId: restaurant.id,
+      membershipId: membership.id,
+      mode: "join",
+    });
+    expect(spun.ok).toBe(true);
+    if (!spun.ok) return;
+    expect(spun.data.bonusStamps).toBeUndefined();
+    expect(spun.data.prizeSpecialId).toBeTruthy();
+    const code = demoRepo
+      .read()
+      .specialCodes.find((item) => item.specialId === spun.data.prizeSpecialId);
+    expect(code?.membershipId).toBe(membership.id);
+  });
+
+  it("reward decider draws at random above the floor and ignores a caller's segment", () => {
+    const { restaurant, membership } = spinFixture({
+      modes: ["reward_decider"],
+      rewardFloorCents: 500,
+      segments: [
+        { id: "below-floor", label: "Little biscuit", weight: 100, valueCents: 100 },
+        { id: "at-floor", label: "Free coffee", weight: 1, valueCents: 500 },
+        { id: "above-floor", label: "Free lunch", weight: 1, valueCents: 1500 },
+      ],
+    });
+    const labels = new Set<string>();
+    for (let index = 0; index < 40; index++) {
+      addReward(restaurant.id, membership.id, "A coffee");
+      const spun = spinWheel({
+        restaurantId: restaurant.id,
+        membershipId: membership.id,
+        mode: "reward_decider",
+        // The guest never chooses the segment, even if a caller tries to supply one.
+        segmentId: "below-floor",
+      } as Parameters<typeof spinWheel>[0]);
+      expect(spun.ok).toBe(true);
+      if (!spun.ok) return;
+      expect(spun.data.valueCents).toBeGreaterThanOrEqual(500);
+      expect(spun.data.label).not.toBe("Little biscuit");
+      labels.add(spun.data.label);
+    }
+    expect([...labels].sort()).toEqual(["Free coffee", "Free lunch"]);
+  });
+
+  it("reward decider keeps the advertised reward when nothing meets the floor", () => {
+    const { restaurant, membership } = spinFixture({
+      modes: ["reward_decider"],
+      rewardFloorCents: 900,
+      segments: [{ id: "small", label: "Small tea", weight: 1, valueCents: 100 }],
+    });
+    const reward = addReward(restaurant.id, membership.id, "A free coffee");
+    const spun = spinWheel({
+      restaurantId: restaurant.id,
+      membershipId: membership.id,
+      mode: "reward_decider",
+    });
+    expect(spun.ok).toBe(true);
+    if (!spun.ok) return;
+    expect(spun.data.keptAdvertisedReward).toBe(true);
+    expect(spun.data.label).toBe("A free coffee");
+    expect(demoRepo.read().rewards.find((item) => item.id === reward.id)?.description).toBe(
+      "A free coffee",
+    );
+  });
+
+  it("reward decider needs a completed card to draw for", () => {
+    const { restaurant, membership } = spinFixture({ modes: ["reward_decider"] });
+    updateDemo((current) => ({
+      ...current,
+      rewards: current.rewards.filter((reward) => reward.membershipId !== membership.id),
+    }));
+    const spun = spinWheel({
+      restaurantId: restaurant.id,
+      membershipId: membership.id,
+      mode: "reward_decider",
+    });
+    expect(spun.ok).toBe(false);
+  });
+
+  it("normalises the legacy welcome mode and rejects a negative floor", () => {
+    const { restaurant, membership } = spinFixture({ modes: ["welcome" as unknown as SpinMode] });
+    const saved = demoRepo.read().restaurants.find((item) => item.id === restaurant.id)!;
+    expect(saved.spin.modes).toEqual(["earned"]);
+    expect(spinState(membership.id).earnedEnabled).toBe(true);
+    const invalid = saveSpinConfig({
+      restaurantId: restaurant.id,
+      config: { ...saved.spin, rewardFloorCents: -1 },
+    });
+    expect(invalid.ok).toBe(false);
   });
 
   it("refuses a spin when the guest has no visits", () => {

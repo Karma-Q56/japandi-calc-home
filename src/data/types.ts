@@ -224,13 +224,22 @@ export interface SpinSegment {
   weight: number;
   /** Value of the prize in cents, counted against the weekly budget. */
   valueCents: number;
+  /** A join-spin segment can hand over bonus stamps instead of an offer. */
+  bonusStamps?: number;
   /** Optional cap, e.g. at most 3 a day. */
   cap?: { period: "day" | "week"; max: number };
 }
 
+/**
+ * Wheel modes. "earned" is what early snapshots stored as "welcome"; the
+ * normaliser in the domain keeps those old configurations working.
+ */
+export type SpinMode = "earned" | "join" | "reward_decider" | "daily_surprise";
+
 export interface SpinConfig {
   enabled: boolean;
-  modes?: Array<"welcome" | "reward_decider" | "daily_surprise">;
+  /** Modes shown to guests. Older snapshots may still contain the legacy "welcome" id. */
+  modes?: SpinMode[];
   dailyPool?: string[];
   segments: SpinSegment[];
   weeklyBudgetCents: number;
@@ -238,6 +247,8 @@ export interface SpinConfig {
   earnEveryVisits: number;
   /** Also award a spin at every reward milestone. */
   earnAtMilestone: boolean;
+  /** Reward decider never hands over a prize worth less than this (cents). */
+  rewardFloorCents?: number;
   rules: string;
 }
 
@@ -249,9 +260,13 @@ export interface SpinResult {
   label: string;
   valueCents: number;
   wonAt: string;
-  mode?: "welcome" | "reward_decider" | "daily_surprise" | "visit";
+  mode?: SpinMode | "welcome" | "visit";
   code?: string;
   prizeSpecialId?: string;
+  /** Bonus stamps handed over by a join spin. */
+  bonusStamps?: number;
+  /** Reward decider kept the advertised reward because no prize met the floor. */
+  keptAdvertisedReward?: boolean;
 }
 
 export interface Challenge {

@@ -14,12 +14,46 @@ export interface OverviewStat {
   action: string;
 }
 
+export interface OverviewCampaign {
+  id: string;
+  name: string;
+  status: string;
+  /** Human status, e.g. "Draft", "Scheduled", "Waiting for approval". */
+  statusLabel: string;
+  /** Johannesburg send date and time, or null when it has not been scheduled. */
+  when: string | null;
+  href: string;
+}
+
+export interface OverviewLastCampaign {
+  id: string;
+  name: string;
+  delivered: number;
+  failed: number;
+  sentAt: string | null;
+  /** Johannesburg date of the send, or null when there is no send date. */
+  sentLabel: string | null;
+}
+
 export interface Overview {
   stats: OverviewStat[];
   weeklyVisits: number[];
-  lastCampaign: { name: string; delivered: number; failed: number } | null;
-  nextCampaign: { name: string; when: string; status: string } | null;
+  lastCampaign: OverviewLastCampaign | null;
+  nextCampaign: OverviewCampaign | null;
 }
+
+const CAMPAIGN_STATUS_LABELS: Record<string, string> = {
+  draft: "Draft",
+  scheduled: "Scheduled",
+  pending_approval: "Waiting for approval",
+};
+
+const johannesburgMoment = (iso: string) =>
+  new Intl.DateTimeFormat("en-ZA", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Africa/Johannesburg",
+  }).format(new Date(iso));
 
 const DAY = 86400000;
 const WEEK = 7 * DAY;
@@ -75,19 +109,17 @@ export function overview(
   const upcoming = campaigns
     .filter((campaign) => ["draft", "scheduled", "pending_approval"].includes(campaign.status))
     .sort((a, b) => (a.scheduledAt ?? a.createdAt).localeCompare(b.scheduledAt ?? b.createdAt))[0];
-  const nextCampaign = upcoming
+  const nextCampaign: OverviewCampaign | null = upcoming
     ? {
+        id: upcoming.id,
         name: upcoming.name,
-        when: upcoming.scheduledAt
-          ? new Intl.DateTimeFormat("en-ZA", {
-              dateStyle: "medium",
-              timeStyle: "short",
-              timeZone: "Africa/Johannesburg",
-            }).format(new Date(upcoming.scheduledAt))
-          : upcoming.status.replace("_", " "),
         status: upcoming.status,
+        statusLabel: CAMPAIGN_STATUS_LABELS[upcoming.status] ?? upcoming.status.replace("_", " "),
+        when: upcoming.scheduledAt ? johannesburgMoment(upcoming.scheduledAt) : null,
+        href: `/app/campaigns/${upcoming.id}`,
       }
     : null;
+  const sentCount = campaigns.filter((campaign) => campaign.sentAt).length;
 
   const stats: OverviewStat[] = [
     {
@@ -125,19 +157,25 @@ export function overview(
     },
     {
       key: "campaign",
-      label: "Next campaign",
-      value: upcoming ? 1 : 0,
-      display: upcoming ? upcoming.name : "None",
-      tooltip: nextCampaign?.when ?? "No campaign is drafted or scheduled.",
-      href: upcoming ? `/app/campaigns/${upcoming.id}` : "/app/campaigns/new",
-      action: upcoming ? "Open campaign" : "Start one",
+      label: "Campaigns sent",
+      value: sentCount,
+      tooltip: "Campaigns already sent to your guests. Drafts and scheduled sends are not counted.",
+      href: "/app/campaigns",
+      action: "See campaigns",
     },
   ];
   const result: Overview = {
     stats,
     weeklyVisits,
     lastCampaign: last
-      ? { name: last.name, delivered: last.delivered, failed: last.failed }
+      ? {
+          id: last.id,
+          name: last.name,
+          delivered: last.delivered,
+          failed: last.failed,
+          sentAt: last.sentAt,
+          sentLabel: last.sentAt ? johannesburgMoment(last.sentAt) : null,
+        }
       : null,
     nextCampaign,
   };

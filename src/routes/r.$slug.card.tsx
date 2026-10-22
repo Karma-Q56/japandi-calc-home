@@ -113,6 +113,7 @@ function GuestCard() {
               {api.loyalty.tierLabel(tier.nextTier)}
             </span>
           )}
+          {spins.joinAvailable && <span className="spin-pill">Welcome spin ready</span>}
           {spins.earned > 0 && (
             <span className="spin-pill">
               {spins.earned} spin{spins.earned === 1 ? "" : "s"} ready

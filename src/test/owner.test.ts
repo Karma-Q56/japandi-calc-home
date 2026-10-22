@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { demoRepo } from "@/data/repo";
+import { demoRepo, updateDemo } from "@/data/repo";
 import { clock } from "@/lib/clock";
 import { overview } from "@/domain/dash";
 import { exportCsv, listCustomers, matchingCustomerMembershipIds, removeFromList, revealPhone } from "@/domain/customers";
@@ -45,11 +45,85 @@ describe("overview", () => {
       state.rewards.filter((r) => r.restaurantId === "rest-daily-grind" && !r.redeemedAt).length,
     );
     expect(get("credit")).toBe(4200);
-    expect(result.data.stats.find((s) => s.key === "campaign")!.display).toBe(
-      "Weekend family lunch",
-    );
+    // A campaign name is never rendered as a stat value; the stat counts sends.
+    expect(result.data.stats.find((s) => s.key === "campaign")!.display).toBeUndefined();
+    expect(get("campaign")).toBe(1);
     expect(result.data.weeklyVisits).toHaveLength(8);
+    expect(result.data.nextCampaign?.name).toBe("Weekend family lunch");
     expect(result.data.lastCampaign?.name).toBe("A little Tuesday treat");
+  });
+
+  it("reports the next campaign and the last sent campaign separately", () => {
+    const result = overview("rest-daily-grind", owner);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.nextCampaign).toEqual({
+      id: "campaign-draft-weekend",
+      name: "Weekend family lunch",
+      status: "draft",
+      statusLabel: "Draft",
+      when: null,
+      href: "/app/campaigns/campaign-draft-weekend",
+    });
+    expect(result.data.lastCampaign?.name).toBe("A little Tuesday treat");
+    expect(result.data.lastCampaign?.delivered).toBe(11);
+    expect(result.data.lastCampaign?.failed).toBe(1);
+    expect(result.data.lastCampaign?.sentLabel).toBeTruthy();
+
+    // With no draft or scheduled campaign left, nothing is planned.
+    updateDemo((current) => ({
+      ...current,
+      campaigns: current.campaigns.filter(
+        (campaign) => campaign.restaurantId !== "rest-daily-grind" || campaign.sentAt,
+      ),
+    }));
+    const sentOnly = overview("rest-daily-grind", owner);
+    expect(sentOnly.ok).toBe(true);
+    if (!sentOnly.ok) return;
+    expect(sentOnly.data.nextCampaign).toBeNull();
+    expect(sentOnly.data.lastCampaign?.id).toBe("campaign-1");
+  });
+
+  it("picks the earliest scheduled campaign over a later one", () => {
+    const now = demoRepo.read().now;
+    const base = {
+      restaurantId: "rest-daily-grind",
+      body: "Bring a friend.",
+      channel: "sms" as const,
+      audience: { type: "everyone" as const },
+      code: "NEXT",
+      requiresApproval: false,
+      sentAt: null,
+      recipients: 0,
+      delivered: 0,
+      failed: 0,
+      createdBy: "owner-test",
+      createdAt: new Date(now).toISOString(),
+      actualCostCents: 0,
+    };
+    const scheduled = (id: string, name: string, daysAhead: number) => ({
+      ...base,
+      id,
+      name,
+      status: "scheduled" as const,
+      scheduledAt: new Date(now + daysAhead * 86400000).toISOString(),
+    });
+    updateDemo((current) => ({
+      ...current,
+      campaigns: [
+        ...current.campaigns.filter(
+          (campaign) => campaign.restaurantId !== "rest-daily-grind" || campaign.sentAt,
+        ),
+        scheduled("campaign-later", "Later send", 6),
+        scheduled("campaign-sooner", "Sooner send", 2),
+      ],
+    }));
+    const result = overview("rest-daily-grind", owner);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.nextCampaign?.id).toBe("campaign-sooner");
+    expect(result.data.nextCampaign?.statusLabel).toBe("Scheduled");
+    expect(result.data.nextCampaign?.when).toBeTruthy();
   });
 
   it("lapsed count rises after 30 days and matches the filter", () => {

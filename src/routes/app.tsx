@@ -109,15 +109,53 @@ function Overview({ restaurantId }: { restaurantId: string }) {
           ))}
         </div>
       </section>
-      <section className="builder-panel dashboard-next-campaign">
+      <section className="builder-panel">
         <h2>Next campaign</h2>
-        {result.data.lastCampaign ? (
-          <p className="dashboard-next-campaign-row">
-            <span className="dashboard-campaign-name">{result.data.lastCampaign.name}</span>
-            <span>{result.data.lastCampaign.delivered} delivered, {result.data.lastCampaign.failed} failed.</span>
-          </p>
+        {result.data.nextCampaign ? (
+          <>
+            <p>{result.data.nextCampaign.name}</p>
+            <p className="demo-data-note">
+              {result.data.nextCampaign.statusLabel} ·{" "}
+              {result.data.nextCampaign.when
+                ? `Sends ${result.data.nextCampaign.when}`
+                : "Not scheduled yet"}
+            </p>
+            <div className="page-actions">
+              <a className="builder-secondary" href={result.data.nextCampaign.href}>
+                Open campaign
+              </a>
+            </div>
+          </>
         ) : (
-          <p>No upcoming campaigns. Send your first offer from Campaigns.</p>
+          <>
+            <p>No campaign planned.</p>
+            <div className="page-actions">
+              <a className="builder-primary" href="/app/campaigns/new">
+                New campaign
+              </a>
+            </div>
+          </>
+        )}
+      </section>
+      <section className="builder-panel">
+        <h2>Last campaign</h2>
+        {result.data.lastCampaign ? (
+          <>
+            <p>{result.data.lastCampaign.name}</p>
+            <p className="demo-data-note">
+              {result.data.lastCampaign.delivered} delivered · {result.data.lastCampaign.failed} failed
+              {result.data.lastCampaign.sentLabel
+                ? ` · sent ${result.data.lastCampaign.sentLabel}`
+                : ""}
+            </p>
+            <div className="page-actions">
+              <a className="builder-secondary" href={`/app/campaigns/${result.data.lastCampaign.id}`}>
+                Open results
+              </a>
+            </div>
+          </>
+        ) : (
+          <p>No campaign has been sent yet.</p>
         )}
       </section>
     </main>

@@ -67,6 +67,8 @@ function ComposerPage() {
     );
   }
   const savedLists = api.audience.lists(restaurant.id);
+  // The saved-list card shows the list's own size, not the SMS-eligible subset.
+  const selectedList = savedLists.find((list) => list.id === listId);
   const specials = api.special.ownerList(restaurant.id);
   const audience: CampaignAudience =
     segment === "saved_list"
@@ -219,14 +221,27 @@ function ComposerPage() {
               onChange={(event) => setName(event.target.value)}
             />
           </label>
-          <fieldset className="campaign-channel-picker">
+          <fieldset className="option-cards">
             <legend>Send by</legend>
             {([
-              ["push", "Push only"],
-              ["sms", "SMS only"],
-              ["push_then_sms", "Push first, then SMS without push"],
-            ] as const).map(([value, label]) => (
-              <label key={value}><input type="radio" name="campaign-channel" checked={channel === value} onChange={() => setChannel(value)} />{label}</label>
+              ["push", "Push only", "Free and instant for guests who turned notifications on."],
+              ["sms", "SMS only", "A text message to every opted-in guest, charged from your credit."],
+              ["push_then_sms", "Push first, then SMS", "Free push first; SMS goes only to guests without push."],
+            ] as const).map(([value, title, description]) => (
+              <label className="option-card" key={value}>
+                <input
+                  type="radio"
+                  name="campaign-channel"
+                  value={value}
+                  checked={channel === value}
+                  onChange={() => setChannel(value)}
+                />
+                <span className="option-card-mark" aria-hidden="true" />
+                <span className="option-card-body">
+                  <strong>{title}</strong>
+                  <small>{description}</small>
+                </span>
+              </label>
             ))}
             <p>{pushEligible.length} push recipients · {smsEligible.length} SMS recipients. Push is free; SMS only is charged from credit.</p>
           </fieldset>
@@ -243,8 +258,14 @@ function ComposerPage() {
                 <b>{choice.title}</b>
                 <span>{choice.hint}</span>
                 <strong>
-                  {segment === choice.type ? rawCount : api.audience.count(restaurant.id, segmentAudience(choice.type, weekday, listId))}{" "}
-                  guests
+                  {choice.type === "saved_list" ? (
+                    selectedList ? `${selectedList.membershipIds.length} guest${selectedList.membershipIds.length === 1 ? "" : "s"}` : "Choose a list"
+                  ) : (
+                    <>
+                      {segment === choice.type ? rawCount : api.audience.count(restaurant.id, segmentAudience(choice.type, weekday, listId))}{" "}
+                      guests
+                    </>
+                  )}
                 </strong>
               </button>
             ))}
