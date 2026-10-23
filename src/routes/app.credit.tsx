@@ -7,7 +7,7 @@ import { requireRole } from "@/data/session";
 
 export const Route = createFileRoute("/app/credit")({
   beforeLoad: () => {
-    if (!requireRole("owner", "manager")(demoRepo.read().session)) throw redirect({ to: "/demo" });
+    if (!requireRole("owner", "manager")(demoRepo.read().session)) throw redirect({ to: "/login" });
   },
   component: CreditPage,
 });

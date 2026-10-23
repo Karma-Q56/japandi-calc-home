@@ -8,7 +8,7 @@ import { requireRole } from "@/data/session";
 export const Route = createFileRoute("/app/customers/$customerId")({
   beforeLoad: () => {
     if (!requireRole("owner", "manager")(demoRepo.read().session)) {
-      throw redirect({ to: "/demo" });
+      throw redirect({ to: "/login" });
     }
   },
   component: CustomerProfile,

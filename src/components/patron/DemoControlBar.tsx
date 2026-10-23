@@ -107,7 +107,7 @@ export function DemoControlBar() {
           <div className="demo-control-actions">
             <button onClick={() => demoRepo.reset()}>Reset demo data</button>
             <Link to="/demo/outbox">Open outbox</Link>
-            <Link to="/demo">Demo hub</Link>
+            <Link to="/dev/roles">Developer roles</Link>
           </div>
         </div>
       )}

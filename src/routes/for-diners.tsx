@@ -1,17 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { MarketingShell } from "@/components/patron/MarketingShell";
-import { ArrowRight, Stamp, Smartphone, MapPin, Sparkles } from "lucide-react";
-import { createSeed } from "@/data/seed";
-import { PatronBrand } from "@/lib/patron-brand";
+import { VenueGrid } from "@/components/patron/Venues";
+import { ArrowRight, BellRing, Gift, MapPin, Sparkles, Stamp, Smartphone, Tag } from "lucide-react";
 
 export const Route = createFileRoute("/for-diners")({
   head: () => ({
     meta: [
-      { title: "For diners — Patron loyalty cards in your browser" },
+      { title: "For diners — a loyalty card in your browser | Patron" },
       {
         name: "description",
         content:
-          "Join your favourite local restaurants with a phone number. Collect stamps, spin for prizes and see offers, with no app to download.",
+          "Join your favourite local restaurants with a phone number. Collect stamps, spin for prizes and see member-only offers, with no app to download.",
       },
     ],
   }),
@@ -28,30 +27,48 @@ const faqs = [
     "Nothing. Joining a restaurant's card is free, and asking for a reward costs nothing extra.",
   ],
   [
-    "How do I collect stamps?",
-    "Show your card at the till after a qualifying purchase. Staff scan the code or type your member number. You cannot stamp your own card.",
-  ],
-  [
     "Do I have to receive messages?",
     "Only if you keep them on. Every restaurant you join has its own SMS switch under Me → Messages. Turning one off does not affect your card.",
   ],
   [
-    "What are spins and challenges?",
-    "Some restaurants award spins for visits and set challenges, like three visits in 14 days for a bonus stamp. Spins are earned by visiting, never by paying.",
-  ],
-  [
-    "How do I find a restaurant?",
-    "Open Restaurants in your card. In this demo you can browse three venues, and any live venue appears there after you scan its QR code.",
+    "How do rewards and spins work?",
+    "Fill your stamp card to earn the restaurant's reward. Some places also award a spin for a visit or a milestone. Prizes are real offers from that venue.",
   ],
 ];
 
+const benefits = [
+  {
+    icon: Stamp,
+    title: "Stamps",
+    text: "One card per place you love. Staff confirm a stamp after a qualifying visit, and your card updates straight away.",
+  },
+  {
+    icon: Gift,
+    title: "Rewards",
+    text: "Fill the card and the reward is yours. Show the code at the till; the team confirms it in a few seconds.",
+  },
+  {
+    icon: Sparkles,
+    title: "Spins",
+    text: "Where a venue runs a wheel, a visit can earn you a spin. Prizes are offers, and spins are never bought.",
+  },
+  {
+    icon: Tag,
+    title: "Member-only offers",
+    text: "Specials that only regulars see, sometimes with a personal code that is yours alone.",
+  },
+  {
+    icon: BellRing,
+    title: "A gentle nudge",
+    text: "Turn on a notification when a new offer lands. It is off by default and you can switch it off any time.",
+  },
+];
+
 function ForDiners() {
-  const venues = createSeed().restaurants.filter((restaurant) => restaurant.status === "active");
   return (
-    <MarketingShell current="diners">
+    <MarketingShell>
       <section className="diners-hero page-width">
         <div className="diners-hero-copy">
-          <PatronBrand />
           <span className="eyebrow">
             <span className="eyebrow-line" /> For diners
           </span>
@@ -65,8 +82,8 @@ function ForDiners() {
             see the offers that are meant for you — all from your phone&apos;s browser.
           </p>
           <div className="diners-actions">
-            <a className="builder-primary" href="/demo">
-              Try the demo card <ArrowRight size={16} />
+            <a className="builder-primary" href="#find-a-restaurant">
+              Find a restaurant <ArrowRight size={16} />
             </a>
             <a className="text-link" href="#how-it-works">
               How it works
@@ -106,16 +123,16 @@ function ForDiners() {
             {
               icon: Stamp,
               title: "Collect stamps",
-              text: "Staff confirm a stamp after your purchase. Your card updates instantly, with your welcome stamps already on it.",
+              text: "Staff confirm a stamp after your purchase. Your welcome stamps are already on the card.",
             },
             {
               icon: Sparkles,
               title: "Get the good stuff",
-              text: "Rewards, personal offers, spins and challenges show up in your card. Show the code at the till.",
+              text: "Rewards, personal offers and spins show up in your card. Show the code at the till.",
             },
           ].map((step) => (
             <article key={step.title} className="diners-step">
-              <step.icon />
+              <step.icon aria-hidden />
               <h3>{step.title}</h3>
               <p>{step.text}</p>
             </article>
@@ -123,36 +140,42 @@ function ForDiners() {
         </div>
       </section>
 
-      <section className="diners-find">
+      <section className="section page-width">
+        <div className="center-heading">
+          <span className="eyebrow">
+            <span className="eyebrow-line" /> What you get
+          </span>
+          <h2 className="section-heading">
+            More than a paper card.
+            <br />
+            <span className="editorial">Less to lose.</span>
+          </h2>
+        </div>
+        <div className="diner-benefit-grid">
+          {benefits.map((benefit) => (
+            <article className="diner-benefit" key={benefit.title}>
+              <benefit.icon aria-hidden />
+              <h3>{benefit.title}</h3>
+              <p>{benefit.text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="diners-find" id="find-a-restaurant">
         <div className="page-width">
           <span className="eyebrow">
             <span className="eyebrow-line" /> Find a restaurant
           </span>
           <h2>Start with a demo venue.</h2>
           <p className="diners-lede">
-            Every venue has its own card. In the demo you can open any of these, join and see the
-            card, menu and offers.
+            Every venue has its own card. Open any of these to join and see the card, menu and
+            offers. Any live Patron venue appears here after you scan its QR code.
           </p>
-          <div className="diners-venue-grid">
-            {venues.map((restaurant) => (
-              <a
-                key={restaurant.id}
-                className="diners-venue"
-                href={`/r/${restaurant.slug}`}
-              >
-                <span className="diners-venue-mark" aria-hidden>
-                  {restaurant.name.slice(0, 1)}
-                </span>
-                <strong>{restaurant.name}</strong>
-                <small>
-                  <MapPin size={13} /> {restaurant.suburb}
-                </small>
-                <span>
-                  {restaurant.stampsRequired} stamps to {restaurant.rewardDescription}
-                </span>
-              </a>
-            ))}
-          </div>
+          <VenueGrid />
+          <p className="find-note">
+            <MapPin size={14} aria-hidden /> Currently showing venues in Johannesburg.
+          </p>
         </div>
       </section>
 
@@ -175,15 +198,20 @@ function ForDiners() {
             </details>
           ))}
         </div>
+        <p className="faq-more">
+          <a className="text-link" href="/faq">
+            More questions <ArrowRight size={14} />
+          </a>
+        </p>
       </section>
 
       <section className="diners-cta page-width">
         <div>
           <h2>Ready when you are.</h2>
-          <p>Join a demo restaurant, or scan the code at any Patron venue.</p>
+          <p>Join a venue below, or scan the code at any Patron restaurant.</p>
         </div>
-        <a className="builder-primary" href="/demo">
-          Open the demo <ArrowRight size={16} />
+        <a className="builder-primary" href="#find-a-restaurant">
+          Find a restaurant <ArrowRight size={16} />
         </a>
       </section>
     </MarketingShell>

@@ -48,7 +48,7 @@ function OpsShell() {
 const OpsPage = withChildren(OpsShell);
 export const Route = createFileRoute("/ops")({
   beforeLoad: () => {
-    if (!requireRole("operator")(demoRepo.read().session)) throw redirect({ to: "/demo" });
+    if (!requireRole("operator")(demoRepo.read().session)) throw redirect({ to: "/login" });
   },
   component: OpsPage,
 });

@@ -53,7 +53,7 @@ const CustomersWithChildren = withChildren(Customers);
 export const Route = createFileRoute("/app/customers")({
   beforeLoad: () => {
     if (!requireRole("owner", "manager")(demoRepo.read().session)) {
-      throw redirect({ to: "/demo" });
+      throw redirect({ to: "/login" });
     }
   },
   component: CustomersWithChildren,

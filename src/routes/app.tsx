@@ -12,7 +12,7 @@ import { PatronBrand } from "@/lib/patron-brand";
 export const Route = createFileRoute("/app")({
   beforeLoad: () => {
     if (!requireRole("owner", "manager")(demoRepo.read().session)) {
-      throw redirect({ to: "/demo" });
+      throw redirect({ to: "/login" });
     }
   },
   component: markOutletComponent(OwnerShell),
@@ -64,7 +64,7 @@ function Overview({ restaurantId }: { restaurantId: string }) {
       <main className="demo-hub page-width">
         <h1>We couldn’t load the overview.</h1>
         <p>{result.error.message}</p>
-        <a href="/demo">Back to demo hub</a>
+        <a href="/">Back to Patron</a>
       </main>
     );
   }

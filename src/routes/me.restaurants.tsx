@@ -14,7 +14,7 @@ export const Route = createFileRoute("/me/restaurants")({
       !requireRole("guest")(demoRepo.read().session) ||
       (typeof window !== "undefined" && !demoRepo.read().session.customerId)
     ) {
-      throw redirect({ to: "/demo" });
+      throw redirect({ to: "/login" });
     }
   },
   component: RestaurantsWithChildren,
@@ -32,8 +32,8 @@ function RestaurantsPage() {
         <section className="guest-panel">
           <h1>No guest session yet.</h1>
           <p>Pick a guest tunnel from the demo hub first.</p>
-          <a className="builder-primary" href="/demo">
-            Back to demo hub
+          <a className="builder-primary" href="/">
+            Back to Patron
           </a>
         </section>
       </main>

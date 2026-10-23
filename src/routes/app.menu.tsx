@@ -8,7 +8,7 @@ import type { MenuItem } from "@/data/types";
 
 export const Route = createFileRoute("/app/menu")({
   beforeLoad: () => {
-    if (!requireRole("owner", "manager")(demoRepo.read().session)) throw redirect({ to: "/demo" });
+    if (!requireRole("owner", "manager")(demoRepo.read().session)) throw redirect({ to: "/login" });
   },
   component: MenuEditor,
 });

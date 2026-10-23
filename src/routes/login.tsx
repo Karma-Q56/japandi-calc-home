@@ -1,15 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { ArrowRight } from "lucide-react";
 import { MarketingShell } from "@/components/patron/MarketingShell";
-import { updateDemo } from "@/data/repo";
-import { useDemoState } from "@/data/useDemoState";
-import { PatronBrand } from "@/lib/patron-brand";
-import {
-  CreditCard,
-  Store,
-  ScanLine,
-  ShieldCheck,
-  ArrowRight,
-} from "lucide-react";
+import { DEMO_ACCOUNTS, signInAsDemoAccount, type DemoAccount } from "@/lib/demo-signin";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -17,7 +10,8 @@ export const Route = createFileRoute("/login")({
       { title: "Log in — Patron" },
       {
         name: "description",
-        content: "Choose how you use Patron: diner, restaurant owner, staff till or Patron admin.",
+        content:
+          "Log in to see your loyalty cards, stamps and rewards. Restaurant owners and staff sign in here too.",
       },
     ],
   }),
@@ -25,107 +19,97 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
-  const state = useDemoState();
   const navigate = useNavigate();
-  const restaurant = state.restaurants[0]!;
-  const customer = state.customers[0]!;
+  const [status, setStatus] = useState("");
 
-  const portals = [
-    {
-      id: "diner",
-      icon: CreditCard,
-      title: "Diner",
-      text: "Your cards, stamps, offers and rewards.",
-      action: () => {
-        updateDemo((current) => ({
-          ...current,
-          session: { role: "guest", customerId: customer.id },
-        }));
-        void navigate({ to: "/me" });
-      },
-    },
-    {
-      id: "owner",
-      icon: Store,
-      title: "Restaurant owner",
-      text: "Dashboard, guests, loyalty rules, specials and campaigns.",
-      action: () => {
-        updateDemo((current) => ({
-          ...current,
-          session: { role: "owner", restaurantId: restaurant.id },
-        }));
-        void navigate({ to: "/app" });
-      },
-    },
-    {
-      id: "staff",
-      icon: ScanLine,
-      title: "Staff till",
-      text: "Scan cards, add stamps, redeem rewards and offers.",
-      action: () => {
-        updateDemo((current) => {
-          const staffId = current.staff.find(
-            (item) => item.restaurantId === restaurant.id,
-          )?.id;
-          return {
-            ...current,
-            session: {
-              role: "staff",
-              restaurantId: restaurant.id,
-              tillPairedRestaurantId: restaurant.id,
-              ...(staffId ? { staffId } : {}),
-            },
-          };
-        });
-        void navigate({ to: "/stamp" });
-      },
-    },
-    {
-      id: "operator",
-      icon: ShieldCheck,
-      title: "Patron admin",
-      text: "Set up venues, looks, credit and campaigns.",
-      action: () => {
-        updateDemo((current) => ({ ...current, session: { role: "operator" } }));
-        void navigate({ to: "/ops/restaurants" });
-      },
-    },
-  ];
+  const enter = (account: DemoAccount, message: string) => {
+    const to = signInAsDemoAccount(account);
+    setStatus(message);
+    void navigate({ to });
+  };
 
   return (
-    <MarketingShell current="login">
+    <MarketingShell>
       <section className="login-page page-width">
-        <PatronBrand />
-        <span className="eyebrow">
-          <span className="eyebrow-line" /> Log in
-        </span>
-        <h1>Who are you here as?</h1>
-        <p className="login-note" role="note">
-          <strong>Demo preview.</strong> These buttons switch the local demo role — no password and
-          no real account yet. Real sign-in is coming.
-        </p>
-        <div className="login-grid">
-          {portals.map((portal) => (
-            <button
-              key={portal.id}
-              type="button"
-              className="login-portal"
-              onClick={portal.action}
-            >
-              <portal.icon />
-              <strong>{portal.title}</strong>
-              <span>{portal.text}</span>
-              <span className="login-portal-go">
-                Enter demo <ArrowRight size={15} />
-              </span>
+        <div className="login-card">
+          <span className="eyebrow">
+            <span className="eyebrow-line" /> Log in
+          </span>
+          <h1>Welcome back.</h1>
+          <p className="login-lede">Your cards, your stamps and the offers waiting for you.</p>
+
+          <button
+            type="button"
+            className="login-google"
+            onClick={() => enter("diner", "Opening the demo diner account…")}
+          >
+            <span className="login-google-mark" aria-hidden>
+              G
+            </span>
+            Continue with Google
+          </button>
+
+          <div className="login-divider" role="presentation">
+            <span>or</span>
+          </div>
+
+          <form
+            className="login-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              enter("diner", "Opening the demo diner account…");
+            }}
+          >
+            <label htmlFor="login-email">Email address</label>
+            <input
+              id="login-email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              required
+            />
+            <button type="submit" className="builder-primary login-continue">
+              Continue <ArrowRight size={16} />
             </button>
-          ))}
+          </form>
+
+          <p className="login-note" role="note">
+            Restaurant owners and staff sign in here too. We&apos;ll take you to the right place.
+          </p>
+
+          <p className="login-new">
+            New here? <a href="/for-diners">Create your account</a>
+          </p>
+
+          <details className="login-demo">
+            <summary>Demo accounts</summary>
+            <div className="login-demo-list">
+              {DEMO_ACCOUNTS.map((account) => (
+                <button
+                  key={account.id}
+                  type="button"
+                  onClick={() =>
+                    enter(account.id, `Opening the demo ${account.label.toLowerCase()} account…`)
+                  }
+                >
+                  <strong>{account.label}</strong>
+                  <span>{account.text}</span>
+                </button>
+              ))}
+            </div>
+            <p className="login-demo-note">
+              This preview has no real password or account yet. Each button opens the matching demo
+              account in this browser.
+            </p>
+          </details>
+
+          {status && (
+            <p className="login-status" role="status">
+              {status}
+            </p>
+          )}
         </div>
-        <p className="login-help">
-          New here?{" "}
-          <a href="/for-diners">See what diners get</a> or{" "}
-          <a href="/#visit">book a 15-minute visit</a> for your restaurant.
-        </p>
       </section>
     </MarketingShell>
   );

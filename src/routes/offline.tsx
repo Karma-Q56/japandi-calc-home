@@ -14,7 +14,7 @@ function Offline() {
       <h1>You’re offline.</h1>
       <p className="demo-intro">The till keeps working offline; stamps sync when you reconnect.</p>
       <p>
-        <a href="/demo">Back to demo hub</a>
+        <a href="/">Back to Patron</a>
       </p>
     </main>
   );

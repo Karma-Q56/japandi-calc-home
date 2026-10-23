@@ -28,7 +28,7 @@ function CronDispatchPlaceholder() {
     <main className="demo-hub page-width">
       <h1>Not implemented yet.</h1>
       <p>Queued SMS dispatch runs from the demo outbox until M9.</p>
-      <a href="/demo">Back to demo hub</a>
+      <a href="/">Back to Patron</a>
     </main>
   );
 }

@@ -14,7 +14,7 @@ export const Route = createFileRoute("/me/settings")({
       !requireRole("guest")(demoRepo.read().session) ||
       (typeof window !== "undefined" && !demoRepo.read().session.customerId)
     )
-      throw redirect({ to: "/demo" });
+      throw redirect({ to: "/login" });
   },
   component: GuestSettings,
 });
@@ -38,8 +38,8 @@ function GuestSettings() {
         <section className="guest-panel">
           <h1>We couldn’t find that guest.</h1>
           <p>This demo guest may have been reset.</p>
-          <a className="builder-primary" href="/demo">
-            Back to demo hub
+          <a className="builder-primary" href="/">
+            Back to Patron
           </a>
         </section>
       </main>

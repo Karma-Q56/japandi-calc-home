@@ -13,7 +13,7 @@ export const Route = createFileRoute("/me/restaurants/$slug")({
       !requireRole("guest")(demoRepo.read().session) ||
       (typeof window !== "undefined" && !demoRepo.read().session.customerId)
     ) {
-      throw redirect({ to: "/demo" });
+      throw redirect({ to: "/login" });
     }
   },
   component: VenuePage,

@@ -7,7 +7,7 @@ import type { CampaignAudience, SpecialKind, TierName } from "@/data/types";
 
 export const Route = createFileRoute("/app/specials")({
   beforeLoad: () => {
-    if (!requireRole("owner", "manager")(demoRepo.read().session)) throw redirect({ to: "/demo" });
+    if (!requireRole("owner", "manager")(demoRepo.read().session)) throw redirect({ to: "/login" });
   },
   component: SpecialsPage,
 });

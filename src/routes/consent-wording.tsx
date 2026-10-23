@@ -23,7 +23,7 @@ function ConsentWordingPage() {
         </section>
       ))}
       <p>
-        <a href="/demo">Back to demo hub</a>
+        <a href="/">Back to Patron</a>
       </p>
     </main>
   );

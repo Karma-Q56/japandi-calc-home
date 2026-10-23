@@ -8,7 +8,7 @@ import { requireRole } from "@/data/session";
 const OpsCampaignsPage = withChildren(OpsCampaigns);
 export const Route = createFileRoute("/ops/campaigns")({
   beforeLoad: () => {
-    if (!requireRole("operator")(demoRepo.read().session)) throw redirect({ to: "/demo" });
+    if (!requireRole("operator")(demoRepo.read().session)) throw redirect({ to: "/login" });
   },
   component: OpsCampaignsPage,
 });

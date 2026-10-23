@@ -1,4 +1,8 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  redirect,
+  type ErrorComponentProps,
+} from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { api } from "@/api";
@@ -12,6 +16,7 @@ import { GuestShell } from "@/components/patron/GuestShell";
 import { MemberQr } from "@/components/patron/MemberQr";
 import { SpinWheel } from "@/components/patron/SpinWheel";
 import { rewardEarned, rewardProgress } from "@/lib/reward-copy";
+import { signInAsDemoAccount } from "@/lib/demo-signin";
 
 export const Route = createFileRoute("/r/$slug/card")({
   validateSearch: (search) => cardSearchSchema.parse(search),
@@ -27,14 +32,56 @@ export const Route = createFileRoute("/r/$slug/card")({
     const { mode } = await getDataModeFn();
     if (mode === "live") return;
     if (!requireRole("guest")(demoRepo.read().session)) {
-      throw redirect({ to: "/demo" });
+      throw redirect({ to: "/login" });
     }
     if (typeof window !== "undefined" && !demoRepo.read().session.customerId) {
-      throw redirect({ to: "/demo" });
+      throw redirect({ to: "/login" });
     }
   },
   component: GuestCard,
+  errorComponent: CardError,
 });
+
+/**
+ * A card that cannot render must say so. A blank page tells a guest nothing, and the
+ * most common cause here is a stale demo snapshot in this browser.
+ */
+function CardError({ error }: ErrorComponentProps) {
+  console.error(error);
+  const detail = error instanceof Error ? error.message : "";
+  return (
+    <main className="guest-page">
+      <section className="guest-panel card-error" role="alert">
+        <p className="eyebrow">This card did not open</p>
+        <h1>We could not load this card.</h1>
+        <p>
+          Something in the saved card data did not match what this page expects. Your stamps are
+          safe — this is a display problem, not a lost visit.
+        </p>
+        <div className="card-error-actions">
+          <button
+            type="button"
+            onClick={() => {
+              demoRepo.reset();
+              signInAsDemoAccount("diner");
+              window.location.assign("/me");
+            }}
+          >
+            Reset demo data
+          </button>
+          <a className="builder-primary" href="/me">
+            Back to my cards
+          </a>
+        </div>
+        {detail && (
+          <small className="gx-note">
+            Details for the team: <code>{detail}</code>
+          </small>
+        )}
+      </section>
+    </main>
+  );
+}
 
 function GuestCard() {
   const { slug } = Route.useParams();
@@ -57,9 +104,9 @@ function GuestCard() {
       <main className="guest-page">
         <section className="guest-panel">
           <h1>No guest session yet.</h1>
-          <p>Open the demo hub to pick a guest tunnel first.</p>
-          <a className="builder-primary" href="/demo">
-            Back to demo hub
+          <p>Log in as a diner to see this card.</p>
+          <a className="builder-primary" href="/login">
+            Log in
           </a>
         </section>
       </main>
@@ -75,7 +122,7 @@ function GuestCard() {
             Join the card
           </a>
           <p>
-            <a href="/demo">Back to demo hub</a>
+            <a href="/me">Back to my cards</a>
           </p>
         </section>
       </main>

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { MarketingShell } from "@/components/patron/MarketingShell";
 
 export const Route = createFileRoute("/terms")({
   component: Terms,
@@ -6,16 +7,16 @@ export const Route = createFileRoute("/terms")({
 
 function Terms() {
   return (
-    <main className="demo-hub page-width legal-page">
-      <p className="eyebrow">
-        <span className="eyebrow-line" />
-        Legal · Draft
-      </p>
-      <h1>Terms of use.</h1>
-      <p className="demo-intro">
-        Draft wording for the demo — needs lawyer review before any pilot.
-      </p>
-      <section className="builder-panel">
+    <MarketingShell>
+      <section className="marketing-page-hero page-width">
+        <p className="eyebrow">
+          <span className="eyebrow-line" />
+          Legal · Draft
+        </p>
+        <h1>Terms of use.</h1>
+        <p>Draft wording for the demo — needs lawyer review before any pilot.</p>
+      </section>
+      <section className="section page-width legal-page">
         <h2>Loyalty cards</h2>
         <p>
           A loyalty card is offered by the restaurant you join, not by Patron. Each restaurant sets
@@ -52,9 +53,9 @@ function Terms() {
           not send real SMS.
         </p>
       </section>
-      <p>
-        <a href="/privacy">Privacy notice</a> · <a href="/demo">Back to demo hub</a>
+      <p className="legal-more">
+        <a href="/privacy">Privacy notice</a> · <a href="/contact">Contact us</a>
       </p>
-    </main>
+    </MarketingShell>
   );
 }

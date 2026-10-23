@@ -53,7 +53,7 @@ function JoinPage() {
       <main className="demo-hub page-width">
         <h1>We couldn’t find that place.</h1>
         <p>This join link may be for a paused or renamed venue.</p>
-        <a href="/demo">Back to demo hub</a>
+        <a href="/">Back to Patron</a>
       </main>
     );
   }
@@ -148,7 +148,7 @@ function JoinPage() {
       <main className="guest-page">
         <header className="guest-header">
           <a href={`/r/${slug}`}>{restaurant.name}</a>
-          <a href="/demo">Demo home</a>
+          <a href="/">Patron home</a>
         </header>
         <section className="guest-flow">
           <div className="guest-progress" aria-label={`Step ${step + 1} of 3`}>

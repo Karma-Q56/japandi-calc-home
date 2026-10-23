@@ -9,7 +9,7 @@ import { requireRole } from "@/data/session";
 const OpsCreditPage = withChildren(OpsCredit);
 export const Route = createFileRoute("/ops/credit")({
   beforeLoad: () => {
-    if (!requireRole("operator")(demoRepo.read().session)) throw redirect({ to: "/demo" });
+    if (!requireRole("operator")(demoRepo.read().session)) throw redirect({ to: "/login" });
   },
   component: OpsCreditPage,
 });

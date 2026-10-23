@@ -14,7 +14,7 @@ function SessionExpired() {
       <h1>This demo session expired.</h1>
       <p className="demo-intro">Pick your demo person again from the hub to continue.</p>
       <p>
-        <a href="/demo">Back to demo hub</a>
+        <a href="/">Back to Patron</a>
       </p>
     </main>
   );

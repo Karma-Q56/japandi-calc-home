@@ -1,5 +1,6 @@
 import { withChildren } from "@/lib/nested";
 import { createFileRoute, redirect, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
 import { useDemoState } from "@/data/useDemoState";
@@ -7,15 +8,16 @@ import { requireRole } from "@/data/session";
 import { GuestShell } from "@/components/patron/GuestShell";
 import { LoyaltyCard } from "@/components/patron/LoyaltyCard";
 import { clock } from "@/lib/clock";
+import { signInAsDemoAccount } from "@/lib/demo-signin";
 
 const MyCardsPage = withChildren(MyCards);
 export const Route = createFileRoute("/me")({
   beforeLoad: () => {
     if (!requireRole("guest")(demoRepo.read().session)) {
-      throw redirect({ to: "/demo" });
+      throw redirect({ to: "/login" });
     }
     if (typeof window !== "undefined" && !demoRepo.read().session.customerId) {
-      throw redirect({ to: "/demo" });
+      throw redirect({ to: "/login" });
     }
   },
   component: MyCardsPage,
@@ -23,15 +25,16 @@ export const Route = createFileRoute("/me")({
 
 function MyCards() {
   const state = useDemoState();
+  const [resetNote, setResetNote] = useState("");
   const customerId = state.session.customerId;
   if (!customerId) {
     return (
       <main className="guest-page">
         <section className="guest-panel">
           <h1>No guest session yet.</h1>
-          <p>Pick a guest tunnel from the demo hub first.</p>
-          <a className="builder-primary" href="/demo">
-            Back to demo hub
+          <p>Sign in as a diner to see your cards.</p>
+          <a className="builder-primary" href="/login">
+            Log in
           </a>
         </section>
       </main>
@@ -43,10 +46,17 @@ function MyCards() {
       <main className="guest-page">
         <section className="guest-panel">
           <h1>We couldn’t find that guest.</h1>
-          <p>This demo guest may have been reset.</p>
-          <a className="builder-primary" href="/demo">
-            Back to demo hub
-          </a>
+          <p>This demo guest may have been reset or replaced.</p>
+          <button
+            type="button"
+            className="builder-primary"
+            onClick={() => {
+              demoRepo.reset();
+              signInAsDemoAccount("diner");
+            }}
+          >
+            Reset demo data
+          </button>
         </section>
       </main>
     );
@@ -103,11 +113,35 @@ function MyCards() {
         <section className="gx-panel">
           <h2>No cards yet.</h2>
           <p>Join a restaurant by scanning its QR code or opening its page.</p>
-          <a className="builder-primary" href="/demo">
-            Explore the demo
+          <a className="builder-primary" href="/for-diners#find-a-restaurant">
+            Find a restaurant
           </a>
         </section>
       )}
+      <section className="gx-panel">
+        <div className="guest-section-heading">
+          <h2>Demo data</h2>
+        </div>
+        <p className="gx-note">
+          If a card looks out of date or will not open, reset the demo data stored in this browser.
+          This clears local demo changes and signs you back in as a demo diner.
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            demoRepo.reset();
+            signInAsDemoAccount("diner");
+            setResetNote("Demo data was reset, and a demo diner is signed in.");
+          }}
+        >
+          Reset demo data
+        </button>
+        {resetNote && (
+          <p className="gx-note" role="status">
+            {resetNote}
+          </p>
+        )}
+      </section>
     </GuestShell>
   );
 }

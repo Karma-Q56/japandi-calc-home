@@ -16,6 +16,7 @@ import { Route as ConsentWordingRouteImport } from './routes/consent-wording'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as DemoRouteImport } from './routes/demo'
 import { Route as FaqRouteImport } from './routes/faq'
+import { Route as ForBusinessRouteImport } from './routes/for-business'
 import { Route as ForDinersRouteImport } from './routes/for-diners'
 import { Route as HealthzRouteImport } from './routes/healthz'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
@@ -43,6 +44,7 @@ import { Route as AppSpecialsRouteImport } from './routes/app.specials'
 import { Route as AppTeamRouteImport } from './routes/app.team'
 import { Route as DemoOutboxRouteImport } from './routes/demo.outbox'
 import { Route as DemoStatusRouteImport } from './routes/demo.status'
+import { Route as DevRolesRouteImport } from './routes/dev.roles'
 import { Route as HealthzDbRouteImport } from './routes/healthz.db'
 import { Route as MeRestaurantsRouteImport } from './routes/me.restaurants'
 import { Route as MeSettingsRouteImport } from './routes/me.settings'
@@ -58,7 +60,6 @@ import { Route as ApiCronSettleRouteImport } from './routes/api/cron/settle'
 import { Route as AppCampaignsCampaignIdRouteImport } from './routes/app.campaigns.$campaignId'
 import { Route as AppCampaignsNewRouteImport } from './routes/app.campaigns.new'
 import { Route as AppCustomersCustomerIdRouteImport } from './routes/app.customers.$customerId'
-import { Route as DemoAsRoleRouteImport } from './routes/demo.as.$role'
 import { Route as MeRestaurantsSlugRouteImport } from './routes/me.restaurants.$slug'
 import { Route as OpsRestaurantsIdRouteImport } from './routes/ops.restaurants.$id'
 import { Route as OpsRestaurantsNewRouteImport } from './routes/ops.restaurants.new'
@@ -101,6 +102,11 @@ const DemoRoute = DemoRouteImport.update({
 const FaqRoute = FaqRouteImport.update({
   id: '/faq',
   path: '/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForBusinessRoute = ForBusinessRouteImport.update({
+  id: '/for-business',
+  path: '/for-business',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForDinersRoute = ForDinersRouteImport.update({
@@ -238,6 +244,11 @@ const DemoStatusRoute = DemoStatusRouteImport.update({
   path: '/status',
   getParentRoute: () => DemoRoute,
 } as any)
+const DevRolesRoute = DevRolesRouteImport.update({
+  id: '/dev/roles',
+  path: '/dev/roles',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HealthzDbRoute = HealthzDbRouteImport.update({
   id: '/db',
   path: '/db',
@@ -313,11 +324,6 @@ const AppCustomersCustomerIdRoute = AppCustomersCustomerIdRouteImport.update({
   path: '/$customerId',
   getParentRoute: () => AppCustomersRoute,
 } as any)
-const DemoAsRoleRoute = DemoAsRoleRouteImport.update({
-  id: '/as/$role',
-  path: '/as/$role',
-  getParentRoute: () => DemoRoute,
-} as any)
 const MeRestaurantsSlugRoute = MeRestaurantsSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
@@ -367,6 +373,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/demo': typeof DemoRouteWithChildren
   '/faq': typeof FaqRoute
+  '/for-business': typeof ForBusinessRoute
   '/for-diners': typeof ForDinersRoute
   '/healthz': typeof HealthzRouteWithChildren
   '/how-it-works': typeof HowItWorksRoute
@@ -394,6 +401,7 @@ export interface FileRoutesByFullPath {
   '/app/team': typeof AppTeamRoute
   '/demo/outbox': typeof DemoOutboxRoute
   '/demo/status': typeof DemoStatusRoute
+  '/dev/roles': typeof DevRolesRoute
   '/healthz/db': typeof HealthzDbRoute
   '/me/restaurants': typeof MeRestaurantsRouteWithChildren
   '/me/settings': typeof MeSettingsRoute
@@ -409,7 +417,6 @@ export interface FileRoutesByFullPath {
   '/app/campaigns/$campaignId': typeof AppCampaignsCampaignIdRoute
   '/app/campaigns/new': typeof AppCampaignsNewRoute
   '/app/customers/$customerId': typeof AppCustomersCustomerIdRoute
-  '/demo/as/$role': typeof DemoAsRoleRoute
   '/me/restaurants/$slug': typeof MeRestaurantsSlugRoute
   '/ops/restaurants/$id': typeof OpsRestaurantsIdRouteWithChildren
   '/ops/restaurants/new': typeof OpsRestaurantsNewRoute
@@ -427,6 +434,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/demo': typeof DemoRouteWithChildren
   '/faq': typeof FaqRoute
+  '/for-business': typeof ForBusinessRoute
   '/for-diners': typeof ForDinersRoute
   '/healthz': typeof HealthzRouteWithChildren
   '/how-it-works': typeof HowItWorksRoute
@@ -454,6 +462,7 @@ export interface FileRoutesByTo {
   '/app/team': typeof AppTeamRoute
   '/demo/outbox': typeof DemoOutboxRoute
   '/demo/status': typeof DemoStatusRoute
+  '/dev/roles': typeof DevRolesRoute
   '/healthz/db': typeof HealthzDbRoute
   '/me/restaurants': typeof MeRestaurantsRouteWithChildren
   '/me/settings': typeof MeSettingsRoute
@@ -469,7 +478,6 @@ export interface FileRoutesByTo {
   '/app/campaigns/$campaignId': typeof AppCampaignsCampaignIdRoute
   '/app/campaigns/new': typeof AppCampaignsNewRoute
   '/app/customers/$customerId': typeof AppCustomersCustomerIdRoute
-  '/demo/as/$role': typeof DemoAsRoleRoute
   '/me/restaurants/$slug': typeof MeRestaurantsSlugRoute
   '/ops/restaurants/$id': typeof OpsRestaurantsIdRouteWithChildren
   '/ops/restaurants/new': typeof OpsRestaurantsNewRoute
@@ -488,6 +496,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/demo': typeof DemoRouteWithChildren
   '/faq': typeof FaqRoute
+  '/for-business': typeof ForBusinessRoute
   '/for-diners': typeof ForDinersRoute
   '/healthz': typeof HealthzRouteWithChildren
   '/how-it-works': typeof HowItWorksRoute
@@ -515,6 +524,7 @@ export interface FileRoutesById {
   '/app/team': typeof AppTeamRoute
   '/demo/outbox': typeof DemoOutboxRoute
   '/demo/status': typeof DemoStatusRoute
+  '/dev/roles': typeof DevRolesRoute
   '/healthz/db': typeof HealthzDbRoute
   '/me/restaurants': typeof MeRestaurantsRouteWithChildren
   '/me/settings': typeof MeSettingsRoute
@@ -530,7 +540,6 @@ export interface FileRoutesById {
   '/app/campaigns/$campaignId': typeof AppCampaignsCampaignIdRoute
   '/app/campaigns/new': typeof AppCampaignsNewRoute
   '/app/customers/$customerId': typeof AppCustomersCustomerIdRoute
-  '/demo/as/$role': typeof DemoAsRoleRoute
   '/me/restaurants/$slug': typeof MeRestaurantsSlugRoute
   '/ops/restaurants/$id': typeof OpsRestaurantsIdRouteWithChildren
   '/ops/restaurants/new': typeof OpsRestaurantsNewRoute
@@ -550,6 +559,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/demo'
     | '/faq'
+    | '/for-business'
     | '/for-diners'
     | '/healthz'
     | '/how-it-works'
@@ -577,6 +587,7 @@ export interface FileRouteTypes {
     | '/app/team'
     | '/demo/outbox'
     | '/demo/status'
+    | '/dev/roles'
     | '/healthz/db'
     | '/me/restaurants'
     | '/me/settings'
@@ -592,7 +603,6 @@ export interface FileRouteTypes {
     | '/app/campaigns/$campaignId'
     | '/app/campaigns/new'
     | '/app/customers/$customerId'
-    | '/demo/as/$role'
     | '/me/restaurants/$slug'
     | '/ops/restaurants/$id'
     | '/ops/restaurants/new'
@@ -610,6 +620,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/demo'
     | '/faq'
+    | '/for-business'
     | '/for-diners'
     | '/healthz'
     | '/how-it-works'
@@ -637,6 +648,7 @@ export interface FileRouteTypes {
     | '/app/team'
     | '/demo/outbox'
     | '/demo/status'
+    | '/dev/roles'
     | '/healthz/db'
     | '/me/restaurants'
     | '/me/settings'
@@ -652,7 +664,6 @@ export interface FileRouteTypes {
     | '/app/campaigns/$campaignId'
     | '/app/campaigns/new'
     | '/app/customers/$customerId'
-    | '/demo/as/$role'
     | '/me/restaurants/$slug'
     | '/ops/restaurants/$id'
     | '/ops/restaurants/new'
@@ -670,6 +681,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/demo'
     | '/faq'
+    | '/for-business'
     | '/for-diners'
     | '/healthz'
     | '/how-it-works'
@@ -697,6 +709,7 @@ export interface FileRouteTypes {
     | '/app/team'
     | '/demo/outbox'
     | '/demo/status'
+    | '/dev/roles'
     | '/healthz/db'
     | '/me/restaurants'
     | '/me/settings'
@@ -712,7 +725,6 @@ export interface FileRouteTypes {
     | '/app/campaigns/$campaignId'
     | '/app/campaigns/new'
     | '/app/customers/$customerId'
-    | '/demo/as/$role'
     | '/me/restaurants/$slug'
     | '/ops/restaurants/$id'
     | '/ops/restaurants/new'
@@ -731,6 +743,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   DemoRoute: typeof DemoRouteWithChildren
   FaqRoute: typeof FaqRoute
+  ForBusinessRoute: typeof ForBusinessRoute
   ForDinersRoute: typeof ForDinersRoute
   HealthzRoute: typeof HealthzRouteWithChildren
   HowItWorksRoute: typeof HowItWorksRoute
@@ -745,6 +758,7 @@ export interface RootRouteChildren {
   SessionExpiredRoute: typeof SessionExpiredRoute
   StampRoute: typeof StampRoute
   TermsRoute: typeof TermsRoute
+  DevRolesRoute: typeof DevRolesRoute
   RSlugRoute: typeof RSlugRouteWithChildren
   STokenRoute: typeof STokenRoute
   UTokenRoute: typeof UTokenRoute
@@ -803,6 +817,13 @@ declare module '@tanstack/react-router' {
       path: '/faq'
       fullPath: '/faq'
       preLoaderRoute: typeof FaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/for-business': {
+      id: '/for-business'
+      path: '/for-business'
+      fullPath: '/for-business'
+      preLoaderRoute: typeof ForBusinessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/for-diners': {
@@ -994,6 +1015,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DemoStatusRouteImport
       parentRoute: typeof DemoRoute
     }
+    '/dev/roles': {
+      id: '/dev/roles'
+      path: '/dev/roles'
+      fullPath: '/dev/roles'
+      preLoaderRoute: typeof DevRolesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/healthz/db': {
       id: '/healthz/db'
       path: '/db'
@@ -1098,13 +1126,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/customers/$customerId'
       preLoaderRoute: typeof AppCustomersCustomerIdRouteImport
       parentRoute: typeof AppCustomersRoute
-    }
-    '/demo/as/$role': {
-      id: '/demo/as/$role'
-      path: '/as/$role'
-      fullPath: '/demo/as/$role'
-      preLoaderRoute: typeof DemoAsRoleRouteImport
-      parentRoute: typeof DemoRoute
     }
     '/me/restaurants/$slug': {
       id: '/me/restaurants/$slug'
@@ -1224,13 +1245,11 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 interface DemoRouteChildren {
   DemoOutboxRoute: typeof DemoOutboxRoute
   DemoStatusRoute: typeof DemoStatusRoute
-  DemoAsRoleRoute: typeof DemoAsRoleRoute
 }
 
 const DemoRouteChildren: DemoRouteChildren = {
   DemoOutboxRoute: DemoOutboxRoute,
   DemoStatusRoute: DemoStatusRoute,
-  DemoAsRoleRoute: DemoAsRoleRoute,
 }
 
 const DemoRouteWithChildren = DemoRoute._addFileChildren(DemoRouteChildren)
@@ -1331,6 +1350,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   DemoRoute: DemoRouteWithChildren,
   FaqRoute: FaqRoute,
+  ForBusinessRoute: ForBusinessRoute,
   ForDinersRoute: ForDinersRoute,
   HealthzRoute: HealthzRouteWithChildren,
   HowItWorksRoute: HowItWorksRoute,
@@ -1345,6 +1365,7 @@ const rootRouteChildren: RootRouteChildren = {
   SessionExpiredRoute: SessionExpiredRoute,
   StampRoute: StampRoute,
   TermsRoute: TermsRoute,
+  DevRolesRoute: DevRolesRoute,
   RSlugRoute: RSlugRouteWithChildren,
   STokenRoute: STokenRoute,
   UTokenRoute: UTokenRoute,

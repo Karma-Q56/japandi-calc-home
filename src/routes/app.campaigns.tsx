@@ -9,7 +9,7 @@ const CampaignsWithChildren = withChildren(CampaignsPage);
 
 export const Route = createFileRoute("/app/campaigns")({
   beforeLoad: () => {
-    if (!requireRole("owner", "manager")(demoRepo.read().session)) throw redirect({ to: "/demo" });
+    if (!requireRole("owner", "manager")(demoRepo.read().session)) throw redirect({ to: "/login" });
   },
   component: CampaignsWithChildren,
 });

@@ -8,7 +8,7 @@ import { requireRole } from "@/data/session";
 export const Route = createFileRoute("/app/team")({
   beforeLoad: () => {
     if (!requireRole("owner")(demoRepo.read().session)) {
-      throw redirect({ to: "/demo" });
+      throw redirect({ to: "/login" });
     }
   },
   component: Team,
@@ -141,7 +141,7 @@ function Team() {
         </p>
       )}
       <p>
-        <a href="/demo">Back to demo hub</a>
+        <a href="/">Back to Patron</a>
       </p>
     </main>
   );

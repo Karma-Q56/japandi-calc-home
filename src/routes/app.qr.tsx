@@ -5,7 +5,7 @@ import { requireRole } from "@/data/session";
 import { QrPrintPack } from "@/components/patron/QrPrintPack";
 export const Route = createFileRoute("/app/qr")({
   beforeLoad: () => {
-    if (!requireRole("owner", "manager")(demoRepo.read().session)) throw redirect({ to: "/demo" });
+    if (!requireRole("owner", "manager")(demoRepo.read().session)) throw redirect({ to: "/login" });
   },
   component: QrOwner,
 });

@@ -14,7 +14,7 @@ function SmsWebhookPlaceholder() {
     <main className="demo-hub page-width">
       <h1>Not implemented yet.</h1>
       <p>SMS delivery webhooks arrive in a later milestone.</p>
-      <a href="/demo">Back to demo hub</a>
+      <a href="/">Back to Patron</a>
     </main>
   );
 }

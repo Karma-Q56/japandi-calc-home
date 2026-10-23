@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { MarketingShell } from "@/components/patron/MarketingShell";
 
 export const Route = createFileRoute("/privacy")({
   component: Privacy,
@@ -6,16 +7,16 @@ export const Route = createFileRoute("/privacy")({
 
 function Privacy() {
   return (
-    <main className="demo-hub page-width legal-page">
-      <p className="eyebrow">
-        <span className="eyebrow-line" />
-        Legal · Draft
-      </p>
-      <h1>Privacy notice.</h1>
-      <p className="demo-intro">
-        Draft wording for the demo — needs lawyer review before any pilot.
-      </p>
-      <section className="builder-panel">
+    <MarketingShell>
+      <section className="marketing-page-hero page-width">
+        <p className="eyebrow">
+          <span className="eyebrow-line" />
+          Legal · Draft
+        </p>
+        <h1>Privacy notice.</h1>
+        <p>Draft wording for the demo — needs lawyer review before any pilot.</p>
+      </section>
+      <section className="section page-width legal-page">
         <h2>What we collect</h2>
         <p>
           Your first name, mobile number, the restaurants you join, stamps, rewards, offers,
@@ -47,9 +48,9 @@ function Privacy() {
           message body. Patron never sells guest lists. Restaurants only see their own guests.
         </p>
       </section>
-      <p>
-        <a href="/terms">Terms of use</a> · <a href="/demo">Back to demo hub</a>
+      <p className="legal-more">
+        <a href="/terms">Terms of use</a> · <a href="/contact">Contact us</a>
       </p>
-    </main>
+    </MarketingShell>
   );
 }

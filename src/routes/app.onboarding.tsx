@@ -7,7 +7,7 @@ import { ONBOARDING_STEPS, getChecklist, toggleStep } from "@/domain/onboarding"
 export const Route = createFileRoute("/app/onboarding")({
   beforeLoad: () => {
     if (!requireRole("owner", "manager")(demoRepo.read().session)) {
-      throw redirect({ to: "/demo" });
+      throw redirect({ to: "/login" });
     }
   },
   component: Onboarding,
@@ -47,7 +47,7 @@ function Onboarding() {
         );
       })}
       <p>
-        <a href="/demo">Back to demo hub</a>
+        <a href="/">Back to Patron</a>
       </p>
     </main>
   );

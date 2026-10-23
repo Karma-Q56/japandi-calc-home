@@ -20,12 +20,12 @@ export function DemoPlaceholder({
         <h2>What will live here</h2>
         <p>
           This screen arrives in its milestone with real demo data. Until
-          then, the demo hub tunnels below keep working.
+          then, the developer role switcher keeps working.
         </p>
       </section>
       <p className="demo-data-note">
         This preview is part of {APP_NAME}.{' '}
-        <Link to="/demo">Return to demo hub →</Link>
+        <Link to="/">Return to Patron →</Link>
       </p>
     </main>
   );

@@ -15,7 +15,7 @@ import type { CampaignAudience, SegmentType } from "@/data/types";
 
 export const Route = createFileRoute("/app/campaigns/new")({
   beforeLoad: () => {
-    if (!requireRole("owner", "manager")(demoRepo.read().session)) throw redirect({ to: "/demo" });
+    if (!requireRole("owner", "manager")(demoRepo.read().session)) throw redirect({ to: "/login" });
   },
   validateSearch: (search: Record<string, unknown>) => ({ listId: typeof search["listId"] === "string" ? search["listId"] : undefined }),
   component: ComposerPage,

@@ -19,7 +19,7 @@ export const Route = createFileRoute("/stamp")({
     // Live mode has no demo session; stamping is guarded by the till PIN.
     if (mode === "live") return;
     if (!requireRole("staff")(demoRepo.read().session)) {
-      throw redirect({ to: "/demo" });
+      throw redirect({ to: "/login" });
     }
   },
   component: Till,

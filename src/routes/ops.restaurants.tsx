@@ -6,7 +6,7 @@ import { requireRole } from '@/data/session';
 import { APP_NAME } from '@/config/app';
 
 const RestaurantsPage = withChildren(RestaurantList);
-export const Route = createFileRoute('/ops/restaurants')({ beforeLoad: () => { if (!requireRole('operator')(demoRepo.read().session)) throw redirect({ to: '/demo' }); }, component: RestaurantsPage });
+export const Route = createFileRoute('/ops/restaurants')({ beforeLoad: () => { if (!requireRole('operator')(demoRepo.read().session)) throw redirect({ to: '/login' }); }, component: RestaurantsPage });
 
 function RestaurantList() {
   const state = useSyncExternalStore(demoRepo.subscribe, demoRepo.read, demoRepo.read);

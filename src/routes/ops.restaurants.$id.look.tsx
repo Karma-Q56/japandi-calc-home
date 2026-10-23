@@ -9,7 +9,7 @@ import type { PageTemplate, Restaurant } from "@/data/types";
 
 export const Route = createFileRoute("/ops/restaurants/$id/look")({
   beforeLoad: () => {
-    if (!requireRole("operator")(demoRepo.read().session)) throw redirect({ to: "/demo" });
+    if (!requireRole("operator")(demoRepo.read().session)) throw redirect({ to: "/login" });
   },
   component: LookEditor,
 });

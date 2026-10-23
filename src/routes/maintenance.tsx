@@ -14,7 +14,7 @@ function Maintenance() {
       <h1>Quick maintenance.</h1>
       <p className="demo-intro">We’ll be back shortly. Demo data on this device is safe.</p>
       <p>
-        <a href="/demo">Back to demo hub</a>
+        <a href="/">Back to Patron</a>
       </p>
     </main>
   );

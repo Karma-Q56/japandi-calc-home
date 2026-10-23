@@ -11,7 +11,7 @@ import type { SpinConfig, SpinMode, SpinSegment } from "@/data/types";
 export const Route = createFileRoute("/app/loyalty")({
   beforeLoad: () => {
     if (!requireRole("owner", "manager")(demoRepo.read().session)) {
-      throw redirect({ to: "/demo" });
+      throw redirect({ to: "/login" });
     }
   },
   component: Loyalty,

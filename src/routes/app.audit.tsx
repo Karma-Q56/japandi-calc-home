@@ -21,7 +21,7 @@ const ACTIONS: Array<AuditAction | "all"> = [
 export const Route = createFileRoute("/app/audit")({
   beforeLoad: () => {
     if (!requireRole("owner")(demoRepo.read().session)) {
-      throw redirect({ to: "/demo" });
+      throw redirect({ to: "/login" });
     }
   },
   component: Audit,
@@ -75,7 +75,7 @@ function Audit() {
         </p>
       ))}
       <p>
-        <a href="/demo">Back to demo hub</a>
+        <a href="/">Back to Patron</a>
       </p>
     </main>
   );

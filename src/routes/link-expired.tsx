@@ -14,7 +14,7 @@ function LinkExpired() {
       <h1>This link has expired.</h1>
       <p className="demo-intro">Ask the restaurant for a fresh link or opt-out code.</p>
       <p>
-        <a href="/demo">Back to demo hub</a>
+        <a href="/">Back to Patron</a>
       </p>
     </main>
   );
