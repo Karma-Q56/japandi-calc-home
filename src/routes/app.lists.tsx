@@ -59,7 +59,7 @@ function ListsPage() {
         {lists.map((list: SavedList) => {
           const members = list.membershipIds
             .map((id: string) => state.memberships.find((m: Membership) => m.id === id))
-            .filter(Boolean);
+            .filter((m): m is Membership => !!m);
           const names = members
             .slice(0, 6)
             .map((m) => state.customers.find((c: Customer) => c.id === m.customerId)?.name ?? "A guest");
