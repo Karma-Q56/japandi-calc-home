@@ -92,13 +92,14 @@ describe("routes audit", () => {
   });
 
   for (const leaf of leaves) {
-    const template
+    const template =
       "/" +
       leaf.segments
-        .map((segment) => segment.replace(/\/+|\/+$/g, ""))
+        .map((segment) => segment.replace(/^\/+|\/+$/g, ""))
         .filter(Boolean)
         .join("/");
-    if (template.startsWith("/api")) return; // webhook endpoints, not pages
+    if (template.startsWith("/api")) continue; // webhook endpoints, not pages
+    const url = fillParams(template);
     it(`${url} renders one header, no console errors and no em dash`, async () => {
       const role = roleFor(template);
       if (role === "owner") {
