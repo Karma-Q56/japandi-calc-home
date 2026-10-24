@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useSyncExternalStore } from "react";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
+import { useDemoState } from "@/data/useDemoState";
 import { QrPrintPack } from "@/components/patron/QrPrintPack";
 export const Route = createFileRoute("/app/qr")({
   beforeLoad: () => {

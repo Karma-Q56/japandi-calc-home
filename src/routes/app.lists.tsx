@@ -27,7 +27,7 @@ function ListsPage() {
       </main>
     );
   }
-  const result = api.lists.list(restaurant.id);
+  const result = api.audience.lists(restaurant.id);
   const lists = result.ok ? result.data : [];
   return (
     <main className="demo-hub page-width">
@@ -86,7 +86,7 @@ function ListsPage() {
                 <button
                   type="button"
                   className="row-action"
-                  onClick={() => api.lists.deleteList({ id: list.id, restaurantId })}
+                  onClick={() => api.audience.deleteList({ id: list.id, restaurantId })}
                 >
                   Delete
                 </button>
