@@ -175,7 +175,7 @@ function Masthead({ restaurant, open }: { restaurant: Restaurant; open: boolean 
       <span className={`pt-open${open ? " is-open" : ""}`}>
         {open ? "Open now" : "Closed now"} · {restaurant.suburb}
       </span>
-    </div>
+    </header>
   );
 }
 
