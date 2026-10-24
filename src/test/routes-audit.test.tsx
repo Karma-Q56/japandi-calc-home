@@ -37,6 +37,9 @@ function leafRoutes(route: AnyRoute, segments: string[] = [], out: Leaf[] = []):
   return out;
 }
 
+// Server health endpoints are not pages.
+const NON_PAGES = ["/api", "/healthz"];
+
 const NO_HEADER_OK = [
   "/consent-wording",
   "/demo/outbox",
@@ -45,6 +48,7 @@ const NO_HEADER_OK = [
   "/offline",
   "/session-expired",
   "/stamp",
+  "/dev/roles",
 ];
 
 function roleFor(path: string): DemoSession["role"] | null {
@@ -93,7 +97,9 @@ describe("routes audit", () => {
         .map((segment) => segment.replace(/^\/+|\/+$/g, ""))
         .filter(Boolean)
         .join("/");
-    if (template.startsWith("/api")) continue; // webhook endpoints, not pages
+    if (NON_PAGES.some((base) => template === base || template.startsWith(base + "/"))) {
+      continue; // webhook endpoints and health checks, not pages
+    }
     const url = fillParams(template);
     it(`${url} renders one header, no console errors and no em dash`, async () => {
       const role = roleFor(template);
