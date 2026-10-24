@@ -84,9 +84,7 @@ afterEach(() => {
 });
 
 describe("routes audit", () => {
-  const leaves = leafRoutes(routeTree as AnyRoute).filter(
-    (leaf) => "/" + leaf.segments.join("/") !== SERVER_ROUTES && !leaf.segments.join("/").startsWith(SERVER_ROUTES.replace("/", "/")),
-  );
+  const leaves = leafRoutes(routeTree as AnyRoute);
   it("discovers a sensible number of routes", () => {
     expect(leaves.length).toBeGreaterThan(20);
   });
