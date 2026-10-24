@@ -10,7 +10,7 @@ export const Route = createFileRoute("/app/qr")({
   component: QrOwner,
 });
 function QrOwner() {
-  const state = useSyncExternalStore(demoRepo.subscribe, demoRepo.read, demoRepo.read);
+  const state = useDemoState();
   const restaurant =
     state.restaurants.find((item) => item.id === state.session.restaurantId) ??
     state.restaurants[0]!;

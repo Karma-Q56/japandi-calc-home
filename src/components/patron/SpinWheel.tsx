@@ -4,10 +4,11 @@ import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
 import type { SpinMode, SpinResult } from "@/data/types";
 import { spinModeLabel } from "@/domain/spins";
+import { useDemoState } from "@/data/useDemoState";
 
 /** Guest-facing spin control. The result is chosen by the domain layer, never here. */
 export function SpinWheel({ membershipId }: { membershipId: string }) {
-  useSyncExternalStore(demoRepo.subscribe, demoRepo.read, demoRepo.read);
+  useDemoState();
   const [result, setResult] = useState<SpinResult | null>(null);
   const [error, setError] = useState("");
   const [spinning, setSpinning] = useState(false);

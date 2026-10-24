@@ -3,6 +3,7 @@ import { useSyncExternalStore } from "react";
 import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
+import { useDemoState } from "@/data/useDemoState";
 
 export const Route = createFileRoute("/app/lists")({
   beforeLoad: () => {
@@ -15,7 +16,7 @@ export const Route = createFileRoute("/app/lists")({
 });
 
 function ListsPage() {
-  const state = useSyncExternalStore(demoRepo.subscribe, demoRepo.read, demoRepo.read);
+  const state = useDemoState();
   const restaurantId = state.session.restaurantId;
   const restaurant = state.restaurants.find((r) => r.id === restaurantId);
   if (!restaurant) {

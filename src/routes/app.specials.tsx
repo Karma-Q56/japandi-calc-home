@@ -4,6 +4,7 @@ import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
 import type { CampaignAudience, SpecialKind, TierName } from "@/data/types";
+import { useDemoState } from "@/data/useDemoState";
 
 export const Route = createFileRoute("/app/specials")({
   beforeLoad: () => {
@@ -25,7 +26,7 @@ const human = (iso: string) =>
   }).format(new Date(iso));
 
 function SpecialsPage() {
-  const state = useSyncExternalStore(demoRepo.subscribe, demoRepo.read, demoRepo.read);
+  const state = useDemoState();
   const restaurant =
     state.restaurants.find((item) => item.id === state.session.restaurantId) ??
     state.restaurants[0]!;

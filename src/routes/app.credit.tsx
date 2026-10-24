@@ -4,6 +4,7 @@ import { api } from "@/api";
 import { LEDGER_LABELS } from "@/domain/credit";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
+import { useDemoState } from "@/data/useDemoState";
 
 export const Route = createFileRoute("/app/credit")({
   beforeLoad: () => {
@@ -15,7 +16,7 @@ export const Route = createFileRoute("/app/credit")({
 const zar = (cents: number) => `R${(cents / 100).toFixed(2)}`;
 
 function CreditPage() {
-  const state = useSyncExternalStore(demoRepo.subscribe, demoRepo.read, demoRepo.read);
+  const state = useDemoState();
   const restaurantId = state.session.restaurantId;
   const [amount, setAmount] = useState("500");
   const [notice, setNotice] = useState("");

@@ -4,6 +4,7 @@ import { useState, useSyncExternalStore } from "react";
 import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
+import { useDemoState } from "@/data/useDemoState";
 
 const OpsCampaignsPage = withChildren(OpsCampaigns);
 export const Route = createFileRoute("/ops/campaigns")({
@@ -14,7 +15,7 @@ export const Route = createFileRoute("/ops/campaigns")({
 });
 
 function OpsCampaigns() {
-  const state = useSyncExternalStore(demoRepo.subscribe, demoRepo.read, demoRepo.read);
+  const state = useDemoState();
   const [restaurantId, setRestaurantId] = useState(state.restaurants[0]?.id ?? "");
   const [name, setName] = useState("");
   const [body, setBody] = useState("");

@@ -7,6 +7,7 @@ import { StampSlots } from "@/components/patron/StampSlots";
 import { Switch } from "@/components/patron/Switch";
 import { SPIN_MODES } from "@/domain/spins";
 import type { SpinConfig, SpinMode, SpinSegment } from "@/data/types";
+import { useDemoState } from "@/data/useDemoState";
 
 export const Route = createFileRoute("/app/loyalty")({
   beforeLoad: () => {
@@ -27,7 +28,7 @@ function blankSegment(): SpinSegment {
 }
 
 function Loyalty() {
-  const state = useSyncExternalStore(demoRepo.subscribe, demoRepo.read, demoRepo.read);
+  const state = useDemoState();
   const restaurant =
     state.restaurants.find((item) => item.id === state.session.restaurantId) ??
     state.restaurants[0]!;
