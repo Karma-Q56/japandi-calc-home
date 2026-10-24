@@ -37,9 +37,6 @@ function leafRoutes(route: AnyRoute, segments: string[] = [], out: Leaf[] = []):
   return out;
 }
 
-// Server routes under /api are webhook endpoints, not pages.
-const SERVER_ROUTES = "/api";
-
 const NO_HEADER_OK = [
   "/consent-wording",
   "/demo/outbox",
