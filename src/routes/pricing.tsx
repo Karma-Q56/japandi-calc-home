@@ -6,7 +6,7 @@ import { commercial, plans, rand } from "@/lib/patron";
 export const Route = createFileRoute("/pricing")({
   head: () => ({
     meta: [
-      { title: "Pricing — plans for your kind of place | Patron" },
+      { title: "Pricing: plans for your kind of place | Patron" },
       {
         name: "description",
         content:
@@ -65,7 +65,7 @@ function Pricing() {
             per message. You see the cost before sending, so there are no surprise SMS bills.
           </p>
           <p>
-            Founding partners — our first {commercial.foundingSpots} restaurants — receive a reduced
+            Founding partners, our first {commercial.foundingSpots} restaurants, receive a reduced
             setup fee and a discounted monthly plan for {commercial.discountMonths} months.
           </p>
         </div>

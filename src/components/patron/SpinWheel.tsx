@@ -4,10 +4,11 @@ import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
 import type { SpinMode, SpinResult } from "@/data/types";
 import { spinModeLabel } from "@/domain/spins";
+import { useDemoState } from "@/data/useDemoState";
 
 /** Guest-facing spin control. The result is chosen by the domain layer, never here. */
 export function SpinWheel({ membershipId }: { membershipId: string }) {
-  useSyncExternalStore(demoRepo.subscribe, demoRepo.read, demoRepo.read);
+  useDemoState();
   const [result, setResult] = useState<SpinResult | null>(null);
   const [error, setError] = useState("");
   const [spinning, setSpinning] = useState(false);
@@ -82,7 +83,7 @@ export function SpinWheel({ membershipId }: { membershipId: string }) {
           : activeMode === "earned"
             ? `You’ve made ${state.visits} visits. Spins come from visits, never from spending.`
             : activeMode === "reward_decider"
-              ? `The house draws your reward at random from the prize list — you don’t pick. It never gives less than ${
+              ? `The house draws your reward at random from the prize list, you don’t pick. It never gives less than ${
                   state.advertisedReward || "the advertised reward"
                 }.`
               : "One daily surprise is available per Johannesburg day."}
@@ -125,7 +126,7 @@ export function SpinWheel({ membershipId }: { membershipId: string }) {
               <p>Your advertised reward stands. Nothing on the wheel bettered it today.</p>
             ) : (
               <p>
-                Your reward is now {result.label} — never less than the advertised reward you
+                Your reward is now {result.label}, never less than the advertised reward you
                 collected.
               </p>
             )

@@ -24,7 +24,7 @@ function segmentCount(body: string) {
 }
 
 function notConfigured(name: string): Error {
-  return new Error(`${name} is not configured yet — the founder has not picked a provider.`);
+  return new Error(`${name} is not configured yet, the founder has not picked a provider.`);
 }
 
 export class FakeSmsProvider implements SmsProvider {

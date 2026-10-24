@@ -6,6 +6,7 @@ import { GuestShell } from "@/components/patron/GuestShell";
 import { ThemeProvider } from "@/theme";
 import { api } from "@/api";
 import { SpinWheel } from "@/components/patron/SpinWheel";
+import { formatRand } from "@/lib/money";
 
 export const Route = createFileRoute("/me/restaurants/$slug")({
   beforeLoad: () => {
@@ -19,12 +20,7 @@ export const Route = createFileRoute("/me/restaurants/$slug")({
   component: VenuePage,
 });
 
-const money = (cents: number) =>
-  new Intl.NumberFormat("en-ZA", {
-    style: "currency",
-    currency: "ZAR",
-    maximumFractionDigits: cents % 100 === 0 ? 0 : 2,
-  }).format(cents / 100);
+
 
 function VenuePage() {
   const { slug } = Route.useParams();
@@ -144,7 +140,7 @@ function VenuePage() {
                 <small>{special.body}</small>
                 <small>
                   {special.kind === "targeted" ? "Just for you" : "Members only"} · Code{" "}
-                  {code?.code ?? special.code ?? "—"}
+                  {code?.code ?? special.code ?? "not set"}
                   {redeemed ? " · Used" : ""}
                 </small>
               </span>
@@ -164,7 +160,7 @@ function VenuePage() {
                     <strong>{item.name}</strong>
                     <small>{item.description}</small>
                   </span>
-                  <b>{money(item.priceCents)}</b>
+                  <b>{formatRand(item.priceCents)}</b>
                 </div>
               ))}
             </div>

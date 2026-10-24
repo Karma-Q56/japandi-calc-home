@@ -4,6 +4,7 @@ import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
 import { withChildren } from "@/lib/nested";
+import { useDemoState } from "@/data/useDemoState";
 
 const CampaignsWithChildren = withChildren(CampaignsPage);
 
@@ -15,7 +16,7 @@ export const Route = createFileRoute("/app/campaigns")({
 });
 
 function CampaignsPage() {
-  const state = useSyncExternalStore(demoRepo.subscribe, demoRepo.read, demoRepo.read);
+  const state = useDemoState();
   const restaurantId = state.session.restaurantId;
   const restaurant = state.restaurants.find((r) => r.id === restaurantId);
   if (!restaurant) {

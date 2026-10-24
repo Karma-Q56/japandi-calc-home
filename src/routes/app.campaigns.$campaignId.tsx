@@ -4,6 +4,7 @@ import { api } from "@/api";
 import { campaignResults } from "@/domain/campaigns";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
+import { useDemoState } from "@/data/useDemoState";
 
 export const Route = createFileRoute("/app/campaigns/$campaignId")({
   beforeLoad: () => {
@@ -16,7 +17,7 @@ const zar = (cents: number) => `R${(cents / 100).toFixed(2)}`;
 
 function ResultsPage() {
   const { campaignId } = Route.useParams();
-  const state = useSyncExternalStore(demoRepo.subscribe, demoRepo.read, demoRepo.read);
+  const state = useDemoState();
   const [notice, setNotice] = useState("");
   const campaign = state.campaigns.find((c) => c.id === campaignId);
   if (!campaign) {

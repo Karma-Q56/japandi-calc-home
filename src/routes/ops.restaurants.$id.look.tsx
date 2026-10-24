@@ -6,6 +6,7 @@ import { api } from "@/api";
 import { can } from "@/clients/registry";
 import { ThemeEditor } from "@/components/patron/ThemeEditor";
 import type { PageTemplate, Restaurant } from "@/data/types";
+import { useDemoState } from "@/data/useDemoState";
 
 export const Route = createFileRoute("/ops/restaurants/$id/look")({
   beforeLoad: () => {
@@ -16,7 +17,7 @@ export const Route = createFileRoute("/ops/restaurants/$id/look")({
 
 function LookEditor() {
   const { id } = Route.useParams();
-  const state = useSyncExternalStore(demoRepo.subscribe, demoRepo.read, demoRepo.read);
+  const state = useDemoState();
   const restaurant = state.restaurants.find((item) => item.id === id);
   const [theme, setTheme] = useState<Restaurant["theme"] | null>(null);
   const [blocks, setBlocks] = useState<Restaurant["pageConfig"] | null>(null);

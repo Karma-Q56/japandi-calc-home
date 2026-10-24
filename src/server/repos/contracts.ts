@@ -70,7 +70,7 @@ export interface LeadInput {
   consentVersion?: string | undefined;
   calculator?: Record<string, unknown> | undefined;
   notes?: string | undefined;
-  website?: string | undefined; // honeypot — must be empty
+  website?: string | undefined; // honeypot, must be empty
   ipHash?: string | undefined;
 }
 

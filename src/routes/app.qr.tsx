@@ -1,16 +1,17 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useSyncExternalStore } from "react";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
+import { useDemoState } from "@/data/useDemoState";
 import { QrPrintPack } from "@/components/patron/QrPrintPack";
 export const Route = createFileRoute("/app/qr")({
   beforeLoad: () => {
     if (!requireRole("owner", "manager")(demoRepo.read().session)) throw redirect({ to: "/login" });
   },
+  ssr: false,
   component: QrOwner,
 });
 function QrOwner() {
-  const state = useSyncExternalStore(demoRepo.subscribe, demoRepo.read, demoRepo.read);
+  const state = useDemoState();
   const restaurant =
     state.restaurants.find((item) => item.id === state.session.restaurantId) ??
     state.restaurants[0]!;

@@ -23,7 +23,7 @@ function scopeCheck(
   );
 }
 
-/** Pure computation over a state snapshot — same table as record_stamp. */
+/** Pure computation over a state snapshot, same table as record_stamp. */
 export function computeStamp(
   state: ReturnType<typeof demoRepo.read>,
   input: { restaurantId: string; membershipId: string; key: string },

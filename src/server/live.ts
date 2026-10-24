@@ -10,7 +10,7 @@ import { verifyScanToken } from "@/lib/scan";
 // directly when DATA_MODE=live (demo stays the default).
 //
 // SECURITY: the client never receives operator context and cannot send it
-// either — every function below builds its context server-side with
+// either, every function below builds its context server-side with
 // isOperator: false. Tenant ids are validated identifiers (slugs, RLS-confined
 // row ids); the RLS policies plus the till PIN are the authority, not the
 // caller. Full session binding (signed-in customer/staff) arrives with the

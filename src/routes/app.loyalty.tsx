@@ -7,6 +7,7 @@ import { StampSlots } from "@/components/patron/StampSlots";
 import { Switch } from "@/components/patron/Switch";
 import { SPIN_MODES } from "@/domain/spins";
 import type { SpinConfig, SpinMode, SpinSegment } from "@/data/types";
+import { useDemoState } from "@/data/useDemoState";
 
 export const Route = createFileRoute("/app/loyalty")({
   beforeLoad: () => {
@@ -27,7 +28,7 @@ function blankSegment(): SpinSegment {
 }
 
 function Loyalty() {
-  const state = useSyncExternalStore(demoRepo.subscribe, demoRepo.read, demoRepo.read);
+  const state = useDemoState();
   const restaurant =
     state.restaurants.find((item) => item.id === state.session.restaurantId) ??
     state.restaurants[0]!;
@@ -230,7 +231,7 @@ function Loyalty() {
           onChange={(next) => setSpin({ ...spin, enabled: next })}
         />
         <p className="demo-data-note">
-          Guests earn spins from visits — never from spending. Results are picked on the server and
+          Guests earn spins from visits, never from spending. Results are picked on the server and
           logged. Prizes become personal single-use offers.
         </p>
         <div className="builder-fields">
@@ -300,7 +301,7 @@ function Loyalty() {
               }
             />
             <small>
-              The reward decider never draws a prize worth less than this — it keeps “
+              The reward decider never draws a prize worth less than this, it keeps “
               {reward || "your advertised reward"}” as the floor.
             </small>
           </label>

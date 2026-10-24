@@ -155,7 +155,7 @@ function Till() {
       }
       const outcome = res.outcome;
       if (outcome.result === "too_soon") {
-        say("error", "Too soon — wait a little before the next stamp.");
+        say("error", "Too soon, wait a little before the next stamp.");
         return;
       }
       if (outcome.result === "not_a_member") {
@@ -163,12 +163,12 @@ function Till() {
         return;
       }
       if (outcome.result === "duplicate_retry") {
-        say("ok", "Already stamped — showing the existing stamp.");
+        say("ok", "Already stamped, showing the existing stamp.");
         return;
       }
       say(
         "ok",
-        `Stamp added — ${outcome.stampsCurrent} of ${restaurant.stampsRequired}.` +
+        `Stamp added, ${outcome.stampsCurrent} of ${restaurant.stampsRequired}.` +
           (outcome.result === "reward" ? " Reward earned!" : ""),
       );
       return;
@@ -188,7 +188,7 @@ function Till() {
     if (data.result === "too_soon") {
       say(
         "error",
-        `Too soon — next stamp ${new Intl.DateTimeFormat("en-ZA", {
+        `Too soon, next stamp ${new Intl.DateTimeFormat("en-ZA", {
           timeStyle: "short",
         }).format(new Date(data.nextAllowedAt))}.`,
       );
@@ -199,7 +199,7 @@ function Till() {
       return;
     }
     setLastStampId(data.stampId);
-    say("ok", `Stamp added — ${data.stampsCurrent} of ${restaurant.stampsRequired}.`);
+    say("ok", `Stamp added, ${data.stampsCurrent} of ${restaurant.stampsRequired}.`);
     doLookupRefresh(lookup.membershipId);
   };
 

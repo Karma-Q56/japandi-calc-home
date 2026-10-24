@@ -12,6 +12,7 @@ import {
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
 import type { CampaignAudience, SegmentType } from "@/data/types";
+import { useDemoState } from "@/data/useDemoState";
 
 export const Route = createFileRoute("/app/campaigns/new")({
   beforeLoad: () => {
@@ -32,7 +33,7 @@ const SEGMENT_CHOICES: Array<{ type: SegmentType; title: string; hint: string }>
 ];
 
 function ComposerPage() {
-  const state = useSyncExternalStore(demoRepo.subscribe, demoRepo.read, demoRepo.read);
+  const state = useDemoState();
   const navigate = useNavigate();
   const { listId: initialListId } = useSearch({ from: "/app/campaigns/new" });
   const restaurantId = state.session.restaurantId;

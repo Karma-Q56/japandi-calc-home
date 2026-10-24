@@ -76,9 +76,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Patron — A little loyalty goes a long way" },
+      { title: "Patron: A little loyalty goes a long way" },
       { name: "description", content: "Digital stamp cards and thoughtful SMS specials for independent South African restaurants." },
-      { property: "og:title", content: "Patron — A little loyalty goes a long way" },
+      { property: "og:title", content: "Patron: A little loyalty goes a long way" },
       { property: "og:description", content: "Turn first-timers into regulars with phone-based loyalty and thoughtful SMS specials." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

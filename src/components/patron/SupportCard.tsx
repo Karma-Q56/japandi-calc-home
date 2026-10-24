@@ -16,7 +16,7 @@ export function SupportCard() {
         <ol>
           <li>Ask the guest to open their member code.</li>
           <li>Type the code or scan the QR at the till.</li>
-          <li>Press Add stamp once — too-soon means wait.</li>
+          <li>Press Add stamp once, too-soon means wait.</li>
           <li>Rewards redeem once; undo only fixes mistakes.</li>
         </ol>
       </details>

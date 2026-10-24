@@ -80,6 +80,6 @@ export function SeeItWorking() {
     <div data-reveal><div className="eyebrow"><span className="eyebrow-line" />See it working</div>
     <h2 className="section-heading">Three screens.<br /><span className="editorial">One happy regular.</span></h2></div>
     <div className="screens">{[<GuestScreen key="g" />, <StaffScreen key="s" />, <OwnerScreen key="o" />]}</div>
-    <p className="demo-disclaimer">Demo data — example screens, not real customers or results.</p>
+    <p className="demo-disclaimer">Demo data, example screens, not real customers or results.</p>
   </div></section>;
 }

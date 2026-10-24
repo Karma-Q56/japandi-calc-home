@@ -5,6 +5,7 @@ import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
 import { clock } from "@/lib/clock";
 import type { MenuItem } from "@/data/types";
+import { useDemoState } from "@/data/useDemoState";
 
 export const Route = createFileRoute("/app/menu")({
   beforeLoad: () => {
@@ -14,7 +15,7 @@ export const Route = createFileRoute("/app/menu")({
 });
 const asDateField = (value: number) => new Date(value).toISOString().slice(0, 16);
 function MenuEditor() {
-  const state = useSyncExternalStore(demoRepo.subscribe, demoRepo.read, demoRepo.read);
+  const state = useDemoState();
   const restaurant =
     state.restaurants.find((item) => item.id === state.session.restaurantId) ??
     state.restaurants[0]!;

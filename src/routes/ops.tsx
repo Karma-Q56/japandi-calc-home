@@ -1,4 +1,4 @@
-import { withChildren } from "@/lib/nested";
+import { markOutletComponent } from "@/lib/nested";
 import { createFileRoute, redirect, Link, Outlet, useChildMatches, useRouterState } from "@tanstack/react-router";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
@@ -45,7 +45,7 @@ function OpsShell() {
   );
 }
 
-const OpsPage = withChildren(OpsShell);
+const OpsPage = markOutletComponent(OpsShell);
 export const Route = createFileRoute("/ops")({
   beforeLoad: () => {
     if (!requireRole("operator")(demoRepo.read().session)) throw redirect({ to: "/login" });

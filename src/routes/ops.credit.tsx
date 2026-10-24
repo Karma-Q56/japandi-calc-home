@@ -5,6 +5,7 @@ import { api } from "@/api";
 import { LEDGER_LABELS } from "@/domain/credit";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
+import { useDemoState } from "@/data/useDemoState";
 
 const OpsCreditPage = withChildren(OpsCredit);
 export const Route = createFileRoute("/ops/credit")({
@@ -17,7 +18,7 @@ export const Route = createFileRoute("/ops/credit")({
 const zar = (cents: number) => `R${(cents / 100).toFixed(2)}`;
 
 function OpsCredit() {
-  const state = useSyncExternalStore(demoRepo.subscribe, demoRepo.read, demoRepo.read);
+  const state = useDemoState();
   const [restaurantId, setRestaurantId] = useState(state.restaurants[0]?.id ?? "");
   const [adjustAmount, setAdjustAmount] = useState("");
   const [adjustNote, setAdjustNote] = useState("");
