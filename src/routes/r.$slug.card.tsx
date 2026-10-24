@@ -253,7 +253,7 @@ function GuestCard() {
                     : special.kind === "members"
                       ? "Members only"
                       : "Everyone"}{" "}
-                  · Code {code?.code ?? special.code ?? "—"}
+                  · Code {code?.code ?? special.code ?? "not set"}
                 </small>
               </span>
               <button

@@ -144,7 +144,7 @@ function VenuePage() {
                 <small>{special.body}</small>
                 <small>
                   {special.kind === "targeted" ? "Just for you" : "Members only"} · Code{" "}
-                  {code?.code ?? special.code ?? "—"}
+                  {code?.code ?? special.code ?? "not set"}
                   {redeemed ? " · Used" : ""}
                 </small>
               </span>
