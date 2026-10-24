@@ -6,7 +6,7 @@ import { ArrowRight, BellRing, Gift, MapPin, Sparkles, Stamp, Smartphone, Tag } 
 export const Route = createFileRoute("/for-diners")({
   head: () => ({
     meta: [
-      { title: "For diners, a loyalty card in your browser | Patron" },
+      { title: "For diners: a loyalty card in your browser | Patron" },
       {
         name: "description",
         content:

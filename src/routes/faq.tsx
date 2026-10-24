@@ -5,7 +5,7 @@ import { MarketingShell } from "@/components/patron/MarketingShell";
 export const Route = createFileRoute("/faq")({
   head: () => ({
     meta: [
-      { title: "FAQ, questions from diners and restaurants | Patron" },
+      { title: "FAQ: questions from diners and restaurants | Patron" },
       {
         name: "description",
         content:

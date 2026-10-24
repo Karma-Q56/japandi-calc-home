@@ -24,7 +24,7 @@ import cafeHero from "@/assets/cafe-hero.jpg";
 export const Route = createFileRoute("/for-business")({
   head: () => ({
     meta: [
-      { title: "For restaurants, loyalty, your list and thoughtful SMS | Patron" },
+      { title: "For restaurants: loyalty, your list and thoughtful SMS | Patron" },
       {
         name: "description",
         content:

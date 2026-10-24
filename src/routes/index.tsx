@@ -18,13 +18,13 @@ import cafeHero from "@/assets/cafe-hero.jpg";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Patron, Collect stamps at the places you love" },
+      { title: "Patron: Collect stamps at the places you love" },
       {
         name: "description",
         content:
           "A stamp card for your favourite local cafe, bakery or restaurant, right in your phone's browser. No app, no plastic. Free to join.",
       },
-      { property: "og:title", content: "Patron, Collect stamps at the places you love" },
+      { property: "og:title", content: "Patron: Collect stamps at the places you love" },
       {
         property: "og:description",
         content:

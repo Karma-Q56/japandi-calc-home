@@ -6,7 +6,7 @@ import { commercial } from "@/lib/patron";
 export const Route = createFileRoute("/case-studies")({
   head: () => ({
     meta: [
-      { title: "Case studies, neighbourhood results | Patron" },
+      { title: "Case studies: neighbourhood results | Patron" },
       {
         name: "description",
         content:

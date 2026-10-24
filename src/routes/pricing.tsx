@@ -6,7 +6,7 @@ import { commercial, plans, rand } from "@/lib/patron";
 export const Route = createFileRoute("/pricing")({
   head: () => ({
     meta: [
-      { title: "Pricing, plans for your kind of place | Patron" },
+      { title: "Pricing: plans for your kind of place | Patron" },
       {
         name: "description",
         content:

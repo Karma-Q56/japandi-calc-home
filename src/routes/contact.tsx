@@ -5,7 +5,7 @@ import { LeadForm } from "@/components/patron/LeadForm";
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
-      { title: "Book a visit, Patron" },
+      { title: "Book a visit | Patron" },
       {
         name: "description",
         content:
