@@ -167,7 +167,7 @@ function Footer({ restaurant }: { restaurant: Restaurant }) {
 
 function Masthead({ restaurant, open }: { restaurant: Restaurant; open: boolean }) {
   return (
-    <header className="pt-masthead">
+    <div className="pt-masthead">
       <div className="pt-masthead-brands">
         <a href={`/r/${restaurant.slug}`} className="pt-venue-wordmark">{restaurant.name}</a>
         <PatronBrand className="pt-product-wordmark" />
@@ -175,7 +175,7 @@ function Masthead({ restaurant, open }: { restaurant: Restaurant; open: boolean 
       <span className={`pt-open${open ? " is-open" : ""}`}>
         {open ? "Open now" : "Closed now"} · {restaurant.suburb}
       </span>
-    </header>
+    </div>
   );
 }
 

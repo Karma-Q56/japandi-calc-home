@@ -95,7 +95,7 @@ export function LoyaltyCard({
       style={style}
       aria-label={`${name} loyalty card, ${filled} of ${total} stamps`}
     >
-      <header className="lcard-head">
+      <div className="lcard-head">
         <span className="lcard-mark" aria-hidden>
           {theme.logo ? <img src={theme.logo} alt="" /> : initials(name)}
         </span>
@@ -109,7 +109,7 @@ export function LoyaltyCard({
             <i>/{total}</i>
           </span>
         )}
-      </header>
+      </div>
 
       {!compact && memberName && <p className="lcard-member">{memberName}</p>}
 
