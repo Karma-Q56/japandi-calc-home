@@ -56,7 +56,7 @@ function CardError({ error }: ErrorComponentProps) {
         <h1>We could not load this card.</h1>
         <p>
           Something in the saved card data did not match what this page expects. Your stamps are
-          safe — this is a display problem, not a lost visit.
+          safe, this is a display problem, not a lost visit.
         </p>
         <div className="card-error-actions">
           <button

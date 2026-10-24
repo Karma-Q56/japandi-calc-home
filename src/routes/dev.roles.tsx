@@ -26,7 +26,7 @@ const defaultDestination: Record<(typeof roles)[number], string> = {
 export const Route = createFileRoute("/dev/roles")({
   validateSearch: (search) => searchSchema.parse(search),
   head: () => ({
-    meta: [{ title: "Developer roles — Patron" }, { name: "robots", content: "noindex" }],
+    meta: [{ title: "Developer roles, Patron" }, { name: "robots", content: "noindex" }],
   }),
   component: DeveloperRoles,
 });

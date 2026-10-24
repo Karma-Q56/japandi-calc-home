@@ -6,7 +6,7 @@ import { withContext } from "@/server/db";
 
 // Cross-tenant RLS is enforced by scripts/rls-check.mjs against the DEV branch.
 // This wrapper runs the same assertion through withContext when DATABASE_URL
-// (dev) is present, otherwise it skips — never touching production.
+// (dev) is present, otherwise it skips, never touching production.
 const url = process.env["DATABASE_URL"];
 
 describe.skipIf(!url)("rls cross-tenant (dev branch)", () => {

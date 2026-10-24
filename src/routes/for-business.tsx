@@ -24,7 +24,7 @@ import cafeHero from "@/assets/cafe-hero.jpg";
 export const Route = createFileRoute("/for-business")({
   head: () => ({
     meta: [
-      { title: "For restaurants — loyalty, your list and thoughtful SMS | Patron" },
+      { title: "For restaurants, loyalty, your list and thoughtful SMS | Patron" },
       {
         name: "description",
         content:
@@ -254,7 +254,7 @@ function ForBusiness() {
             </article>
           </div>
           <p className="demo-disclaimer">
-            Demo data — example cards, customers and campaign, not real results.
+            Demo data, example cards, customers and campaign, not real results.
           </p>
         </div>
       </section>
@@ -335,7 +335,7 @@ function ForBusiness() {
           <p className="section-description">
             We're looking for {commercial.foundingSpots} founding restaurants in {brand.location}.
             Pilot stories land on the case-studies page once those restaurants have a few months
-            behind them — we would rather show real numbers than invented ones.
+            behind them, we would rather show real numbers than invented ones.
           </p>
         </div>
         <ul className="case-measures">

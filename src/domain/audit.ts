@@ -28,7 +28,7 @@ export type AuditAction =
   | "spin"
   | "challenge_award";
 
-/** Never pass PINs or full phone numbers — ids only. */
+/** Never pass PINs or full phone numbers, ids only. */
 export function logAudit(input: {
   actor: string;
   action: AuditAction;

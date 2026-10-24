@@ -19,7 +19,7 @@ export interface MilestoneStatus {
 export const MILESTONE_STATUS: MilestoneStatus[] = [
   {
     id: "M0",
-    title: "M0 — Demo foundation",
+    title: "M0: Demo foundation",
     state: "Built",
     summary: "Seeded demo data, clock, roles, and fake SMS outbox.",
     screens: [
@@ -55,7 +55,7 @@ export const MILESTONE_STATUS: MilestoneStatus[] = [
   },
   {
     id: "M2",
-    title: "M2 — Restaurants, pages, menus, QR",
+    title: "M2: Restaurants, pages, menus, QR",
     state: "Built",
     summary: "Operator console, public pages, menu editor, QR print pack.",
     screens: [
@@ -91,7 +91,7 @@ export const MILESTONE_STATUS: MilestoneStatus[] = [
   },
   {
     id: "M3",
-    title: "M3 — Guest join, cards, consent",
+    title: "M3: Guest join, cards, consent",
     state: "Built",
     summary: "Join flow, loyalty cards, consent history, opt-out links.",
     screens: [
@@ -127,7 +127,7 @@ export const MILESTONE_STATUS: MilestoneStatus[] = [
   },
   {
     id: "M4",
-    title: "M4 — Staff till",
+    title: "M4: Staff till",
     state: "Built",
     summary: "Pair device, PIN, stamp, undo, redeem, audit.",
     screens: [
@@ -156,7 +156,7 @@ export const MILESTONE_STATUS: MilestoneStatus[] = [
   },
   {
     id: "M5",
-    title: "M5 — Owner dashboard",
+    title: "M5: Owner dashboard",
     state: "Built",
     summary: "Overview, guests, loyalty, settings, team, audit.",
     screens: [
@@ -192,7 +192,7 @@ export const MILESTONE_STATUS: MilestoneStatus[] = [
   },
   {
     id: "M6",
-    title: "M6 — Credit and SMS",
+    title: "M6: Credit and SMS",
     state: "Built",
     summary: "Ledger with idempotent references, EFT top-ups, adjustments, provider stubs, webhooks.",
     screens: [
@@ -214,7 +214,7 @@ export const MILESTONE_STATUS: MilestoneStatus[] = [
   },
   {
     id: "M7",
-    title: "M7 — Campaigns",
+    title: "M7: Campaigns",
     state: "Built",
     summary: "Composer, dispatcher, settlement, results, approvals.",
     screens: [
@@ -243,14 +243,14 @@ export const MILESTONE_STATUS: MilestoneStatus[] = [
   },
   {
     id: "M8",
-    title: "M8 — PWA and push",
+    title: "M8: PWA and push",
     state: "Planned",
     summary: "Install sheet, offline till, push notifications.",
     screens: [],
   },
   {
     id: "M9",
-    title: "M9 — Real backend",
+    title: "M9: Real backend",
     state: "Planned",
     summary: "Real database, login, SMS, deploy.",
     screens: [],

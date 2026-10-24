@@ -107,7 +107,7 @@ function Team() {
           <p>
             <strong className="member-code">{shownPin.pin}</strong>
           </p>
-          <p>Shown once — write it down for them now.</p>
+          <p>Shown once, write it down for them now.</p>
           <button className="builder-secondary" onClick={() => setShownPin(null)}>
             Done
           </button>
@@ -131,7 +131,7 @@ function Team() {
         </button>
         {pairing && (
           <p role="status">
-            <strong className="member-code">{pairing}</strong> — enter it on the till device.
+            <strong className="member-code">{pairing}</strong>, enter it on the till device.
           </p>
         )}
       </section>

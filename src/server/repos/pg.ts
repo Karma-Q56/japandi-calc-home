@@ -9,7 +9,7 @@ import { pgGetSpecialOffers, pgRedeemSpecial } from "./special-offers-pg";
 type Ctx = { databaseUrl: string; restaurantId?: string | null; customerId?: string | null; isOperator?: boolean };
 
 // All queries run inside withContext (SPEC 8.1). One Pool per request is
-// created inside withContext — never a module-global client.
+// created inside withContext, never a module-global client.
 async function q<T>(tx: DatabaseTransaction, query: SQL): Promise<T[]> {
   const res = (await tx.execute(query)) as unknown as { rows: T[] };
   return res.rows;
@@ -203,7 +203,7 @@ export function createPgRepos(ctx: Ctx): PatronRepos {
       // honeypot/consent/rate-limit checks, so this tx runs as operator
       // (never exposed to clients). A public ctx cannot use `returning id`
       // because lead SELECT is operator-only and RLS rejects RETURNING rows
-      // that fail the SELECT policy — the public insert policy alone is not
+      // that fail the SELECT policy, the public insert policy alone is not
       // enough.
       const sys: Ctx = { ...ctx, isOperator: true };
       return withContext(sys, async (tx) => {
@@ -397,7 +397,7 @@ export function createPgRepos(ctx: Ctx): PatronRepos {
       assertPinPresent(input.pin);
       const pepper = requirePinPepper();
       // Transaction 1 (committed on its own): staff lookup + PIN check. The
-      // wrong-PIN failure insert MUST commit here — inserting it inside the
+      // wrong-PIN failure insert MUST commit here, inserting it inside the
       // stamp transaction and then throwing rolled it back, so the lockout
       // never triggered. This block returns a result value and never throws
       // for wrong/locked PINs, so the failure insert survives.

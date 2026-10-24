@@ -18,13 +18,13 @@ import cafeHero from "@/assets/cafe-hero.jpg";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Patron — Collect stamps at the places you love" },
+      { title: "Patron, Collect stamps at the places you love" },
       {
         name: "description",
         content:
           "A stamp card for your favourite local cafe, bakery or restaurant, right in your phone's browser. No app, no plastic. Free to join.",
       },
-      { property: "og:title", content: "Patron — Collect stamps at the places you love" },
+      { property: "og:title", content: "Patron, Collect stamps at the places you love" },
       {
         property: "og:description",
         content:
@@ -109,7 +109,7 @@ function HomePage() {
             Collect stamps at the places you <span className="editorial">already love.</span>
           </h1>
           <p className="hero-description">
-            A stamp card for your favourite cafe, bakery or restaurant — right in your phone's
+            A stamp card for your favourite cafe, bakery or restaurant, right in your phone's
             browser. No app to download. No plastic card to lose.
           </p>
           <VenueSearch />
@@ -210,7 +210,7 @@ function HomePage() {
               Give your regulars a reason to <span className="editorial">come back.</span>
             </h2>
             <p>
-              Patron is loyalty the way a neighbourhood place would do it — a stamp card your guests
+              Patron is loyalty the way a neighbourhood place would do it, a stamp card your guests
               keep, a list that stays yours, and a quiet SMS when someone hasn't been in for a
               while.
             </p>

@@ -14,7 +14,7 @@ function Terms() {
           Legal · Draft
         </p>
         <h1>Terms of use.</h1>
-        <p>Draft wording for the demo — needs lawyer review before any pilot.</p>
+        <p>Draft wording for the demo, needs lawyer review before any pilot.</p>
       </section>
       <section className="section page-width legal-page">
         <h2>Loyalty cards</h2>
@@ -42,7 +42,7 @@ function Terms() {
         <h2>Spins, challenges and tiers</h2>
         <p>
           Where a restaurant publishes a spin wheel, spins are earned by visits and reward
-          milestones — never by purchase. The result is selected by the system, and prizes are
+          milestones, never by purchase. The result is selected by the system, and prizes are
           personal single-use offers. Visit challenges add bonus stamps when their conditions are
           met. Tiers are calculated from recorded visits and may unlock members-only offers. The
           restaurant may change or end a promotion; already-earned rewards are honoured.

@@ -230,7 +230,7 @@ function Loyalty() {
           onChange={(next) => setSpin({ ...spin, enabled: next })}
         />
         <p className="demo-data-note">
-          Guests earn spins from visits — never from spending. Results are picked on the server and
+          Guests earn spins from visits, never from spending. Results are picked on the server and
           logged. Prizes become personal single-use offers.
         </p>
         <div className="builder-fields">
@@ -300,7 +300,7 @@ function Loyalty() {
               }
             />
             <small>
-              The reward decider never draws a prize worth less than this — it keeps “
+              The reward decider never draws a prize worth less than this, it keeps “
               {reward || "your advertised reward"}” as the floor.
             </small>
           </label>

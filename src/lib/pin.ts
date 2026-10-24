@@ -6,7 +6,7 @@ function toHex(bytes: ArrayBuffer): string {
   return [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-/** HMAC-SHA256(demoPepper, restaurantId:staffId:pin) — never store the PIN. */
+/** HMAC-SHA256(demoPepper, restaurantId:staffId:pin), never store the PIN. */
 export async function hashPin(restaurantId: string, staffId: string, pin: string): Promise<string> {
   const key = await crypto.subtle.importKey(
     "raw",

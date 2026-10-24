@@ -5,7 +5,7 @@ import { MarketingShell } from "@/components/patron/MarketingShell";
 export const Route = createFileRoute("/faq")({
   head: () => ({
     meta: [
-      { title: "FAQ — questions from diners and restaurants | Patron" },
+      { title: "FAQ, questions from diners and restaurants | Patron" },
       {
         name: "description",
         content:
@@ -58,7 +58,7 @@ const ownerFaqs: Array<[string, string]> = [
   ],
   [
     "What does being a founding partner mean?",
-    "Our first three restaurants get a reduced setup fee and a discounted monthly plan for three months, in exchange for honest feedback and — only if they are happy — an approved testimonial.",
+    "Our first three restaurants get a reduced setup fee and a discounted monthly plan for three months, in exchange for honest feedback and, only if they are happy, an approved testimonial.",
   ],
 ];
 

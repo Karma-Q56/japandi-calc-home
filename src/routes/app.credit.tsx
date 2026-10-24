@@ -72,7 +72,7 @@ function CreditPage() {
           Request top-up
         </button>
         <p className="demo-data-note">
-          Demo EFT details (placeholder — real banking details arrive before launch): Bank: Demo
+          Demo EFT details (placeholder, real banking details arrive before launch): Bank: Demo
           Bank · Account: 00-000-0000 · Use your PAT reference so the operator can match the
           payment. The operator confirms it under /ops/credit.
         </p>

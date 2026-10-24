@@ -14,7 +14,7 @@ function Privacy() {
           Legal · Draft
         </p>
         <h1>Privacy notice.</h1>
-        <p>Draft wording for the demo — needs lawyer review before any pilot.</p>
+        <p>Draft wording for the demo, needs lawyer review before any pilot.</p>
       </section>
       <section className="section page-width legal-page">
         <h2>What we collect</h2>

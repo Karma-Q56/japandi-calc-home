@@ -7,7 +7,7 @@ import { DEMO_ACCOUNTS, signInAsDemoAccount, type DemoAccount } from "@/lib/demo
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "Log in — Patron" },
+      { title: "Log in, Patron" },
       {
         name: "description",
         content:

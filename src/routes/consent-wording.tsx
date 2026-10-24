@@ -13,7 +13,7 @@ function ConsentWordingPage() {
         Legal · Draft
       </p>
       <h1>Consent wording.</h1>
-      <p className="demo-intro">Draft wording — needs lawyer review before any pilot.</p>
+      <p className="demo-intro">Draft wording, needs lawyer review before any pilot.</p>
       {Object.entries(CONSENT_WORDING).map(([key, wording]) => (
         <section className="builder-panel" key={key}>
           <h2>

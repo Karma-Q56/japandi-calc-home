@@ -5,7 +5,7 @@ import { STAMP_CONTRACT } from "@/test/stamp-contract.test";
 
 // Result-path tests shared with the SQL record_stamp function: the demo
 // engine and Postgres must agree on stamped/too_soon/not_a_member/duplicate_retry.
-// Live SQL verification needs DATABASE_URL (dev) — marked not verified until run.
+// Live SQL verification needs DATABASE_URL (dev), marked not verified until run.
 describe("record_stamp result paths", () => {
   for (const row of STAMP_CONTRACT) {
     it(row.name, () => {

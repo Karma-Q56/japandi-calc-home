@@ -6,7 +6,7 @@ import { ArrowRight, BellRing, Gift, MapPin, Sparkles, Stamp, Smartphone, Tag } 
 export const Route = createFileRoute("/for-diners")({
   head: () => ({
     meta: [
-      { title: "For diners — a loyalty card in your browser | Patron" },
+      { title: "For diners, a loyalty card in your browser | Patron" },
       {
         name: "description",
         content:
@@ -79,7 +79,7 @@ function ForDiners() {
           </h1>
           <p>
             Join the places you already love. Collect stamps, earn the reward you actually want and
-            see the offers that are meant for you — all from your phone&apos;s browser.
+            see the offers that are meant for you, all from your phone&apos;s browser.
           </p>
           <div className="diners-actions">
             <a className="builder-primary" href="#find-a-restaurant">

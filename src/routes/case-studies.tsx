@@ -6,7 +6,7 @@ import { commercial } from "@/lib/patron";
 export const Route = createFileRoute("/case-studies")({
   head: () => ({
     meta: [
-      { title: "Case studies — neighbourhood results | Patron" },
+      { title: "Case studies, neighbourhood results | Patron" },
       {
         name: "description",
         content:
@@ -39,7 +39,7 @@ function CaseStudies() {
           <h2>Nothing invented.</h2>
           <p>
             There are no pilot results to show yet. When there are, each story will show the
-            restaurant in its own words, the numbers behind it and the period they cover — approved
+            restaurant in its own words, the numbers behind it and the period they cover, approved
             by the owner before it goes up.
           </p>
         </div>

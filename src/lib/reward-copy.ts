@@ -12,5 +12,5 @@ export function rewardJoinPitch(reward: string): string {
 }
 
 export function rewardPosterLine(restaurantName: string, reward: string): string {
-  return `Join the regulars at ${restaurantName} — collect stamps and get ${reward}.`;
+  return `Join the regulars at ${restaurantName}, collect stamps and get ${reward}.`;
 }

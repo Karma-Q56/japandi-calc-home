@@ -8,7 +8,7 @@ const ideas = [
   { day: 'Thu', title: 'Bring a friend Thursday', idea: 'Bring a friend and you both get a free dessert.', sms: 'Thursday treat, Thandi: bring a friend and you both get a free dessert with any main.' },
   { day: 'Fri', title: 'Early-bird Friday', idea: 'An early-bird offer for the slow hour before the dinner rush.', sms: 'Beat the rush, Thandi! 15% off the bill this Friday between 5 and 6pm.' },
   { day: 'Sat', title: 'Saturday tea & cake', idea: 'A late-afternoon tea-and-cake special.', sms: 'Saturday slow-down, Thandi: tea and a slice of cake for R65, from 3pm.' },
-  { day: 'Sun', title: 'Sunday family evening', idea: 'A Sunday-evening family special for guests with birthdays this week.', sms: 'Happy birthday week, Thandi! Bring the family this Sunday evening — dessert is on us.' },
+  { day: 'Sun', title: 'Sunday family evening', idea: 'A Sunday-evening family special for guests with birthdays this week.', sms: 'Happy birthday week, Thandi! Bring the family this Sunday evening, dessert is on us.' },
 ];
 const audience = 120;
 

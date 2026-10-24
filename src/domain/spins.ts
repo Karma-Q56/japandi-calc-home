@@ -13,7 +13,7 @@ export const SPIN_MODES: Array<{ mode: SpinMode; title: string; description: str
   {
     mode: "join",
     title: "Welcome spin",
-    description: "One spin when a guest joins — bonus stamps or a personal offer.",
+    description: "One spin when a guest joins, bonus stamps or a personal offer.",
   },
   {
     mode: "earned",
@@ -147,7 +147,7 @@ export function spinsEarned(
   return Math.max(0, earned - spinsUsedForState(state, membershipId));
 }
 
-/** Spins are earned by visits and reward milestones — never purchased. */
+/** Spins are earned by visits and reward milestones, never purchased. */
 export function spinState(membershipId: string): SpinState {
   const state = demoRepo.read();
   const membership = state.memberships.find((item) => item.id === membershipId);
@@ -438,7 +438,7 @@ export function spinRulesText(
   const config = restaurant.spin;
   const modes = configuredModes(config);
   const lines = [
-    `${restaurant.name} Spin & Win — rules`,
+    `${restaurant.name} Spin & Win, rules`,
     `• Modes: ${modes.map(spinModeLabel).join(", ") || "none"}.`,
     ...(modes.includes("join")
       ? ["• One welcome spin per guest, unlocked when they join. It lands as bonus stamps or a personal offer."]
@@ -448,7 +448,7 @@ export function spinRulesText(
       : []),
     ...(modes.includes("reward_decider")
       ? [
-          `• Reward decider: when a card completes, the venue draws a prize from its prize list at random. The advertised reward (${restaurant.rewardDescription}) is the floor — the draw never gives less — and guests do not choose the prize.`,
+          `• Reward decider: when a card completes, the venue draws a prize from its prize list at random. The advertised reward (${restaurant.rewardDescription}) is the floor, the draw never gives less, and guests do not choose the prize.`,
         ]
       : []),
     ...(config.dailyPool?.length ? ["• Daily surprise specials: " + config.dailyPool.map((id) => demoRepo.read().specials.find((special) => special.id === id)?.title ?? "Unavailable special").join(", ") + ". One per guest per Johannesburg calendar day."] : []),
@@ -457,7 +457,7 @@ export function spinRulesText(
     "• Odds depend on the wheel segments published below; some segments may be unavailable once their cap or the weekly budget is reached.",
     "• The venue's decision is final. This promotion is run by the venue, not by Patron.",
     ...config.segments.map(
-      (segment) => `• ${segment.label} — weight ${segment.weight}${segment.cap ? `, max ${segment.cap.max} per ${segment.cap.period}` : ""}.`,
+      (segment) => `• ${segment.label}, weight ${segment.weight}${segment.cap ? `, max ${segment.cap.max} per ${segment.cap.period}` : ""}.`,
     ),
   ];
   return lines.join("\n");
