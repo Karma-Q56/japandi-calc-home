@@ -3,6 +3,7 @@ import { useSyncExternalStore } from "react";
 import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
+import type { Customer, Membership, SavedList } from "@/data/types";
 import { useDemoState } from "@/data/useDemoState";
 
 export const Route = createFileRoute("/app/lists")({
@@ -27,8 +28,7 @@ function ListsPage() {
       </main>
     );
   }
-  const result = api.audience.lists(restaurant.id);
-  const lists = result.ok ? result.data : [];
+  const lists = api.audience.lists(restaurant.id);
   return (
     <main className="demo-hub page-width">
       <p className="eyebrow">
@@ -56,13 +56,13 @@ function ListsPage() {
             No saved lists yet. Pick guests on the Customers page and save them as a list.
           </p>
         )}
-        {lists.map((list) => {
+        {lists.map((list: SavedList) => {
           const members = list.membershipIds
-            .map((id) => state.memberships.find((m) => m.id === id))
+            .map((id: string) => state.memberships.find((m: Membership) => m.id === id))
             .filter(Boolean);
           const names = members
             .slice(0, 6)
-            .map((m) => state.customers.find((c) => c.id === m.customerId)?.name ?? "A guest");
+            .map((m) => state.customers.find((c: Customer) => c.id === m.customerId)?.name ?? "A guest");
           const updated = new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium" }).format(
             new Date(list.updatedAt),
           );
@@ -86,7 +86,7 @@ function ListsPage() {
                 <button
                   type="button"
                   className="row-action"
-                  onClick={() => api.audience.deleteList({ id: list.id, restaurantId })}
+                  onClick={() => api.audience.deleteList({ id: list.id, restaurantId: restaurant.id })}
                 >
                   Delete
                 </button>
