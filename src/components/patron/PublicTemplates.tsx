@@ -3,6 +3,7 @@ import { APP_NAME } from "@/config/app";
 import { PatronBrand } from "@/lib/patron-brand";
 import { johannesburgTime, venueIsOpenNow } from "@/lib/johannesburg-time";
 import { LoyaltyCard } from "./LoyaltyCard";
+import { formatRand } from "@/lib/money";
 
 export interface VenueSection {
   id: string;
@@ -20,12 +21,7 @@ export interface VenueTemplateProps {
   memberOffers?: Array<{ title: string; body: string; kind: string; code: string | null }>;
 }
 
-const money = (cents: number) =>
-  new Intl.NumberFormat("en-ZA", {
-    style: "currency",
-    currency: "ZAR",
-    maximumFractionDigits: cents % 100 === 0 ? 0 : 2,
-  }).format(cents / 100);
+
 
 const dateLabel = (iso: string) =>
   new Intl.DateTimeFormat("en-ZA", {
@@ -80,7 +76,7 @@ function Menu({ sections }: { sections: VenueSection[] }) {
                 <strong>{item.name}</strong>
                 {item.description && <small>{item.description}</small>}
               </div>
-              <b>{money(item.priceCents)}</b>
+              <b>{formatRand(item.priceCents)}</b>
             </div>
           ))}
         </div>

@@ -8,6 +8,7 @@ import { johannesburgTime, venueIsOpenNow } from "@/lib/johannesburg-time";
 import { ThemeProvider } from "@/theme";
 import { withChildren } from "@/lib/nested";
 import { PublicTemplate, type VenueSection } from "@/components/patron/PublicTemplates";
+import { formatRand } from "@/lib/money";
 
 const PublicRestaurantPageWithChildren = withChildren(PublicRestaurantPage);
 export const Route = createFileRoute("/r/$slug")({
@@ -20,12 +21,7 @@ export const Route = createFileRoute("/r/$slug")({
   component: PublicRestaurantPageWithChildren,
 });
 
-const money = (cents: number) =>
-  new Intl.NumberFormat("en-ZA", {
-    style: "currency",
-    currency: "ZAR",
-    maximumFractionDigits: cents % 100 === 0 ? 0 : 2,
-  }).format(cents / 100);
+
 
 function PublicRestaurantPage() {
   const { slug } = Route.useParams();
@@ -139,7 +135,7 @@ function LivePublicPage({ page, slug }: { page: PublicPage; slug: string }) {
             {group.items.map((item) => (
               <li key={item.id}>
                 {item.name}
-                {item.priceCents != null && item.priceCents > 0 ? ` · ${money(item.priceCents)}` : ""}
+                {item.priceCents != null && item.priceCents > 0 ? ` · ${formatRand(item.priceCents)}` : ""}
               </li>
             ))}
           </ul>
