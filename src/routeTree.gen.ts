@@ -35,6 +35,7 @@ import { Route as AppAuditRouteImport } from './routes/app.audit'
 import { Route as AppCampaignsRouteImport } from './routes/app.campaigns'
 import { Route as AppCreditRouteImport } from './routes/app.credit'
 import { Route as AppCustomersRouteImport } from './routes/app.customers'
+import { Route as AppListsRouteImport } from './routes/app.lists'
 import { Route as AppLoyaltyRouteImport } from './routes/app.loyalty'
 import { Route as AppMenuRouteImport } from './routes/app.menu'
 import { Route as AppOnboardingRouteImport } from './routes/app.onboarding'
@@ -197,6 +198,11 @@ const AppCreditRoute = AppCreditRouteImport.update({
 const AppCustomersRoute = AppCustomersRouteImport.update({
   id: '/customers',
   path: '/customers',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppListsRoute = AppListsRouteImport.update({
+  id: '/lists',
+  path: '/lists',
   getParentRoute: () => AppRoute,
 } as any)
 const AppLoyaltyRoute = AppLoyaltyRouteImport.update({
@@ -392,6 +398,7 @@ export interface FileRoutesByFullPath {
   '/app/campaigns': typeof AppCampaignsRouteWithChildren
   '/app/credit': typeof AppCreditRoute
   '/app/customers': typeof AppCustomersRouteWithChildren
+  '/app/lists': typeof AppListsRoute
   '/app/loyalty': typeof AppLoyaltyRoute
   '/app/menu': typeof AppMenuRoute
   '/app/onboarding': typeof AppOnboardingRoute
@@ -453,6 +460,7 @@ export interface FileRoutesByTo {
   '/app/campaigns': typeof AppCampaignsRouteWithChildren
   '/app/credit': typeof AppCreditRoute
   '/app/customers': typeof AppCustomersRouteWithChildren
+  '/app/lists': typeof AppListsRoute
   '/app/loyalty': typeof AppLoyaltyRoute
   '/app/menu': typeof AppMenuRoute
   '/app/onboarding': typeof AppOnboardingRoute
@@ -515,6 +523,7 @@ export interface FileRoutesById {
   '/app/campaigns': typeof AppCampaignsRouteWithChildren
   '/app/credit': typeof AppCreditRoute
   '/app/customers': typeof AppCustomersRouteWithChildren
+  '/app/lists': typeof AppListsRoute
   '/app/loyalty': typeof AppLoyaltyRoute
   '/app/menu': typeof AppMenuRoute
   '/app/onboarding': typeof AppOnboardingRoute
@@ -578,6 +587,7 @@ export interface FileRouteTypes {
     | '/app/campaigns'
     | '/app/credit'
     | '/app/customers'
+    | '/app/lists'
     | '/app/loyalty'
     | '/app/menu'
     | '/app/onboarding'
@@ -639,6 +649,7 @@ export interface FileRouteTypes {
     | '/app/campaigns'
     | '/app/credit'
     | '/app/customers'
+    | '/app/lists'
     | '/app/loyalty'
     | '/app/menu'
     | '/app/onboarding'
@@ -700,6 +711,7 @@ export interface FileRouteTypes {
     | '/app/campaigns'
     | '/app/credit'
     | '/app/customers'
+    | '/app/lists'
     | '/app/loyalty'
     | '/app/menu'
     | '/app/onboarding'
@@ -950,6 +962,13 @@ declare module '@tanstack/react-router' {
       path: '/customers'
       fullPath: '/app/customers'
       preLoaderRoute: typeof AppCustomersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/lists': {
+      id: '/app/lists'
+      path: '/lists'
+      fullPath: '/app/lists'
+      preLoaderRoute: typeof AppListsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/loyalty': {
@@ -1217,6 +1236,7 @@ interface AppRouteChildren {
   AppCampaignsRoute: typeof AppCampaignsRouteWithChildren
   AppCreditRoute: typeof AppCreditRoute
   AppCustomersRoute: typeof AppCustomersRouteWithChildren
+  AppListsRoute: typeof AppListsRoute
   AppLoyaltyRoute: typeof AppLoyaltyRoute
   AppMenuRoute: typeof AppMenuRoute
   AppOnboardingRoute: typeof AppOnboardingRoute
@@ -1231,6 +1251,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCampaignsRoute: AppCampaignsRouteWithChildren,
   AppCreditRoute: AppCreditRoute,
   AppCustomersRoute: AppCustomersRouteWithChildren,
+  AppListsRoute: AppListsRoute,
   AppLoyaltyRoute: AppLoyaltyRoute,
   AppMenuRoute: AppMenuRoute,
   AppOnboardingRoute: AppOnboardingRoute,
