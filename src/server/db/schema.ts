@@ -72,6 +72,12 @@ export const restaurant = pgTable('restaurant', {
   visitWindowMinutes: integer('visit_window_minutes').notNull().default(240),
   stampsRequired: integer('stamps_required').notNull().default(8),
   welcomeStamp: boolean('welcome_stamp').notNull().default(false),
+  welcomeStamps: integer('welcome_stamps').notNull().default(0),
+  pageTemplate: text('page_template').notNull().default('classic'),
+  tiers: jsonb('tiers').notNull().default({ regular: 3, vip: 8 }),
+  mysteryEveryVisits: integer('mystery_every_visits').notNull().default(0),
+  birthdayReward: boolean('birthday_reward').notNull().default(false),
+  spin: jsonb('spin').notNull().default({}),
   rewardDescription: text('reward_description').notNull().default('A free item on us'),
   marketingWeeklyCap: integer('marketing_weekly_cap').notNull().default(3),
   memberWeeklyCap: integer('member_weekly_cap').notNull().default(2),
@@ -123,6 +129,9 @@ export const special = pgTable('special', {
   startsAt: timestamp('starts_at', { mode: 'date' }),
   endsAt: timestamp('ends_at', { mode: 'date' }),
   active: boolean('active').notNull().default(true),
+  kind: text('kind').notNull().default('public'),
+  code: text('code'),
+  minTier: text('min_tier'),
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
 });
 
@@ -177,6 +186,7 @@ export const stampEvent = pgTable('stamp_event', {
   membershipId: uuid('membership_id').notNull().references(() => membership.id, { onDelete: 'cascade' }),
   staffId: uuid('staff_id').references(() => staffMember.id),
   status: stampStatus('status').notNull().default('valid'),
+  reason: text('reason').notNull().default('visit'),
   idempotencyKey: text('idempotency_key').notNull(),
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
   undoneAt: timestamp('undone_at', { mode: 'date' }),
@@ -276,7 +286,11 @@ export const message = pgTable('message', {
 // Redemption
 export const redemption = pgTable('redemption', {
   id: uuid('id').primaryKey().defaultRandom(),
-  campaignId: uuid('campaign_id').notNull().references(() => campaign.id, { onDelete: 'cascade' }),
+  campaignId: uuid('campaign_id').references(() => campaign.id, { onDelete: 'cascade' }),
+  kind: text('kind').notNull().default('campaign'),
+  specialId: uuid('special_id').references(() => special.id, { onDelete: 'set null' }),
+  specialCodeId: uuid('special_code_id'),
+  code: text('code'),
   restaurantId: uuid('restaurant_id').notNull().references(() => restaurant.id, { onDelete: 'cascade' }),
   membershipId: uuid('membership_id').notNull().references(() => membership.id, { onDelete: 'cascade' }),
   staffId: uuid('staff_id').references(() => staffMember.id),
@@ -290,6 +304,57 @@ export const redemption = pgTable('redemption', {
       table.membershipId,
     ),
   };
+});
+
+// Personal single-use codes for targeted specials
+export const specialCode = pgTable('special_code', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  restaurantId: uuid('restaurant_id').notNull().references(() => restaurant.id, { onDelete: 'cascade' }),
+  specialId: uuid('special_id').notNull().references(() => special.id, { onDelete: 'cascade' }),
+  membershipId: uuid('membership_id').notNull().references(() => membership.id, { onDelete: 'cascade' }),
+  code: text('code').notNull(),
+  issuedAt: timestamp('issued_at', { mode: 'date' }).notNull().defaultNow(),
+  redeemedAt: timestamp('redeemed_at', { mode: 'date' }),
+  redeemedBy: text('redeemed_by'),
+}, (table) => {
+  return {
+    membershipSpecialUnique: uniqueIndex('special_code_special_membership_unique').on(table.specialId, table.membershipId),
+    restaurantCodeUnique: uniqueIndex('special_code_restaurant_code_unique').on(table.restaurantId, table.code),
+  };
+});
+
+// Saved guest lists for campaigns
+export const savedList = pgTable('saved_list', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  restaurantId: uuid('restaurant_id').notNull().references(() => restaurant.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  membershipIds: jsonb('membership_ids').notNull().default([]),
+  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
+});
+
+// Spin results (server-chosen)
+export const spinResult = pgTable('spin_result', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  restaurantId: uuid('restaurant_id').notNull().references(() => restaurant.id, { onDelete: 'cascade' }),
+  membershipId: uuid('membership_id').notNull().references(() => membership.id, { onDelete: 'cascade' }),
+  segmentId: text('segment_id').notNull(),
+  label: text('label').notNull(),
+  valueCents: integer('value_cents').notNull().default(0),
+  wonAt: timestamp('won_at', { mode: 'date' }).notNull().defaultNow(),
+  prizeSpecialId: uuid('prize_special_id').references(() => special.id, { onDelete: 'set null' }),
+});
+
+// Visit challenges
+export const challenge = pgTable('challenge', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  restaurantId: uuid('restaurant_id').notNull().references(() => restaurant.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  visits: integer('visits').notNull(),
+  windowDays: integer('window_days').notNull(),
+  bonusStamps: integer('bonus_stamps').notNull().default(1),
+  active: boolean('active').notNull().default(true),
+  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
 });
 
 // Credit Ledger
@@ -385,8 +450,9 @@ export const otpSendLog = pgTable('otp_send_log', {
 });
 
 // Rate Limit Hit
+
 export const rateLimitHit = pgTable('rate_limit_hit', {
-  id: integer('id').primaryKey({ mode: 'number' }).generatedAlwaysAsIdentity(),
+  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
   bucket: text('bucket').notNull(),
   key: text('key').notNull(),
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
@@ -436,6 +502,10 @@ export const schema = {
   campaign,
   message,
   redemption,
+  specialCode,
+  savedList,
+  spinResult,
+  challenge,
   creditLedger,
   pushSubscription,
   lead,

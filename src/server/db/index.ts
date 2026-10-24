@@ -3,7 +3,7 @@ import { drizzle } from "drizzle-orm/neon-serverless";
 import { sql } from "drizzle-orm";
 import type { NeonDatabase } from "drizzle-orm/neon-serverless";
 
-type DatabaseTransaction = Parameters<Parameters<NeonDatabase["transaction"]>[0]>[0];
+export type DatabaseTransaction = Parameters<Parameters<NeonDatabase["transaction"]>[0]>[0];
 
 type DatabaseContext = {
   databaseUrl: string;

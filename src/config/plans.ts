@@ -1,101 +1,70 @@
-// Plan configuration
-export type PlanTier = 'starter' | 'managed' | 'partner' | 'custom';
-
+// Plan configuration and pricing
 export interface Plan {
-  id: PlanTier;
   name: string;
-  minPrice: number; // ZAR cents
-  maxPrice: number; // ZAR cents
+  min: number;
+  max: number;
   description: string;
   features: string[];
-  monthlySmsIncluded: number | null; // null = not included
-  maxCampaignsPerMonth: number | null; // null = unlimited
-  managed: boolean; // Operator handles campaigns
 }
 
-export const PLANS: Record<PlanTier, Plan> = {
-  starter: {
-    id: 'starter',
+export const plans: Plan[] = [
+  {
     name: 'Starter',
-    minPrice: 29900, // R299
-    maxPrice: 49900, // R499
+    min: 299,
+    max: 499,
     description: 'A little loyalty. A lot of possibility.',
     features: [
       'Your own digital stamp card',
       'QR sign-up, menu & specials',
       'Your regulars list & results',
-      'Send your own SMS specials',
+      'Send your own SMS specials'
     ],
-    monthlySmsIncluded: null,
-    maxCampaignsPerMonth: null,
-    managed: false,
   },
-  managed: {
-    id: 'managed',
+  {
     name: 'Growth',
-    minPrice: 99900, // R999
-    maxPrice: 180000, // R1,800
+    min: 999,
+    max: 1800,
     description: 'You run the restaurant. We run the specials.',
     features: [
       'Everything in Starter',
       '4 campaigns a month, done for you',
       'Bring back customers you miss',
-      'A monthly results report',
+      'A monthly results report'
     ],
-    monthlySmsIncluded: null,
-    maxCampaignsPerMonth: 4,
-    managed: true,
   },
-  partner: {
-    id: 'partner',
+  {
     name: 'Pro',
-    minPrice: 250000, // R2,500
-    maxPrice: 400000, // R4,000
+    min: 2500,
+    max: 4000,
     description: 'Your very own extra pair of hands.',
     features: [
       'Everything in Growth',
       'Weekly campaigns & birthday offers',
       'Multiple rewards & staff coaching',
-      'Priority, hands-on support',
+      'Priority, hands-on support'
     ],
-    monthlySmsIncluded: null,
-    maxCampaignsPerMonth: null,
-    managed: true,
   },
-  custom: {
-    id: 'custom',
-    name: 'Custom',
-    minPrice: 0,
-    maxPrice: 0,
-    description: 'Tailored to your needs.',
-    features: [],
-    monthlySmsIncluded: null,
-    maxCampaignsPerMonth: null,
-    managed: false,
-  },
+];
+
+// Single illustrative monthly fees used by the repeat-visit planner
+export const plannerPlans = [
+  { name: 'Starter', fee: 399 },
+  { name: 'Growth', fee: 1200 },
+  { name: 'Pro', fee: 3000 },
+] as const;
+
+export const plannerDefaults = {
+  spend: 160,
+  visits: 250,
+  lift: 3,
+  margin: 35,
+  plan: 'Growth' as const,
 };
 
-// Get plan by ID
-export function getPlan(id: PlanTier): Plan {
-  const plan = PLANS[id];
-  if (!plan) {
-    throw new Error(`Unknown plan: ${id}`);
-  }
-  return plan;
-}
-
-// Setup fees (one-time, ZAR cents)
-export const SETUP_FEES = {
-  min: 100000, // R1,000
-  max: 200000, // R2,000
-};
-
-// SMS cost estimate (ZAR cents)
-export const SMS_COST_ESTIMATE = 35; // R0.35 per message
-
-// Founding partner program
-export const FOUNDING_PROGRAM = {
-  spots: 3,
+export const commercial = {
+  setupMin: 1000,
+  setupMax: 2000,
+  smsEstimate: 0.35,
+  foundingSpots: 3,
   discountMonths: 3,
-  location: 'Johannesburg',
 };

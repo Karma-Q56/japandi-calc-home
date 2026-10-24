@@ -11,8 +11,63 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/app'
+import { Route as CaseStudiesRouteImport } from './routes/case-studies'
+import { Route as ConsentWordingRouteImport } from './routes/consent-wording'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as DemoRouteImport } from './routes/demo'
+import { Route as FaqRouteImport } from './routes/faq'
+import { Route as ForBusinessRouteImport } from './routes/for-business'
+import { Route as ForDinersRouteImport } from './routes/for-diners'
 import { Route as HealthzRouteImport } from './routes/healthz'
+import { Route as HowItWorksRouteImport } from './routes/how-it-works'
+import { Route as LinkExpiredRouteImport } from './routes/link-expired'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as MaintenanceRouteImport } from './routes/maintenance'
+import { Route as MeRouteImport } from './routes/me'
+import { Route as OfflineRouteImport } from './routes/offline'
+import { Route as OpsRouteImport } from './routes/ops'
+import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as SessionExpiredRouteImport } from './routes/session-expired'
+import { Route as StampRouteImport } from './routes/stamp'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as AppAuditRouteImport } from './routes/app.audit'
+import { Route as AppCampaignsRouteImport } from './routes/app.campaigns'
+import { Route as AppCreditRouteImport } from './routes/app.credit'
+import { Route as AppCustomersRouteImport } from './routes/app.customers'
+import { Route as AppLoyaltyRouteImport } from './routes/app.loyalty'
+import { Route as AppMenuRouteImport } from './routes/app.menu'
+import { Route as AppOnboardingRouteImport } from './routes/app.onboarding'
+import { Route as AppQrRouteImport } from './routes/app.qr'
+import { Route as AppSettingsRouteImport } from './routes/app.settings'
+import { Route as AppSpecialsRouteImport } from './routes/app.specials'
+import { Route as AppTeamRouteImport } from './routes/app.team'
+import { Route as DemoOutboxRouteImport } from './routes/demo.outbox'
+import { Route as DemoStatusRouteImport } from './routes/demo.status'
+import { Route as DevRolesRouteImport } from './routes/dev.roles'
 import { Route as HealthzDbRouteImport } from './routes/healthz.db'
+import { Route as MeRestaurantsRouteImport } from './routes/me.restaurants'
+import { Route as MeSettingsRouteImport } from './routes/me.settings'
+import { Route as OpsCampaignsRouteImport } from './routes/ops.campaigns'
+import { Route as OpsCreditRouteImport } from './routes/ops.credit'
+import { Route as OpsRestaurantsRouteImport } from './routes/ops.restaurants'
+import { Route as RSlugRouteImport } from './routes/r.$slug'
+import { Route as STokenRouteImport } from './routes/s/$token'
+import { Route as UTokenRouteImport } from './routes/u/$token'
+import { Route as ApiCronDispatchRouteImport } from './routes/api/cron/dispatch'
+import { Route as ApiCronNightlyRouteImport } from './routes/api/cron/nightly'
+import { Route as ApiCronSettleRouteImport } from './routes/api/cron/settle'
+import { Route as AppCampaignsCampaignIdRouteImport } from './routes/app.campaigns.$campaignId'
+import { Route as AppCampaignsNewRouteImport } from './routes/app.campaigns.new'
+import { Route as AppCustomersCustomerIdRouteImport } from './routes/app.customers.$customerId'
+import { Route as MeRestaurantsSlugRouteImport } from './routes/me.restaurants.$slug'
+import { Route as OpsRestaurantsIdRouteImport } from './routes/ops.restaurants.$id'
+import { Route as OpsRestaurantsNewRouteImport } from './routes/ops.restaurants.new'
+import { Route as RSlugCardRouteImport } from './routes/r.$slug.card'
+import { Route as RSlugJoinRouteImport } from './routes/r.$slug.join'
+import { Route as ApiWebhooksSmsProviderRouteImport } from './routes/api/webhooks/sms/$provider'
+import { Route as OpsRestaurantsIdLookRouteImport } from './routes/ops.restaurants.$id.look'
+import { Route as OpsRestaurantsIdQrRouteImport } from './routes/ops.restaurants.$id.qr'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -24,9 +79,174 @@ const AppRoute = AppRouteImport.update({
   path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CaseStudiesRoute = CaseStudiesRouteImport.update({
+  id: '/case-studies',
+  path: '/case-studies',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConsentWordingRoute = ConsentWordingRouteImport.update({
+  id: '/consent-wording',
+  path: '/consent-wording',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoRoute = DemoRouteImport.update({
+  id: '/demo',
+  path: '/demo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForBusinessRoute = ForBusinessRouteImport.update({
+  id: '/for-business',
+  path: '/for-business',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForDinersRoute = ForDinersRouteImport.update({
+  id: '/for-diners',
+  path: '/for-diners',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HealthzRoute = HealthzRouteImport.update({
   id: '/healthz',
   path: '/healthz',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HowItWorksRoute = HowItWorksRouteImport.update({
+  id: '/how-it-works',
+  path: '/how-it-works',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LinkExpiredRoute = LinkExpiredRouteImport.update({
+  id: '/link-expired',
+  path: '/link-expired',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MaintenanceRoute = MaintenanceRouteImport.update({
+  id: '/maintenance',
+  path: '/maintenance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeRoute = MeRouteImport.update({
+  id: '/me',
+  path: '/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OfflineRoute = OfflineRouteImport.update({
+  id: '/offline',
+  path: '/offline',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OpsRoute = OpsRouteImport.update({
+  id: '/ops',
+  path: '/ops',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SessionExpiredRoute = SessionExpiredRouteImport.update({
+  id: '/session-expired',
+  path: '/session-expired',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StampRoute = StampRouteImport.update({
+  id: '/stamp',
+  path: '/stamp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppAuditRoute = AppAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCampaignsRoute = AppCampaignsRouteImport.update({
+  id: '/campaigns',
+  path: '/campaigns',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCreditRoute = AppCreditRouteImport.update({
+  id: '/credit',
+  path: '/credit',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCustomersRoute = AppCustomersRouteImport.update({
+  id: '/customers',
+  path: '/customers',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppLoyaltyRoute = AppLoyaltyRouteImport.update({
+  id: '/loyalty',
+  path: '/loyalty',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMenuRoute = AppMenuRouteImport.update({
+  id: '/menu',
+  path: '/menu',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOnboardingRoute = AppOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppQrRoute = AppQrRouteImport.update({
+  id: '/qr',
+  path: '/qr',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSpecialsRoute = AppSpecialsRouteImport.update({
+  id: '/specials',
+  path: '/specials',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTeamRoute = AppTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => AppRoute,
+} as any)
+const DemoOutboxRoute = DemoOutboxRouteImport.update({
+  id: '/outbox',
+  path: '/outbox',
+  getParentRoute: () => DemoRoute,
+} as any)
+const DemoStatusRoute = DemoStatusRouteImport.update({
+  id: '/status',
+  path: '/status',
+  getParentRoute: () => DemoRoute,
+} as any)
+const DevRolesRoute = DevRolesRouteImport.update({
+  id: '/dev/roles',
+  path: '/dev/roles',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HealthzDbRoute = HealthzDbRouteImport.update({
@@ -34,38 +254,518 @@ const HealthzDbRoute = HealthzDbRouteImport.update({
   path: '/db',
   getParentRoute: () => HealthzRoute,
 } as any)
+const MeRestaurantsRoute = MeRestaurantsRouteImport.update({
+  id: '/restaurants',
+  path: '/restaurants',
+  getParentRoute: () => MeRoute,
+} as any)
+const MeSettingsRoute = MeSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => MeRoute,
+} as any)
+const OpsCampaignsRoute = OpsCampaignsRouteImport.update({
+  id: '/campaigns',
+  path: '/campaigns',
+  getParentRoute: () => OpsRoute,
+} as any)
+const OpsCreditRoute = OpsCreditRouteImport.update({
+  id: '/credit',
+  path: '/credit',
+  getParentRoute: () => OpsRoute,
+} as any)
+const OpsRestaurantsRoute = OpsRestaurantsRouteImport.update({
+  id: '/restaurants',
+  path: '/restaurants',
+  getParentRoute: () => OpsRoute,
+} as any)
+const RSlugRoute = RSlugRouteImport.update({
+  id: '/r/$slug',
+  path: '/r/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const STokenRoute = STokenRouteImport.update({
+  id: '/s/$token',
+  path: '/s/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UTokenRoute = UTokenRouteImport.update({
+  id: '/u/$token',
+  path: '/u/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCronDispatchRoute = ApiCronDispatchRouteImport.update({
+  id: '/api/cron/dispatch',
+  path: '/api/cron/dispatch',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCronNightlyRoute = ApiCronNightlyRouteImport.update({
+  id: '/api/cron/nightly',
+  path: '/api/cron/nightly',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCronSettleRoute = ApiCronSettleRouteImport.update({
+  id: '/api/cron/settle',
+  path: '/api/cron/settle',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppCampaignsCampaignIdRoute = AppCampaignsCampaignIdRouteImport.update({
+  id: '/$campaignId',
+  path: '/$campaignId',
+  getParentRoute: () => AppCampaignsRoute,
+} as any)
+const AppCampaignsNewRoute = AppCampaignsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AppCampaignsRoute,
+} as any)
+const AppCustomersCustomerIdRoute = AppCustomersCustomerIdRouteImport.update({
+  id: '/$customerId',
+  path: '/$customerId',
+  getParentRoute: () => AppCustomersRoute,
+} as any)
+const MeRestaurantsSlugRoute = MeRestaurantsSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => MeRestaurantsRoute,
+} as any)
+const OpsRestaurantsIdRoute = OpsRestaurantsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => OpsRestaurantsRoute,
+} as any)
+const OpsRestaurantsNewRoute = OpsRestaurantsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => OpsRestaurantsRoute,
+} as any)
+const RSlugCardRoute = RSlugCardRouteImport.update({
+  id: '/card',
+  path: '/card',
+  getParentRoute: () => RSlugRoute,
+} as any)
+const RSlugJoinRoute = RSlugJoinRouteImport.update({
+  id: '/join',
+  path: '/join',
+  getParentRoute: () => RSlugRoute,
+} as any)
+const ApiWebhooksSmsProviderRoute = ApiWebhooksSmsProviderRouteImport.update({
+  id: '/api/webhooks/sms/$provider',
+  path: '/api/webhooks/sms/$provider',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OpsRestaurantsIdLookRoute = OpsRestaurantsIdLookRouteImport.update({
+  id: '/look',
+  path: '/look',
+  getParentRoute: () => OpsRestaurantsIdRoute,
+} as any)
+const OpsRestaurantsIdQrRoute = OpsRestaurantsIdQrRouteImport.update({
+  id: '/qr',
+  path: '/qr',
+  getParentRoute: () => OpsRestaurantsIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
+  '/app': typeof AppRouteWithChildren
+  '/case-studies': typeof CaseStudiesRoute
+  '/consent-wording': typeof ConsentWordingRoute
+  '/contact': typeof ContactRoute
+  '/demo': typeof DemoRouteWithChildren
+  '/faq': typeof FaqRoute
+  '/for-business': typeof ForBusinessRoute
+  '/for-diners': typeof ForDinersRoute
   '/healthz': typeof HealthzRouteWithChildren
+  '/how-it-works': typeof HowItWorksRoute
+  '/link-expired': typeof LinkExpiredRoute
+  '/login': typeof LoginRoute
+  '/maintenance': typeof MaintenanceRoute
+  '/me': typeof MeRouteWithChildren
+  '/offline': typeof OfflineRoute
+  '/ops': typeof OpsRouteWithChildren
+  '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
+  '/session-expired': typeof SessionExpiredRoute
+  '/stamp': typeof StampRoute
+  '/terms': typeof TermsRoute
+  '/app/audit': typeof AppAuditRoute
+  '/app/campaigns': typeof AppCampaignsRouteWithChildren
+  '/app/credit': typeof AppCreditRoute
+  '/app/customers': typeof AppCustomersRouteWithChildren
+  '/app/loyalty': typeof AppLoyaltyRoute
+  '/app/menu': typeof AppMenuRoute
+  '/app/onboarding': typeof AppOnboardingRoute
+  '/app/qr': typeof AppQrRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app/specials': typeof AppSpecialsRoute
+  '/app/team': typeof AppTeamRoute
+  '/demo/outbox': typeof DemoOutboxRoute
+  '/demo/status': typeof DemoStatusRoute
+  '/dev/roles': typeof DevRolesRoute
   '/healthz/db': typeof HealthzDbRoute
+  '/me/restaurants': typeof MeRestaurantsRouteWithChildren
+  '/me/settings': typeof MeSettingsRoute
+  '/ops/campaigns': typeof OpsCampaignsRoute
+  '/ops/credit': typeof OpsCreditRoute
+  '/ops/restaurants': typeof OpsRestaurantsRouteWithChildren
+  '/r/$slug': typeof RSlugRouteWithChildren
+  '/s/$token': typeof STokenRoute
+  '/u/$token': typeof UTokenRoute
+  '/api/cron/dispatch': typeof ApiCronDispatchRoute
+  '/api/cron/nightly': typeof ApiCronNightlyRoute
+  '/api/cron/settle': typeof ApiCronSettleRoute
+  '/app/campaigns/$campaignId': typeof AppCampaignsCampaignIdRoute
+  '/app/campaigns/new': typeof AppCampaignsNewRoute
+  '/app/customers/$customerId': typeof AppCustomersCustomerIdRoute
+  '/me/restaurants/$slug': typeof MeRestaurantsSlugRoute
+  '/ops/restaurants/$id': typeof OpsRestaurantsIdRouteWithChildren
+  '/ops/restaurants/new': typeof OpsRestaurantsNewRoute
+  '/r/$slug/card': typeof RSlugCardRoute
+  '/r/$slug/join': typeof RSlugJoinRoute
+  '/api/webhooks/sms/$provider': typeof ApiWebhooksSmsProviderRoute
+  '/ops/restaurants/$id/look': typeof OpsRestaurantsIdLookRoute
+  '/ops/restaurants/$id/qr': typeof OpsRestaurantsIdQrRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
+  '/app': typeof AppRouteWithChildren
+  '/case-studies': typeof CaseStudiesRoute
+  '/consent-wording': typeof ConsentWordingRoute
+  '/contact': typeof ContactRoute
+  '/demo': typeof DemoRouteWithChildren
+  '/faq': typeof FaqRoute
+  '/for-business': typeof ForBusinessRoute
+  '/for-diners': typeof ForDinersRoute
   '/healthz': typeof HealthzRouteWithChildren
+  '/how-it-works': typeof HowItWorksRoute
+  '/link-expired': typeof LinkExpiredRoute
+  '/login': typeof LoginRoute
+  '/maintenance': typeof MaintenanceRoute
+  '/me': typeof MeRouteWithChildren
+  '/offline': typeof OfflineRoute
+  '/ops': typeof OpsRouteWithChildren
+  '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
+  '/session-expired': typeof SessionExpiredRoute
+  '/stamp': typeof StampRoute
+  '/terms': typeof TermsRoute
+  '/app/audit': typeof AppAuditRoute
+  '/app/campaigns': typeof AppCampaignsRouteWithChildren
+  '/app/credit': typeof AppCreditRoute
+  '/app/customers': typeof AppCustomersRouteWithChildren
+  '/app/loyalty': typeof AppLoyaltyRoute
+  '/app/menu': typeof AppMenuRoute
+  '/app/onboarding': typeof AppOnboardingRoute
+  '/app/qr': typeof AppQrRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app/specials': typeof AppSpecialsRoute
+  '/app/team': typeof AppTeamRoute
+  '/demo/outbox': typeof DemoOutboxRoute
+  '/demo/status': typeof DemoStatusRoute
+  '/dev/roles': typeof DevRolesRoute
   '/healthz/db': typeof HealthzDbRoute
+  '/me/restaurants': typeof MeRestaurantsRouteWithChildren
+  '/me/settings': typeof MeSettingsRoute
+  '/ops/campaigns': typeof OpsCampaignsRoute
+  '/ops/credit': typeof OpsCreditRoute
+  '/ops/restaurants': typeof OpsRestaurantsRouteWithChildren
+  '/r/$slug': typeof RSlugRouteWithChildren
+  '/s/$token': typeof STokenRoute
+  '/u/$token': typeof UTokenRoute
+  '/api/cron/dispatch': typeof ApiCronDispatchRoute
+  '/api/cron/nightly': typeof ApiCronNightlyRoute
+  '/api/cron/settle': typeof ApiCronSettleRoute
+  '/app/campaigns/$campaignId': typeof AppCampaignsCampaignIdRoute
+  '/app/campaigns/new': typeof AppCampaignsNewRoute
+  '/app/customers/$customerId': typeof AppCustomersCustomerIdRoute
+  '/me/restaurants/$slug': typeof MeRestaurantsSlugRoute
+  '/ops/restaurants/$id': typeof OpsRestaurantsIdRouteWithChildren
+  '/ops/restaurants/new': typeof OpsRestaurantsNewRoute
+  '/r/$slug/card': typeof RSlugCardRoute
+  '/r/$slug/join': typeof RSlugJoinRoute
+  '/api/webhooks/sms/$provider': typeof ApiWebhooksSmsProviderRoute
+  '/ops/restaurants/$id/look': typeof OpsRestaurantsIdLookRoute
+  '/ops/restaurants/$id/qr': typeof OpsRestaurantsIdQrRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
+  '/app': typeof AppRouteWithChildren
+  '/case-studies': typeof CaseStudiesRoute
+  '/consent-wording': typeof ConsentWordingRoute
+  '/contact': typeof ContactRoute
+  '/demo': typeof DemoRouteWithChildren
+  '/faq': typeof FaqRoute
+  '/for-business': typeof ForBusinessRoute
+  '/for-diners': typeof ForDinersRoute
   '/healthz': typeof HealthzRouteWithChildren
+  '/how-it-works': typeof HowItWorksRoute
+  '/link-expired': typeof LinkExpiredRoute
+  '/login': typeof LoginRoute
+  '/maintenance': typeof MaintenanceRoute
+  '/me': typeof MeRouteWithChildren
+  '/offline': typeof OfflineRoute
+  '/ops': typeof OpsRouteWithChildren
+  '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
+  '/session-expired': typeof SessionExpiredRoute
+  '/stamp': typeof StampRoute
+  '/terms': typeof TermsRoute
+  '/app/audit': typeof AppAuditRoute
+  '/app/campaigns': typeof AppCampaignsRouteWithChildren
+  '/app/credit': typeof AppCreditRoute
+  '/app/customers': typeof AppCustomersRouteWithChildren
+  '/app/loyalty': typeof AppLoyaltyRoute
+  '/app/menu': typeof AppMenuRoute
+  '/app/onboarding': typeof AppOnboardingRoute
+  '/app/qr': typeof AppQrRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app/specials': typeof AppSpecialsRoute
+  '/app/team': typeof AppTeamRoute
+  '/demo/outbox': typeof DemoOutboxRoute
+  '/demo/status': typeof DemoStatusRoute
+  '/dev/roles': typeof DevRolesRoute
   '/healthz/db': typeof HealthzDbRoute
+  '/me/restaurants': typeof MeRestaurantsRouteWithChildren
+  '/me/settings': typeof MeSettingsRoute
+  '/ops/campaigns': typeof OpsCampaignsRoute
+  '/ops/credit': typeof OpsCreditRoute
+  '/ops/restaurants': typeof OpsRestaurantsRouteWithChildren
+  '/r/$slug': typeof RSlugRouteWithChildren
+  '/s/$token': typeof STokenRoute
+  '/u/$token': typeof UTokenRoute
+  '/api/cron/dispatch': typeof ApiCronDispatchRoute
+  '/api/cron/nightly': typeof ApiCronNightlyRoute
+  '/api/cron/settle': typeof ApiCronSettleRoute
+  '/app/campaigns/$campaignId': typeof AppCampaignsCampaignIdRoute
+  '/app/campaigns/new': typeof AppCampaignsNewRoute
+  '/app/customers/$customerId': typeof AppCustomersCustomerIdRoute
+  '/me/restaurants/$slug': typeof MeRestaurantsSlugRoute
+  '/ops/restaurants/$id': typeof OpsRestaurantsIdRouteWithChildren
+  '/ops/restaurants/new': typeof OpsRestaurantsNewRoute
+  '/r/$slug/card': typeof RSlugCardRoute
+  '/r/$slug/join': typeof RSlugJoinRoute
+  '/api/webhooks/sms/$provider': typeof ApiWebhooksSmsProviderRoute
+  '/ops/restaurants/$id/look': typeof OpsRestaurantsIdLookRoute
+  '/ops/restaurants/$id/qr': typeof OpsRestaurantsIdQrRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app' | '/healthz' | '/healthz/db'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/case-studies'
+    | '/consent-wording'
+    | '/contact'
+    | '/demo'
+    | '/faq'
+    | '/for-business'
+    | '/for-diners'
+    | '/healthz'
+    | '/how-it-works'
+    | '/link-expired'
+    | '/login'
+    | '/maintenance'
+    | '/me'
+    | '/offline'
+    | '/ops'
+    | '/pricing'
+    | '/privacy'
+    | '/session-expired'
+    | '/stamp'
+    | '/terms'
+    | '/app/audit'
+    | '/app/campaigns'
+    | '/app/credit'
+    | '/app/customers'
+    | '/app/loyalty'
+    | '/app/menu'
+    | '/app/onboarding'
+    | '/app/qr'
+    | '/app/settings'
+    | '/app/specials'
+    | '/app/team'
+    | '/demo/outbox'
+    | '/demo/status'
+    | '/dev/roles'
+    | '/healthz/db'
+    | '/me/restaurants'
+    | '/me/settings'
+    | '/ops/campaigns'
+    | '/ops/credit'
+    | '/ops/restaurants'
+    | '/r/$slug'
+    | '/s/$token'
+    | '/u/$token'
+    | '/api/cron/dispatch'
+    | '/api/cron/nightly'
+    | '/api/cron/settle'
+    | '/app/campaigns/$campaignId'
+    | '/app/campaigns/new'
+    | '/app/customers/$customerId'
+    | '/me/restaurants/$slug'
+    | '/ops/restaurants/$id'
+    | '/ops/restaurants/new'
+    | '/r/$slug/card'
+    | '/r/$slug/join'
+    | '/api/webhooks/sms/$provider'
+    | '/ops/restaurants/$id/look'
+    | '/ops/restaurants/$id/qr'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/app' | '/healthz' | '/healthz/db'
-  id: '__root__' | '/' | '/app' | '/healthz' | '/healthz/db'
+  to:
+    | '/'
+    | '/app'
+    | '/case-studies'
+    | '/consent-wording'
+    | '/contact'
+    | '/demo'
+    | '/faq'
+    | '/for-business'
+    | '/for-diners'
+    | '/healthz'
+    | '/how-it-works'
+    | '/link-expired'
+    | '/login'
+    | '/maintenance'
+    | '/me'
+    | '/offline'
+    | '/ops'
+    | '/pricing'
+    | '/privacy'
+    | '/session-expired'
+    | '/stamp'
+    | '/terms'
+    | '/app/audit'
+    | '/app/campaigns'
+    | '/app/credit'
+    | '/app/customers'
+    | '/app/loyalty'
+    | '/app/menu'
+    | '/app/onboarding'
+    | '/app/qr'
+    | '/app/settings'
+    | '/app/specials'
+    | '/app/team'
+    | '/demo/outbox'
+    | '/demo/status'
+    | '/dev/roles'
+    | '/healthz/db'
+    | '/me/restaurants'
+    | '/me/settings'
+    | '/ops/campaigns'
+    | '/ops/credit'
+    | '/ops/restaurants'
+    | '/r/$slug'
+    | '/s/$token'
+    | '/u/$token'
+    | '/api/cron/dispatch'
+    | '/api/cron/nightly'
+    | '/api/cron/settle'
+    | '/app/campaigns/$campaignId'
+    | '/app/campaigns/new'
+    | '/app/customers/$customerId'
+    | '/me/restaurants/$slug'
+    | '/ops/restaurants/$id'
+    | '/ops/restaurants/new'
+    | '/r/$slug/card'
+    | '/r/$slug/join'
+    | '/api/webhooks/sms/$provider'
+    | '/ops/restaurants/$id/look'
+    | '/ops/restaurants/$id/qr'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/case-studies'
+    | '/consent-wording'
+    | '/contact'
+    | '/demo'
+    | '/faq'
+    | '/for-business'
+    | '/for-diners'
+    | '/healthz'
+    | '/how-it-works'
+    | '/link-expired'
+    | '/login'
+    | '/maintenance'
+    | '/me'
+    | '/offline'
+    | '/ops'
+    | '/pricing'
+    | '/privacy'
+    | '/session-expired'
+    | '/stamp'
+    | '/terms'
+    | '/app/audit'
+    | '/app/campaigns'
+    | '/app/credit'
+    | '/app/customers'
+    | '/app/loyalty'
+    | '/app/menu'
+    | '/app/onboarding'
+    | '/app/qr'
+    | '/app/settings'
+    | '/app/specials'
+    | '/app/team'
+    | '/demo/outbox'
+    | '/demo/status'
+    | '/dev/roles'
+    | '/healthz/db'
+    | '/me/restaurants'
+    | '/me/settings'
+    | '/ops/campaigns'
+    | '/ops/credit'
+    | '/ops/restaurants'
+    | '/r/$slug'
+    | '/s/$token'
+    | '/u/$token'
+    | '/api/cron/dispatch'
+    | '/api/cron/nightly'
+    | '/api/cron/settle'
+    | '/app/campaigns/$campaignId'
+    | '/app/campaigns/new'
+    | '/app/customers/$customerId'
+    | '/me/restaurants/$slug'
+    | '/ops/restaurants/$id'
+    | '/ops/restaurants/new'
+    | '/r/$slug/card'
+    | '/r/$slug/join'
+    | '/api/webhooks/sms/$provider'
+    | '/ops/restaurants/$id/look'
+    | '/ops/restaurants/$id/qr'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AppRoute: typeof AppRoute
+  AppRoute: typeof AppRouteWithChildren
+  CaseStudiesRoute: typeof CaseStudiesRoute
+  ConsentWordingRoute: typeof ConsentWordingRoute
+  ContactRoute: typeof ContactRoute
+  DemoRoute: typeof DemoRouteWithChildren
+  FaqRoute: typeof FaqRoute
+  ForBusinessRoute: typeof ForBusinessRoute
+  ForDinersRoute: typeof ForDinersRoute
   HealthzRoute: typeof HealthzRouteWithChildren
+  HowItWorksRoute: typeof HowItWorksRoute
+  LinkExpiredRoute: typeof LinkExpiredRoute
+  LoginRoute: typeof LoginRoute
+  MaintenanceRoute: typeof MaintenanceRoute
+  MeRoute: typeof MeRouteWithChildren
+  OfflineRoute: typeof OfflineRoute
+  OpsRoute: typeof OpsRouteWithChildren
+  PricingRoute: typeof PricingRoute
+  PrivacyRoute: typeof PrivacyRoute
+  SessionExpiredRoute: typeof SessionExpiredRoute
+  StampRoute: typeof StampRoute
+  TermsRoute: typeof TermsRoute
+  DevRolesRoute: typeof DevRolesRoute
+  RSlugRoute: typeof RSlugRouteWithChildren
+  STokenRoute: typeof STokenRoute
+  UTokenRoute: typeof UTokenRoute
+  ApiCronDispatchRoute: typeof ApiCronDispatchRoute
+  ApiCronNightlyRoute: typeof ApiCronNightlyRoute
+  ApiCronSettleRoute: typeof ApiCronSettleRoute
+  ApiWebhooksSmsProviderRoute: typeof ApiWebhooksSmsProviderRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -84,11 +784,242 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/case-studies': {
+      id: '/case-studies'
+      path: '/case-studies'
+      fullPath: '/case-studies'
+      preLoaderRoute: typeof CaseStudiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/consent-wording': {
+      id: '/consent-wording'
+      path: '/consent-wording'
+      fullPath: '/consent-wording'
+      preLoaderRoute: typeof ConsentWordingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo': {
+      id: '/demo'
+      path: '/demo'
+      fullPath: '/demo'
+      preLoaderRoute: typeof DemoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/for-business': {
+      id: '/for-business'
+      path: '/for-business'
+      fullPath: '/for-business'
+      preLoaderRoute: typeof ForBusinessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/for-diners': {
+      id: '/for-diners'
+      path: '/for-diners'
+      fullPath: '/for-diners'
+      preLoaderRoute: typeof ForDinersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/healthz': {
       id: '/healthz'
       path: '/healthz'
       fullPath: '/healthz'
       preLoaderRoute: typeof HealthzRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/how-it-works': {
+      id: '/how-it-works'
+      path: '/how-it-works'
+      fullPath: '/how-it-works'
+      preLoaderRoute: typeof HowItWorksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/link-expired': {
+      id: '/link-expired'
+      path: '/link-expired'
+      fullPath: '/link-expired'
+      preLoaderRoute: typeof LinkExpiredRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/maintenance': {
+      id: '/maintenance'
+      path: '/maintenance'
+      fullPath: '/maintenance'
+      preLoaderRoute: typeof MaintenanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/me': {
+      id: '/me'
+      path: '/me'
+      fullPath: '/me'
+      preLoaderRoute: typeof MeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/offline': {
+      id: '/offline'
+      path: '/offline'
+      fullPath: '/offline'
+      preLoaderRoute: typeof OfflineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ops': {
+      id: '/ops'
+      path: '/ops'
+      fullPath: '/ops'
+      preLoaderRoute: typeof OpsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/session-expired': {
+      id: '/session-expired'
+      path: '/session-expired'
+      fullPath: '/session-expired'
+      preLoaderRoute: typeof SessionExpiredRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stamp': {
+      id: '/stamp'
+      path: '/stamp'
+      fullPath: '/stamp'
+      preLoaderRoute: typeof StampRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/audit': {
+      id: '/app/audit'
+      path: '/audit'
+      fullPath: '/app/audit'
+      preLoaderRoute: typeof AppAuditRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/campaigns': {
+      id: '/app/campaigns'
+      path: '/campaigns'
+      fullPath: '/app/campaigns'
+      preLoaderRoute: typeof AppCampaignsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/credit': {
+      id: '/app/credit'
+      path: '/credit'
+      fullPath: '/app/credit'
+      preLoaderRoute: typeof AppCreditRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/customers': {
+      id: '/app/customers'
+      path: '/customers'
+      fullPath: '/app/customers'
+      preLoaderRoute: typeof AppCustomersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/loyalty': {
+      id: '/app/loyalty'
+      path: '/loyalty'
+      fullPath: '/app/loyalty'
+      preLoaderRoute: typeof AppLoyaltyRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/menu': {
+      id: '/app/menu'
+      path: '/menu'
+      fullPath: '/app/menu'
+      preLoaderRoute: typeof AppMenuRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/onboarding': {
+      id: '/app/onboarding'
+      path: '/onboarding'
+      fullPath: '/app/onboarding'
+      preLoaderRoute: typeof AppOnboardingRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/qr': {
+      id: '/app/qr'
+      path: '/qr'
+      fullPath: '/app/qr'
+      preLoaderRoute: typeof AppQrRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/settings': {
+      id: '/app/settings'
+      path: '/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/specials': {
+      id: '/app/specials'
+      path: '/specials'
+      fullPath: '/app/specials'
+      preLoaderRoute: typeof AppSpecialsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/team': {
+      id: '/app/team'
+      path: '/team'
+      fullPath: '/app/team'
+      preLoaderRoute: typeof AppTeamRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/demo/outbox': {
+      id: '/demo/outbox'
+      path: '/outbox'
+      fullPath: '/demo/outbox'
+      preLoaderRoute: typeof DemoOutboxRouteImport
+      parentRoute: typeof DemoRoute
+    }
+    '/demo/status': {
+      id: '/demo/status'
+      path: '/status'
+      fullPath: '/demo/status'
+      preLoaderRoute: typeof DemoStatusRouteImport
+      parentRoute: typeof DemoRoute
+    }
+    '/dev/roles': {
+      id: '/dev/roles'
+      path: '/dev/roles'
+      fullPath: '/dev/roles'
+      preLoaderRoute: typeof DevRolesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/healthz/db': {
@@ -98,8 +1029,230 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HealthzDbRouteImport
       parentRoute: typeof HealthzRoute
     }
+    '/me/restaurants': {
+      id: '/me/restaurants'
+      path: '/restaurants'
+      fullPath: '/me/restaurants'
+      preLoaderRoute: typeof MeRestaurantsRouteImport
+      parentRoute: typeof MeRoute
+    }
+    '/me/settings': {
+      id: '/me/settings'
+      path: '/settings'
+      fullPath: '/me/settings'
+      preLoaderRoute: typeof MeSettingsRouteImport
+      parentRoute: typeof MeRoute
+    }
+    '/ops/campaigns': {
+      id: '/ops/campaigns'
+      path: '/campaigns'
+      fullPath: '/ops/campaigns'
+      preLoaderRoute: typeof OpsCampaignsRouteImport
+      parentRoute: typeof OpsRoute
+    }
+    '/ops/credit': {
+      id: '/ops/credit'
+      path: '/credit'
+      fullPath: '/ops/credit'
+      preLoaderRoute: typeof OpsCreditRouteImport
+      parentRoute: typeof OpsRoute
+    }
+    '/ops/restaurants': {
+      id: '/ops/restaurants'
+      path: '/restaurants'
+      fullPath: '/ops/restaurants'
+      preLoaderRoute: typeof OpsRestaurantsRouteImport
+      parentRoute: typeof OpsRoute
+    }
+    '/r/$slug': {
+      id: '/r/$slug'
+      path: '/r/$slug'
+      fullPath: '/r/$slug'
+      preLoaderRoute: typeof RSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/s/$token': {
+      id: '/s/$token'
+      path: '/s/$token'
+      fullPath: '/s/$token'
+      preLoaderRoute: typeof STokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/u/$token': {
+      id: '/u/$token'
+      path: '/u/$token'
+      fullPath: '/u/$token'
+      preLoaderRoute: typeof UTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/cron/dispatch': {
+      id: '/api/cron/dispatch'
+      path: '/api/cron/dispatch'
+      fullPath: '/api/cron/dispatch'
+      preLoaderRoute: typeof ApiCronDispatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/cron/nightly': {
+      id: '/api/cron/nightly'
+      path: '/api/cron/nightly'
+      fullPath: '/api/cron/nightly'
+      preLoaderRoute: typeof ApiCronNightlyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/cron/settle': {
+      id: '/api/cron/settle'
+      path: '/api/cron/settle'
+      fullPath: '/api/cron/settle'
+      preLoaderRoute: typeof ApiCronSettleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/campaigns/$campaignId': {
+      id: '/app/campaigns/$campaignId'
+      path: '/$campaignId'
+      fullPath: '/app/campaigns/$campaignId'
+      preLoaderRoute: typeof AppCampaignsCampaignIdRouteImport
+      parentRoute: typeof AppCampaignsRoute
+    }
+    '/app/campaigns/new': {
+      id: '/app/campaigns/new'
+      path: '/new'
+      fullPath: '/app/campaigns/new'
+      preLoaderRoute: typeof AppCampaignsNewRouteImport
+      parentRoute: typeof AppCampaignsRoute
+    }
+    '/app/customers/$customerId': {
+      id: '/app/customers/$customerId'
+      path: '/$customerId'
+      fullPath: '/app/customers/$customerId'
+      preLoaderRoute: typeof AppCustomersCustomerIdRouteImport
+      parentRoute: typeof AppCustomersRoute
+    }
+    '/me/restaurants/$slug': {
+      id: '/me/restaurants/$slug'
+      path: '/$slug'
+      fullPath: '/me/restaurants/$slug'
+      preLoaderRoute: typeof MeRestaurantsSlugRouteImport
+      parentRoute: typeof MeRestaurantsRoute
+    }
+    '/ops/restaurants/$id': {
+      id: '/ops/restaurants/$id'
+      path: '/$id'
+      fullPath: '/ops/restaurants/$id'
+      preLoaderRoute: typeof OpsRestaurantsIdRouteImport
+      parentRoute: typeof OpsRestaurantsRoute
+    }
+    '/ops/restaurants/new': {
+      id: '/ops/restaurants/new'
+      path: '/new'
+      fullPath: '/ops/restaurants/new'
+      preLoaderRoute: typeof OpsRestaurantsNewRouteImport
+      parentRoute: typeof OpsRestaurantsRoute
+    }
+    '/r/$slug/card': {
+      id: '/r/$slug/card'
+      path: '/card'
+      fullPath: '/r/$slug/card'
+      preLoaderRoute: typeof RSlugCardRouteImport
+      parentRoute: typeof RSlugRoute
+    }
+    '/r/$slug/join': {
+      id: '/r/$slug/join'
+      path: '/join'
+      fullPath: '/r/$slug/join'
+      preLoaderRoute: typeof RSlugJoinRouteImport
+      parentRoute: typeof RSlugRoute
+    }
+    '/api/webhooks/sms/$provider': {
+      id: '/api/webhooks/sms/$provider'
+      path: '/api/webhooks/sms/$provider'
+      fullPath: '/api/webhooks/sms/$provider'
+      preLoaderRoute: typeof ApiWebhooksSmsProviderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ops/restaurants/$id/look': {
+      id: '/ops/restaurants/$id/look'
+      path: '/look'
+      fullPath: '/ops/restaurants/$id/look'
+      preLoaderRoute: typeof OpsRestaurantsIdLookRouteImport
+      parentRoute: typeof OpsRestaurantsIdRoute
+    }
+    '/ops/restaurants/$id/qr': {
+      id: '/ops/restaurants/$id/qr'
+      path: '/qr'
+      fullPath: '/ops/restaurants/$id/qr'
+      preLoaderRoute: typeof OpsRestaurantsIdQrRouteImport
+      parentRoute: typeof OpsRestaurantsIdRoute
+    }
   }
 }
+
+interface AppCampaignsRouteChildren {
+  AppCampaignsCampaignIdRoute: typeof AppCampaignsCampaignIdRoute
+  AppCampaignsNewRoute: typeof AppCampaignsNewRoute
+}
+
+const AppCampaignsRouteChildren: AppCampaignsRouteChildren = {
+  AppCampaignsCampaignIdRoute: AppCampaignsCampaignIdRoute,
+  AppCampaignsNewRoute: AppCampaignsNewRoute,
+}
+
+const AppCampaignsRouteWithChildren = AppCampaignsRoute._addFileChildren(
+  AppCampaignsRouteChildren,
+)
+
+interface AppCustomersRouteChildren {
+  AppCustomersCustomerIdRoute: typeof AppCustomersCustomerIdRoute
+}
+
+const AppCustomersRouteChildren: AppCustomersRouteChildren = {
+  AppCustomersCustomerIdRoute: AppCustomersCustomerIdRoute,
+}
+
+const AppCustomersRouteWithChildren = AppCustomersRoute._addFileChildren(
+  AppCustomersRouteChildren,
+)
+
+interface AppRouteChildren {
+  AppAuditRoute: typeof AppAuditRoute
+  AppCampaignsRoute: typeof AppCampaignsRouteWithChildren
+  AppCreditRoute: typeof AppCreditRoute
+  AppCustomersRoute: typeof AppCustomersRouteWithChildren
+  AppLoyaltyRoute: typeof AppLoyaltyRoute
+  AppMenuRoute: typeof AppMenuRoute
+  AppOnboardingRoute: typeof AppOnboardingRoute
+  AppQrRoute: typeof AppQrRoute
+  AppSettingsRoute: typeof AppSettingsRoute
+  AppSpecialsRoute: typeof AppSpecialsRoute
+  AppTeamRoute: typeof AppTeamRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppAuditRoute: AppAuditRoute,
+  AppCampaignsRoute: AppCampaignsRouteWithChildren,
+  AppCreditRoute: AppCreditRoute,
+  AppCustomersRoute: AppCustomersRouteWithChildren,
+  AppLoyaltyRoute: AppLoyaltyRoute,
+  AppMenuRoute: AppMenuRoute,
+  AppOnboardingRoute: AppOnboardingRoute,
+  AppQrRoute: AppQrRoute,
+  AppSettingsRoute: AppSettingsRoute,
+  AppSpecialsRoute: AppSpecialsRoute,
+  AppTeamRoute: AppTeamRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
+interface DemoRouteChildren {
+  DemoOutboxRoute: typeof DemoOutboxRoute
+  DemoStatusRoute: typeof DemoStatusRoute
+}
+
+const DemoRouteChildren: DemoRouteChildren = {
+  DemoOutboxRoute: DemoOutboxRoute,
+  DemoStatusRoute: DemoStatusRoute,
+}
+
+const DemoRouteWithChildren = DemoRoute._addFileChildren(DemoRouteChildren)
 
 interface HealthzRouteChildren {
   HealthzDbRoute: typeof HealthzDbRoute
@@ -112,10 +1265,114 @@ const HealthzRouteChildren: HealthzRouteChildren = {
 const HealthzRouteWithChildren =
   HealthzRoute._addFileChildren(HealthzRouteChildren)
 
+interface MeRestaurantsRouteChildren {
+  MeRestaurantsSlugRoute: typeof MeRestaurantsSlugRoute
+}
+
+const MeRestaurantsRouteChildren: MeRestaurantsRouteChildren = {
+  MeRestaurantsSlugRoute: MeRestaurantsSlugRoute,
+}
+
+const MeRestaurantsRouteWithChildren = MeRestaurantsRoute._addFileChildren(
+  MeRestaurantsRouteChildren,
+)
+
+interface MeRouteChildren {
+  MeRestaurantsRoute: typeof MeRestaurantsRouteWithChildren
+  MeSettingsRoute: typeof MeSettingsRoute
+}
+
+const MeRouteChildren: MeRouteChildren = {
+  MeRestaurantsRoute: MeRestaurantsRouteWithChildren,
+  MeSettingsRoute: MeSettingsRoute,
+}
+
+const MeRouteWithChildren = MeRoute._addFileChildren(MeRouteChildren)
+
+interface OpsRestaurantsIdRouteChildren {
+  OpsRestaurantsIdLookRoute: typeof OpsRestaurantsIdLookRoute
+  OpsRestaurantsIdQrRoute: typeof OpsRestaurantsIdQrRoute
+}
+
+const OpsRestaurantsIdRouteChildren: OpsRestaurantsIdRouteChildren = {
+  OpsRestaurantsIdLookRoute: OpsRestaurantsIdLookRoute,
+  OpsRestaurantsIdQrRoute: OpsRestaurantsIdQrRoute,
+}
+
+const OpsRestaurantsIdRouteWithChildren =
+  OpsRestaurantsIdRoute._addFileChildren(OpsRestaurantsIdRouteChildren)
+
+interface OpsRestaurantsRouteChildren {
+  OpsRestaurantsIdRoute: typeof OpsRestaurantsIdRouteWithChildren
+  OpsRestaurantsNewRoute: typeof OpsRestaurantsNewRoute
+}
+
+const OpsRestaurantsRouteChildren: OpsRestaurantsRouteChildren = {
+  OpsRestaurantsIdRoute: OpsRestaurantsIdRouteWithChildren,
+  OpsRestaurantsNewRoute: OpsRestaurantsNewRoute,
+}
+
+const OpsRestaurantsRouteWithChildren = OpsRestaurantsRoute._addFileChildren(
+  OpsRestaurantsRouteChildren,
+)
+
+interface OpsRouteChildren {
+  OpsCampaignsRoute: typeof OpsCampaignsRoute
+  OpsCreditRoute: typeof OpsCreditRoute
+  OpsRestaurantsRoute: typeof OpsRestaurantsRouteWithChildren
+}
+
+const OpsRouteChildren: OpsRouteChildren = {
+  OpsCampaignsRoute: OpsCampaignsRoute,
+  OpsCreditRoute: OpsCreditRoute,
+  OpsRestaurantsRoute: OpsRestaurantsRouteWithChildren,
+}
+
+const OpsRouteWithChildren = OpsRoute._addFileChildren(OpsRouteChildren)
+
+interface RSlugRouteChildren {
+  RSlugCardRoute: typeof RSlugCardRoute
+  RSlugJoinRoute: typeof RSlugJoinRoute
+}
+
+const RSlugRouteChildren: RSlugRouteChildren = {
+  RSlugCardRoute: RSlugCardRoute,
+  RSlugJoinRoute: RSlugJoinRoute,
+}
+
+const RSlugRouteWithChildren = RSlugRoute._addFileChildren(RSlugRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AppRoute: AppRoute,
+  AppRoute: AppRouteWithChildren,
+  CaseStudiesRoute: CaseStudiesRoute,
+  ConsentWordingRoute: ConsentWordingRoute,
+  ContactRoute: ContactRoute,
+  DemoRoute: DemoRouteWithChildren,
+  FaqRoute: FaqRoute,
+  ForBusinessRoute: ForBusinessRoute,
+  ForDinersRoute: ForDinersRoute,
   HealthzRoute: HealthzRouteWithChildren,
+  HowItWorksRoute: HowItWorksRoute,
+  LinkExpiredRoute: LinkExpiredRoute,
+  LoginRoute: LoginRoute,
+  MaintenanceRoute: MaintenanceRoute,
+  MeRoute: MeRouteWithChildren,
+  OfflineRoute: OfflineRoute,
+  OpsRoute: OpsRouteWithChildren,
+  PricingRoute: PricingRoute,
+  PrivacyRoute: PrivacyRoute,
+  SessionExpiredRoute: SessionExpiredRoute,
+  StampRoute: StampRoute,
+  TermsRoute: TermsRoute,
+  DevRolesRoute: DevRolesRoute,
+  RSlugRoute: RSlugRouteWithChildren,
+  STokenRoute: STokenRoute,
+  UTokenRoute: UTokenRoute,
+  ApiCronDispatchRoute: ApiCronDispatchRoute,
+  ApiCronNightlyRoute: ApiCronNightlyRoute,
+  ApiCronSettleRoute: ApiCronSettleRoute,
+  ApiWebhooksSmsProviderRoute: ApiWebhooksSmsProviderRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

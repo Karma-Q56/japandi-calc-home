@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ArrowUpRight, Check, Loader2, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { whatsappLink } from '@/lib/patron';
+import { getDataModeFn, submitLeadFn } from '@/server/live';
 
 const consentText = 'I agree that Patron may contact me on WhatsApp or by phone about a visit.';
 
@@ -10,6 +11,14 @@ type Status = 'idle' | 'loading' | 'success' | 'error';
 export function LeadForm() {
   const [status, setStatus] = useState<Status>('idle');
   const [name, setName] = useState('');
+  const [live, setLive] = useState(false);
+  useEffect(() => {
+    let on = true;
+    getDataModeFn()
+      .then((r) => { if (on && r.mode === 'live') setLive(true); })
+      .catch(() => {});
+    return () => { on = false; };
+  }, []);
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const data = new FormData(e.currentTarget);
@@ -18,9 +27,27 @@ export function LeadForm() {
     const contactName = get('contact_name');
     setName(contactName);
     setStatus('loading');
-    // This is a front-end-only preview; do not imply that a booking was sent or
-    // persist a visitor's contact details until a backend is available.
-    setStatus('success');
+    if (!live) {
+      // This is a front-end-only preview; do not imply that a booking was sent or
+      // persist a visitor's contact details until a backend is available.
+      setStatus('success');
+      return;
+    }
+    const res = await submitLeadFn({
+      data: {
+        restaurantName: get('restaurant_name'),
+        contactName,
+        phone: get('phone'),
+        suburb: get('area') || undefined,
+        venueType: get('restaurant_type') || undefined,
+        quietTime: get('quiet_day') || undefined,
+        notes: get('notes') || undefined,
+        consent: data.get('consent') === 'on',
+        consentVersion: 'v1',
+        website: get('website') || undefined,
+      },
+    });
+    setStatus(res.ok ? 'success' : 'error');
   };
   return <section className="founding-section form-section" id="visit"><div className="page-width form-inner">
     <div className="founding-copy" data-reveal><div className="eyebrow"><span className="eyebrow-line" />Book a 15-minute visit</div>

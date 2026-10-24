@@ -1,6 +1,6 @@
 // Application configuration - browser-safe constants
 export const APP_NAME = 'Patron';
-export const APP_ENV = import.meta.env.APP_ENV || 'development';
+export const APP_ENV = (import.meta.env as { APP_ENV?: string }).APP_ENV || 'development';
 export const IS_PRODUCTION = APP_ENV === 'production';
 export const IS_STAGING = APP_ENV === 'staging';
 export const IS_DEVELOPMENT = APP_ENV === 'development';
@@ -44,26 +44,26 @@ export const QUIET_HOURS = {
 
 // WhatsApp configuration
 export const WHATSAPP = {
-  number: import.meta.env.WHATSAPP_NUMBER || '',
+  number: (import.meta.env as { WHATSAPP_NUMBER?: string }).WHATSAPP_NUMBER || '',
   businessName: APP_NAME,
 };
 
 // SMS configuration
 export const SMS = {
-  defaultSender: import.meta.env.SMS_DEFAULT_SENDER || APP_NAME,
+  defaultSender: (import.meta.env as { SMS_DEFAULT_SENDER?: string }).SMS_DEFAULT_SENDER || APP_NAME,
   otpCostCents: 30, // R0.30 per OTP in v1
 };
 
 // Operator configuration
-export const OPERATOR_PHONES = (import.meta.env.OPERATOR_PHONES || '').split(',').filter(Boolean);
+export const OPERATOR_PHONES = ((import.meta.env as { OPERATOR_PHONES?: string }).OPERATOR_PHONES || '').split(',').filter(Boolean);
 
 // Application URLs
-export const APP_URL = import.meta.env.APP_URL || 'http://localhost:5173';
+export const APP_URL = (import.meta.env as { APP_URL?: string }).APP_URL || 'http://localhost:5173';
 
 // Reserved slugs that cannot be used by restaurants
 export const RESERVED_SLUGS = new Set([
   'app', 'me', 'stamp', 'ops', 'u', 'api', 'login', 'r', 's',
-  'privacy', 'terms', 'healthz', 'sw', 'manifest',
+  'privacy', 'terms', 'healthz', 'sw', 'manifest', 'for-diners',
 ]);
 
 // PWA configuration

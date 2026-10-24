@@ -16,6 +16,7 @@
     "test:e2e": "playwright test",
     "test:watch": "vitest",
     "db:migrate": "node scripts/migrate.mjs",
+    "db:seed:dev": "node scripts/seed-dev.mjs",
     "db:role": "node scripts/provision-app-role.mjs",
     "db:reset": "node scripts/reset-db.mjs",
     "cf-typegen": "wrangler types",
@@ -25,6 +26,9 @@
     "rolldown": "1.2.1"
   },
   "dependencies": {
+    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
+    "@fontsource-variable/dm-sans": "^5.3.0",
+    "@fontsource-variable/lora": "^5.3.0",
     "@hookform/resolvers": "^5.2.2",
     "@neondatabase/serverless": "^1.2.0",
     "@radix-ui/react-accordion": "^1.2.12",
@@ -65,6 +69,7 @@
     "drizzle-orm": "^0.45.4",
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.4.2",
+    "jsqr": "^1.4.0",
     "lucide-react": "^0.575.0",
     "react": "^19.2.0",
     "react-day-picker": "^9.14.0",

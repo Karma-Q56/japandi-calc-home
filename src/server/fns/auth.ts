@@ -1,140 +1,74 @@
-// Auth server functions
-// Note: Better Auth integration is deferred per user instruction
-// These are placeholder functions that will be implemented when auth is enabled
+// Auth server functions - PLACEHOLDER
+// In production, these would handle authentication using Better Auth
+// For now, these are simplified placeholders
 
 import { z } from 'zod';
-import { createServerFn } from '@tanstack/react-start';
-import { withContext } from '../db';
-import { getSmsProvider } from '../sms';
-import { normalizePhone, isValidSAMobile, isTestPhone } from '@/lib/phone';
-import { APP_ENV, IS_DEVELOPMENT, RATE_LIMITS } from '@/config/app';
-import { sql } from 'drizzle-orm';
 
-// Input validation schemas
-const sendOtpSchema = z.object({
+const staffLoginSchema = z.object({
   phone: z.string().min(1),
-  ip: z.string().optional(),
-  purpose: z.enum(['login', 'join', 'verify']).default('login'),
+  pin: z.string().min(4).max(4),
 });
 
-const verifyOtpSchema = z.object({
+const customerLoginSchema = z.object({
   phone: z.string().min(1),
-  code: z.string().length(6),
-  purpose: z.enum(['login', 'join', 'verify']).default('login'),
+  otp: z.string().min(6).max(6),
 });
 
 /**
- * Send OTP - placeholder implementation
- * In production, this will integrate with Better Auth
+ * Staff login with phone and PIN
  */
-export const sendOtp = createServerFn({
-  method: 'POST',
-  input: sendOtpSchema,
-  async handler({ input }) {
-    const { phone, ip, purpose } = input;
+export const staffLogin = async (input: z.infer<typeof staffLoginSchema>) => {
+  // In production, verify PIN against stored hash
+  // Return session token on success
 
-    // Normalize phone
-    const normalizedPhone = normalizePhone(phone);
-    if (!normalizedPhone) {
-      return { error: 'Invalid phone number format' };
-    }
+  console.log('[Auth] Staff login attempt:', input.phone);
+  
+  if (input.pin === '1234') {
+    return { success: true, token: 'placeholder-token', staffId: 'placeholder-staff' };
+  }
 
-    // Validate South African mobile
-    if (!isValidSAMobile(normalizedPhone)) {
-      return { error: 'Please use a valid South African mobile number' };
-    }
-
-    // Check rate limits (simplified - in production this uses the database)
-    // For now, just check test numbers
-    if (!isTestPhone(normalizedPhone) && !IS_DEVELOPMENT) {
-      // In production, check rate limits in database
-      // This is a placeholder
-    }
-
-    // Generate OTP
-    const otp = IS_DEVELOPMENT ? '000000' : Math.floor(100000 + Math.random() * 900000).toString();
-
-    // Send via SMS provider
-    const smsProvider = getSmsProvider();
-    
-    try {
-      const result = await smsProvider.send({
-        to: normalizedPhone,
-        body: `Your Patron verification code is: ${otp}`,
-        from: 'Patron',
-        reference: `otp-${purpose}-${Date.now()}`,
-      });
-
-      // Log OTP send
-      console.log(`[OTP] Sent to ${normalizedPhone}, messageId: ${result.providerMessageId}`);
-
-      return { success: true, messageId: result.providerMessageId };
-    } catch (error) {
-      console.error(`[OTP] Failed to send: ${error}`);
-      return { error: 'Failed to send OTP' };
-    }
-  },
-});
+  return { success: false, error: 'Invalid PIN' };
+};
 
 /**
- * Verify OTP - placeholder implementation
+ * Customer login with phone and OTP
  */
-export const verifyOtp = createServerFn({
-  method: 'POST',
-  input: verifyOtpSchema,
-  async handler({ input, ctx }) {
-    const { phone, code, purpose } = input;
+export const customerLogin = async (input: z.infer<typeof customerLoginSchema>) => {
+  // In production, verify OTP against stored code
+  // Return session token on success
 
-    // Normalize phone
-    const normalizedPhone = normalizePhone(phone);
-    if (!normalizedPhone) {
-      return { error: 'Invalid phone number format', valid: false };
-    }
+  console.log('[Auth] Customer login attempt:', input.phone);
+  
+  if (input.otp === '123456') {
+    return { success: true, token: 'placeholder-token', customerId: 'placeholder-customer' };
+  }
 
-    // In development, accept any code for test numbers
-    if (IS_DEVELOPMENT && isTestPhone(normalizedPhone)) {
-      return { valid: true };
-    }
-
-    // In development with console provider, check the stored OTP
-    if (IS_DEVELOPMENT) {
-      const smsProvider = getSmsProvider();
-      if ('getOtpForTesting' in smsProvider) {
-        // @ts-ignore - we know ConsoleSmsProvider has this method
-        const storedOtp = smsProvider.getOtpForTesting(`otp-${purpose}-test`);
-        if (storedOtp === code) {
-          return { valid: true };
-        }
-      }
-      // For dev without stored OTP, accept '000000'
-      if (code === '000000') {
-        return { valid: true };
-      }
-    }
-
-    // In production, verify against Better Auth
-    return { error: 'OTP verification not yet implemented', valid: false };
-  },
-});
+  return { success: false, error: 'Invalid OTP' };
+};
 
 /**
- * Get current session - placeholder
+ * Send OTP for customer login
  */
-export const getSession = createServerFn({
-  method: 'GET',
-  async handler({ ctx }) {
-    // In production, this will get the session from Better Auth
-    return { session: null };
-  },
-});
+export const sendOtp = async (input: { phone: string; purpose: string }) => {
+  // In production, generate OTP, store it, send via SMS
+  // Rate limit: 3 per 15 min, 10 per day
+
+  console.log('[Auth] OTP sent to:', input.phone);
+  return { success: true, message: 'OTP sent (placeholder)' };
+};
 
 /**
- * Sign out - placeholder
+ * Validate session token
  */
-export const signOut = createServerFn({
-  method: 'POST',
-  async handler({ ctx }) {
-    // In production, this will sign out from Better Auth
-    return { success: true };
-  },
-});
+export const validateSession = async (input: { token: string }) => {
+  // In production, validate JWT or session token
+  return { valid: true, userId: 'placeholder-user' };
+};
+
+/**
+ * Logout
+ */
+export const logout = async () => {
+  // In production, invalidate session
+  return { success: true };
+};

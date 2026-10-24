@@ -1,72 +1,163 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Coffee, Gift, LayoutDashboard, Menu, MessageSquare, QrCode, Smartphone, Users, WalletCards, Check, LockKeyhole, RotateCcw, Send, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { brand, rand } from '@/lib/patron';
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { Outlet, useChildMatches } from "@tanstack/react-router";
+import { api } from "@/api";
+import { APP_NAME } from "@/config/app";
+import { demoRepo } from "@/data/repo";
+import { useDemoState } from "@/data/useDemoState";
+import { requireRole } from "@/data/session";
+import { OwnerSideNav, OwnerTabs } from "@/components/patron/OwnerNav";
+import { markOutletComponent } from "@/lib/nested";
+import { PatronBrand } from "@/lib/patron-brand";
 
-export const Route = createFileRoute('/app')({ component: ProductDemo });
+export const Route = createFileRoute("/app")({
+  beforeLoad: () => {
+    if (!requireRole("owner", "manager")(demoRepo.read().session)) {
+      throw redirect({ to: "/login" });
+    }
+  },
+  component: markOutletComponent(OwnerShell),
+});
 
-type Member = { name: string; phone: string; joined: string; lastVisit: string; stamps: number; optedIn: boolean; birthday?: string };
-type Campaign = { message: string; audience: string; code: string; sent: string; recipients: number; redeemed: number };
-type DemoData = { members: Member[]; campaigns: Campaign[]; credits: number; balance: number; menu: { name: string; price: number }[]; special: string; restaurant: string; lastStamp: Record<string, number> };
-const KEY = 'patron-product-demo-v1';
-function birthdayThisWeek(value?: string) {
-  if (!value) return false;
-  const [, month, day] = value.split('-').map(Number);
-  const today = new Date();
-  return Array.from({ length: 7 }, (_, offset) => {
-    const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() + offset);
-    return date.getMonth() + 1 === month && date.getDate() === day;
-  }).some(Boolean);
+function OwnerShell() {
+  const state = useDemoState();
+  const children = useChildMatches();
+  const restaurant =
+    state.restaurants.find((item) => item.id === state.session.restaurantId) ??
+    state.restaurants[0]!;
+  const brand = (
+    <div className="ox-brand">
+      <PatronBrand className="ox-brand-wordmark" />
+      <span>
+        <strong>{restaurant.name}</strong>
+        <small>Owner view</small>
+      </span>
+    </div>
+  );
+  return (
+    <div className="ox">
+      <aside className="ox-side">
+        {brand}
+        <OwnerSideNav />
+        <p className="ox-foot">
+          Powered by {APP_NAME}.<br />
+          Demo data. Nothing is sent to real guests.
+        </p>
+      </aside>
+      <div className="ox-main">
+        <header className="ox-top">{brand}</header>
+        {children.length > 0 ? <Outlet /> : <Overview restaurantId={restaurant.id} />}
+      </div>
+      <OwnerTabs />
+    </div>
+  );
 }
-const initial: DemoData = {
-  restaurant: 'The Daily Grind', balance: 42, credits: 500, special: 'Tuesday coffee & breakfast special',
-  menu: [{ name: 'Flat white', price: 38 }, { name: 'Butter croissant', price: 32 }, { name: 'Avocado toast', price: 78 }, { name: 'Shakshuka', price: 95 }],
-  members: [
-    { name: 'Thandi Mokoena', phone: '082 555 0142', joined: '2026-10-01', lastVisit: new Date().toISOString(), stamps: 5, optedIn: true },
-    { name: 'James Nkosi', phone: '082 555 0168', joined: '2026-09-18', lastVisit: '2026-09-04T10:00:00.000Z', stamps: 3, optedIn: true },
-    { name: 'Sipho Pillay', phone: '082 555 0191', joined: '2026-10-08', lastVisit: '2026-10-14T10:00:00.000Z', stamps: 7, optedIn: false },
-    { name: 'Lerato Dlamini', phone: '082 555 0117', joined: '2026-10-10', lastVisit: '2026-09-01T10:00:00.000Z', stamps: 2, optedIn: true },
-  ], campaigns: [{ message: 'We miss you! Visit this Tuesday for a coffee on us with any breakfast.', audience: 'lapsed', code: 'TUESDAY', sent: '2026-10-12', recipients: 2, redeemed: 1 }], lastStamp: {},
-};
-type View = 'overview' | 'customers' | 'campaigns' | 'menu' | 'staff' | 'card' | 'public';
-function loadDemo(): DemoData { try { const value = localStorage.getItem(KEY); return value ? { ...initial, ...JSON.parse(value) } : initial; } catch { return initial; } }
-function stampSvg() { return <svg className="pixel-stamp" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 2h14v3h3v14h-3v3H5v-3H2V5h3V2zm2 3v2H5v10h2v2h10v-2h2V7h-2V5H7zm2 6h2v3h2v-3h2V9h2v5h-2v2h-4v-2H9v-3z" /></svg>; }
-function ProductDemo() {
-  const [data, setData] = useState<DemoData>(initial);
-  const [view, setView] = useState<View>('overview');
-  const [notice, setNotice] = useState('');
-  useEffect(() => { setData(loadDemo()); }, []);
-  const update = (next: DemoData) => { setData(next); try { localStorage.setItem(KEY, JSON.stringify(next)); } catch { /* Browser storage may be unavailable; keep this demo interaction usable. */ } };
-  const announce = (text: string) => { setNotice(text); window.setTimeout(() => setNotice(''), 3600); };
-  return <div className="product-demo">
-    <header className="site-header"><div className="page-width header-inner"><Link to="/" className="wordmark">{stampSvg()}<span>{brand.name}<span className="wordmark-dot">.</span></span></Link><span className="demo-badge">LOCAL PRODUCT PREVIEW</span><Link to="/" className="app-back"><ArrowLeft size={15}/> Marketing site</Link></div></header>
-    <main className="app-shell page-width">
-      <aside className="app-sidebar"><div className="app-place"><span className="app-place-icon"><Coffee size={18}/></span><span><strong>{data.restaurant}</strong><small>Johannesburg · Demo venue</small></span></div><nav aria-label="Product preview"><p className="app-nav-label">WORKSPACE</p>{([['overview','Overview',LayoutDashboard],['customers','Customers',Users],['campaigns','Campaigns',MessageSquare],['menu','Menu & specials',Menu],['staff','Staff stamps',LockKeyhole],['card','My loyalty card',WalletCards],['public','Restaurant page',Smartphone]] as const).map(([id,label,Icon])=><button key={id} className={`app-nav-item ${view===id?'active':''}`} onClick={()=>setView(id)}><Icon size={17}/>{label}</button>)}</nav><div className="app-local-note"><span className="local-dot"/>Local preview<br/><small>Changes stay in this browser</small></div></aside>
-      <section className="app-content" aria-live="polite">
-        {view==='overview'&&<Overview data={data} go={setView}/>}
-        {view==='customers'&&<Customers data={data}/>}
-        {view==='campaigns'&&<Campaigns data={data} save={update} notify={announce}/>}
-        {view==='menu'&&<MenuEditor data={data} save={update} notify={announce}/>}
-        {view==='staff'&&<Staff data={data} save={update} notify={announce}/>}
-        {view==='card'&&<CustomerCard data={data} save={update} notify={announce}/>}
-        {view==='public'&&<PublicPage data={data}/>}
+
+function Overview({ restaurantId }: { restaurantId: string }) {
+  const state = useDemoState();
+  const session = state.session;
+  const result = api.dash.overview(restaurantId, {
+    role: session.role,
+    restaurantId: session.restaurantId,
+  });
+  if (!result.ok) {
+    return (
+      <main className="demo-hub page-width">
+        <h1>We couldn’t load the overview.</h1>
+        <p>{result.error.message}</p>
+        <a href="/">Back to Patron</a>
+      </main>
+    );
+  }
+  const max = Math.max(1, ...result.data.weeklyVisits);
+  return (
+    <main className="demo-hub page-width">
+      <p className="eyebrow">
+        <span className="eyebrow-line" />
+        Overview
+      </p>
+      <h1>Your week at a glance.</h1>
+      <div className="page-actions">
+        <a className="builder-primary" href="/stamp">
+          Open the till
+        </a>
+        <a className="builder-secondary" href="/app/campaigns/new">
+          New campaign
+        </a>
+      </div>
+      <div className="stat-grid stat-grid--five">
+        {result.data.stats.map((stat) => (
+          <a className="stat-card" key={stat.key} title={stat.tooltip} href={stat.href}>
+            <strong>{stat.display ?? stat.value}</strong>
+            <span>{stat.label}</span>
+            <small>{stat.tooltip}</small>
+            <em>{stat.action} →</em>
+          </a>
+        ))}
+      </div>
+      <section className="builder-panel">
+        <h2>Visits · last 8 weeks</h2>
+        <div
+          className="week-chart"
+          role="img"
+          aria-label={`Weekly visits: ${result.data.weeklyVisits.join(", ")}`}
+        >
+          {result.data.weeklyVisits.map((visits, index) => (
+            <span key={index} title={`${visits} visits`}>
+              <i style={{ height: `${Math.round((visits / max) * 100)}%` }} />
+              <small>{visits}</small>
+            </span>
+          ))}
+        </div>
+      </section>
+      <section className="builder-panel">
+        <h2>Next campaign</h2>
+        {result.data.nextCampaign ? (
+          <>
+            <p>{result.data.nextCampaign.name}</p>
+            <p className="demo-data-note">
+              {result.data.nextCampaign.statusLabel} ·{" "}
+              {result.data.nextCampaign.when
+                ? `Sends ${result.data.nextCampaign.when}`
+                : "Not scheduled yet"}
+            </p>
+            <div className="page-actions">
+              <a className="builder-secondary" href={result.data.nextCampaign.href}>
+                Open campaign
+              </a>
+            </div>
+          </>
+        ) : (
+          <>
+            <p>No campaign planned.</p>
+            <div className="page-actions">
+              <a className="builder-primary" href="/app/campaigns/new">
+                New campaign
+              </a>
+            </div>
+          </>
+        )}
+      </section>
+      <section className="builder-panel">
+        <h2>Last campaign</h2>
+        {result.data.lastCampaign ? (
+          <>
+            <p>{result.data.lastCampaign.name}</p>
+            <p className="demo-data-note">
+              {result.data.lastCampaign.delivered} delivered · {result.data.lastCampaign.failed} failed
+              {result.data.lastCampaign.sentLabel
+                ? ` · sent ${result.data.lastCampaign.sentLabel}`
+                : ""}
+            </p>
+            <div className="page-actions">
+              <a className="builder-secondary" href={`/app/campaigns/${result.data.lastCampaign.id}`}>
+                Open results
+              </a>
+            </div>
+          </>
+        ) : (
+          <p>No campaign has been sent yet.</p>
+        )}
       </section>
     </main>
-    {notice&&<div className="demo-toast" role="status"><Check size={17}/>{notice}</div>}
-  </div>;
+  );
 }
-function Heading({ eyebrow, title, text, action }: { eyebrow:string;title:string;text?:string;action?:React.ReactNode }) { return <div className="app-heading"><div><span className="eyebrow"><span className="eyebrow-line"/>{eyebrow}</span><h1>{title}</h1>{text&&<p>{text}</p>}</div>{action}</div>; }
-function Overview({ data, go }: { data:DemoData;go:(v:View)=>void }) {
-  const week = data.members.filter(m => Date.now()-new Date(m.joined).getTime() < 7*86400000).length;
-  const sent = data.campaigns.reduce((n,c)=>n+c.recipients,0);
-  const redeemed = data.campaigns.reduce((n,c)=>n+c.redeemed,0);
-  return <><Heading eyebrow="Your neighbourhood, at a glance" title="Good morning." text="Here’s how your regulars are doing this week." action={<Button variant="patron" onClick={()=>go('campaigns')}><Send size={15}/> New campaign</Button>}/><div className="metric-grid">{[[Users,'Members',data.members.length], [Coffee,'Joined this week',week], [MessageSquare,'SMS sent',sent], [Gift,'Campaign redemptions',redeemed]].map(([Icon,label,value])=>{const I=Icon as typeof Users;return <div className="metric-card" key={String(label)}><span className="metric-icon"><I size={18}/></span><span className="metric-label">{String(label)}</span><strong>{value as number}</strong><small>{label==='Members'?'Across this restaurant':'This month · demo data'}</small></div>})}</div><div className="app-panels"><div className="app-panel"><div className="panel-heading"><div><span className="eyebrow"><span className="eyebrow-line"/>A little nudge</span><h2>Bring a regular back.</h2></div><button className="quiet-link" onClick={()=>go('campaigns')}>Write a special →</button></div><p>There are <strong>{data.members.filter(m=>Date.now()-new Date(m.lastVisit).getTime()>30*86400000&&m.optedIn).length} opted-in guests</strong> you haven’t seen in 30 days.</p></div><div className="app-panel credit-panel"><span className="eyebrow"><span className="eyebrow-line"/>SMS credits</span><strong>{rand(data.credits)}</strong><p>At R0.35 per message · preview only</p><Button variant="quiet" size="sm" onClick={()=>go('campaigns')}>Manage credits</Button></div></div><div className="app-panel"><div className="panel-heading"><div><span className="eyebrow"><span className="eyebrow-line"/>Your regulars</span><h2>Recent activity</h2></div><button className="quiet-link" onClick={()=>go('customers')}>See your guest list →</button></div><MemberTable members={data.members.slice(0,4)}/></div><p className="prototype-footnote">Preview only. SMS, account security and cloud sync need a backend before launch.</p></>;
-}
-function MemberTable({members}:{members:Member[]}) { return <div className="table-scroll"><table className="demo-table"><thead><tr><th>Customer</th><th>Joined</th><th>Last visit</th><th>Stamps</th><th>Offers</th></tr></thead><tbody>{members.map(m=><tr key={m.phone}><td><strong>{m.name}</strong><small>{m.phone}</small></td><td>{new Date(m.joined).toLocaleDateString('en-ZA',{day:'numeric',month:'short'})}</td><td>{new Date(m.lastVisit).toLocaleDateString('en-ZA',{day:'numeric',month:'short'})}</td><td><span className="stamp-pill">{m.stamps} / 8</span></td><td><span className={`consent-pill ${m.optedIn?'yes':''}`}>{m.optedIn?'Opted in':'Card only'}</span></td></tr>)}</tbody></table></div>; }
-function Customers({data}:{data:DemoData}) { const [filter,setFilter]=useState('all');const members=data.members.filter(m=>filter==='all'||(filter==='opted'&&m.optedIn)||(filter==='30'&&Date.now()-new Date(m.lastVisit).getTime()>30*86400000));return <><Heading eyebrow="People who make your place" title="Your regulars." text="Every guest, their visits and the offers they chose to receive."/><div className="filter-row"><select aria-label="Filter customers" value={filter} onChange={e=>setFilter(e.target.value)}><option value="all">Everyone</option><option value="30">No visit in 30 days</option><option value="opted">Offers opted in</option></select><span>{members.length} guests · {members.filter(m=>m.optedIn).length} opted in</span></div><div className="app-panel"><MemberTable members={members}/></div><p className="prototype-footnote">Sample customer records are stored only in this browser. Export and deletion tools can be connected when a backend is available.</p></>; }
-function Campaigns({data,save,notify}:{data:DemoData;save:(d:DemoData)=>void;notify:(s:string)=>void}) { const [audience,setAudience]=useState('lapsed');const [message,setMessage]=useState('We miss you! Visit this Tuesday for a coffee on us with any breakfast.');const [code,setCode]=useState('TUESDAY');const eligible=useMemo(()=>data.members.filter(m=>m.optedIn&&(audience==='all'||(audience==='lapsed'&&Date.now()-new Date(m.lastVisit).getTime()>30*86400000)||(audience==='birthday'&&birthdayThisWeek(m.birthday)))),[data,audience]);const cost=eligible.length*.35;const [topup,setTopup]=useState('200');const send=()=>{if(!message.trim()||!code.trim()){notify('Add a message and a campaign code first.');return}if(!eligible.length){notify('No opted-in guests in this audience.');return}if(cost>data.credits){notify('Not enough SMS credits. Top up to continue.');return}if(data.campaigns.filter(c=>new Date(c.sent).getTime()>Date.now()-7*86400000).length>=3){notify('Weekly send limit reached (3 campaigns).');return}save({...data,credits:Math.round((data.credits-cost)*100)/100,campaigns:[{message:message.trim(),audience,code:code.trim().toUpperCase(),sent:new Date().toISOString(),recipients:eligible.length,redeemed:0},...data.campaigns]});notify(`Demo campaign queued for ${eligible.length} opted-in guests.`)};return <><Heading eyebrow="A thoughtful reason to return" title="Send a special." text="Only opted-in guests are counted. Preview the cost before sending."/><div className="app-panels campaign-layout"><div className="app-panel campaign-compose"><label className="app-label">Who should hear from you?<select value={audience} onChange={e=>setAudience(e.target.value)}><option value="lapsed">No visit in 30 days</option><option value="all">All opted-in guests</option><option value="birthday">Birthday this week</option></select></label><label className="app-label">Your message<textarea value={message} maxLength={280} onChange={e=>setMessage(e.target.value)}/></label><label className="app-label">Campaign code word<input value={code} maxLength={16} onChange={e=>setCode(e.target.value)}/></label><div className="sms-preview"><span>MESSAGE PREVIEW</span><p>{message}</p><small>{data.restaurant} · Reply STOP to opt out</small></div><div className="send-summary"><span>{eligible.length} opted-in guests</span><strong>R{cost.toFixed(2)} estimated</strong></div><Button variant="patron" onClick={send}><Send size={15}/> Send demo campaign</Button><small className="subtle-note">No SMS will be sent. This records a local demo campaign only.</small></div><div className="app-panel credit-panel"><span className="eyebrow"><span className="eyebrow-line"/>Prepaid balance</span><strong>{rand(data.credits)}</strong><p>Estimated R0.35 per SMS</p><div className="topup-control"><select value={topup} onChange={e=>setTopup(e.target.value)} aria-label="Top-up amount"><option value="200">R200 top-up</option><option value="500">R500 top-up</option></select><Button variant="quiet" onClick={()=>{save({...data,credits:data.credits+Number(topup)});notify(`R${topup} demo credits added.`)}}><Plus size={14}/> Add credits</Button></div><p className="prototype-footnote">Payment checkout is not connected in this preview.</p></div></div><div className="app-panel campaign-history"><span className="eyebrow"><span className="eyebrow-line"/>Campaign history</span><div className="table-scroll"><table className="demo-table"><thead><tr><th>Message</th><th>Audience</th><th>Code</th><th>Sent</th><th>Redeemed</th></tr></thead><tbody>{data.campaigns.map((c,i)=><tr key={`${c.sent}-${i}`}><td>{c.message}</td><td>{c.recipients} guests</td><td><span className="stamp-pill">{c.code}</span></td><td>{new Date(c.sent).toLocaleDateString('en-ZA')}</td><td>{c.redeemed}</td></tr>)}</tbody></table></div></div></>; }
-function MenuEditor({data,save,notify}:{data:DemoData;save:(d:DemoData)=>void;notify:(s:string)=>void}) {const [items,setItems]=useState(data.menu);const [special,setSpecial]=useState(data.special);return <><Heading eyebrow="One page for your guests" title="Menu & specials." text="Keep your restaurant page up to date. Your edits are saved in this browser." action={<Button variant="patron" onClick={()=>{save({...data,menu:items,special});notify('Restaurant page updated.')}}><Check size={15}/> Save changes</Button>}/><div className="app-panel edit-panel"><label className="app-label">Current special<input value={special} onChange={e=>setSpecial(e.target.value)}/></label><div className="panel-heading"><div><span className="eyebrow"><span className="eyebrow-line"/>A taste of your menu</span><h2>Menu items</h2></div><Button variant="quiet" onClick={()=>setItems([...items,{name:'New menu item',price:0}])}><Plus size={14}/> Add item</Button></div>{items.map((item,i)=><div className="menu-edit-row" key={i}><input aria-label="Menu item" value={item.name} onChange={e=>setItems(items.map((x,n)=>n===i?{...x,name:e.target.value}:x))}/><span>R</span><input aria-label="Price in rand" type="number" min="0" value={item.price} onChange={e=>setItems(items.map((x,n)=>n===i?{...x,price:Number(e.target.value)}:x))}/><button className="quiet-link" onClick={()=>setItems(items.filter((_,n)=>n!==i))} aria-label={`Remove ${item.name}`}>Remove</button></div>)}</div></>; }
-function Staff({data,save,notify}:{data:DemoData;save:(d:DemoData)=>void;notify:(s:string)=>void}) {const [pin,setPin]=useState('');const [unlocked,setUnlocked]=useState(false);const [phone,setPhone]=useState('');const [campaign,setCampaign]=useState('');const [undo,setUndo]=useState<{phone:string;before:DemoData}|null>(null);const [error,setError]=useState('');const member=data.members.find(m=>m.phone.replace(/\D/g,'').endsWith(phone.replace(/\D/g,''))&&phone.replace(/\D/g,'').length>=8);const addStamp=()=>{if(!member){setError('No member found. Check the phone number and try again.');return}if(Date.now()-(data.lastStamp[member.phone]??0)<4*3600000){setError('This guest already received a stamp in the last 4 hours.');return}if(campaign&&!data.campaigns.some(c=>c.code.toLowerCase()===campaign.toLowerCase())){setError('That campaign code was not found.');return}const before=data;save({...data,members:data.members.map(m=>m.phone===member.phone?{...m,stamps:Math.min(8,m.stamps+1),lastVisit:new Date().toISOString()}:m),lastStamp:{...data.lastStamp,[member.phone]:Date.now()},campaigns:data.campaigns.map(c=>c.code.toLowerCase()===campaign.toLowerCase()?{...c,redeemed:c.redeemed+1}:c)});setUndo({phone:member.phone,before});setPhone('');setCampaign('');setError('');notify(`Stamp added for ${member.name}.`)};return <><Heading eyebrow="For the people on the floor" title="A quick little stamp." text="Enter the guest phone number after a qualifying purchase. One stamp per four-hour visit window."/><div className="staff-stage"><div className="app-panel staff-card"><span className="staff-lock"><LockKeyhole/></span><h2>{unlocked?'Ready for the next regular?':'Staff PIN'}</h2><p>{unlocked?'Confirm the guest’s phone number. Their card cannot award its own stamps.':'Enter the demo PIN to open the staff page.'}</p>{!unlocked?<form onSubmit={e=>{e.preventDefault();if(pin==='1234'){setUnlocked(true);setError('')}else setError('Demo PIN is 1234.')}}><input aria-label="Staff PIN" inputMode="numeric" type="password" maxLength={4} value={pin} onChange={e=>setPin(e.target.value)} placeholder="••••"/><Button variant="patron">Unlock staff page</Button></form>:<><label className="app-label">Customer phone number<input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="e.g. 082 555 0142" inputMode="tel"/></label><label className="app-label">Campaign code (optional)<input value={campaign} onChange={e=>setCampaign(e.target.value)} placeholder="TUESDAY"/></label>{member&&<div className="member-match"><span>{member.name}</span><span>{member.stamps} of 8 stamps</span></div>}<Button variant="patron" onClick={addStamp}><Coffee size={16}/> Confirm purchase · add stamp</Button>{undo&&<Button variant="quiet" onClick={()=>{save(undo.before);setUndo(null);notify('Last stamp undone.')}}><RotateCcw size={15}/> Undo last stamp</Button>}</>}{error&&<p className="inline-error" role="alert">{error}</p>}<small className="subtle-note">Demo PIN: 1234 · This PIN is not secure and is not suitable for real customer data.</small></div></div></>; }
-function CustomerCard({data,save,notify}:{data:DemoData;save:(d:DemoData)=>void;notify:(s:string)=>void}) {const [step,setStep]=useState<'join'|'verify'|'card'>('join');const [name,setName]=useState('');const [phone,setPhone]=useState('');const [consent,setConsent]=useState(false);const [birthday,setBirthday]=useState('');const [code,setCode]=useState('');const [member,setMember]=useState<Member|undefined>();useEffect(()=>{const remembered=localStorage.getItem('patron-demo-phone');if(remembered){const found=data.members.find(m=>m.phone===remembered);if(found){setMember(found);setStep('card')}}},[data.members]);const begin=(e:React.FormEvent)=>{e.preventDefault();const found=data.members.find(m=>m.phone.replace(/\D/g,'')===phone.replace(/\D/g,''));if(found){setMember(found);setStep('verify')}else setStep('verify')};const finish=(e:React.FormEvent)=>{e.preventDefault();if(code!=='123456')return;if(member&&member.phone.replace(/\D/g,'')===phone.replace(/\D/g,'')){localStorage.setItem('patron-demo-phone',member.phone);setStep('card');return}const m:Member={name,phone,joined:new Date().toISOString(),lastVisit:new Date().toISOString(),stamps:0,optedIn:consent,...(birthday?{birthday}:{})};save({...data,members:[m,...data.members]});localStorage.setItem('patron-demo-phone',phone);setMember(m);setStep('card')};return <><Heading eyebrow="A little something for your next visit" title={step==='card'?'Your coffee card.':step==='verify'?'One quick check.':'Join the regulars.'} text={step==='card'?'Show this card to a team member after your next purchase.':'Join in seconds. No app and no password.'}/><div className="guest-card-wrap">{step==='join'&&<form className="app-panel guest-join" onSubmit={begin}><span className="eyebrow"><span className="eyebrow-line"/>{data.restaurant}</span><label className="app-label">Your name<input required value={name} onChange={e=>setName(e.target.value)} autoComplete="name" placeholder="First and last name"/></label><label className="app-label">Mobile number<input required value={phone} onChange={e=>setPhone(e.target.value)} autoComplete="tel" inputMode="tel" placeholder="082 555 0123"/></label><label className="app-label">Birthday <span className="optional">Optional</span><input type="date" value={birthday} onChange={e=>setBirthday(e.target.value)}/></label><label className="consent-check"><input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)}/><span>I agree to receive offers from {data.restaurant} by SMS. I can opt out at any time by replying STOP. My card works even if I leave this unticked.</span></label><Button variant="patron">Continue <ArrowLeft className="flip-icon" size={15}/></Button><small className="subtle-note">Prototype only. No SMS is sent. Consent recorded for this venue only.</small></form>}{step==='verify'&&<form className="app-panel guest-join" onSubmit={finish}><span className="guest-icon"><MessageSquare/></span><h2>Check your phone.</h2><p>Enter the six-digit code we sent to {phone}.</p><label className="app-label">Verification code<input required inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={code} onChange={e=>setCode(e.target.value)} placeholder="123456"/></label><Button variant="patron">Verify & open my card</Button><small className="subtle-note">Demo verification code: 123456 · No SMS is sent.</small></form>}{step==='card'&&member&&<div className="loyalty-demo live-card"><span className="demo-cafe">{data.restaurant}</span><span className="demo-subtitle">A little perk for your daily ritual</span><p className="card-member-name">{member.name} · Your card</p><div className="demo-stamps">{Array.from({length:8},(_,i)=><span key={i} className={`demo-stamp ${i<member.stamps?'filled':''}`}>{i<member.stamps?<Coffee/>:i===7?<Gift/>:null}</span>)}</div><div className="demo-reward">Your 8th coffee is on us.</div><span className="demo-progress">{member.stamps} of 8 stamps collected</span><div className="fake-qr"><QrCode size={96}/><span>Staff scan / phone lookup</span></div><div className="card-links"><button onClick={()=>notify('Restaurant menu is available in the Restaurant page preview.')}>View menu</button><button onClick={()=>notify(data.special)}>Current special</button></div><button className="quiet-link" onClick={()=>{const optedIn=!member.optedIn;const updated={...member,optedIn};save({...data,members:data.members.map(m=>m.phone===member.phone?updated:m)});setMember(updated);notify(optedIn?'Offers turned on for this restaurant.':'You opted out of this restaurant’s offers. Your card still works.')}}>{member.optedIn?'Opt out of offers':'Opt in to offers'}</button><button className="quiet-link" onClick={()=>{localStorage.removeItem('patron-demo-phone');setMember(undefined);setPhone('');setCode('');setStep('join')}}>This isn’t you? Sign out</button></div>}</div></>; }
-function PublicPage({data}:{data:DemoData}) {return <><Heading eyebrow="A shared page for your place" title={data.restaurant+'.'} text="A phone-friendly home for your menu, specials and loyalty card." action={<span className="stamp-pill">/{data.restaurant.toLowerCase().replace(/[^a-z0-9]+/g,'-')}</span>}/><div className="public-preview"><div className="public-hero"><span className="eyebrow"><span className="eyebrow-line"/>GOOD FOOD · FAMILIAR FACES</span><h2>{data.restaurant}</h2><p>Good coffee, good company, right around the corner.</p><button className="staff-button" onClick={()=>window.location.hash='join'}>Join our regulars <ArrowLeft className="flip-icon" size={15}/></button></div><div className="public-special"><span className="eyebrow"><span className="eyebrow-line"/>THIS WEEK AT OUR PLACE</span><h3>{data.special}</h3><p>Pop in and say hello. We’d love to see you.</p></div><div className="public-menu"><span className="eyebrow"><span className="eyebrow-line"/>A FEW FAVOURITES</span>{data.menu.map((item,i)=><div className="menu-edit-row" key={i}><strong>{item.name}</strong><span className="menu-dot"/><span>{rand(item.price)}</span></div>)}</div></div><div id="join" className="app-panel join-cta"><h2>Your next coffee comes with a little perk.</h2><p>Open the customer card preview to join and collect stamps.</p><Link to="/app" className="quiet-link" onClick={()=>window.setTimeout(()=>document.querySelector<HTMLButtonElement>('.app-nav-item:nth-child(6)')?.click(),0)}>Go to loyalty card →</Link></div></>; }

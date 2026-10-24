@@ -55,7 +55,7 @@ create table staff_member (
   id            uuid primary key default gen_random_uuid(),
   restaurant_id uuid not null references restaurant(id) on delete cascade,
   display_name  text not null,
-  pin_hmac      text not null,                  -- HMAC-SHA256(pepper, restaurant_id || ':' || pin), never the PIN
+  pin_hmac      text not null,                  -- HMAC-SHA256(pepper, restaurant_id || ':' || staff_id || ':' || pin), never the PIN
   active        boolean not null default true,
   created_at    timestamptz not null default now(),
   unique (restaurant_id, pin_hmac)              -- a PIN is unique inside one restaurant

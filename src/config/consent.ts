@@ -28,19 +28,36 @@ export const CONSENT_WORDING: Record<string, ConsentWording> = {
     purpose: 'marketing_push',
     text: 'Send me notifications about offers from {restaurant}.',
   },
+  // v2 - one line beside the join button; consent is recorded per restaurant.
+  'v2_loyalty': {
+    version: 'v2',
+    purpose: 'loyalty',
+    text: 'I agree to {restaurant} saving my name and number to run my loyalty card.',
+  },
+  'v2_marketing_sms': {
+    version: 'v2',
+    purpose: 'marketing_sms',
+    text: "By joining you agree to our Terms, Privacy Policy and to receive {restaurant}'s loyalty offers. Reply STOP anytime.",
+  },
+  'v2_marketing_push': {
+    version: 'v2',
+    purpose: 'marketing_push',
+    text: "Send me notifications about offers from {restaurant}. You can turn this off in Messages settings.",
+  },
 };
 
 // Current version for each purpose
 export const CURRENT_CONSENT_VERSIONS: Record<ConsentPurpose, string> = {
-  loyalty: 'v1',
-  marketing_sms: 'v1',
-  marketing_push: 'v1',
+  loyalty: 'v2',
+  marketing_sms: 'v2',
+  marketing_push: 'v2',
 };
 
 // Get current wording for a purpose
 export function getConsentWording(purpose: ConsentPurpose, restaurantName: string): ConsentWording {
   const version = CURRENT_CONSENT_VERSIONS[purpose];
-  const wording = CONSENT_WORDING[`${version}_${purpose}`];
+  const key = `${version}_${purpose}` as const;
+  const wording = CONSENT_WORDING[key];
   
   if (!wording) {
     throw new Error(`No consent wording found for purpose: ${purpose}`);
@@ -54,7 +71,8 @@ export function getConsentWording(purpose: ConsentPurpose, restaurantName: strin
 
 // Get wording by version and purpose (for historical lookups)
 export function getConsentWordingByVersion(version: string, purpose: ConsentPurpose, restaurantName: string): ConsentWording | null {
-  const wording = CONSENT_WORDING[`${version}_${purpose}`];
+  const key = `${version}_${purpose}` as const;
+  const wording = CONSENT_WORDING[key];
   
   if (!wording) {
     return null;
@@ -66,6 +84,12 @@ export function getConsentWordingByVersion(version: string, purpose: ConsentPurp
   };
 }
 
+// One line shown beside the join button. Kept in one place so the copy cannot
+// drift between the join screen, terms and the recorded consent event.
+export function joinConsentLine(restaurantName: string): string {
+  return `By joining you agree to our Terms, Privacy Policy and to receive ${restaurantName}'s loyalty offers. Reply STOP anytime.`;
+}
+
 // Source types for consent events
 export type ConsentSource = 
   | 'join_form'
@@ -73,7 +97,10 @@ export type ConsentSource =
   | 'sms_reply'
   | 'opt_out_link'
   | 'operator'
-  | 'sms_link';
+  | 'sms_link'
+  | 'messages_settings'
+  | 'inbound_stop'
+  | 'inbound_stopall';
 
 // Marketing status values
 export type MarketingStatus = 'not_opted_in' | 'opted_in' | 'opted_out';
