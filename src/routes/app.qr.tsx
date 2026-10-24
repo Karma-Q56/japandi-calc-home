@@ -7,6 +7,7 @@ export const Route = createFileRoute("/app/qr")({
   beforeLoad: () => {
     if (!requireRole("owner", "manager")(demoRepo.read().session)) throw redirect({ to: "/login" });
   },
+  ssr: false,
   component: QrOwner,
 });
 function QrOwner() {
