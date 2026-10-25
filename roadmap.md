@@ -8,9 +8,12 @@ Working order from the brief. Stop points get noted per section.
 - [ ] Replace jargon wording with plain South African English and add helper lines to non-obvious settings (ongoing with each section).
 
 ## 1. Page by page fix and consistency
-- [ ] Walk every route at 375px and 1280px: one header and footer, fonts, spacing, buttons, cards, colours, no overlaps or cut off text, no dead links or buttons, correct page titles, useful empty and error states.
-- [ ] Fix footer column alignment on mobile and hide the floating demo pill except in dev mode.
-- [ ] Add a routes test visiting every route (one header, no console errors, no U+2014).
+- [x] Walk every route at 375px and 1280px (4 roles, 160 checks via the Playwright walker): zero flagged after fixes. Keep re-running the walker after big changes (script regenerated per run from /tmp/browser/walk_route.py).
+- [x] Footer column alignment on mobile is correct and the floating demo pill is already hidden in production (dev-only unless ?demo=1).
+- [x] Routes test added: src/test/routes-audit.test.tsx visits every page route and asserts one header, no console errors and no U+2014 (44 pages; /api, /healthz, /u/$token skipped, dev and utility pages allowlisted).
+- [x] Fixed hydration mismatches: shared money formatter (src/lib/money.ts) replaces three locale-dependent Intl formatters; demo-state pages use the hydration-safe useDemoState; QR print pages are ssr:false because the QR needs the browser origin.
+- [x] Fixed structure: operator pages keep the Ops nav on child routes (markOutletComponent); the venue masthead and card head are the single page header (no duplicated header elements).
+- [ ] Deeper per-page review of useful content, empty states and dead links (ongoing with sections 2 to 8).
 
 ## 2. Dashboards
 - [ ] One design system across owner dashboard, diner app, staff till and Patron admin (homepage style: cream, terracotta, Bricolage Grotesque, DM Sans, Lora italic accents).
