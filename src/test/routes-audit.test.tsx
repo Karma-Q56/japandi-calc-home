@@ -49,6 +49,7 @@ const NO_HEADER_OK = [
   "/session-expired",
   "/stamp",
   "/dev/roles",
+  "/demo/status",
 ];
 
 function roleFor(path: string): DemoSession["role"] | null {
@@ -100,6 +101,7 @@ describe("routes audit", () => {
     if (NON_PAGES.some((base) => template === base || template.startsWith(base + "/"))) {
       continue; // webhook endpoints and health checks, not pages
     }
+    if (template === "/u/$token") continue; // needs a real invitation token; covered by the browser walk
     const url = fillParams(template);
     it(`${url} renders one header, no console errors and no em dash`, async () => {
       const role = roleFor(template);
