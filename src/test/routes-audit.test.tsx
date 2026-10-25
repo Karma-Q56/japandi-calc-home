@@ -10,7 +10,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { routeTree } from "@/routeTree.gen";
 import { demoRepo, updateDemo } from "@/data/repo";
-import type { DemoSession } from "@/data/session";
 
 vi.mock("@/server/live", () => ({
   getDataModeFn: async () => ({ mode: "demo" }),
@@ -49,9 +48,10 @@ const NO_HEADER_OK = [
   "/session-expired",
   "/stamp",
   "/dev/roles",
+  "/demo/status",
 ];
 
-function roleFor(path: string): DemoSession["role"] | null {
+function roleFor(path: string): "guest" | "owner" | "manager" | "operator" | "staff" | null {
   if (path.startsWith("/app")) return "owner";
   if (path.startsWith("/ops")) return "operator";
   if (path.startsWith("/me")) return "guest";
@@ -61,7 +61,7 @@ function roleFor(path: string): DemoSession["role"] | null {
 
 function fillParams(path: string): string {
   const state = demoRepo.read();
-  const restaurant = state.restaurants[0];
+  const restaurant = state.restaurants[0]!;
   const campaign = state.campaigns.find((c) => c.restaurantId === restaurant.id);
   const membership = state.memberships.find((m) => m.restaurantId === restaurant.id);
   if (path.startsWith("/app/customers/") && membership) {
@@ -100,13 +100,14 @@ describe("routes audit", () => {
     if (NON_PAGES.some((base) => template === base || template.startsWith(base + "/"))) {
       continue; // webhook endpoints and health checks, not pages
     }
+    if (template === "/u/$token") continue; // needs a real invitation token; covered by the browser walk
     const url = fillParams(template);
     it(`${url} renders one header, no console errors and no em dash`, async () => {
       const role = roleFor(template);
       if (role === "owner") {
         updateDemo((state) => ({
           ...state,
-          session: { role: "owner", restaurantId: state.restaurants[0].id },
+          session: { role: "owner", restaurantId: state.restaurants[0]!.id },
         }));
       } else if (role) {
         updateDemo((state) => ({ ...state, session: { role } }));
