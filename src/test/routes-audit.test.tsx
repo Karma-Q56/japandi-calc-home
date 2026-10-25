@@ -108,7 +108,7 @@ describe("routes audit", () => {
       if (role === "owner") {
         updateDemo((state) => ({
           ...state,
-          session: { role: "owner", restaurantId: state.restaurants[0].id },
+          session: { role: "owner", restaurantId: state.restaurants[0]!.id },
         }));
       } else if (role) {
         updateDemo((state) => ({ ...state, session: { role } }));
