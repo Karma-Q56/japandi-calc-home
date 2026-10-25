@@ -235,3 +235,11 @@ Verified in the local demo browser at 375 px and 1280 px unless marked built-onl
 - [x] verified (browser, headless Chromium) Demo-mode review at 375×812 and 1280×900 by screenshots and DOM measurement. Flows exercised end to end: desktop dropdown, mobile accordion, hero search, `/demo` → `/`, `/dev/roles` (unlinked), login → Diner → `/me` (2 cards) → first card (`/r/sunrise-bakes/card`, “Show this at the till”). Screenshots are `screenshots/site-*.png` (left untracked).
 - [~] Built, not verified: real sign-in. The login buttons, Google button and demo accounts all switch the local demo session; there is no password, OAuth exchange or account creation yet. Search covers the seeded venues only, since there is no public venue index endpoint. `/case-studies` is an honest placeholder until pilot numbers exist. `/demo/status` and `/demo/outbox` remain unlinked developer pages.
 - Note: the review required flipping `.dev.vars` to `DATA_MODE=demo` temporarily. It was restored from a copy taken beforehand and reads `DATA_MODE=live` again; the database URLs were not touched.
+
+## Page by page fix and consistency pass (2026-10-24, verified in browser at 375px and 1280px)
+
+- [x] verified (browser walk, 160 checks across 4 demo roles) Every route renders one header, no hydration errors, no horizontal overflow and no em dashes. Before the pass: hydration crashes on /app/campaigns, /app/credit and the QR pages, two different prices during hydration on venue pages, duplicate or missing headers on venue and operator pages.
+- [x] verified (vitest) New routes audit test (44 page routes): one header, no console errors, no U+2014. New money formatter test. Suite: 220 passed, 5 skipped.
+- [x] verified (browser at 375px) Footer columns align and all links read correctly on the home, business and pricing pages.
+- [x] Demo pill is production-hidden already (shows only in dev, or with ?demo=1).
+- [ ] Not verified: real device Safari/Chrome, and the walker counts semantic headers rather than judging visual design, which sections 2 to 8 cover page by page.
