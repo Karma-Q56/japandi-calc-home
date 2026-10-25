@@ -10,7 +10,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { routeTree } from "@/routeTree.gen";
 import { demoRepo, updateDemo } from "@/data/repo";
-import type { DemoSession } from "@/data/session";
 
 vi.mock("@/server/live", () => ({
   getDataModeFn: async () => ({ mode: "demo" }),
@@ -52,7 +51,7 @@ const NO_HEADER_OK = [
   "/demo/status",
 ];
 
-function roleFor(path: string): DemoSession["role"] | null {
+function roleFor(path: string): "guest" | "owner" | "manager" | "operator" | "staff" | null {
   if (path.startsWith("/app")) return "owner";
   if (path.startsWith("/ops")) return "operator";
   if (path.startsWith("/me")) return "guest";
