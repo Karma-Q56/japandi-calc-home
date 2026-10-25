@@ -62,7 +62,7 @@ function roleFor(path: string): DemoSession["role"] | null {
 
 function fillParams(path: string): string {
   const state = demoRepo.read();
-  const restaurant = state.restaurants[0];
+  const restaurant = state.restaurants[0]!;
   const campaign = state.campaigns.find((c) => c.restaurantId === restaurant.id);
   const membership = state.memberships.find((m) => m.restaurantId === restaurant.id);
   if (path.startsWith("/app/customers/") && membership) {
