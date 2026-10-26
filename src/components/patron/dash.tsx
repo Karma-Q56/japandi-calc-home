@@ -34,9 +34,9 @@ export function PageHeader(props: {
 export function StatCard(props: {
   value: ReactNode;
   label: string;
-  hint?: string;
-  href?: string;
-  tone?: "good" | "bad";
+  hint?: string | undefined;
+  href?: string | undefined;
+  tone?: "good" | "bad" | undefined;
 }) {
   const className = `stat-card${props.tone ? ` is-${props.tone}` : ""}`;
   const body = (
@@ -62,7 +62,7 @@ export function StatGrid({ children }: { children: ReactNode }) {
 /* ------------------------------------------------------------------- badge */
 
 /** Status badge on the shared .status-pill pill. data-s picks the colour. */
-export function Badge(props: { tone?: "sent" | "active"; children: ReactNode }) {
+export function Badge(props: { tone?: "sent" | "active" | undefined; children: ReactNode }) {
   return (
     <span className="status-pill" {...(props.tone ? { "data-s": props.tone } : {})}>
       {props.children}

@@ -3429,3 +3429,62 @@ input[type="range"] {
   border-radius: 999px;
   background: color-mix(in srgb, var(--background) 94%, transparent);
 }
+
+/* ---------- shared dashboard kit (src/components/patron/dash.tsx) ---------- */
+.dash-header {
+  margin-bottom: 4px;
+}
+.dash-empty {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  margin-top: 16px;
+  padding: clamp(18px, 4vw, 30px);
+  border: 1.5px dashed color-mix(in oklab, var(--primary) 30%, var(--line));
+  border-radius: 18px;
+  background: color-mix(in oklab, var(--primary) 4%, var(--card));
+}
+.dash-empty strong {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+}
+.dash-empty p {
+  margin: 0;
+  max-width: 52ch;
+}
+.dash-confirm {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.dash-confirm > span {
+  font-weight: 650;
+}
+.stat-card.is-good strong {
+  color: var(--sage-foreground);
+}
+.stat-card.is-bad strong {
+  color: oklch(0.48 0.16 28);
+}
+.preview-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 650;
+  background: color-mix(in oklab, var(--primary) 12%, var(--secondary));
+  color: var(--ink-soft);
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

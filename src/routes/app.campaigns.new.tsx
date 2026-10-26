@@ -11,6 +11,8 @@ import {
 } from "@/domain/campaigns";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
+import { PreviewBanner } from "@/components/patron/dash";
+
 import type { CampaignAudience, SegmentType } from "@/data/types";
 import { useDemoState } from "@/data/useDemoState";
 
@@ -428,6 +430,8 @@ function ComposerPage() {
               )}
             </p>
           </div>
+          <PreviewBanner>Preview only. Nothing was sent. Guests get it after you confirm on the last step.</PreviewBanner>
+
           <label className="builder-field">
             Attach a special (optional)
             <select value={specialId} onChange={(event) => setSpecialId(event.target.value)}>
