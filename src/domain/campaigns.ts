@@ -805,6 +805,52 @@ export function campaignResults(state: DemoState, campaignId: string): CampaignR
   };
 }
 
+/** Per-guest delivery rows for the campaign results page. */
+export interface CampaignRecipientRow {
+  messageId: string;
+  name: string;
+  channel: "sms" | "push";
+  status: Message["status"];
+  segments: number;
+  costCents: number;
+  attempts: number;
+  errorCode?: string;
+}
+
+export function campaignRecipients(state: DemoState, campaignId: string): CampaignRecipientRow[] {
+  return state.messages
+    .filter((message) => message.campaignId === campaignId)
+    .map((message) => ({
+      messageId: message.id,
+      name: state.customers.find((c) => c.id === message.customerId)?.name ?? "Removed guest",
+      channel: message.channel,
+      status: message.status,
+      segments: message.segments,
+      costCents: message.costCents,
+      attempts: message.attempts,
+      ...(message.errorCode ? { errorCode: message.errorCode } : {}),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** Plain wording for a message delivery state. */
+export function messageStatusLabel(status: Message["status"]): string {
+  switch (status) {
+    case "queued":
+      return "Waiting";
+    case "sending":
+      return "Sending";
+    case "sent":
+      return "Sent";
+    case "delivered":
+      return "Delivered";
+    case "failed":
+      return "Did not send";
+    case "skipped":
+      return "Not sent";
+  }
+}
+
 export function listCampaigns(restaurantId: string) {
   const state = demoRepo.read();
   return success(
