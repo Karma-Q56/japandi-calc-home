@@ -71,7 +71,7 @@ function sendSmallCampaign() {
   if (!draft.ok) throw new Error("draft failed");
   const confirmed = confirmCampaign({ campaignId: draft.data.id, actor: "owner-1", sendNow: true });
   if (!confirmed.ok) throw new Error("confirm failed");
-  dispatchBatch(demoRepo.read(), Date.now(), { limit: 25 });
+  runDispatcher();
   const settled = settleCampaign({ campaignId: draft.data.id, actor: "owner-1" });
   if (!settled.ok) throw new Error("settle failed");
   return draft.data.id;
