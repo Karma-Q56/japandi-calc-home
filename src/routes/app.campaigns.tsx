@@ -1,8 +1,9 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useSyncExternalStore } from "react";
 import { api } from "@/api";
+import { campaignBadge, Badge, DataTable, EmptyState, PageHeader } from "@/components/patron/dash";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
+import { formatRand } from "@/lib/money";
 import { withChildren } from "@/lib/nested";
 import { useDemoState } from "@/data/useDemoState";
 
@@ -32,19 +33,19 @@ function CampaignsPage() {
   const needsApproval = campaigns.filter((c) => c.requiresApproval && !c.approvedBy);
   return (
     <main className="demo-hub page-width">
-      <p className="eyebrow">
-        <span className="eyebrow-line" />
-        {restaurant.name} · Campaigns
-      </p>
-      <h1>Message your regulars.</h1>
-      <p className="demo-intro">
-        <a className="builder-primary" href="/app/campaigns/new">
-          New campaign
-        </a>
-      </p>
+      <PageHeader
+        eyebrow={restaurant.name}
+        title="Message your regulars."
+        actions={
+          <a className="builder-primary" href="/app/campaigns/new">
+            New campaign
+          </a>
+        }
+      />
       {needsApproval.length > 0 && (
         <section className="guest-panel">
           <h2>Needs your approval</h2>
+          <p className="demo-data-note">An operator drafted these. Nothing sends until you approve.</p>
           {needsApproval.map((campaign) => (
             <div className="outbox-meta" key={campaign.id}>
               <span>
@@ -55,20 +56,63 @@ function CampaignsPage() {
           ))}
         </section>
       )}
-      <section className="guest-panel">
+      <section className="builder-panel">
         <h2>All campaigns</h2>
-        {campaigns.length === 0 && <p className="demo-data-note">No campaigns yet.</p>}
-        {campaigns.map((campaign) => (
-          <div className="outbox-meta" key={campaign.id}>
-            <span>
-              <strong>{campaign.name}</strong> · code {campaign.code}
-            </span>
-            <span>
-              <span className={`status-pill ${campaign.status}`}>{campaign.status}</span>{" "}
-              <a href={`/app/campaigns/${campaign.id}`}>Open →</a>
-            </span>
-          </div>
-        ))}
+        {campaigns.length === 0 ? (
+          <EmptyState
+            title="No campaigns yet."
+            hint="Write your first message to bring guests back. You pick who gets it and see the cost before anything sends."
+            action={
+              <a className="builder-primary" href="/app/campaigns/new">
+                New campaign
+              </a>
+            }
+          />
+        ) : (
+          <DataTable
+            caption={`Campaigns for ${restaurant.name}`}
+            rows={campaigns}
+            columns={[
+              {
+                key: "name",
+                header: "Campaign",
+                cell: (campaign) => (
+                  <>
+                    {campaign.name}
+                    <small>Code {campaign.code}</small>
+                  </>
+                ),
+              },
+              {
+                key: "status",
+                header: "Status",
+                cell: (campaign) => {
+                  const badge = campaignBadge(campaign.status);
+                  return <Badge tone={badge.tone}>{badge.label}</Badge>;
+                },
+              },
+              {
+                key: "recipients",
+                header: "Guests",
+                cell: (campaign) => (campaign.status === "draft" ? "" : campaign.recipients),
+              },
+              {
+                key: "cost",
+                header: "Cost",
+                cell: (campaign) => {
+                  const cents =
+                    campaign.status === "sent" ? campaign.actualCostCents : (campaign.estCostCents ?? 0);
+                  return cents > 0 ? formatRand(cents) : "R0.00";
+                },
+              },
+              {
+                key: "open",
+                header: "",
+                cell: (campaign) => <a href={`/app/campaigns/${campaign.id}`}>Open →</a>,
+              },
+            ]}
+          />
+        )}
       </section>
     </main>
   );
