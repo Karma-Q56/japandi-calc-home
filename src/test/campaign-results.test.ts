@@ -60,8 +60,8 @@ function topUp(cents: number) {
 }
 
 function sendSmallCampaign() {
-  addMembers(3);
-  topUp(10000);
+  const memberships = addMembers(3);
+  topUp(100000);
   const draft = saveDraft({
     restaurantId: RESTAURANT,
     actor: "owner-1",
@@ -74,7 +74,7 @@ function sendSmallCampaign() {
   runDispatcher();
   const settled = settleCampaign({ campaignId: draft.data.id, actor: "owner-1" });
   if (!settled.ok) throw new Error("settle failed");
-  return draft.data.id;
+  return { campaignId: draft.data.id, atLeast: memberships.length, sent: confirmed.data.recipients };
 }
 
 describe("campaign results page data", () => {
