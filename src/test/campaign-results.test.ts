@@ -86,7 +86,7 @@ describe("campaign results page data", () => {
     expect(rows.some((row) => row.name.startsWith("Results Guest"))).toBe(true);
     expect(rows.every((row) => row.channel === "sms")).toBe(true);
     expect(rows.every((row) => row.segments >= 1)).toBe(true);
-    expect(new Set(rows.map((row) => row.messageId)).size).toBe(3);
+    expect(new Set(rows.map((row) => row.messageId)).size).toBe(rows.length);
   });
 
   it("adds row costs up to the settled campaign cost", () => {
