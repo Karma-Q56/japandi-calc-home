@@ -83,7 +83,11 @@ describe("child URLs render their own content", () => {
   it("/app/campaigns/:id renders campaign results, not the campaign list", async () => {
     updateDemo((state) => ({ ...state, session: owner }));
     const campaign = demoRepo.read().campaigns.find((c) => c.restaurantId === owner.restaurantId)!;
-    await expectAt(`/app/campaigns/${campaign.id}`, /Results/i);
+    // The results page leads with the campaign name and its delivery table.
+    await expectAt(`/app/campaigns/${campaign.id}`, /A little Tuesday treat/i);
+    await waitFor(() =>
+      expect(screen.getByRole("table", { name: /delivery status/i })).toBeInTheDocument(),
+    );
   });
 
   it("/me/restaurants renders the diner restaurant list", async () => {
