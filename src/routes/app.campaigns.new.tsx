@@ -428,6 +428,8 @@ function ComposerPage() {
               )}
             </p>
           </div>
+          <PreviewBanner>Preview only. Nothing was sent. Guests get it after you confirm on the last step.</PreviewBanner>
+
           <label className="builder-field">
             Attach a special (optional)
             <select value={specialId} onChange={(event) => setSpecialId(event.target.value)}>
