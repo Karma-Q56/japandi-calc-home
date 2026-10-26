@@ -34,9 +34,9 @@ export function PageHeader(props: {
 export function StatCard(props: {
   value: ReactNode;
   label: string;
-  hint?: string;
-  href?: string;
-  tone?: "good" | "bad";
+  hint?: string | undefined;
+  href?: string | undefined;
+  tone?: "good" | "bad" | undefined;
 }) {
   const className = `stat-card${props.tone ? ` is-${props.tone}` : ""}`;
   const body = (
