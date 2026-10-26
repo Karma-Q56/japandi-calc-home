@@ -5,7 +5,7 @@ import {
   campaignRecipients,
   campaignResults,
   confirmCampaign,
-  dispatchBatch,
+  runDispatcher,
   messageStatusLabel,
   saveDraft,
   settleCampaign,
