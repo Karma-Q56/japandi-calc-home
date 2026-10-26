@@ -11,6 +11,8 @@ import {
 } from "@/domain/campaigns";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
+import { PreviewBanner } from "@/components/patron/dash";
+
 import type { CampaignAudience, SegmentType } from "@/data/types";
 import { useDemoState } from "@/data/useDemoState";
 
