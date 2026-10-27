@@ -16,14 +16,15 @@ Working order from the brief. Stop points get noted per section.
 - [ ] Deeper per-page review of useful content, empty states and dead links (ongoing with sections 2 to 8).
 
 ## 2. Dashboards
-- [ ] One design system across owner dashboard, diner app, staff till and Patron admin (homepage style: cream, terracotta, Bricolage Grotesque, DM Sans, Lora italic accents).
-- [ ] Shared component set: PageHeader, StatCard, DataTable, EmptyState, FormField, Badge, ConfirmDialog.
-- [ ] Mobile first: bottom tab bar on phones, sidebar on desktop; one main action per screen.
+- [x] Shared component set: PageHeader, StatCard, StatGrid, DataTable, EmptyState, FormField, Badge (campaignBadge), ConfirmDialog and PreviewBanner in src/components/patron/dash.tsx, styled on the existing ui.css tokens. Applied to the campaign list and results pages so far.
+- [ ] One design system across owner dashboard, diner app, staff till and Patron admin (homepage style: cream, terracotta, Bricolage Grotesque, DM Sans, Lora italic accents). Remaining: apply the kit to customers, credit, loyalty, menu, specials, team, lists, settings and the ops and till screens.
+- [ ] Mobile first: bottom tab bar on phones, sidebar on desktop; one main action per screen. Shells already do this; remaining: re-check each converted page.
 
 ## 3. Preview everything before publishing
-- [ ] Draft, Preview, Publish states for: loyalty rules and reward triggers, stamp card design and logo stamps, public page and template, menu and items, specials, campaigns (SMS and push), spin wheels, challenges and tiers, welcome stamps.
-- [ ] Guest-accurate previews: phone frame card, public page per template, SMS with character count and cost, push notification, test spin (no budget use), reward moment, "Preview only, nothing was sent".
-- [ ] Publish gate plus "Preview changes" step for published items, with tests.
+- [x] Campaigns (SMS and push): draft, approve, confirm and send already gated in the domain with tests; the composer preview now carries the shared "Preview only. Nothing was sent." banner with segment count and cost, and the results page marks running totals as not final until settled. Cancel confirms in place.
+- [ ] Draft, Preview, Publish states for: loyalty rules and reward triggers, stamp card design and logo stamps, public page and template, menu and items, specials, spin wheels, challenges and tiers, welcome stamps. Remaining: apply the same banner and gate pattern to each builder.
+- [ ] Guest-accurate previews: phone frame card, public page per template, push notification, test spin (no budget use), reward moment.
+- [ ] "Preview changes" step for published items, with tests.
 
 ## 4. Content pages
 - [ ] Blog index, blog post template, RSS-friendly data structure; docs/blog-plan.md with 15 topics; two clearly marked placeholder posts.
@@ -55,3 +56,4 @@ Working order from the brief. Stop points get noted per section.
 
 ## Notes
 - Git commits are managed by the platform, so section commits happen through the normal save flow.
+- Campaign results page added 2026-10-25: /app/campaigns/:id shows messages sent, delivery per guest, redemptions and total cost; seed messages now belong to campaign-1 so the page shows real rows in demo mode.

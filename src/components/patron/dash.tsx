@@ -15,7 +15,8 @@ export function PageHeader(props: {
   actions?: ReactNode;
 }) {
   return (
-    <header className="dash-header">
+    // A div, not <header>: dashboard shells already own the one page header.
+    <div className="dash-header">
       <p className="eyebrow">
         <span className="eyebrow-line" />
         {props.eyebrow}
@@ -25,7 +26,7 @@ export function PageHeader(props: {
         <p className="demo-intro">{props.intro}</p>
       ) : null}
       {props.actions ? <div className="page-actions">{props.actions}</div> : null}
-    </header>
+    </div>
   );
 }
 

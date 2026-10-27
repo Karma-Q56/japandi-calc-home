@@ -243,3 +243,8 @@ Verified in the local demo browser at 375 px and 1280 px unless marked built-onl
 - [x] verified (browser at 375px) Footer columns align and all links read correctly on the home, business and pricing pages.
 - [x] Demo pill is production-hidden already (shows only in dev, or with ?demo=1).
 - [ ] Not verified: real device Safari/Chrome, and the walker counts semantic headers rather than judging visual design, which sections 2 to 8 cover page by page.
+
+## 2026-10-25: Campaign results page, shared dashboard kit, campaign preview banner
+- Campaign results page (built and verified in demo): messages sent, delivery status per guest, redemptions and total cost for each campaign at /app/campaigns/:id.
+- Shared dashboard component set (built, applied to campaign pages only so far): PageHeader, StatCard, DataTable, EmptyState, FormField, Badge, ConfirmDialog, PreviewBanner in src/components/patron/dash.tsx.
+- Preview banner on the campaign composer preview (verified in code, not yet walked at both widths).
