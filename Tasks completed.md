@@ -140,3 +140,19 @@ Committed on `freebuff/b8bfff140b08360ec8ca4786` as `9b494a7`, then
 
 Final zip: `zip_JH-final.zip` — git archive of HEAD, checked with
 `unzip -l`: 473 files, no `.git/`, no `.dev.vars`, no secrets.
+
+## Part 0 status (this session)
+
+Done and pushed:
+- 0a: branch joined with origin/main (merge -s ours). Now 0 behind, 6 ahead.
+- 0b: gender-neutral guest wording, with a test that fails on gendered pronouns.
+- 0c: singular and plural labels and whole-number visit gaps, with tests.
+- 0d: Quiet days gap removed, guest profile actions are real buttons, demo guests have unique names.
+- 0e (partial): .gitignore covers *.zip and .dev-server.pid; bun.lock and package-lock.json removed; pnpm-lock.yaml kept. Screenshot folder NOT yet trimmed.
+
+Not done:
+- 0f: screenshots for Insights, Bring a friend, Know your guest, till step, composer and join birthday step were NOT taken. The preview window would not draw the page, so no screenshot was captured or checked.
+- Part A (shared dash kit across all screens): not started.
+- Part B (Draft, Preview, Publish): not started.
+
+Checks on the current commit: tsc passes; eslint has 0 errors and 12 warnings; vitest 296 passed, 5 skipped; build passes.
