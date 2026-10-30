@@ -1,5 +1,6 @@
 import { demoRepo } from "@/data/repo";
 import { birthdayOf, birthdayLabel } from "@/lib/birthday";
+import { averageGapPhrase, countLabel } from "@/lib/wording";
 import { dayName, timeOfDayFor, TIME_OF_DAY_LABEL, visitPattern } from "@/lib/visits";
 import type { TimeOfDay } from "@/lib/visits";
 import { failure, success, type ApiResult } from "./demo";
@@ -107,7 +108,7 @@ export function ownerInsights(input: {
       name: nameOf(membership.id),
       customerId: membership.customerId,
       membershipId: membership.id,
-      detail: `${pattern.lastVisitDaysAgo} days since the last visit, usually about ${pattern.averageGapDays} days apart`,
+      detail: `${countLabel(pattern.lastVisitDaysAgo, "day")} since the last visit, ${averageGapPhrase(pattern.averageGapDays ?? 0)}`,
     });
   }
   slippingRegulars.sort((a, b) => Number(b.detail.match(/^\d+/)![0]) - Number(a.detail.match(/^\d+/)![0]));

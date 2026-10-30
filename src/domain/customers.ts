@@ -1,6 +1,7 @@
 import { clock } from "@/lib/clock";
 import { demoRepo, updateDemo } from "@/data/repo";
 import { maskPhone } from "@/lib/phone";
+import { averageGapPhrase, countLabel } from "@/lib/wording";
 import { birthdayOf, birthdayLabel, johannesburgMonthDay } from "@/lib/birthday";
 import { dayName, TIME_OF_DAY_LABEL, visitPattern } from "@/lib/visits";
 import type { VisitPattern } from "@/lib/visits";
@@ -312,22 +313,22 @@ export function knowYourGuest(input: {
     parts.push(
       dayList.length > 0
         ? `${firstName} usually comes in on ${dayList.slice(0, 2).join(" and ")}`
-        : `${firstName} has stamped ${pattern.visits} ${pattern.visits === 1 ? "time" : "times"}`,
+        : `${firstName} has stamped ${countLabel(pattern.visits, "time", "times")}`,
     );
     if (dayList.length > 0 && pattern.usualTime) {
       parts.push(`${TIME_OF_DAY_LABEL[pattern.usualTime]}`);
     }
     sentenceParts.push(`${parts.join(", ")}.`);
     if (topItems.length > 0) {
-      sentenceParts.push(`She usually has ${topItems[0]!.label.toLowerCase()}.`);
+      sentenceParts.push(`${firstName} usually has ${topItems[0]!.label.toLowerCase()}.`);
     }
   }
   sentenceParts.push(
-    `She has ${membership.stampsCurrent} stamps on her card.`,
+    `${firstName} has ${countLabel(membership.stampsCurrent, "stamp")} on their card.`,
   );
-  if (birthday) sentenceParts.push(`Her birthday is ${birthdayLabel(birthday)}.`);
+  if (birthday) sentenceParts.push(`Their birthday is ${birthdayLabel(birthday)}.`);
   if (pattern.slipping) {
-    sentenceParts.push("It has been a while. A friendly hello might bring her back.");
+    sentenceParts.push(`It has been a while. A friendly hello might bring ${firstName} back.`);
   }
 
   const patternSummary =
@@ -336,7 +337,7 @@ export function knowYourGuest(input: {
       : [
           pattern.usualDays.length > 0 ? dayList.slice(0, 2).join(" and ") : "no usual day",
           pattern.usualTime ? TIME_OF_DAY_LABEL[pattern.usualTime] : null,
-          pattern.averageGapDays !== null ? `about ${pattern.averageGapDays} days apart` : null,
+          pattern.averageGapDays !== null ? averageGapPhrase(pattern.averageGapDays) : null,
         ]
           .filter(Boolean)
           .join(", ");
