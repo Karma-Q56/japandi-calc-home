@@ -59,6 +59,9 @@
 }
 .builder-panel,
 .ox-main .builder-panel {
+  /* One column that can shrink: a wide child must never push the panel past
+     the screen. Panels with their own columns set them explicitly. */
+  grid-template-columns: minmax(0, 1fr);
   margin-top: 18px;
   padding: clamp(16px, 3vw, 24px);
   border: 1px solid var(--line);
@@ -3656,6 +3659,8 @@ input[type="range"] {
 .preview-banner {
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
+  max-width: 100%;
   gap: 8px;
   margin: 10px 0 0;
   padding: 6px 14px;
@@ -3772,3 +3777,10 @@ input[type="range"] {
 .pv-phone .pt button,
 .pv-phone .pt summary { pointer-events: none; }
 .pv-phone .pt img { max-width: 100%; height: auto; }
+/* A phone screen scrolls; the preview should not turn into a 3000px page. */
+.pv-phone .pv-screen {
+  max-height: 560px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
