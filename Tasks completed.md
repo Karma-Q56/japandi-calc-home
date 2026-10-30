@@ -168,6 +168,8 @@ Done and committed:
 - Loyalty card rules, welcome stamps, tiers, the birthday treat and the wheel settings now draft, preview inside a phone frame with the guest card and birthday line, and publish behind a confirm. After publishing, any further edit goes back through Preview changes. Commit `11df67f`.
 
 - Menu items now draft, preview as a guest and publish. The preview shows the whole public page in a phone frame with a template switcher; `Use the ... template on my public page` publishes the chosen template, while `Publish to my menu` is the only path that puts the item on the live menu. The duplicate specials editor was removed from this page because specials already have their own draft, preview and publish screen. Tests in `src/test/menu-preview.test.tsx`.
+- Layout fixes found while checking the menu preview in a browser at 375px and 1280px: builder panels now hold one shrinkable column, so a wide child (the new template switcher) can no longer push a panel past the screen; the preview banner wraps instead of overflowing; the phone frame scrolls its page instead of stretching to the full height of the public page. Checked by measuring every element in the page at both widths: no element crossed the viewport, no two actions overlapped.
+- The publish flow was exercised in a real browser, not only in tests: a new item was previewed, published, and then found on `/r/daily-grind`. No screenshot could be saved because the browser window never drew (the screenshot tool refused with that reason), so the check is by page text and element measurements, not by looking at an image.
 
 Not done yet:
 
