@@ -5,6 +5,8 @@ import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
 import { StampSlots } from "@/components/patron/StampSlots";
 import { Switch } from "@/components/patron/Switch";
+import { ConfirmDialog, PageHeader } from "@/components/patron/dash";
+import { PhoneFrame, PreviewOnly, PublishSteps } from "@/components/patron/preview";
 import { SPIN_MODES } from "@/domain/spins";
 import type { SpinConfig, SpinMode, SpinSegment } from "@/data/types";
 import { useDemoState } from "@/data/useDemoState";
@@ -49,6 +51,7 @@ function Loyalty() {
     : null;
   const [spin, setSpin] = useState<SpinConfig>(restaurant.spin);
   const [notice, setNotice] = useState("");
+  const [step, setStep] = useState(1);
   const [challengeTitle, setChallengeTitle] = useState("Three visits in 14 days");
   const [challengeVisits, setChallengeVisits] = useState(3);
   const [challengeDays, setChallengeDays] = useState(14);
@@ -58,27 +61,27 @@ function Loyalty() {
     (item) => item.restaurantId === restaurant.id,
   );
 
-  const save = () => {
+  const save = (): boolean => {
     if (stampsRequired < 2 || stampsRequired > 30) {
       setNotice("Stamps required must be between 2 and 30.");
-      return;
+      return false;
     }
     if (reward.trim().length < 1 || reward.trim().length > 80) {
       setNotice("Reward text must be 1 to 80 characters.");
-      return;
+      return false;
     }
     if (birthday && birthdayKind === "freeItem" &&
       (birthdayItem.trim().length < 2 || birthdayItem.trim().length > 60)) {
       setNotice("Name the free birthday item (2 to 60 characters) or pick a bonus stamp.");
-      return;
+      return false;
     }
     if (welcomeStamps < 0 || welcomeStamps > stampsRequired - 1) {
       setNotice(`Welcome stamps must be 0 to ${stampsRequired - 1}.`);
-      return;
+      return false;
     }
     if (regular < 1 || vip <= regular) {
       setNotice("VIP visits must be higher than Regular visits.");
-      return;
+      return false;
     }
     const result = api.restaurant.update(restaurant.id, {
       stampsRequired,
@@ -93,11 +96,13 @@ function Loyalty() {
       birthdayRewardItem: birthdayKind === "freeItem" ? birthdayItem.trim() : "",
     });
     setNotice(result.ok ? "Loyalty rules saved." : result.error.message);
+    return result.ok;
   };
 
-  const saveSpin = () => {
+  const saveSpin = (): boolean => {
     const result = api.spin.saveConfig({ restaurantId: restaurant.id, config: spin });
     setNotice(result.ok ? "Spin wheel saved." : result.error.message);
+    return result.ok;
   };
 
   const setSegment = (id: string, patch: Partial<SpinSegment>) => {
@@ -122,15 +127,12 @@ function Loyalty() {
 
   return (
     <main className="demo-hub page-width">
-      <p className="eyebrow">
-        <span className="eyebrow-line" />
-        Loyalty · {restaurant.name}
-      </p>
-      <h1>The card rules.</h1>
-      <p className="demo-intro">
-        Changing rules never alters rewards already earned. Stamps above a lowered threshold convert
-        on the next stamp.
-      </p>
+      <PageHeader
+        eyebrow={`Loyalty · ${restaurant.name}`}
+        title="The card rules"
+        intro="Changing rules never alters rewards already earned. Stamps above a lowered threshold convert on the next stamp."
+      />
+      <PublishSteps step={step} labels={["Draft", "Preview", "Publish"]} />
 
       <section className="builder-panel">
         <h2>Card</h2>
@@ -268,9 +270,6 @@ function Loyalty() {
           Tiers unlock members-only and targeted specials. VIP members can be the only ones who see
           a particular offer.
         </p>
-        <button className="builder-primary" onClick={save}>
-          Save loyalty rules
-        </button>
       </section>
 
       <section className="builder-panel">
@@ -471,9 +470,6 @@ function Loyalty() {
           />
         </label>
         <div className="page-actions">
-          <button className="builder-primary" onClick={saveSpin}>
-            Save spin wheel
-          </button>
           <button
             className="builder-secondary"
             onClick={() =>
@@ -554,6 +550,65 @@ function Loyalty() {
           Add challenge
         </button>
       </section>
+
+      {step >= 2 && (
+        <section className="builder-panel">
+          <h2>Preview: what guests see</h2>
+          <PhoneFrame label="Guest loyalty card">
+            <strong>{restaurant.name}</strong>
+            <small>{reward || "your reward"}</small>
+            <StampSlots
+              filled={Math.min(welcomeStamps, Math.max(1, stampsRequired - 1))}
+              total={stampsRequired}
+              theme={restaurant.theme}
+            />
+            <p>
+              {stampsRequired} stamps to {reward || "your reward"}
+            </p>
+            <p>
+              {welcomeStamps > 0
+                ? `You start with ${welcomeStamps} ${welcomeStamps === 1 ? "stamp" : "stamps"}.`
+                : "Start collecting from your first visit."}
+            </p>
+            {birthday && birthdayPreview && <p>{birthdayPreview.guestLine}</p>}
+          </PhoneFrame>
+          <PreviewOnly>
+            Preview only, nothing was sent. Guests see these rules only after you publish.
+          </PreviewOnly>
+          <div className="page-actions">
+            <button className="guest-back" onClick={() => setStep(1)}>
+              Back to edit
+            </button>
+            {step === 2 ? (
+              <ConfirmDialog
+                label="Publish loyalty rules"
+                question="Publish these card rules and wheel settings? Guests will see the new card straight away."
+                confirmLabel="Yes, publish"
+                buttonClass="builder-primary"
+                onConfirm={() => {
+                  const savedRules = save();
+                  if (!savedRules) return;
+                  const savedSpin = saveSpin();
+                  if (!savedSpin) return;
+                  setStep(3);
+                }}
+              />
+            ) : (
+              <p role="status" className="gx-note">
+                Published. Guests now see these rules on their card.
+              </p>
+            )}
+          </div>
+        </section>
+      )}
+
+      {step === 1 && (
+        <div className="page-actions">
+          <button className="builder-primary" onClick={() => setStep(2)}>
+            Preview changes
+          </button>
+        </div>
+      )}
 
       {notice && (
         <p role="status" className="demo-data-note">
