@@ -16,6 +16,7 @@ import {
   Settings,
   Ellipsis,
   UsersRound,
+  Palette,
 } from "lucide-react";
 
 type Item = { to: string; label: string; icon: ComponentType; end?: boolean };
@@ -29,6 +30,7 @@ export const OWNER_NAV: Item[] = [
   { to: "/app/specials", label: "Specials", icon: Tag },
   { to: "/app/credit", label: "Credit", icon: Wallet },
   { to: "/app/loyalty", label: "Loyalty card", icon: Gift },
+  { to: "/app/design", label: "Card design", icon: Palette },
   { to: "/app/menu", label: "Menu", icon: UtensilsCrossed },
   { to: "/app/qr", label: "QR codes", icon: QrCode },
   { to: "/app/team", label: "Team", icon: UserCog },
