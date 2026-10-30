@@ -11,11 +11,11 @@ import {
   EmptyState,
   FormField,
   PageHeader,
-  PreviewBanner,
   StatCard,
   StatGrid,
 } from "@/components/patron/dash";
 import { Switch } from "@/components/patron/Switch";
+import { PhoneFrame, PreviewOnly, PublishSteps } from "@/components/patron/preview";
 import { referralGuestPreview } from "@/domain/referrals";
 
 import type { ReferralConfig } from "@/data/types";
@@ -110,17 +110,7 @@ function ReferralsBody({
         title="Let your happy guests bring friends."
         intro="Every guest gets a personal link. When their friend gets their first stamp, both guests earn the reward you choose."
       />
-      <ol className="cmp-steps" aria-label={`Step ${step} of 3`}>
-        {STEP_LABELS.map((label, index) => (
-          <li
-            key={label}
-            className={index + 1 === step ? "is-now" : index + 1 < step ? "is-done" : ""}
-          >
-            <i>{index + 1 < step ? "✓" : index + 1}</i>
-            {label}
-          </li>
-        ))}
-      </ol>
+      <PublishSteps step={step} labels={STEP_LABELS} />
 
       {step === 1 && (
         <section className="cmp-card">
@@ -203,21 +193,24 @@ function ReferralsBody({
             ← Back
           </button>
           <h2>Preview: what your guests see</h2>
-          <div className="cmp-phone">
-            <small>The guest who shares</small>
-            <p>{preview.referrerText}</p>
-            <small>The friend who joins</small>
-            <p>{preview.friendText}</p>
-          </div>
+          <PhoneFrame label="Bring a friend preview">
+            <small className="pv-sender">On the guest&apos;s card</small>
+            <p className="pv-sms-bubble">{preview.referrerText}</p>
+            <small className="pv-sender">When the friend joins</small>
+            <p className="pv-sms-bubble">{preview.friendText}</p>
+            <p className="pv-meta">
+              Both rewards land after the friend&apos;s first stamp, never before.
+            </p>
+          </PhoneFrame>
           <p className="cmp-note">{overview.estimateText}</p>
           <p className="cmp-note">
             {config.rewardKind === "stamp"
               ? "No SMS cost. The reward lands on the card automatically."
               : "Both guests get their own single-use code, valid for 30 days."}
           </p>
-          <PreviewBanner>Preview only. Nothing changes until you publish on the next step.</PreviewBanner>
+          <PreviewOnly>Preview only, nothing was sent. Guests keep the current offer until you publish.</PreviewOnly>
           <button className="builder-primary" onClick={() => setStep(3)}>
-            Continue
+            Review and publish
           </button>
         </section>
       )}

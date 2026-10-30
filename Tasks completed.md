@@ -157,6 +157,8 @@ Not done:
 
 Checks on the current commit: tsc passes; eslint has 0 errors and 12 warnings; vitest 296 passed, 5 skipped; build passes.
 
+- Bring a friend closes Part B: its three steps now use PublishSteps, the guest preview sits in a phone frame with the exact share and join wording, and the banner reads "Preview only, nothing was sent" before the publish confirm.
+
 ## Part A and Part B (evening session, 2026-10-30)
 
 Done and committed:
