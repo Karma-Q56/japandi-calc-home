@@ -52,6 +52,7 @@ function Loyalty() {
   const [spin, setSpin] = useState<SpinConfig>(restaurant.spin);
   const [notice, setNotice] = useState("");
   const [step, setStep] = useState(1);
+  const [published, setPublished] = useState(false);
   const [challengeTitle, setChallengeTitle] = useState("Three visits in 14 days");
   const [challengeVisits, setChallengeVisits] = useState(3);
   const [challengeDays, setChallengeDays] = useState(14);
@@ -132,7 +133,7 @@ function Loyalty() {
         title="The card rules"
         intro="Changing rules never alters rewards already earned. Stamps above a lowered threshold convert on the next stamp."
       />
-      <PublishSteps step={step} labels={["Draft", "Preview", "Publish"]} />
+      <PublishSteps step={step} labels={["Draft", "Preview"]} />
 
       <section className="builder-panel">
         <h2>Card</h2>
@@ -579,7 +580,7 @@ function Loyalty() {
             <button className="guest-back" onClick={() => setStep(1)}>
               Back to edit
             </button>
-            {step === 2 ? (
+            {step === 2 && (
               <ConfirmDialog
                 label="Publish loyalty rules"
                 question="Publish these card rules and wheel settings? Guests will see the new card straight away."
@@ -590,13 +591,10 @@ function Loyalty() {
                   if (!savedRules) return;
                   const savedSpin = saveSpin();
                   if (!savedSpin) return;
-                  setStep(3);
+                  setPublished(true);
+                  setStep(1);
                 }}
               />
-            ) : (
-              <p role="status" className="gx-note">
-                Published. Guests now see these rules on their card.
-              </p>
             )}
           </div>
         </section>
@@ -607,6 +605,11 @@ function Loyalty() {
           <button className="builder-primary" onClick={() => setStep(2)}>
             Preview changes
           </button>
+          {published && (
+            <p role="status" className="gx-note">
+              Published. Guests now see these rules. Any further edit needs Preview changes again.
+            </p>
+          )}
         </div>
       )}
 

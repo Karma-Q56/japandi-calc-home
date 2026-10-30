@@ -165,12 +165,13 @@ Done and committed:
 - Part B foundations: `src/domain/publish.ts` is one tested draft, preview and publish state machine. It refuses to jump from draft to publish, keeps preview non-live, asks for "Preview changes" after editing a published item, and exports the single PREVIEW_ONLY line. 8 tests in `src/test/publish.test.ts`. Commit `7c4512f`.
 - Part B preview surfaces: `src/components/patron/preview.tsx` adds PhoneFrame, SmsPreview (characters, message count, guest count, cost), PushPreview, PublishSteps and PreviewOnly.
 - Campaign composer now reads Draft, Preview, Cost, Publish and shows a switchable SMS and push preview with the exact character count, message count, guest count and cost. Specials now draft, preview the guest view, then publish behind a confirm.
+- Loyalty card rules, welcome stamps, tiers, the birthday treat and the wheel settings now draft, preview inside a phone frame with the guest card and birthday line, and publish behind a confirm. After publishing, any further edit goes back through Preview changes. Commit `11df67f`.
 
 Not done yet:
 
-- Part B is not applied to loyalty rules, birthday rewards, bring a friend (it already had its own three steps), stamp card and logo stamps, the public page and template, menu items, spin wheels and prizes, challenges and tiers, and welcome stamps.
+- Part B is not applied to stamp card design and logo stamps, the public page and template switcher, menu items, the wheel test spin and prize list, challenges, and the remaining bring a friend surfaces (it already had its own three steps).
 - Part A is not applied to the diner app, the staff till or the guest profile page body.
 - Items 1 to 6 of the newest request (owner editing with uploads, reward presets, loyalty tools, suggestions, content pages, page audit) are not started.
 - Screenshots at 375px and 1280px were not taken in this session.
 
-Checks on `7c4512f`: tsc clean, eslint 0 errors, vitest 304 passed and 5 skipped, build passes.
+Checks on `11df67f`: tsc clean, eslint 0 errors (12 pre-existing warnings), vitest 310 passed and 5 skipped, build passes.
