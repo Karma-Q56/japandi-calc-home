@@ -7,6 +7,7 @@ import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
 import { isScanTokenShape, verifyScanToken } from "@/lib/scan";
 import { CardScanner } from "@/components/patron/CardScanner";
+import { Badge, FormField, PageHeader } from "@/components/patron/dash";
 import type { StampResult } from "@/domain/stamps";
 
 export const Route = createFileRoute("/stamp")({
@@ -358,18 +359,20 @@ function Till() {
   if (!paired) {
     return (
       <main className="guest-page">
-        <p className="eyebrow">Till · {restaurant.name}</p>
-        <h1>Pair this till.</h1>
+        <PageHeader
+          eyebrow="Till"
+          title="Pair this till."
+          intro={`${restaurant.name} · a one time code links this device to the counter.`}
+        />
         <section className="guest-panel">
-          <label className="builder-field">
-            Pairing code
+          <FormField label="Pairing code" hint="Ask the owner for the code in Team.">
             <input
               value={pairingCode}
               onChange={(event) => setPairingCode(event.target.value)}
               placeholder="ABCDEFGH"
               autoComplete="off"
             />
-          </label>
+          </FormField>
           <button className="builder-primary" onClick={() => void pair()}>
             Pair device
           </button>
@@ -395,11 +398,13 @@ function Till() {
     const crew = state.staff.filter((s) => s.restaurantId === restaurant.id && s.active);
     return (
       <main className="guest-page">
-        <p className="eyebrow">Till · {restaurant.name}</p>
-        <h1>Who’s stamping?</h1>
+        <PageHeader
+          eyebrow={`Till · ${restaurant.name}`}
+          title="Who’s stamping?"
+          intro="Your name goes on every stamp so the owner can see who served the guest."
+        />
         <section className="guest-panel">
-          <label className="builder-field">
-            Your name
+          <FormField label="Your name">
             <select value={pinName} onChange={(event) => setPinName(event.target.value)}>
               <option value="">Choose…</option>
               {crew.map((s) => (
@@ -408,9 +413,8 @@ function Till() {
                 </option>
               ))}
             </select>
-          </label>
-          <label className="builder-field">
-            PIN
+          </FormField>
+          <FormField label="PIN" hint="Four digits, set by the owner.">
             <input
               type="password"
               className="pin-input"
@@ -421,7 +425,7 @@ function Till() {
               maxLength={4}
               placeholder="••••"
             />
-          </label>
+          </FormField>
           <div className="pin-pad">
             {["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "⌫"].map((key) => (
               <button
@@ -460,14 +464,16 @@ function Till() {
 
   return (
     <main className="guest-page">
-      <header className="guest-header till-bar">
-        <span>
-          Till · {signedInStaff?.displayName} · {restaurant.name}
-        </span>
-        <button className="guest-back" onClick={swap}>
-          Swap staff
-        </button>
-      </header>
+      <PageHeader
+        eyebrow={`Till · ${signedInStaff?.displayName ?? "Staff"}`}
+        title={restaurant.name}
+        intro="Look up a guest, add a stamp and send them off with their reward."
+        actions={
+          <button className="builder-secondary" onClick={swap}>
+            Swap staff
+          </button>
+        }
+      />
       <section className="guest-panel">
         <form
           className="till-lookup"
@@ -476,8 +482,7 @@ function Till() {
             doLookup();
           }}
         >
-          <label className="builder-field">
-            Member code or phone
+          <FormField label="Member code or phone" hint="Or scan the card with the button below.">
             <input
               value={code}
               onChange={(event) => setCode(event.target.value.toUpperCase())}
@@ -485,7 +490,7 @@ function Till() {
               autoComplete="off"
               autoCapitalize="characters"
             />
-          </label>
+          </FormField>
           <button className="builder-primary" type="submit">
             Look up
           </button>
@@ -532,11 +537,13 @@ function Till() {
           </div>
           {lookup.rewards.length > 0 && (
             <p>
-              {lookup.rewards.length} reward
-              {lookup.rewards.length === 1 ? "" : "s"} waiting
+              <Badge tone="active">
+                {lookup.rewards.length} reward
+                {lookup.rewards.length === 1 ? "" : "s"} waiting
+              </Badge>
             </p>
           )}
-          <button className="staff-button" onClick={addStamp}>
+          <button className="builder-primary" onClick={addStamp}>
             Add stamp
           </button>
           {lookup.rewards.map((reward) => (
@@ -549,15 +556,14 @@ function Till() {
               Undo last stamp
             </button>
           )}
-          <label className="builder-field">
-            Offer code
+          <FormField label="Offer code" hint="Campaign codes and specials use this one field.">
             <input
               value={redeemCode}
               onChange={(event) => setRedeemCode(event.target.value)}
               placeholder="TUESDAY"
               autoComplete="off"
             />
-          </label>
+          </FormField>
           <button className="builder-secondary" onClick={redeemOffer}>
             Redeem offer
           </button>
@@ -651,15 +657,14 @@ function OrderSheet({
           );
         })}
       </div>
-      <label className="builder-field">
-        Search the whole menu
+      <FormField label="Search the whole menu">
         <input
           value={menuQuery}
           onChange={(event) => onMenuQuery(event.target.value)}
           placeholder="Type to search the menu"
           autoComplete="off"
         />
-      </label>
+      </FormField>
       {menuHits.length > 0 && (
         <div className="order-quick-grid">
           {menuHits.map((item) => {
@@ -678,8 +683,7 @@ function OrderSheet({
           })}
         </div>
       )}
-      <label className="builder-field">
-        Bill amount in rand (optional)
+      <FormField label="Bill amount in rand (optional)">
         <input
           type="number"
           min={0}
@@ -688,7 +692,7 @@ function OrderSheet({
           placeholder="0"
           inputMode="numeric"
         />
-      </label>
+      </FormField>
       <button
         className="builder-primary"
         disabled={pickCount === 0}

@@ -7,6 +7,7 @@ import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
 import { GuestShell } from "@/components/patron/GuestShell";
 import { LoyaltyCard } from "@/components/patron/LoyaltyCard";
+import { PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
 import { clock } from "@/lib/clock";
 import { signInAsDemoAccount } from "@/lib/demo-signin";
 
@@ -63,20 +64,34 @@ function MyCards() {
   }
   const result = api.member.cards(customerId);
   const memberships = result.ok ? result.data : [];
+  const firstName = customer.name.split(" ")[0];
+  const rewardsReady = memberships.filter((item) =>
+    item.rewards.some((reward) => !reward.redeemedAt),
+  ).length;
+  const stampsHeld = memberships.reduce((sum, item) => sum + item.stampsCurrent, 0);
   return (
     <GuestShell title={customer.name}>
-      <p className="gx-hello">Hi {customer.name.split(" ")[0]} 👋</p>
-      <h1>My cards.</h1>
+      <PageHeader
+        eyebrow="My cards"
+        title={`Hi ${firstName}`}
+        intro="Every card you have joined, with the stamps and rewards ready for you today."
+      />
       {memberships.length > 0 && (
-        <p className="gx-summary">
-          <span>
-            <b>{memberships.length}</b> {memberships.length === 1 ? "card" : "cards"}
-          </span>
-          <span>
-            <b>{memberships.filter((m) => m.rewards.some((r) => !r.redeemedAt)).length}</b> reward
-            ready
-          </span>
-        </p>
+        <StatGrid>
+          <StatCard
+            value={memberships.length}
+            label={memberships.length === 1 ? "card joined" : "cards joined"}
+          />
+          <StatCard
+            value={rewardsReady}
+            label={rewardsReady === 1 ? "reward ready" : "rewards ready"}
+            tone={rewardsReady > 0 ? "good" : undefined}
+          />
+          <StatCard
+            value={stampsHeld}
+            label={stampsHeld === 1 ? "stamp collected" : "stamps collected"}
+          />
+        </StatGrid>
       )}
       {memberships.length ? (
         <div className="gx-cards">
@@ -128,6 +143,7 @@ function MyCards() {
         </p>
         <button
           type="button"
+          className="builder-secondary"
           onClick={() => {
             demoRepo.reset();
             signInAsDemoAccount("diner");

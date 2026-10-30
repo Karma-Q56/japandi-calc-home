@@ -7,6 +7,8 @@ import { requireRole } from "@/data/session";
 import { birthdayOf, MONTH_NAMES } from "@/lib/birthday";
 import { maskPhone } from "@/lib/phone";
 import { Switch } from "@/components/patron/Switch";
+import { GuestShell } from "@/components/patron/GuestShell";
+import { FormField, PageHeader } from "@/components/patron/dash";
 import { enableBrowserPush, disableBrowserPush, showLocalPushTest } from "@/lib/web-push-client";
 
 export const Route = createFileRoute("/me/settings")({
@@ -75,34 +77,30 @@ function GuestSettings() {
   };
   const deletion = state.dataRequests.find((item) => item.customerId === customerId);
   return (
-    <main className="guest-page">
-      <header className="guest-header">
-        <a href="/me">← My cards</a>
-        <span>Settings</span>
-      </header>
-      <section className="guest-card-content">
-        <p className="eyebrow">Your details</p>
-        <h1>Settings.</h1>
-        {customer.deleted ? (
-          <section className="guest-panel">
+    <GuestShell title={customer.name}>
+      <PageHeader
+        eyebrow="Your details"
+        title="Settings."
+        intro="Your name, birthday and the messages each restaurant can send you."
+      />
+      {customer.deleted ? (
+        <section className="builder-panel">
             <h2>Your personal details have been cleared.</h2>
             <p>Membership and visit counts remain in demo history.</p>
             <p>Data request status: {deletion?.status ?? "open"}</p>
           </section>
         ) : (
-          <section className="guest-panel">
-            <label className="builder-field">
-              Name
+          <section className="builder-panel">
+            <FormField label="Name">
               <input
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 maxLength={40}
               />
-            </label>
-            <label className="builder-field">
-              Phone number
+            </FormField>
+            <FormField label="Phone number" hint="Shared by you when you joined.">
               <input value={maskPhone(customer.phoneE164)} readOnly />
-            </label>
+            </FormField>
             <div className="builder-field" role="group" aria-label="Birthday, day and month">
               <span>Birthday · optional</span>
               <small className="gx-note" style={{ display: "block" }}>
@@ -141,7 +139,7 @@ function GuestSettings() {
             </button>
           </section>
         )}
-        <section className="guest-section" id="messages">
+        <section className="builder-panel" id="messages">
           <h2>Messages</h2>
           <p className="gx-note">
             Each restaurant you&apos;ve joined has its own SMS and push switches. Your loyalty cards
@@ -222,7 +220,7 @@ function GuestSettings() {
               </p>
             ))}
         </section>
-        <section className="guest-section">
+        <section className="builder-panel">
           <h2>Your data</h2>
           <div className="settings-actions">
             <button className="builder-secondary" onClick={download}>
@@ -253,7 +251,6 @@ function GuestSettings() {
             {notice}
           </p>
         )}
-      </section>
-    </main>
+    </GuestShell>
   );
 }

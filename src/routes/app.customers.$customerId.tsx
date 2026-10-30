@@ -1,8 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { api } from "@/api";
-import { Button } from "@/components/ui/button";
-import { ConfirmDialog } from "@/components/patron/dash";
+import { Badge, ConfirmDialog, PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
 import { demoRepo } from "@/data/repo";
 import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
@@ -48,32 +47,81 @@ function CustomerProfile() {
     restaurantId: restaurant.id,
     session: scope,
   });
+  const waitingRewards = profile.rewards.filter((reward) => !reward.redeemedAt).length;
+  const maskedPhone = `•••• ${profile.customer.phoneE164.slice(-4)}`;
   return (
     <main className="demo-hub page-width">
-      <p className="eyebrow">
-        <span className="eyebrow-line" />
-        Customer · {restaurant.name}
-      </p>
-      <h1>{profile.customer.name || "(removed)"}</h1>
-      <p>
-        {profile.customer.phoneE164}{" "}
+      <PageHeader
+        eyebrow={`Customer · ${restaurant.name}`}
+        title={profile.customer.name || "(removed)"}
+        intro="Their card, visits and consent in one place."
+      />
+      <StatGrid>
+        <StatCard
+          value={`${profile.membership.stampsCurrent} / ${restaurant.stampsRequired}`}
+          label="stamps on the card"
+        />
+        <StatCard
+          value={waitingRewards}
+          label={waitingRewards === 1 ? "reward waiting" : "rewards waiting"}
+          tone={waitingRewards > 0 ? "good" : undefined}
+        />
+        <StatCard value={profile.visits.length} label="visits recorded" />
+      </StatGrid>
+      <div className="demo-control-actions">
         <button
-          className="builder-secondary"
+          className="builder-primary"
           onClick={() => {
-            const revealed = api.customers.reveal({
-              customerId,
-              restaurantId: restaurant.id,
+            const stamped = api.customers.manualStamp({
+              membershipId: profile.membership.id,
               actorId: actor,
               session: scope,
             });
-            if (revealed.ok) setPhone(revealed.data.phone);
-            else setNotice(revealed.error.message);
+            setNotice(stamped.ok ? "Manual stamp added." : stamped.error.message);
           }}
         >
-          Reveal phone
+          Add manual stamp
         </button>
-        {phone && <strong> {phone}</strong>}
-      </p>
+        <ConfirmDialog
+          label="Remove from my list"
+          question="Remove this guest from marketing? Their visit history is kept."
+          confirmLabel="Yes, remove"
+          buttonClass="destructive-link"
+          onConfirm={() => {
+            const removed = api.customers.remove({
+              membershipId: profile.membership.id,
+              actorId: actor,
+              session: scope,
+            });
+            setNotice(removed.ok ? "Removed from marketing; counts kept." : removed.error.message);
+          }}
+        />
+      </div>
+      <section className="builder-panel">
+        <h2>Contact</h2>
+        <p>
+          {phone ? <strong>{phone}</strong> : <span>{maskedPhone}</span>}
+          {" "}
+          <button
+            className="builder-secondary"
+            onClick={() => {
+              const revealed = api.customers.reveal({
+                customerId,
+                restaurantId: restaurant.id,
+                actorId: actor,
+                session: scope,
+              });
+              if (revealed.ok) setPhone(revealed.data.phone);
+              else setNotice(revealed.error.message);
+            }}
+          >
+            {phone ? "Reveal again" : "Reveal phone"}
+          </button>
+        </p>
+        <p className="demo-data-note">
+          Revealing a number is written to the activity log, so every look is traceable.
+        </p>
+      </section>
       {birthday && (
         <p className="guest-birthday-line">
           Birthday: <strong>{birthdayLabel(birthday)}</strong>
@@ -142,7 +190,9 @@ function CustomerProfile() {
           <p className="guest-list-item" key={reward.id}>
             <span>
               <strong>{reward.description}</strong>
-              <small>{reward.redeemedAt ? "Redeemed" : "Waiting"}</small>
+              <Badge tone={reward.redeemedAt ? undefined : "active"}>
+                {reward.redeemedAt ? "Redeemed" : "Waiting"}
+              </Badge>
             </span>
           </p>
         ))}
@@ -163,36 +213,7 @@ function CustomerProfile() {
           </p>
         ))}
       </section>
-      <div className="demo-control-actions">
-        <Button
-          variant="secondary"
-          onClick={() => {
-            const stamped = api.customers.manualStamp({
-              membershipId: profile.membership.id,
-              actorId: actor,
-              session: scope,
-            });
-            setNotice(stamped.ok ? "Manual stamp added." : stamped.error.message);
-          }}
-        >
-          Add manual stamp
-        </Button>
-        <ConfirmDialog
-          label="Remove from my list"
-          question="Remove this guest from marketing? Their visit history is kept."
-          confirmLabel="Yes, remove"
-          buttonClass="destructive-link"
-          onConfirm={() => {
-            const removed = api.customers.remove({
-              membershipId: profile.membership.id,
-              actorId: actor,
-              session: scope,
-            });
-            setNotice(removed.ok ? "Removed from marketing; counts kept." : removed.error.message);
-          }}
-        />
-      </div>
-      {notice && (
+            {notice && (
         <p role="status" className="demo-data-note">
           {notice}
         </p>
