@@ -3732,3 +3732,43 @@ input[type="range"] {
   text-transform: uppercase;
   color: var(--muted-foreground);
 }
+
+/* ---------- public page preview inside the phone frame ---------- */
+
+/* Choose a template while previewing; the pressed one is the one shown. */
+.pv-template-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 4px;
+}
+.pv-template-switch .builder-secondary {
+  min-height: 38px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+.pv-template-switch [aria-pressed="true"] {
+  color: var(--primary-foreground);
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+/* The real guest page, scaled to phone width inside the frame. */
+.pv-phone .pt {
+  min-height: 0;
+  font-size: 12px;
+  border-radius: 14px;
+}
+.pv-phone .pt h1 { font-size: 1.5rem; }
+.pv-phone .pt h2 { font-size: 1.05rem; }
+.pv-phone .pt h3 { font-size: 0.92rem; }
+.pv-phone .pt p,
+.pv-phone .pt small,
+.pv-phone .pt li,
+.pv-phone .pt b,
+.pv-phone .pt span { font-size: 12px; }
+/* A preview is a picture, not a second way to navigate. */
+.pv-phone .pt a,
+.pv-phone .pt button,
+.pv-phone .pt summary { pointer-events: none; }
+.pv-phone .pt img { max-width: 100%; height: auto; }
