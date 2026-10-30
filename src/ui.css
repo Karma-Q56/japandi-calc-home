@@ -4152,3 +4152,47 @@ input[type="range"] {
     margin-top: 8px;
   }
 }
+
+/* ------------------------------------------------------------- ops outbox */
+.outbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.outbox-card {
+  display: grid;
+  gap: 10px;
+}
+.outbox-body {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper-2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.outbox-card h3 {
+  margin: 4px 0 0;
+  font-size: 15px;
+}
+.outbox-timeline {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0 0 0 16px;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+.outbox-timeline li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  justify-content: space-between;
+}
+.outbox-timeline .is-good span {
+  color: oklch(0.45 0.12 150);
+}
+.outbox-timeline .is-bad span {
+  color: oklch(0.48 0.16 28);
+}

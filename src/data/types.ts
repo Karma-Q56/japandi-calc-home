@@ -86,6 +86,8 @@ export interface Restaurant {
   referral?: ReferralConfig;
   /** Placeholder address notified of new enquiries. No real email is sent in demo. */
   enquiryNotifyEmail?: string;
+  /** Operator drafts skip owner approval when this is on. Off by default. */
+  campaignAutoApprove?: boolean;
 }
 
 /** Owner's choices for bring a friend. Disabled by default. */

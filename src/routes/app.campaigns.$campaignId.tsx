@@ -17,6 +17,29 @@ export const Route = createFileRoute("/app/campaigns/$campaignId")({
 
 const CHANNEL_LABEL: Record<"sms" | "push", string> = { sms: "SMS", push: "Push" };
 
+function audienceLabel(audience: { type: string; days?: number; weekday?: number }): string {
+  switch (audience.type) {
+    case "everyone":
+    case "all_opted_in":
+      return "Everyone who opted in";
+    case "new":
+      return `Guests who joined in the last ${audience.days ?? "few"} days`;
+    case "lapsed30":
+    case "lapsed":
+      return `Guests who have not visited in ${audience.days ?? 30} days`;
+    case "close_to_reward":
+      return "Guests one or two stamps from a reward";
+    case "weekday":
+      return "Guests who usually visit on the chosen day";
+    case "birthday_month":
+      return "Guests with a birthday this month";
+    case "saved_list":
+      return "A saved list";
+    default:
+      return "Everyone who opted in";
+  }
+}
+
 function ResultsPage() {
   const { campaignId } = Route.useParams();
   const state = useDemoState();
@@ -64,6 +87,29 @@ function ResultsPage() {
     const cancelled = api.campaign.cancel({ campaignId: campaign.id, actor: "owner" });
     setNotice(cancelled.ok ? "Campaign cancelled; the reservation was released." : cancelled.error.message);
   };
+  const approveAndSend = () => {
+    if (campaign.requiresApproval && !campaign.approvedBy) {
+      const approved = api.campaign.approve({
+        campaignId: campaign.id,
+        actor: "owner",
+        role: state.session.role,
+      });
+      if (!approved.ok) {
+        setNotice(approved.error.message);
+        return;
+      }
+    }
+    const confirmed = api.campaign.confirm({
+      campaignId: campaign.id,
+      actor: "owner",
+      sendNow: true,
+    });
+    setNotice(
+      confirmed.ok
+        ? "Approved and queued. In demo the dispatcher in the outbox delivers it; no real phone is messaged."
+        : confirmed.error.message,
+    );
+  };
 
   return (
     <main className="demo-hub page-width">
@@ -83,6 +129,23 @@ function ResultsPage() {
                 confirmLabel="Cancel it"
                 onConfirm={cancel}
               />
+            </>
+          ) : campaign.status === "draft" ? (
+            <>
+              <ConfirmDialog
+                label={canApprove ? "Approve and send" : "Send campaign"}
+                question={
+                  canApprove
+                    ? `Approve this message and queue it for ${campaign.recipients || "the eligible"} guests? Nothing has been sent yet.`
+                    : "Queue this message for the eligible guests? Nothing has been sent yet."
+                }
+                confirmLabel={canApprove ? "Yes, approve and send" : "Yes, send"}
+                buttonClass="builder-primary"
+                onConfirm={approveAndSend}
+              />
+              <a className="builder-secondary" href="/app/campaigns">
+                Back to campaigns
+              </a>
             </>
           ) : (
             <a className="builder-secondary" href="/app/campaigns">
@@ -104,11 +167,27 @@ function ResultsPage() {
         </section>
       )}
       {campaign.status === "draft" && (
-        <EmptyState
-          title="Nothing sent yet. This campaign is still a draft."
-          hint="Confirm it in the composer to send or schedule it. Nothing goes out until you confirm."
-          action={<a className="builder-primary" href="/app/campaigns/new">New campaign</a>}
-        />
+        <section className="builder-panel">
+          <h2>Preview: what each guest gets</h2>
+          <div className="cmp-phone">
+            <small>
+              From{" "}
+              {state.restaurants.find((item) => item.id === campaign.restaurantId)?.name ??
+                "your restaurant"}
+            </small>
+            <p>{campaign.body}</p>
+            <small>Reply STOP to opt out</small>
+          </div>
+          <p className="demo-data-note">
+            Audience: {audienceLabel(campaign.audience)}. Offer code {campaign.code}. Cost is
+            calculated when you send and shown on the results page.
+          </p>
+          <PreviewBanner>
+            Preview only. Nothing was sent. {canApprove
+              ? "An operator wrote this; approve it before it can go out."
+              : "Send it with the button above when you are happy."}
+          </PreviewBanner>
+        </section>
       )}
       {results && (campaign.status !== "draft") && (
         <>

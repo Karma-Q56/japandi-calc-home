@@ -10,7 +10,7 @@ const LINKS = [
   { to: "/ops/leads", label: "Enquiries" },
   { to: "/ops/campaigns", label: "Campaigns" },
   { to: "/ops/credit", label: "Credit" },
-  { to: "/demo/outbox", label: "SMS outbox" },
+  { to: "/ops/outbox", label: "SMS outbox" },
 ] as const;
 
 function OpsShell() {

@@ -31,6 +31,7 @@ function Settings() {
     restaurant.enquiryNotifyEmail ?? "",
   );
   const [notice, setNotice] = useState("");
+  const [autoApprove, setAutoApprove] = useState(restaurant.campaignAutoApprove ?? false);
   const [trackOrders, setTrackOrders] = useState(restaurant.trackOrders ?? false);
   const [ordersMode, setOrdersMode] = useState<"items" | "categories">(
     restaurant.ordersMode ?? "items",
@@ -49,6 +50,7 @@ function Settings() {
       smsCapMember: Math.max(1, capMember),
       contact: contact.trim(),
       enquiryNotifyEmail: enquiryNotifyEmail.trim(),
+      campaignAutoApprove: autoApprove,
     });
     if (!result.ok) {
       setNotice(result.error.message);
@@ -139,6 +141,18 @@ function Settings() {
             />
           </FormField>
         </div>
+      </section>
+      <section className="builder-panel">
+        <h2>Done for you campaigns</h2>
+        <Switch
+          label="Auto approve Patron's campaign drafts"
+          hint="Off by default. When off, every campaign Patron writes waits for your approval and nothing sends until you say yes."
+          checked={autoApprove}
+          onChange={setAutoApprove}
+        />
+        <p className="demo-data-note">
+          Even with auto approve on, a campaign only sends after its cost and audience are confirmed.
+        </p>
       </section>
       <section className="builder-panel">
         <h2>Orders at the till</h2>

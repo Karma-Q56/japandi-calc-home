@@ -57,6 +57,7 @@ import { Route as MeSettingsRouteImport } from './routes/me.settings'
 import { Route as OpsCampaignsRouteImport } from './routes/ops.campaigns'
 import { Route as OpsCreditRouteImport } from './routes/ops.credit'
 import { Route as OpsLeadsRouteImport } from './routes/ops.leads'
+import { Route as OpsOutboxRouteImport } from './routes/ops.outbox'
 import { Route as OpsRestaurantsRouteImport } from './routes/ops.restaurants'
 import { Route as RSlugRouteImport } from './routes/r.$slug'
 import { Route as STokenRouteImport } from './routes/s/$token'
@@ -316,6 +317,11 @@ const OpsLeadsRoute = OpsLeadsRouteImport.update({
   path: '/leads',
   getParentRoute: () => OpsRoute,
 } as any)
+const OpsOutboxRoute = OpsOutboxRouteImport.update({
+  id: '/outbox',
+  path: '/outbox',
+  getParentRoute: () => OpsRoute,
+} as any)
 const OpsRestaurantsRoute = OpsRestaurantsRouteImport.update({
   id: '/restaurants',
   path: '/restaurants',
@@ -456,6 +462,7 @@ export interface FileRoutesByFullPath {
   '/ops/campaigns': typeof OpsCampaignsRoute
   '/ops/credit': typeof OpsCreditRoute
   '/ops/leads': typeof OpsLeadsRoute
+  '/ops/outbox': typeof OpsOutboxRoute
   '/ops/restaurants': typeof OpsRestaurantsRouteWithChildren
   '/r/$slug': typeof RSlugRouteWithChildren
   '/s/$token': typeof STokenRoute
@@ -524,6 +531,7 @@ export interface FileRoutesByTo {
   '/ops/campaigns': typeof OpsCampaignsRoute
   '/ops/credit': typeof OpsCreditRoute
   '/ops/leads': typeof OpsLeadsRoute
+  '/ops/outbox': typeof OpsOutboxRoute
   '/ops/restaurants': typeof OpsRestaurantsRouteWithChildren
   '/r/$slug': typeof RSlugRouteWithChildren
   '/s/$token': typeof STokenRoute
@@ -593,6 +601,7 @@ export interface FileRoutesById {
   '/ops/campaigns': typeof OpsCampaignsRoute
   '/ops/credit': typeof OpsCreditRoute
   '/ops/leads': typeof OpsLeadsRoute
+  '/ops/outbox': typeof OpsOutboxRoute
   '/ops/restaurants': typeof OpsRestaurantsRouteWithChildren
   '/r/$slug': typeof RSlugRouteWithChildren
   '/s/$token': typeof STokenRoute
@@ -663,6 +672,7 @@ export interface FileRouteTypes {
     | '/ops/campaigns'
     | '/ops/credit'
     | '/ops/leads'
+    | '/ops/outbox'
     | '/ops/restaurants'
     | '/r/$slug'
     | '/s/$token'
@@ -731,6 +741,7 @@ export interface FileRouteTypes {
     | '/ops/campaigns'
     | '/ops/credit'
     | '/ops/leads'
+    | '/ops/outbox'
     | '/ops/restaurants'
     | '/r/$slug'
     | '/s/$token'
@@ -799,6 +810,7 @@ export interface FileRouteTypes {
     | '/ops/campaigns'
     | '/ops/credit'
     | '/ops/leads'
+    | '/ops/outbox'
     | '/ops/restaurants'
     | '/r/$slug'
     | '/s/$token'
@@ -1190,6 +1202,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OpsLeadsRouteImport
       parentRoute: typeof OpsRoute
     }
+    '/ops/outbox': {
+      id: '/ops/outbox'
+      path: '/outbox'
+      fullPath: '/ops/outbox'
+      preLoaderRoute: typeof OpsOutboxRouteImport
+      parentRoute: typeof OpsRoute
+    }
     '/ops/restaurants': {
       id: '/ops/restaurants'
       path: '/restaurants'
@@ -1465,6 +1484,7 @@ interface OpsRouteChildren {
   OpsCampaignsRoute: typeof OpsCampaignsRoute
   OpsCreditRoute: typeof OpsCreditRoute
   OpsLeadsRoute: typeof OpsLeadsRoute
+  OpsOutboxRoute: typeof OpsOutboxRoute
   OpsRestaurantsRoute: typeof OpsRestaurantsRouteWithChildren
 }
 
@@ -1472,6 +1492,7 @@ const OpsRouteChildren: OpsRouteChildren = {
   OpsCampaignsRoute: OpsCampaignsRoute,
   OpsCreditRoute: OpsCreditRoute,
   OpsLeadsRoute: OpsLeadsRoute,
+  OpsOutboxRoute: OpsOutboxRoute,
   OpsRestaurantsRoute: OpsRestaurantsRouteWithChildren,
 }
 

@@ -210,7 +210,8 @@ export function saveDraft(input: {
     );
     if (!special) return failure("INVALID", "Choose a special from this restaurant.");
   }
-  const requiresApproval = input.actorRole === "operator";
+  // Done-for-you drafts wait for the owner unless the owner turned auto approve on.
+  const requiresApproval = input.actorRole === "operator" && !restaurant.campaignAutoApprove;
   if (!input.draftId) {
     const now = new Date(state.now).toISOString();
     const campaign: Campaign = {
