@@ -6,7 +6,7 @@ import { requireRole } from "@/data/session";
 import { StampSlots } from "@/components/patron/StampSlots";
 import { Switch } from "@/components/patron/Switch";
 import { ConfirmDialog, PageHeader } from "@/components/patron/dash";
-import { PhoneFrame, PreviewOnly, PublishSteps } from "@/components/patron/preview";
+import { PhoneFrame, PreviewOnly, PublishSteps, WheelPreview } from "@/components/patron/preview";
 import { SPIN_MODES } from "@/domain/spins";
 import type { SpinConfig, SpinMode, SpinSegment } from "@/data/types";
 import { useDemoState } from "@/data/useDemoState";
@@ -573,6 +573,22 @@ function Loyalty() {
             </p>
             {birthday && birthdayPreview && <p>{birthdayPreview.guestLine}</p>}
           </PhoneFrame>
+          <div className="pv-test-spin">
+            <h3>Test the wheel</h3>
+            <p className="demo-data-note">
+              A test spin draws from these draft prizes only. It never touches your weekly budget
+              and never creates an offer, code or reward.
+            </p>
+            {!spin.enabled && (
+              <p className="demo-data-note">
+                The wheel is off for guests right now. Turn it on above when you are happy with
+                the prizes.
+              </p>
+            )}
+            <PhoneFrame label="Guest spin wheel preview">
+              <WheelPreview segments={spin.segments} />
+            </PhoneFrame>
+          </div>
           <PreviewOnly>
             Preview only, nothing was sent. Guests see these rules only after you publish.
           </PreviewOnly>
