@@ -170,12 +170,13 @@ Done and committed:
 - Menu items now draft, preview as a guest and publish. The preview shows the whole public page in a phone frame with a template switcher; `Use the ... template on my public page` publishes the chosen template, while `Publish to my menu` is the only path that puts the item on the live menu. The duplicate specials editor was removed from this page because specials already have their own draft, preview and publish screen. Tests in `src/test/menu-preview.test.tsx`.
 - Layout fixes found while checking the menu preview in a browser at 375px and 1280px: builder panels now hold one shrinkable column, so a wide child (the new template switcher) can no longer push a panel past the screen; the preview banner wraps instead of overflowing; the phone frame scrolls its page instead of stretching to the full height of the public page. Checked by measuring every element in the page at both widths: no element crossed the viewport, no two actions overlapped.
 - The publish flow was exercised in a real browser, not only in tests: a new item was previewed, published, and then found on `/r/daily-grind`. No screenshot could be saved because the browser window never drew (the screenshot tool refused with that reason), so the check is by page text and element measurements, not by looking at an image.
+- The loyalty preview now includes the wheel as a guest sees it: a coloured wheel drawn from the draft prize list, the share each prize holds, and a Test spin button. The pick uses the same weighted helper as the guest wheel in the browser, and goes no further: no spin is recorded, no budget is spent and no prize, offer or code is created. `src/lib/wheel.ts` holds the pure geometry, `WheelPreview` in `src/components/patron/preview.tsx` draws it, and three tests in `src/test/wheel-preview.test.tsx` check the draw and that the whole demo state is byte identical after several test spins. In the browser the test spin landed on a named prize and the stored demo state did not change.
 
 Not done yet:
 
-- Part B is not applied to stamp card design and logo stamps, the wheel test spin and prize list, challenges, and the remaining bring a friend surfaces (it already had its own three steps).
+- Part B is not applied to stamp card design and logo stamps, challenges, and the remaining bring a friend surfaces (it already had its own three steps).
 - Part A is not applied to the diner app, the staff till or the guest profile page body.
 - Items 1 to 6 of the newest request (owner editing with uploads, reward presets, loyalty tools, suggestions, content pages, page audit) are not started.
-- Screenshots at 375px and 1280px were not taken in this session.
+- Screenshots at 375px and 1280px were not taken in this session; the browser window never drew, so the screenshot tool refused every attempt.
 
-Checks on `11df67f`: tsc clean, eslint 0 errors (12 pre-existing warnings), vitest 310 passed and 5 skipped, build passes.
+Latest full check: tsc clean, eslint 0 errors and 12 pre-existing warnings, vitest 315 passed and 5 skipped, build passes.
