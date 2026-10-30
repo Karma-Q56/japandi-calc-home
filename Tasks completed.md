@@ -156,3 +156,21 @@ Not done:
 - Part B (Draft, Preview, Publish): not started.
 
 Checks on the current commit: tsc passes; eslint has 0 errors and 12 warnings; vitest 296 passed, 5 skipped; build passes.
+
+## Part A and Part B (evening session, 2026-10-30)
+
+Done and committed:
+
+- Part A, owner and Patron admin screens now use the shared kit in `src/components/patron/dash.tsx`: overview, insights, customers, lists, menu, credit, team, QR, settings, activity log, onboarding, campaigns, bring a friend, specials, and the operator screens (restaurants, credit, theme editor). Same PageHeader, StatGrid and StatCard, DataTable, EmptyState, FormField, Badge, ConfirmDialog and PreviewBanner. `DataTable` now sets `data-label` on each cell so phones keep the stacked row labels. Commit `bdca9b8`.
+- Part B foundations: `src/domain/publish.ts` is one tested draft, preview and publish state machine. It refuses to jump from draft to publish, keeps preview non-live, asks for "Preview changes" after editing a published item, and exports the single PREVIEW_ONLY line. 8 tests in `src/test/publish.test.ts`. Commit `7c4512f`.
+- Part B preview surfaces: `src/components/patron/preview.tsx` adds PhoneFrame, SmsPreview (characters, message count, guest count, cost), PushPreview, PublishSteps and PreviewOnly.
+- Campaign composer now reads Draft, Preview, Cost, Publish and shows a switchable SMS and push preview with the exact character count, message count, guest count and cost. Specials now draft, preview the guest view, then publish behind a confirm.
+
+Not done yet:
+
+- Part B is not applied to loyalty rules, birthday rewards, bring a friend (it already had its own three steps), stamp card and logo stamps, the public page and template, menu items, spin wheels and prizes, challenges and tiers, and welcome stamps.
+- Part A is not applied to the diner app, the staff till or the guest profile page body.
+- Items 1 to 6 of the newest request (owner editing with uploads, reward presets, loyalty tools, suggestions, content pages, page audit) are not started.
+- Screenshots at 375px and 1280px were not taken in this session.
+
+Checks on `7c4512f`: tsc clean, eslint 0 errors, vitest 304 passed and 5 skipped, build passes.
