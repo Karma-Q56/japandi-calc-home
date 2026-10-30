@@ -167,9 +167,11 @@ Done and committed:
 - Campaign composer now reads Draft, Preview, Cost, Publish and shows a switchable SMS and push preview with the exact character count, message count, guest count and cost. Specials now draft, preview the guest view, then publish behind a confirm.
 - Loyalty card rules, welcome stamps, tiers, the birthday treat and the wheel settings now draft, preview inside a phone frame with the guest card and birthday line, and publish behind a confirm. After publishing, any further edit goes back through Preview changes. Commit `11df67f`.
 
+- Menu items now draft, preview as a guest and publish. The preview shows the whole public page in a phone frame with a template switcher; `Use the ... template on my public page` publishes the chosen template, while `Publish to my menu` is the only path that puts the item on the live menu. The duplicate specials editor was removed from this page because specials already have their own draft, preview and publish screen. Tests in `src/test/menu-preview.test.tsx`.
+
 Not done yet:
 
-- Part B is not applied to stamp card design and logo stamps, the public page and template switcher, menu items, the wheel test spin and prize list, challenges, and the remaining bring a friend surfaces (it already had its own three steps).
+- Part B is not applied to stamp card design and logo stamps, the wheel test spin and prize list, challenges, and the remaining bring a friend surfaces (it already had its own three steps).
 - Part A is not applied to the diner app, the staff till or the guest profile page body.
 - Items 1 to 6 of the newest request (owner editing with uploads, reward presets, loyalty tools, suggestions, content pages, page audit) are not started.
 - Screenshots at 375px and 1280px were not taken in this session.
