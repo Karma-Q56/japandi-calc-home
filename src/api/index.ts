@@ -90,6 +90,7 @@ import {
 } from "@/domain/referrals";
 import { overview } from "@/domain/dash";
 import { ownerInsights } from "@/domain/insights";
+import { ownerReport, reportCsv } from "@/domain/reports";
 import {
   codesForMembership,
   createPrizeOffer,
@@ -251,6 +252,10 @@ export const api = {
   },
   insights: {
     owner: ownerInsights,
+  },
+  reports: {
+    owner: ownerReport,
+    csv: reportCsv,
   },
   customers: {
     list: listCustomers,

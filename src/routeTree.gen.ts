@@ -44,6 +44,7 @@ import { Route as AppMenuRouteImport } from './routes/app.menu'
 import { Route as AppOnboardingRouteImport } from './routes/app.onboarding'
 import { Route as AppQrRouteImport } from './routes/app.qr'
 import { Route as AppReferralsRouteImport } from './routes/app.referrals'
+import { Route as AppReportsRouteImport } from './routes/app.reports'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppSpecialsRouteImport } from './routes/app.specials'
 import { Route as AppTeamRouteImport } from './routes/app.team'
@@ -249,6 +250,11 @@ const AppReferralsRoute = AppReferralsRouteImport.update({
   path: '/referrals',
   getParentRoute: () => AppRoute,
 } as any)
+const AppReportsRoute = AppReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -431,6 +437,7 @@ export interface FileRoutesByFullPath {
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/qr': typeof AppQrRoute
   '/app/referrals': typeof AppReferralsRoute
+  '/app/reports': typeof AppReportsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/specials': typeof AppSpecialsRoute
   '/app/team': typeof AppTeamRoute
@@ -497,6 +504,7 @@ export interface FileRoutesByTo {
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/qr': typeof AppQrRoute
   '/app/referrals': typeof AppReferralsRoute
+  '/app/reports': typeof AppReportsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/specials': typeof AppSpecialsRoute
   '/app/team': typeof AppTeamRoute
@@ -564,6 +572,7 @@ export interface FileRoutesById {
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/qr': typeof AppQrRoute
   '/app/referrals': typeof AppReferralsRoute
+  '/app/reports': typeof AppReportsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/specials': typeof AppSpecialsRoute
   '/app/team': typeof AppTeamRoute
@@ -632,6 +641,7 @@ export interface FileRouteTypes {
     | '/app/onboarding'
     | '/app/qr'
     | '/app/referrals'
+    | '/app/reports'
     | '/app/settings'
     | '/app/specials'
     | '/app/team'
@@ -698,6 +708,7 @@ export interface FileRouteTypes {
     | '/app/onboarding'
     | '/app/qr'
     | '/app/referrals'
+    | '/app/reports'
     | '/app/settings'
     | '/app/specials'
     | '/app/team'
@@ -764,6 +775,7 @@ export interface FileRouteTypes {
     | '/app/onboarding'
     | '/app/qr'
     | '/app/referrals'
+    | '/app/reports'
     | '/app/settings'
     | '/app/specials'
     | '/app/team'
@@ -1075,6 +1087,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppReferralsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/reports': {
+      id: '/app/reports'
+      path: '/reports'
+      fullPath: '/app/reports'
+      preLoaderRoute: typeof AppReportsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/settings': {
       id: '/app/settings'
       path: '/settings'
@@ -1321,6 +1340,7 @@ interface AppRouteChildren {
   AppOnboardingRoute: typeof AppOnboardingRoute
   AppQrRoute: typeof AppQrRoute
   AppReferralsRoute: typeof AppReferralsRoute
+  AppReportsRoute: typeof AppReportsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSpecialsRoute: typeof AppSpecialsRoute
   AppTeamRoute: typeof AppTeamRoute
@@ -1340,6 +1360,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppOnboardingRoute: AppOnboardingRoute,
   AppQrRoute: AppQrRoute,
   AppReferralsRoute: AppReferralsRoute,
+  AppReportsRoute: AppReportsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSpecialsRoute: AppSpecialsRoute,
   AppTeamRoute: AppTeamRoute,
