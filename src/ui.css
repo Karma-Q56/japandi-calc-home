@@ -2467,6 +2467,10 @@ input[type="range"] {
 .insights-grid .builder-panel {
   min-width: 0;
 }
+/* Empty-state text inside an insights card sits right under its heading. */
+.insights-grid .builder-panel > .demo-data-note {
+  margin-top: 6px;
+}
 .insights-list {
   list-style: none;
   margin: 0;
@@ -3621,6 +3625,27 @@ input[type="range"] {
 }
 .dash-confirm > span {
   font-weight: 650;
+}
+/* Removal trigger: a real button, clearly marked as destructive. */
+.destructive-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 16px;
+  border: 1px solid var(--destructive);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--destructive);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+.destructive-link:hover {
+  background: color-mix(in oklab, var(--destructive) 10%, transparent);
+}
+.destructive-link:focus-visible {
+  outline: 2px solid var(--destructive);
+  outline-offset: 2px;
 }
 .stat-card.is-good strong {
   color: var(--sage-foreground);

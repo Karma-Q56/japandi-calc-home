@@ -108,7 +108,7 @@ export function ownerInsights(input: {
       name: nameOf(membership.id),
       customerId: membership.customerId,
       membershipId: membership.id,
-      detail: `${countLabel(pattern.lastVisitDaysAgo, "day")} since the last visit, ${averageGapPhrase(pattern.averageGapDays ?? 0)}`,
+      detail: `${countLabel(pattern.lastVisitDaysAgo ?? 0, "day")} since the last visit, ${averageGapPhrase(pattern.averageGapDays ?? 0)}`,
     });
   }
   slippingRegulars.sort((a, b) => Number(b.detail.match(/^\d+/)![0]) - Number(a.detail.match(/^\d+/)![0]));

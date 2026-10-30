@@ -1,6 +1,8 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { api } from "@/api";
+import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/patron/dash";
 import { demoRepo } from "@/data/repo";
 import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
@@ -162,7 +164,8 @@ function CustomerProfile() {
         ))}
       </section>
       <div className="demo-control-actions">
-        <button
+        <Button
+          variant="secondary"
           onClick={() => {
             const stamped = api.customers.manualStamp({
               membershipId: profile.membership.id,
@@ -173,9 +176,13 @@ function CustomerProfile() {
           }}
         >
           Add manual stamp
-        </button>
-        <button
-          onClick={() => {
+        </Button>
+        <ConfirmDialog
+          label="Remove from my list"
+          question="Remove this guest from marketing? Their visit history is kept."
+          confirmLabel="Yes, remove"
+          buttonClass="destructive-link"
+          onConfirm={() => {
             const removed = api.customers.remove({
               membershipId: profile.membership.id,
               actorId: actor,
@@ -183,9 +190,7 @@ function CustomerProfile() {
             });
             setNotice(removed.ok ? "Removed from marketing; counts kept." : removed.error.message);
           }}
-        >
-          Remove from my list
-        </button>
+        />
       </div>
       {notice && (
         <p role="status" className="demo-data-note">

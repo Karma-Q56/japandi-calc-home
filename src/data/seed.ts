@@ -200,6 +200,16 @@ const baseRestaurants: Restaurant[] = [
   },
 ];
 
+const GUEST_FIRST_NAMES = ["Thandi", "James", "Sipho", "Lerato", "Ayesha", "Ben", "Naledi", "Pieter", "Zanele", "Kabelo", "Megan", "Themba"];
+const GUEST_SURNAME_INITIALS = ["M", "N", "K", "D", "V"];
+
+/** 12 first names x 5 surname initials = 60 unique demo guests, e.g. "Sipho N.". */
+function guestNameAt(i: number): string {
+  const first = GUEST_FIRST_NAMES[i % GUEST_FIRST_NAMES.length]!;
+  const initial = GUEST_SURNAME_INITIALS[Math.floor(i / GUEST_FIRST_NAMES.length) % GUEST_SURNAME_INITIALS.length]!;
+  return `${first} ${initial}.`;
+}
+
 export function createSeed(now = Date.UTC(2026, 9, 1, 8)): DemoState {
   const restaurants = structuredClone(baseRestaurants);
   // The demo venues show both till order modes: the coffee shop tracks items,
@@ -218,9 +228,7 @@ export function createSeed(now = Date.UTC(2026, 9, 1, 8)): DemoState {
   const todayParts = johannesburgMonthDay(now);
   const customers = Array.from({ length: 60 }, (_, i) => ({
     id: `customer-${i + 1}`,
-    name:
-      ["Thandi Mokoena", "James Ndlovu", "Sipho Nkosi", "Lerato Dlamini", "Ayesha Khan"][i % 5] +
-      ` ${i + 1}`,
+    name: guestNameAt(i),
     phoneE164: `+278255501${String(i + 1).padStart(2, "0")}`,
     memberCode: safeCode(i + 1),
     qrToken: `demo-token-${String(i + 1).padStart(4, "0")}`,

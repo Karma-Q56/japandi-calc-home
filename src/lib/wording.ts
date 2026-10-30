@@ -1,7 +1,4 @@
-/** "1 stamp", "2 stamps", "0 stamps". Pass the plural form when it is irregular. */
-export function countLabel(count: number, singular: string, plural = `${singular}s`): string {
-  return `${count} ${count === 1 ? singular : plural}`;
-}
+export { countLabel } from "./count-label";
 
 /**
  * A whole-number phrase for how often a guest usually comes back.
