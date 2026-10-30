@@ -5,7 +5,14 @@ import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
 import type { CampaignAudience, SpecialKind, TierName } from "@/data/types";
 import { useDemoState } from "@/data/useDemoState";
-import { Badge, EmptyState, FormField, PageHeader } from "@/components/patron/dash";
+import {
+  Badge,
+  ConfirmDialog,
+  EmptyState,
+  FormField,
+  PageHeader,
+} from "@/components/patron/dash";
+import { PreviewOnly, PublishSteps } from "@/components/patron/preview";
 
 export const Route = createFileRoute("/app/specials")({
   beforeLoad: () => {
@@ -46,6 +53,7 @@ function SpecialsPage() {
     new Date(state.now + 21 * 86400000).toISOString().slice(0, 10),
   );
   const [notice, setNotice] = useState("");
+  const [step, setStep] = useState(1);
 
   const lists = api.audience.lists(restaurant.id);
   const targetAudience: CampaignAudience =
@@ -97,6 +105,7 @@ function SpecialsPage() {
     setTitle("");
     setBody("");
     setCode("");
+    setStep(1);
   };
 
   const issueMore = (specialId: string) => {
@@ -119,8 +128,11 @@ function SpecialsPage() {
         intro="Public offers anyone can see, members-only offers for your regulars, and targeted offers with a personal code for every guest."
       />
 
+      <PublishSteps step={step} labels={["Draft", "Preview"]} />
+
+      {step === 1 && (
       <section className="builder-panel">
-        <h2>Create a special</h2>
+        <h2>Draft a special</h2>
         <div className="kind-picker" role="radiogroup" aria-label="Special kind">
           {(["public", "members", "targeted"] as SpecialKind[]).map((option) => (
             <button
@@ -201,8 +213,18 @@ function SpecialsPage() {
           </FormField>
         </div>
         <div className="page-actions">
-          <button className="builder-primary" onClick={create}>
-            Create special
+          <button
+            className="builder-primary"
+            onClick={() => {
+              if (!title.trim()) {
+                setNotice("Give the special a title before you preview it.");
+                return;
+              }
+              setNotice("");
+              setStep(2);
+            }}
+          >
+            Preview special
           </button>
         </div>
         {notice && (
@@ -211,6 +233,45 @@ function SpecialsPage() {
           </p>
         )}
       </section>
+      )}
+
+      {step === 2 && (
+        <section className="builder-panel">
+          <h2>Preview: what guests see</h2>
+          <article className="special-row">
+            <div>
+              <div className="special-pills">
+                <Badge tone="active">{kind}</Badge>
+              </div>
+              <strong>{title}</strong>
+              <small>{body}</small>
+              <small>
+                {kind === "targeted"
+                  ? `A personal code for each of the ${targetMembers.length} guests in this group`
+                  : `Code ${code || "generated when you publish"}`}
+              </small>
+              <small>
+                {startsAt} to {endsAt}
+              </small>
+            </div>
+          </article>
+          <PreviewOnly>
+            Preview only, nothing was sent. Guests see this offer after you publish it.
+          </PreviewOnly>
+          <div className="page-actions">
+            <button className="guest-back" onClick={() => setStep(1)}>
+              Back to edit
+            </button>
+            <ConfirmDialog
+              label="Publish special"
+              question="Publish this special now? Guests will be able to use the code."
+              confirmLabel="Yes, publish"
+              buttonClass="builder-primary"
+              onConfirm={create}
+            />
+          </div>
+        </section>
+      )}
 
       <section className="builder-panel">
         <h2>Your specials</h2>

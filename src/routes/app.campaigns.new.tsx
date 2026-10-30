@@ -11,7 +11,7 @@ import {
 } from "@/domain/campaigns";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
-import { PreviewBanner } from "@/components/patron/dash";
+import { PreviewOnly, PublishSteps, PushPreview, SmsPreview } from "@/components/patron/preview";
 import {
   applyFillIns,
   messageFillFacts,
@@ -77,6 +77,9 @@ function ComposerPage() {
   const [editingListId, setEditingListId] = useState<string | null>(null);
   const [editingIds, setEditingIds] = useState<string[]>([]);
   const [editingName, setEditingName] = useState("");
+  const [previewChannel, setPreviewChannel] = useState<"sms" | "push">(
+    channel === "push" ? "push" : "sms",
+  );
 
   const restaurant = state.restaurants.find((r) => r.id === restaurantId);
   if (!restaurant) {
@@ -208,7 +211,7 @@ function ComposerPage() {
 
   const preview = applyFillIns(body, fillFacts, sampleName);
   const short = balance < costPreviewCents(smsEligible.length, messageSegments(preview, sampleName));
-  const steps = ["Audience", "Message", "Cost", "Confirm"];
+  const steps = ["Draft", "Preview", "Cost", "Publish"] as const;
   const back =
     step > 1 ? (
       <button className="cmp-back" onClick={() => setStep(step - 1)}>
@@ -223,17 +226,7 @@ function ComposerPage() {
         {restaurant.name} · New campaign
       </p>
       <h1>Bring them back.</h1>
-      <ol className="cmp-steps" aria-label={`Step ${step} of 4`}>
-        {steps.map((label, index) => (
-          <li
-            key={label}
-            className={index + 1 === step ? "is-now" : index + 1 < step ? "is-done" : ""}
-          >
-            <i>{index + 1 < step ? "✓" : index + 1}</i>
-            {label}
-          </li>
-        ))}
-      </ol>
+      <PublishSteps step={step} labels={steps} />
 
       {step === 1 && (
         <section className="cmp-card">
@@ -460,21 +453,46 @@ function ComposerPage() {
               )}
             </p>
           ))}
-          <div className="cmp-phone" aria-label="Message preview">
-            <small>Preview · {restaurant.name}</small>
-            <p>
-              {preview}
-              <br />
-              <span>Reply STOP to opt out.</span>
-              {selectedSpecial?.kind === "targeted" && (
-                <>
-                  <br />
-                  <span>Your code: {"{unique code}"}</span>
-                </>
-              )}
-            </p>
+          <div className="cmp-options" role="radiogroup" aria-label="Preview channel">
+            <button
+              type="button"
+              role="radio"
+              aria-checked={previewChannel === "sms"}
+              className={`cmp-option${previewChannel === "sms" ? " is-on" : ""}`}
+              onClick={() => setPreviewChannel("sms")}
+            >
+              <b>Show the SMS</b>
+              <span>Exactly the text a guest reads, with its length and cost.</span>
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={previewChannel === "push"}
+              className={`cmp-option${previewChannel === "push" ? " is-on" : ""}`}
+              onClick={() => setPreviewChannel("push")}
+            >
+              <b>Show the push</b>
+              <span>The notification a guest sees on their phone. Free to send.</span>
+            </button>
           </div>
-          <PreviewBanner>Preview only. Nothing was sent. Guests get it after you confirm on the last step.</PreviewBanner>
+          {previewChannel === "sms" ? (
+            <SmsPreview
+              sender={restaurant.senderName}
+              body={body}
+              sampleName={sampleName}
+              recipients={smsEligible.length}
+            />
+          ) : (
+            <PushPreview
+              sender={restaurant.name}
+              title={name || "A treat from us"}
+              body={preview}
+              recipients={pushEligible.length}
+            />
+          )}
+          <PreviewOnly>
+            Preview only, nothing was sent. Guests get this after you press Publish on the last step.
+          </PreviewOnly>
 
           <label className="builder-field">
             Attach a special (optional)
@@ -560,7 +578,7 @@ function ComposerPage() {
       {step === 4 && (
         <section className="cmp-card">
           {back}
-          <h2>Ready to send?</h2>
+          <h2>Publish this campaign?</h2>
           <div className="cmp-options" role="radiogroup" aria-label="When">
             <button
               type="button"
@@ -603,7 +621,7 @@ function ComposerPage() {
             </label>
           )}
           <button className="builder-primary" onClick={confirm}>
-            Confirm and {sendNow ? "send" : "schedule"}
+            Publish and {sendNow ? "send" : "schedule"}
           </button>
         </section>
       )}
