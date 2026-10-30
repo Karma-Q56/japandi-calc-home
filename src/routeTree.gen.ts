@@ -33,6 +33,7 @@ import { Route as StampRouteImport } from './routes/stamp'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AppAuditRouteImport } from './routes/app.audit'
 import { Route as AppCampaignsRouteImport } from './routes/app.campaigns'
+import { Route as AppChallengesRouteImport } from './routes/app.challenges'
 import { Route as AppCreditRouteImport } from './routes/app.credit'
 import { Route as AppCustomersRouteImport } from './routes/app.customers'
 import { Route as AppDesignRouteImport } from './routes/app.design'
@@ -191,6 +192,11 @@ const AppAuditRoute = AppAuditRouteImport.update({
 const AppCampaignsRoute = AppCampaignsRouteImport.update({
   id: '/campaigns',
   path: '/campaigns',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppChallengesRoute = AppChallengesRouteImport.update({
+  id: '/challenges',
+  path: '/challenges',
   getParentRoute: () => AppRoute,
 } as any)
 const AppCreditRoute = AppCreditRouteImport.update({
@@ -414,6 +420,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/app/audit': typeof AppAuditRoute
   '/app/campaigns': typeof AppCampaignsRouteWithChildren
+  '/app/challenges': typeof AppChallengesRoute
   '/app/credit': typeof AppCreditRoute
   '/app/customers': typeof AppCustomersRouteWithChildren
   '/app/design': typeof AppDesignRoute
@@ -479,6 +486,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/app/audit': typeof AppAuditRoute
   '/app/campaigns': typeof AppCampaignsRouteWithChildren
+  '/app/challenges': typeof AppChallengesRoute
   '/app/credit': typeof AppCreditRoute
   '/app/customers': typeof AppCustomersRouteWithChildren
   '/app/design': typeof AppDesignRoute
@@ -545,6 +553,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/app/audit': typeof AppAuditRoute
   '/app/campaigns': typeof AppCampaignsRouteWithChildren
+  '/app/challenges': typeof AppChallengesRoute
   '/app/credit': typeof AppCreditRoute
   '/app/customers': typeof AppCustomersRouteWithChildren
   '/app/design': typeof AppDesignRoute
@@ -612,6 +621,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/app/audit'
     | '/app/campaigns'
+    | '/app/challenges'
     | '/app/credit'
     | '/app/customers'
     | '/app/design'
@@ -677,6 +687,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/app/audit'
     | '/app/campaigns'
+    | '/app/challenges'
     | '/app/credit'
     | '/app/customers'
     | '/app/design'
@@ -742,6 +753,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/app/audit'
     | '/app/campaigns'
+    | '/app/challenges'
     | '/app/credit'
     | '/app/customers'
     | '/app/design'
@@ -984,6 +996,13 @@ declare module '@tanstack/react-router' {
       path: '/campaigns'
       fullPath: '/app/campaigns'
       preLoaderRoute: typeof AppCampaignsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/challenges': {
+      id: '/app/challenges'
+      path: '/challenges'
+      fullPath: '/app/challenges'
+      preLoaderRoute: typeof AppChallengesRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/credit': {
@@ -1291,6 +1310,7 @@ const AppCustomersRouteWithChildren = AppCustomersRoute._addFileChildren(
 interface AppRouteChildren {
   AppAuditRoute: typeof AppAuditRoute
   AppCampaignsRoute: typeof AppCampaignsRouteWithChildren
+  AppChallengesRoute: typeof AppChallengesRoute
   AppCreditRoute: typeof AppCreditRoute
   AppCustomersRoute: typeof AppCustomersRouteWithChildren
   AppDesignRoute: typeof AppDesignRoute
@@ -1309,6 +1329,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAuditRoute: AppAuditRoute,
   AppCampaignsRoute: AppCampaignsRouteWithChildren,
+  AppChallengesRoute: AppChallengesRoute,
   AppCreditRoute: AppCreditRoute,
   AppCustomersRoute: AppCustomersRouteWithChildren,
   AppDesignRoute: AppDesignRoute,

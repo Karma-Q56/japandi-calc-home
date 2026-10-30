@@ -53,15 +53,6 @@ function Loyalty() {
   const [notice, setNotice] = useState("");
   const [step, setStep] = useState(1);
   const [published, setPublished] = useState(false);
-  const [challengeTitle, setChallengeTitle] = useState("Three visits in 14 days");
-  const [challengeVisits, setChallengeVisits] = useState(3);
-  const [challengeDays, setChallengeDays] = useState(14);
-  const [challengeBonus, setChallengeBonus] = useState(1);
-
-  const challenges = state.challenges.filter(
-    (item) => item.restaurantId === restaurant.id,
-  );
-
   const save = (): boolean => {
     if (stampsRequired < 2 || stampsRequired > 30) {
       setNotice("Stamps required must be between 2 and 30.");
@@ -113,17 +104,6 @@ function Loyalty() {
         segment.id === id ? { ...segment, ...patch } : segment,
       ),
     }));
-  };
-
-  const addChallenge = () => {
-    const result = api.loyalty.saveChallenge({
-      restaurantId: restaurant.id,
-      title: challengeTitle,
-      visits: challengeVisits,
-      windowDays: challengeDays,
-      bonusStamps: challengeBonus,
-    });
-    setNotice(result.ok ? "Challenge saved." : result.error.message);
   };
 
   return (
@@ -489,68 +469,10 @@ function Loyalty() {
         </p>
       </section>
 
-      <section className="builder-panel">
-        <h2>Visit challenges</h2>
-        {challenges.map((challenge) => (
-          <div className="challenge-owner-row" key={challenge.id}>
-            <div>
-              <strong>{challenge.title}</strong>
-              <small>
-                {challenge.visits} visits in {challenge.windowDays} days · +{challenge.bonusStamps}{" "}
-                bonus stamp{challenge.bonusStamps === 1 ? "" : "s"}
-              </small>
-            </div>
-            <button
-              className="builder-secondary"
-              onClick={() =>
-                api.loyalty.setChallengeActive(challenge.id, !challenge.active)
-              }
-            >
-              {challenge.active ? "Pause" : "Resume"}
-            </button>
-          </div>
-        ))}
-        <div className="builder-fields">
-          <label className="builder-field">
-            Challenge name
-            <input
-              value={challengeTitle}
-              onChange={(event) => setChallengeTitle(event.target.value)}
-            />
-          </label>
-          <label className="builder-field">
-            Visits
-            <input
-              type="number"
-              min={2}
-              value={challengeVisits}
-              onChange={(event) => setChallengeVisits(Number(event.target.value))}
-            />
-          </label>
-          <label className="builder-field">
-            Within days
-            <input
-              type="number"
-              min={1}
-              value={challengeDays}
-              onChange={(event) => setChallengeDays(Number(event.target.value))}
-            />
-          </label>
-          <label className="builder-field">
-            Bonus stamps
-            <input
-              type="number"
-              min={1}
-              max={5}
-              value={challengeBonus}
-              onChange={(event) => setChallengeBonus(Number(event.target.value))}
-            />
-          </label>
-        </div>
-        <button className="builder-secondary" onClick={addChallenge}>
-          Add challenge
-        </button>
-      </section>
+      <p className="demo-data-note">
+        Visit challenges have their own screen. <a href="/app/challenges">Write and publish a
+        challenge</a>.
+      </p>
 
       {step >= 2 && (
         <section className="builder-panel">

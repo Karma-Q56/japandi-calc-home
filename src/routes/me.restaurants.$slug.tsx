@@ -6,6 +6,7 @@ import { GuestShell } from "@/components/patron/GuestShell";
 import { ThemeProvider } from "@/theme";
 import { api } from "@/api";
 import { SpinWheel } from "@/components/patron/SpinWheel";
+import { ChallengeRow } from "@/components/patron/ChallengeRow";
 import { formatRand } from "@/lib/money";
 
 export const Route = createFileRoute("/me/restaurants/$slug")({
@@ -97,24 +98,16 @@ function VenuePage() {
           <section className="gx-panel">
             <h2>Challenges</h2>
             {challenges.map(({ challenge, visits, done, claimed }) => (
-              <article className="challenge-row" key={challenge.id}>
-                <div>
-                  <strong>{challenge.title}</strong>
-                  <small>
-                    {visits} of {challenge.visits} visits in the last {challenge.windowDays} days
-                  </small>
-                </div>
-                <span className={done ? "challenge-state is-done" : "challenge-state"}>
-                  {claimed ? "Bonus added" : done ? "Earned" : `+${challenge.bonusStamps} stamp`}
-                </span>
-                <div className="challenge-track" aria-hidden>
-                  <span
-                    style={{
-                      width: `${Math.min(100, Math.round((visits / challenge.visits) * 100))}%`,
-                    }}
-                  />
-                </div>
-              </article>
+              <ChallengeRow
+                key={challenge.id}
+                title={challenge.title}
+                visits={visits}
+                needed={challenge.visits}
+                windowDays={challenge.windowDays}
+                bonusStamps={challenge.bonusStamps}
+                done={done}
+                claimed={claimed}
+              />
             ))}
           </section>
         )}

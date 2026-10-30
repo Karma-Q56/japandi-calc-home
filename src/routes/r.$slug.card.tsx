@@ -15,6 +15,7 @@ import { LoyaltyCard } from "@/components/patron/LoyaltyCard";
 import { GuestShell } from "@/components/patron/GuestShell";
 import { MemberQr } from "@/components/patron/MemberQr";
 import { SpinWheel } from "@/components/patron/SpinWheel";
+import { ChallengeRow } from "@/components/patron/ChallengeRow";
 import { rewardEarned, rewardProgress } from "@/lib/reward-copy";
 import { signInAsDemoAccount } from "@/lib/demo-signin";
 
@@ -179,24 +180,16 @@ function GuestCard() {
           <section className="gx-panel">
             <h2>Visit challenges</h2>
             {challenges.map(({ challenge, visits: progress, done, claimed }) => (
-              <article className="challenge-row" key={challenge.id}>
-                <div>
-                  <strong>{challenge.title}</strong>
-                  <small>
-                    {progress} of {challenge.visits} visits in the last {challenge.windowDays} days
-                  </small>
-                </div>
-                <span className={done ? "challenge-state is-done" : "challenge-state"}>
-                  {claimed ? "Bonus added" : done ? "Earned" : `${challenge.bonusStamps} bonus stamp`}
-                </span>
-                <div className="challenge-track" aria-hidden>
-                  <span
-                    style={{
-                      width: `${Math.min(100, Math.round((progress / challenge.visits) * 100))}%`,
-                    }}
-                  />
-                </div>
-              </article>
+              <ChallengeRow
+                key={challenge.id}
+                title={challenge.title}
+                visits={progress}
+                needed={challenge.visits}
+                windowDays={challenge.windowDays}
+                bonusStamps={challenge.bonusStamps}
+                done={done}
+                claimed={claimed}
+              />
             ))}
           </section>
         )}
