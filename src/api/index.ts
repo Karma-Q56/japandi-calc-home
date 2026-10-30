@@ -91,6 +91,7 @@ import {
 import { overview } from "@/domain/dash";
 import { ownerInsights } from "@/domain/insights";
 import { ownerReport, reportCsv } from "@/domain/reports";
+import { leadDetails, listEnquiries, submitEnquiry, updateEnquiry } from "@/domain/leads";
 import {
   codesForMembership,
   createPrizeOffer,
@@ -256,6 +257,12 @@ export const api = {
   reports: {
     owner: ownerReport,
     csv: reportCsv,
+  },
+  enquiries: {
+    submit: submitEnquiry,
+    list: listEnquiries,
+    update: updateEnquiry,
+    details: leadDetails,
   },
   customers: {
     list: listCustomers,

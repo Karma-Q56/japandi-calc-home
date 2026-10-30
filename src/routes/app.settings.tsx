@@ -27,6 +27,9 @@ function Settings() {
   const [capRestaurant, setCapRestaurant] = useState(restaurant.smsCapRestaurant);
   const [capMember, setCapMember] = useState(restaurant.smsCapMember);
   const [contact, setContact] = useState(restaurant.contact);
+  const [enquiryNotifyEmail, setEnquiryNotifyEmail] = useState(
+    restaurant.enquiryNotifyEmail ?? "",
+  );
   const [notice, setNotice] = useState("");
   const [trackOrders, setTrackOrders] = useState(restaurant.trackOrders ?? false);
   const [ordersMode, setOrdersMode] = useState<"items" | "categories">(
@@ -45,6 +48,7 @@ function Settings() {
       smsCapRestaurant: Math.max(1, capRestaurant),
       smsCapMember: Math.max(1, capMember),
       contact: contact.trim(),
+      enquiryNotifyEmail: enquiryNotifyEmail.trim(),
     });
     if (!result.ok) {
       setNotice(result.error.message);
@@ -79,6 +83,26 @@ function Settings() {
           </FormField>
           <FormField label="Contact shown on the public page">
             <input value={contact} onChange={(event) => setContact(event.target.value)} />
+          </FormField>
+        </div>
+      </section>
+      <section className="builder-panel">
+        <h2>Enquiries</h2>
+        <p className="demo-data-note">
+          Where Patron should send a note when someone fills in the contact form on the website.
+        </p>
+        <div className="builder-fields">
+          <FormField
+            label="Email that gets new enquiries"
+            hint="Placeholder only in demo. No real email is sent until the live mail service is switched on."
+          >
+            <input
+              type="email"
+              value={enquiryNotifyEmail}
+              maxLength={254}
+              onChange={(event) => setEnquiryNotifyEmail(event.target.value)}
+              placeholder="you@example.co.za"
+            />
           </FormField>
         </div>
       </section>

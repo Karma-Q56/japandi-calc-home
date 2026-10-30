@@ -86,6 +86,7 @@ export const getPublicPageFn = createServerFn({ method: "GET" })
 export const submitLeadFn = createServerFn({ method: "POST" })
   .validator(
     z.object({
+      kind: z.enum(["owner", "diner", "other"]).optional(),
       restaurantName: z.string().trim().min(1, "Restaurant name required.").max(200),
       contactName: z.string().trim().min(1, "Your name required.").max(120),
       phone: e164Schema,
@@ -96,6 +97,8 @@ export const submitLeadFn = createServerFn({ method: "POST" })
       quietTime: shortText(120),
       weeklyGuests: shortText(120),
       planInterest: shortText(120),
+      visitWanted: z.boolean().optional(),
+      preferredDay: shortText(120),
       consent: z.boolean(),
       consentVersion: shortText(32),
       notes: shortText(2000),
@@ -105,8 +108,8 @@ export const submitLeadFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { repos } = getRepos(serverEnv());
     try {
-      const { id } = await repos.submitLead({ ...data, ipHash: requestIpHash() });
-      return { ok: true as const, id };
+      const saved = await repos.submitLead({ ...data, ipHash: requestIpHash() });
+      return { ok: true as const, id: saved.id, reference: saved.reference };
     } catch (error) {
       return { ok: false as const, message: error instanceof Error ? error.message : "Could not submit." };
     }

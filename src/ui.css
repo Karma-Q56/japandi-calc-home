@@ -4047,3 +4047,108 @@ input[type="range"] {
     background: transparent;
   }
 }
+
+/* ---------------------------------------------------------------- enquiries */
+.inbox-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(140px, 1fr) minmax(140px, 1fr);
+  gap: 12px;
+  align-items: end;
+}
+.inbox-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 340px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.inbox-list ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.inbox-row {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.inbox-row:hover {
+  background: color-mix(in oklab, var(--primary) 5%, transparent);
+}
+.inbox-row.is-active {
+  border-color: color-mix(in oklab, var(--primary) 40%, var(--line));
+  background: color-mix(in oklab, var(--primary) 8%, var(--card));
+}
+.inbox-row:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.inbox-row-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.inbox-row-top strong {
+  overflow-wrap: anywhere;
+}
+.inbox-row-meta {
+  color: var(--muted-ink);
+  font-size: 12px;
+}
+.inbox-detail {
+  display: grid;
+  gap: 16px;
+}
+.inbox-detail-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.inbox-detail-head h2 {
+  margin: 2px 0 4px;
+}
+.inbox-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.inbox-answers {
+  display: grid;
+  grid-template-columns: minmax(120px, 190px) minmax(0, 1fr);
+  gap: 8px 16px;
+  margin: 0;
+}
+.inbox-answers dt {
+  color: var(--muted-ink);
+  font-size: 13px;
+}
+.inbox-answers dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+@media (max-width: 860px) {
+  .inbox-toolbar,
+  .inbox-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .inbox-answers {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+  .inbox-answers dt {
+    margin-top: 8px;
+  }
+}

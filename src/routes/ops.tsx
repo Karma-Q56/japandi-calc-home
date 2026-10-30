@@ -7,6 +7,7 @@ import { DemoPlaceholder } from "@/components/patron/DemoPlaceholder";
 
 const LINKS = [
   { to: "/ops/restaurants", label: "Restaurants" },
+  { to: "/ops/leads", label: "Enquiries" },
   { to: "/ops/campaigns", label: "Campaigns" },
   { to: "/ops/credit", label: "Credit" },
   { to: "/demo/outbox", label: "SMS outbox" },

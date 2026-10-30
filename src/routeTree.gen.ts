@@ -56,6 +56,7 @@ import { Route as MeRestaurantsRouteImport } from './routes/me.restaurants'
 import { Route as MeSettingsRouteImport } from './routes/me.settings'
 import { Route as OpsCampaignsRouteImport } from './routes/ops.campaigns'
 import { Route as OpsCreditRouteImport } from './routes/ops.credit'
+import { Route as OpsLeadsRouteImport } from './routes/ops.leads'
 import { Route as OpsRestaurantsRouteImport } from './routes/ops.restaurants'
 import { Route as RSlugRouteImport } from './routes/r.$slug'
 import { Route as STokenRouteImport } from './routes/s/$token'
@@ -310,6 +311,11 @@ const OpsCreditRoute = OpsCreditRouteImport.update({
   path: '/credit',
   getParentRoute: () => OpsRoute,
 } as any)
+const OpsLeadsRoute = OpsLeadsRouteImport.update({
+  id: '/leads',
+  path: '/leads',
+  getParentRoute: () => OpsRoute,
+} as any)
 const OpsRestaurantsRoute = OpsRestaurantsRouteImport.update({
   id: '/restaurants',
   path: '/restaurants',
@@ -449,6 +455,7 @@ export interface FileRoutesByFullPath {
   '/me/settings': typeof MeSettingsRoute
   '/ops/campaigns': typeof OpsCampaignsRoute
   '/ops/credit': typeof OpsCreditRoute
+  '/ops/leads': typeof OpsLeadsRoute
   '/ops/restaurants': typeof OpsRestaurantsRouteWithChildren
   '/r/$slug': typeof RSlugRouteWithChildren
   '/s/$token': typeof STokenRoute
@@ -516,6 +523,7 @@ export interface FileRoutesByTo {
   '/me/settings': typeof MeSettingsRoute
   '/ops/campaigns': typeof OpsCampaignsRoute
   '/ops/credit': typeof OpsCreditRoute
+  '/ops/leads': typeof OpsLeadsRoute
   '/ops/restaurants': typeof OpsRestaurantsRouteWithChildren
   '/r/$slug': typeof RSlugRouteWithChildren
   '/s/$token': typeof STokenRoute
@@ -584,6 +592,7 @@ export interface FileRoutesById {
   '/me/settings': typeof MeSettingsRoute
   '/ops/campaigns': typeof OpsCampaignsRoute
   '/ops/credit': typeof OpsCreditRoute
+  '/ops/leads': typeof OpsLeadsRoute
   '/ops/restaurants': typeof OpsRestaurantsRouteWithChildren
   '/r/$slug': typeof RSlugRouteWithChildren
   '/s/$token': typeof STokenRoute
@@ -653,6 +662,7 @@ export interface FileRouteTypes {
     | '/me/settings'
     | '/ops/campaigns'
     | '/ops/credit'
+    | '/ops/leads'
     | '/ops/restaurants'
     | '/r/$slug'
     | '/s/$token'
@@ -720,6 +730,7 @@ export interface FileRouteTypes {
     | '/me/settings'
     | '/ops/campaigns'
     | '/ops/credit'
+    | '/ops/leads'
     | '/ops/restaurants'
     | '/r/$slug'
     | '/s/$token'
@@ -787,6 +798,7 @@ export interface FileRouteTypes {
     | '/me/settings'
     | '/ops/campaigns'
     | '/ops/credit'
+    | '/ops/leads'
     | '/ops/restaurants'
     | '/r/$slug'
     | '/s/$token'
@@ -1171,6 +1183,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OpsCreditRouteImport
       parentRoute: typeof OpsRoute
     }
+    '/ops/leads': {
+      id: '/ops/leads'
+      path: '/leads'
+      fullPath: '/ops/leads'
+      preLoaderRoute: typeof OpsLeadsRouteImport
+      parentRoute: typeof OpsRoute
+    }
     '/ops/restaurants': {
       id: '/ops/restaurants'
       path: '/restaurants'
@@ -1445,12 +1464,14 @@ const OpsRestaurantsRouteWithChildren = OpsRestaurantsRoute._addFileChildren(
 interface OpsRouteChildren {
   OpsCampaignsRoute: typeof OpsCampaignsRoute
   OpsCreditRoute: typeof OpsCreditRoute
+  OpsLeadsRoute: typeof OpsLeadsRoute
   OpsRestaurantsRoute: typeof OpsRestaurantsRouteWithChildren
 }
 
 const OpsRouteChildren: OpsRouteChildren = {
   OpsCampaignsRoute: OpsCampaignsRoute,
   OpsCreditRoute: OpsCreditRoute,
+  OpsLeadsRoute: OpsLeadsRoute,
   OpsRestaurantsRoute: OpsRestaurantsRouteWithChildren,
 }
 

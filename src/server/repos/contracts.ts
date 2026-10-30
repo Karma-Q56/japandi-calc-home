@@ -115,7 +115,7 @@ export type StampOutcome =
 
 export interface PatronRepos {
   getPublicPage(slug: string): Promise<PublicPage | null>;
-  submitLead(input: LeadInput): Promise<{ id: string }>;
+  submitLead(input: LeadInput): Promise<{ id: string; reference?: string }>;
   joinGuest(input: JoinInput): Promise<JoinResult>;
   getCard(slug: string, customerId: string): Promise<CardView | null>;
   listCards(customerId: string): Promise<{ membershipId: string; restaurantSlug: string }[]>;

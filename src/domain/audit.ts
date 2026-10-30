@@ -28,7 +28,9 @@ export type AuditAction =
   | "spin"
   | "challenge_award"
   | "referral_settings"
-  | "referral_rewarded";
+  | "referral_rewarded"
+  | "enquiry_received"
+  | "enquiry_updated";
 
 /** Never pass PINs or full phone numbers, ids only. */
 export function logAudit(input: {

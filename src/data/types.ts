@@ -84,6 +84,8 @@ export interface Restaurant {
   ordersMode?: "items" | "categories";
   /** Bring a friend settings. Off until the owner switches it on. */
   referral?: ReferralConfig;
+  /** Placeholder address notified of new enquiries. No real email is sent in demo. */
+  enquiryNotifyEmail?: string;
 }
 
 /** Owner's choices for bring a friend. Disabled by default. */
@@ -472,10 +474,35 @@ export interface AuditEvent {
   object?: string;
   createdAt: string;
 }
+export type LeadKind = "owner" | "diner" | "other";
+export type LeadStatus = "new" | "replied" | "closed";
+
+/** One contact enquiry, with every answer the visitor gave. */
 export interface Lead {
   id: string;
+  /** ENQ-YEAR-NUMBER, shown to the visitor and used by staff. */
+  reference: string;
+  kind: LeadKind;
+  status: LeadStatus;
+  /** Restaurant name for owners, the place they want for diners, a subject for others. */
   restaurantName: string;
+  contactName: string;
   phone: string;
+  email?: string;
+  role?: string;
+  venueType?: string;
+  suburb?: string;
+  quietTime?: string;
+  weeklyGuests?: string;
+  planInterest?: string;
+  visitWanted?: boolean;
+  preferredDay?: string;
+  message?: string;
+  consent: boolean;
+  /** When consent was given, recorded with the enquiry. */
+  consentAt?: string;
+  adminNotes?: string;
+  createdAt: string;
 }
 export interface DataRequest {
   id: string;
