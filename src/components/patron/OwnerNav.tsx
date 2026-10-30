@@ -5,6 +5,7 @@ import {
   Users,
   List,
   ChartNoAxesColumn,
+  TrendingUp,
   Gift,
   Megaphone,
   Tag,
@@ -25,6 +26,7 @@ type Item = { to: string; label: string; icon: ComponentType; end?: boolean };
 export const OWNER_NAV: Item[] = [
   { to: "/app", label: "Overview", icon: LayoutDashboard, end: true },
   { to: "/app/insights", label: "Insights", icon: ChartNoAxesColumn },
+  { to: "/app/reports", label: "Reports", icon: TrendingUp },
   { to: "/app/customers", label: "Customers", icon: Users },
   { to: "/app/referrals", label: "Bring a friend", icon: UsersRound },
   { to: "/app/campaigns", label: "Campaigns", icon: Megaphone },

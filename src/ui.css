@@ -3907,3 +3907,143 @@ input[type="range"] {
     padding: 20px 0 40px;
   }
 }
+
+/* ---------------------------------------------------------------- reports */
+.reports-range {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 18px;
+}
+.reports-range-button {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink-soft);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.reports-range-button.is-active {
+  border-color: var(--primary);
+  background: color-mix(in oklab, var(--primary) 12%, var(--card));
+  color: var(--ink);
+}
+.reports-range-button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.reports-basis p {
+  margin: 0 0 8px;
+}
+.reports-chart {
+  width: 100%;
+  min-height: 180px;
+}
+.reports-chart .recharts-surface {
+  overflow: visible;
+}
+.reports-two {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.reports-rank {
+  display: grid;
+  gap: 2px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.reports-rank li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+.reports-rank li:last-child {
+  border-bottom: 0;
+}
+.reports-rank span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.reports-rank strong {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+.reports-worth {
+  border: 1.5px solid color-mix(in oklab, var(--primary) 32%, var(--line));
+  background: color-mix(in oklab, var(--primary) 5%, var(--card));
+}
+.reports-worth-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 12px 0 16px;
+}
+.reports-worth-grid > div {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+}
+.reports-worth-grid strong {
+  font-family: "Bricolage Grotesque Variable", "Bricolage Grotesque", sans-serif;
+  font-size: 1.35rem;
+  font-variant-numeric: tabular-nums;
+}
+.reports-worth-grid span {
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+}
+.reports-worth-grid .is-good strong {
+  color: oklch(0.45 0.12 150);
+}
+.reports-worth-grid .is-bad strong {
+  color: oklch(0.48 0.16 28);
+}
+.reports-hint {
+  padding: 10px 12px;
+  border-left: 3px solid var(--primary);
+  color: var(--ink-soft);
+}
+@media (max-width: 860px) {
+  .reports-two {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media print {
+  .ox-side,
+  .ox-top,
+  .ox-tabs,
+  .reports-range,
+  .reports-page .page-actions,
+  .ox-foot {
+    display: none !important;
+  }
+  .ox-main {
+    display: block !important;
+    margin: 0 !important;
+  }
+  .reports-page {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+  .reports-page .builder-panel,
+  .reports-page .stat-card {
+    break-inside: avoid;
+    box-shadow: none !important;
+  }
+  .reports-page .reports-worth {
+    border-color: var(--line);
+    background: transparent;
+  }
+}
