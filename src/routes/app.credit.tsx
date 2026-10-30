@@ -5,6 +5,7 @@ import { LEDGER_LABELS } from "@/domain/credit";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
 import { useDemoState } from "@/data/useDemoState";
+import { Badge, EmptyState, FormField, PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
 
 export const Route = createFileRoute("/app/credit")({
   beforeLoad: () => {
@@ -50,25 +51,33 @@ function CreditPage() {
   };
   return (
     <main className="demo-hub page-width">
-      <p className="eyebrow">
-        <span className="eyebrow-line" />
-        {restaurant.name} · Credit
-      </p>
-      <h1>{ledger ? zar(ledger.balanceCents) : zar(0)} available.</h1>
-      <p className="demo-intro">
-        One SMS segment costs R0.35. Campaigns reserve the estimate first and settle the actual
-        cost after sending, so the balance never drops below zero.
-      </p>
+      <PageHeader
+        eyebrow={`${restaurant.name} · Credit`}
+        title={`${ledger ? zar(ledger.balanceCents) : zar(0)} available`}
+        intro="One SMS segment costs R0.35. Campaigns reserve the estimate first and settle the actual cost after sending, so the balance never drops below zero."
+      />
+      <StatGrid>
+        <StatCard
+          value={Math.floor((ledger?.balanceCents ?? 0) / 35)}
+          label="SMS segments left"
+          hint="At R0.35 each, before your next top-up"
+        />
+        <StatCard
+          value={ledger ? ledger.payments.filter((payment) => payment.status === "pending").length : 0}
+          label="Top-ups waiting"
+          hint="The operator confirms each one when the EFT lands"
+        />
+        <StatCard value={ledger ? ledger.payments.length : 0} label="Top-ups requested" hint="Every EFT request on this account" />
+      </StatGrid>
       <section className="guest-panel">
         <h2>Top up by EFT</h2>
-        <label className="builder-field">
-          Amount in rand
+        <FormField label="Amount in rand">
           <input
             value={amount}
             onChange={(event) => setAmount(event.target.value)}
             inputMode="decimal"
           />
-        </label>
+        </FormField>
         <button className="builder-primary" onClick={request}>
           Request top-up
         </button>
@@ -80,14 +89,18 @@ function CreditPage() {
       </section>
       <section className="guest-panel">
         <h2>Payments</h2>
-        {ledger && ledger.payments.length === 0 && <p className="demo-data-note">No top-ups yet.</p>}
+        {ledger && ledger.payments.length === 0 && (
+          <EmptyState title="No top-ups yet" hint="Ask for your first top-up above and the operator will confirm it once the EFT lands." />
+        )}
         {ledger &&
           ledger.payments.map((payment) => (
             <div className="outbox-meta" key={payment.id}>
               <span>
                 <strong>{payment.reference}</strong> · {zar(payment.amountCents)}
               </span>
-              <span className={`status-pill ${payment.status}`}>{payment.status}</span>
+              <Badge tone={payment.status === "confirmed" ? "sent" : payment.status === "pending" ? "active" : undefined}>
+                {payment.status}
+              </Badge>
             </div>
           ))}
       </section>

@@ -8,6 +8,7 @@ import { withChildren } from "@/lib/nested";
 import type { CampaignAudience } from "@/data/types";
 import type { CustomerFilter, CustomerSort } from "@/domain/customers";
 import { countLabel } from "@/lib/count-label";
+import { EmptyState, FormField, PageHeader } from "@/components/patron/dash";
 
 const FILTERS: CustomerFilter[] = [
   "all",
@@ -117,14 +118,18 @@ function Customers() {
 
   return (
     <main className="demo-hub page-width">
-      <p className="eyebrow">
-        <span className="eyebrow-line" />
-        Customers · {restaurant.name}
-      </p>
-      <h1>Your regulars.</h1>
+      <PageHeader
+        eyebrow={`Customers · ${restaurant.name}`}
+        title="Your regulars."
+        intro="Everyone who has joined your card, with their stamps, rewards and last visit. Pick a guest to see their full history."
+        actions={
+          <button className="builder-secondary" type="button" onClick={download}>
+            Export CSV
+          </button>
+        }
+      />
       <div className="builder-fields customer-filters">
-        <label className="builder-field">
-          Search name or phone
+        <FormField label="Search name or phone">
           <input
             value={search}
             onChange={(event) => {
@@ -132,9 +137,8 @@ function Customers() {
               setPage(1);
             }}
           />
-        </label>
-        <label className="builder-field">
-          Filter
+        </FormField>
+        <FormField label="Filter">
           <select
             value={filter}
             onChange={(event) => {
@@ -148,9 +152,8 @@ function Customers() {
               </option>
             ))}
           </select>
-        </label>
-        <label className="builder-field">
-          Sort
+        </FormField>
+        <FormField label="Sort">
           <select value={sort} onChange={(event) => setSort(event.target.value as CustomerSort)}>
             {SORTS.map((s) => (
               <option key={s} value={s}>
@@ -158,7 +161,7 @@ function Customers() {
               </option>
             ))}
           </select>
-        </label>
+        </FormField>
       </div>
       <p className="demo-data-note">
         {countLabel(data.total, "guest")} · page {data.page} of {pages}
@@ -209,7 +212,12 @@ function Customers() {
           </div>
         ))}
       </div>
-      {data.total === 0 && <p className="demo-data-note">No guests match these filters.</p>}
+      {data.total === 0 && (
+        <EmptyState
+          title="No guests match these filters."
+          hint="Try a different filter, or clear the search to see everyone."
+        />
+      )}
       <div className="demo-control-actions">
         <button disabled={page <= 1} onClick={() => setPage(page - 1)}>
           Previous
@@ -217,7 +225,6 @@ function Customers() {
         <button disabled={page >= pages} onClick={() => setPage(page + 1)}>
           Next
         </button>
-        <button onClick={download}>Export CSV</button>
       </div>
       {notice && (
         <p role="status" className="demo-data-note">

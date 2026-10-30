@@ -5,6 +5,7 @@ import { demoRepo } from "@/data/repo";
 import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
 import { Switch } from "@/components/patron/Switch";
+import { FormField, PageHeader } from "@/components/patron/dash";
 
 export const Route = createFileRoute("/app/settings")({
   beforeLoad: () => {
@@ -62,52 +63,60 @@ function Settings() {
 
   return (
     <main className="demo-hub page-width">
-      <p className="eyebrow">
-        <span className="eyebrow-line" />
-        Settings · {restaurant.name}
-      </p>
-      <h1>The fine details.</h1>
-      <div className="builder-fields">
-        <label className="builder-field">
-          Business name
-          <input value={name} onChange={(event) => setName(event.target.value)} />
-        </label>
-        <label className="builder-field">
-          Suburb
-          <input value={suburb} onChange={(event) => setSuburb(event.target.value)} />
-        </label>
-        <label className="builder-field">
-          SMS sender name (11 chars, letters and numbers)
-          <input
-            value={sender}
-            maxLength={11}
-            onChange={(event) => setSender(event.target.value)}
-          />
-        </label>
-        <label className="builder-field">
-          Max messages per restaurant per week
-          <input
-            type="number"
-            min={1}
-            value={capRestaurant}
-            onChange={(event) => setCapRestaurant(Number(event.target.value))}
-          />
-        </label>
-        <label className="builder-field">
-          Max messages per member per week
-          <input
-            type="number"
-            min={1}
-            value={capMember}
-            onChange={(event) => setCapMember(Number(event.target.value))}
-          />
-        </label>
-        <label className="builder-field">
-          Contact shown on the public page
-          <input value={contact} onChange={(event) => setContact(event.target.value)} />
-        </label>
-      </div>
-      <section className="builder-panel" style={{ marginTop: "1.5rem" }}>
+      <PageHeader
+        eyebrow={`Settings · ${restaurant.name}`}
+        title="The fine details"
+        intro="Your business details, message limits and whether the till asks what guests ordered."
+      />
+      <section className="builder-panel">
+        <h2>Business details</h2>
+        <div className="builder-fields">
+          <FormField label="Business name">
+            <input value={name} onChange={(event) => setName(event.target.value)} />
+          </FormField>
+          <FormField label="Suburb">
+            <input value={suburb} onChange={(event) => setSuburb(event.target.value)} />
+          </FormField>
+          <FormField label="Contact shown on the public page">
+            <input value={contact} onChange={(event) => setContact(event.target.value)} />
+          </FormField>
+        </div>
+      </section>
+      <section className="builder-panel">
+        <h2>Messages</h2>
+        <div className="builder-fields">
+          <FormField label="SMS sender name" hint="Up to 11 letters and numbers.">
+            <input
+              value={sender}
+              maxLength={11}
+              onChange={(event) => setSender(event.target.value)}
+            />
+          </FormField>
+          <FormField
+            label="Max messages per restaurant per week"
+            hint="A safety limit for the whole venue."
+          >
+            <input
+              type="number"
+              min={1}
+              value={capRestaurant}
+              onChange={(event) => setCapRestaurant(Number(event.target.value))}
+            />
+          </FormField>
+          <FormField
+            label="Max messages per member per week"
+            hint="How often one guest can hear from you."
+          >
+            <input
+              type="number"
+              min={1}
+              value={capMember}
+              onChange={(event) => setCapMember(Number(event.target.value))}
+            />
+          </FormField>
+        </div>
+      </section>
+      <section className="builder-panel">
         <h2>Orders at the till</h2>
         <Switch
           label="Track what guests order"
@@ -116,8 +125,7 @@ function Settings() {
           onChange={setTrackOrders}
         />
         <div className="builder-fields">
-          <label className="builder-field">
-            Quick buttons show
+          <FormField label="Quick buttons show">
             <select
               value={ordersMode}
               onChange={(event) =>
@@ -128,12 +136,14 @@ function Settings() {
               <option value="items">Single items from the menu</option>
               <option value="categories">Simple categories (breakfast, coffee, lunch)</option>
             </select>
-          </label>
+          </FormField>
         </div>
       </section>
-      <button className="builder-primary" onClick={save}>
-        Save settings
-      </button>
+      <div className="page-actions">
+        <button className="builder-primary" onClick={save}>
+          Save settings
+        </button>
+      </div>
       {notice && (
         <p role="status" className="demo-data-note">
           {notice}

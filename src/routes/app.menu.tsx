@@ -6,6 +6,7 @@ import { requireRole } from "@/data/session";
 import { clock } from "@/lib/clock";
 import type { MenuItem } from "@/data/types";
 import { useDemoState } from "@/data/useDemoState";
+import { EmptyState, FormField, PageHeader } from "@/components/patron/dash";
 
 export const Route = createFileRoute("/app/menu")({
   beforeLoad: () => {
@@ -38,6 +39,12 @@ function MenuEditor() {
   const sections = state.sections
     .filter((value) => value.restaurantId === restaurant.id)
     .sort((a, b) => a.sortOrder - b.sortOrder);
+  const sectionItems = state.items
+    .filter((value) => value.sectionId === sectionId)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+  const restaurantSpecials = state.specials.filter(
+    (value) => value.restaurantId === restaurant.id,
+  );
   const save = () => {
     const result = api.menu.saveItem({
       ...item,
@@ -80,18 +87,17 @@ function MenuEditor() {
   };
   return (
     <main className="demo-hub page-width">
-      <p className="eyebrow">
-        <span className="eyebrow-line" />
-        Owner workspace · Demo data
-      </p>
-      <h1>Menu & specials.</h1>
+      <PageHeader
+        eyebrow={`${restaurant.name} · Menu`}
+        title="Menu and specials"
+        intro="Write the menu, keep prices current and hide anything you have run out of."
+      />
       <section className="builder-panel">
         <h2>Menu sections</h2>
         <div className="menu-add-section">
-          <label className="builder-field">
-            Section name
+          <FormField label="Section name">
             <input value={newSection} onChange={(event) => setNewSection(event.target.value)} />
-          </label>
+          </FormField>
           <button
             className="builder-secondary"
             onClick={() => {
@@ -106,8 +112,7 @@ function MenuEditor() {
             Add section
           </button>
         </div>
-        <label className="builder-field">
-          Editing section
+        <FormField label="Editing section">
           <select
             value={sectionId}
             onChange={(event) => {
@@ -121,12 +126,15 @@ function MenuEditor() {
               </option>
             ))}
           </select>
-        </label>
-        <div className="menu-owner-list">
-          {state.items
-            .filter((value) => value.sectionId === sectionId)
-            .sort((a, b) => a.sortOrder - b.sortOrder)
-            .map((value) => (
+        </FormField>
+        {sectionItems.length === 0 ? (
+          <EmptyState
+            title="No items in this section yet."
+            hint="Add the first item below and it appears on your menu right away."
+          />
+        ) : (
+          <div className="menu-owner-list">
+            {sectionItems.map((value) => (
               <article
                 className={`menu-owner-row ${value.available ? "" : "is-hidden"}`}
                 key={value.id}
@@ -152,27 +160,25 @@ function MenuEditor() {
                 </div>
               </article>
             ))}
-        </div>
+          </div>
+        )}
         <h3>{item.id ? "Edit item" : "Add menu item"}</h3>
         <div className="builder-fields">
-          <label className="builder-field">
-            Name
+          <FormField label="Name">
             <input
               value={item.name ?? ""}
               onChange={(event) => setItem((current) => ({ ...current, name: event.target.value }))}
             />
-          </label>
-          <label className="builder-field">
-            Description
+          </FormField>
+          <FormField label="Description">
             <input
               value={item.description ?? ""}
               onChange={(event) =>
                 setItem((current) => ({ ...current, description: event.target.value }))
               }
             />
-          </label>
-          <label className="builder-field">
-            Price in rand
+          </FormField>
+          <FormField label="Price in rand">
             <input
               type="number"
               min="0"
@@ -185,7 +191,7 @@ function MenuEditor() {
                 }))
               }
             />
-          </label>
+          </FormField>
           <button className="builder-primary" onClick={save}>
             Save menu item
           </button>
@@ -193,9 +199,13 @@ function MenuEditor() {
       </section>
       <section className="builder-panel">
         <h2>Specials</h2>
-        {state.specials
-          .filter((value) => value.restaurantId === restaurant.id)
-          .map((special) => (
+        {restaurantSpecials.length === 0 ? (
+          <EmptyState
+            title="No specials yet."
+            hint="A special shows as a banner on your public page while it is on."
+          />
+        ) : (
+          restaurantSpecials.map((special) => (
             <article className="special-owner-row" key={special.id}>
               <div>
                 <strong>{special.title}</strong>
@@ -212,36 +222,33 @@ function MenuEditor() {
                 Show banner
               </label>
             </article>
-          ))}
+          ))
+        )}
         <h3>Add a special</h3>
         <div className="builder-fields">
-          <label className="builder-field">
-            Title
+          <FormField label="Title">
             <input value={specialTitle} onChange={(event) => setSpecialTitle(event.target.value)} />
-          </label>
-          <label className="builder-field">
-            Details
+          </FormField>
+          <FormField label="Details">
             <textarea
               value={specialBody}
               onChange={(event) => setSpecialBody(event.target.value)}
             />
-          </label>
-          <label className="builder-field">
-            Starts
+          </FormField>
+          <FormField label="Starts">
             <input
               type="datetime-local"
               value={startsAt}
               onChange={(event) => setStartsAt(event.target.value)}
             />
-          </label>
-          <label className="builder-field">
-            Ends
+          </FormField>
+          <FormField label="Ends">
             <input
               type="datetime-local"
               value={endsAt}
               onChange={(event) => setEndsAt(event.target.value)}
             />
-          </label>
+          </FormField>
           <button className="builder-primary" onClick={createSpecial}>
             Save special
           </button>

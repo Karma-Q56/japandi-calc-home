@@ -1,10 +1,11 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
 import { api } from "@/api";
 import { can } from "@/clients/registry";
 import { ThemeEditor } from "@/components/patron/ThemeEditor";
+import { EmptyState, PageHeader } from "@/components/patron/dash";
 import type { PageTemplate, Restaurant } from "@/data/types";
 import { useDemoState } from "@/data/useDemoState";
 
@@ -23,16 +24,27 @@ function LookEditor() {
   const [blocks, setBlocks] = useState<Restaurant["pageConfig"] | null>(null);
   const [template, setTemplate] = useState<PageTemplate | null>(null);
   const [notice, setNotice] = useState("");
+
   if (!restaurant) {
     return (
       <main className="demo-hub page-width">
-        <h1>Restaurant not found.</h1>
+        <EmptyState
+          title="Restaurant not found"
+          hint="It may have been removed, or the link is out of date."
+          action={
+            <a className="builder-secondary" href="/ops/restaurants">
+              Back to restaurants
+            </a>
+          }
+        />
       </main>
     );
   }
+
   const currentTheme = theme ?? restaurant.theme;
   const currentBlocks = blocks ?? restaurant.pageConfig;
   const currentTemplate = template ?? restaurant.pageTemplate;
+
   const move = (index: number, delta: number) => {
     const next = [...currentBlocks];
     const target = index + delta;
@@ -40,6 +52,7 @@ function LookEditor() {
     [next[index], next[target]] = [next[target]!, next[index]!];
     setBlocks(next);
   };
+
   const save = () => {
     const result = api.restaurant.update(restaurant.id, {
       theme: currentTheme,
@@ -48,13 +61,14 @@ function LookEditor() {
     });
     setNotice(result.ok ? "Look and page settings saved." : result.error.message);
   };
+
   return (
     <main className="demo-hub page-width">
-      <p className="eyebrow">
-        <span className="eyebrow-line" />
-        Theme editor · {restaurant.name}
-      </p>
-      <h1>Make it yours.</h1>
+      <PageHeader
+        eyebrow={`Theme editor · ${restaurant.name}`}
+        title="Make it yours"
+        intro="Colours, fonts, logo and the public page template. Changes stay on this screen until you save."
+      />
       <ThemeEditor
         theme={currentTheme}
         onChange={setTheme}
@@ -103,7 +117,12 @@ function LookEditor() {
           <button className="builder-primary" onClick={save}>
             Save look
           </button>
-          <a className="builder-secondary" href={`/r/${restaurant.slug}`} target="_blank" rel="noreferrer">
+          <a
+            className="builder-secondary"
+            href={`/r/${restaurant.slug}`}
+            target="_blank"
+            rel="noreferrer"
+          >
             Preview public page
           </a>
         </div>

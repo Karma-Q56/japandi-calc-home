@@ -5,6 +5,7 @@ import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
 import type { CampaignAudience, SpecialKind, TierName } from "@/data/types";
 import { useDemoState } from "@/data/useDemoState";
+import { Badge, EmptyState, FormField, PageHeader } from "@/components/patron/dash";
 
 export const Route = createFileRoute("/app/specials")({
   beforeLoad: () => {
@@ -112,15 +113,11 @@ function SpecialsPage() {
 
   return (
     <main className="demo-hub page-width">
-      <p className="eyebrow">
-        <span className="eyebrow-line" />
-        {restaurant.name} · Specials
-      </p>
-      <h1>Offers with a code.</h1>
-      <p className="demo-intro">
-        Public offers anyone can see, members-only offers for your regulars, and targeted offers
-        with a personal code for every guest.
-      </p>
+      <PageHeader
+        eyebrow={`${restaurant.name} · Specials`}
+        title="Offers with a code"
+        intro="Public offers anyone can see, members-only offers for your regulars, and targeted offers with a personal code for every guest."
+      />
 
       <section className="builder-panel">
         <h2>Create a special</h2>
@@ -140,27 +137,23 @@ function SpecialsPage() {
           ))}
         </div>
         <div className="builder-fields">
-          <label className="builder-field">
-            Title
+          <FormField label="Title">
             <input value={title} onChange={(event) => setTitle(event.target.value)} />
-          </label>
-          <label className="builder-field">
-            Details
+          </FormField>
+          <FormField label="Details">
             <textarea value={body} onChange={(event) => setBody(event.target.value)} rows={3} />
-          </label>
+          </FormField>
           {kind !== "targeted" ? (
-            <label className="builder-field">
-              Shared code (leave blank to generate)
+            <FormField label="Shared code" hint="Leave blank and we generate one for you.">
               <input
                 value={code}
                 onChange={(event) => setCode(event.target.value.toUpperCase())}
                 placeholder="Auto"
               />
-            </label>
+            </FormField>
           ) : (
             <>
-              <label className="builder-field">
-                Who gets a code?
+              <FormField label="Who gets a code?">
                 <select
                   value={segment}
                   onChange={(event) => setSegment(event.target.value)}
@@ -170,10 +163,9 @@ function SpecialsPage() {
                   <option value="close_to_reward">Close to a reward</option>
                   <option value="saved_list">A saved list</option>
                 </select>
-              </label>
+              </FormField>
               {segment === "saved_list" && (
-                <label className="builder-field">
-                  Saved list
+                <FormField label="Saved list">
                   <select value={listId} onChange={(event) => setListId(event.target.value)}>
                     <option value="">Choose…</option>
                     {lists.map((list) => (
@@ -182,7 +174,7 @@ function SpecialsPage() {
                       </option>
                     ))}
                   </select>
-                </label>
+                </FormField>
               )}
               <p className="live-count" role="status">
                 <strong>{targetMembers.length}</strong> guests will get a unique code.
@@ -190,8 +182,7 @@ function SpecialsPage() {
             </>
           )}
           {kind === "members" && (
-            <label className="builder-field">
-              Minimum tier
+            <FormField label="Minimum tier">
               <select
                 value={minTier}
                 onChange={(event) => setMinTier(event.target.value as TierName | "")}
@@ -200,16 +191,14 @@ function SpecialsPage() {
                 <option value="regular">Regular and above</option>
                 <option value="vip">VIP only</option>
               </select>
-            </label>
+            </FormField>
           )}
-          <label className="builder-field">
-            Starts
+          <FormField label="Starts">
             <input type="date" value={startsAt} onChange={(event) => setStartsAt(event.target.value)} />
-          </label>
-          <label className="builder-field">
-            Ends
+          </FormField>
+          <FormField label="Ends">
             <input type="date" value={endsAt} onChange={(event) => setEndsAt(event.target.value)} />
-          </label>
+          </FormField>
         </div>
         <div className="page-actions">
           <button className="builder-primary" onClick={create}>
@@ -225,12 +214,17 @@ function SpecialsPage() {
 
       <section className="builder-panel">
         <h2>Your specials</h2>
-        {rows.length === 0 && <p className="demo-data-note">No specials yet.</p>}
+        {rows.length === 0 && (
+          <EmptyState
+            title="No specials yet"
+            hint="Create your first offer above. A public code anyone can use is the quickest place to start."
+          />
+        )}
         {rows.map(({ special, status, issued, redeemed }) => (
           <article className="special-row" key={special.id}>
             <div>
               <div className="special-pills">
-                <span className={`status-pill ${status}`}>{status}</span>
+                <Badge tone={status === "live" ? "active" : undefined}>{status}</Badge>
                 <span className="kind-pill">{special.kind}</span>
               </div>
               <strong>{special.title}</strong>
@@ -277,7 +271,10 @@ function SpecialsPage() {
       <section className="builder-panel">
         <h2>Recent redemptions</h2>
         {redemptions.length === 0 && (
-          <p className="demo-data-note">Nothing redeemed yet. Codes are checked at the till.</p>
+          <EmptyState
+            title="Nothing redeemed yet"
+            hint="Codes are checked at the till. Redemptions appear here as they happen."
+          />
         )}
         {redemptions.map((redemption) => {
           const special = state.specials.find((item) => item.id === redemption.specialId);

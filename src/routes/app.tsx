@@ -6,6 +6,7 @@ import { demoRepo } from "@/data/repo";
 import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
 import { OwnerSideNav, OwnerTabs } from "@/components/patron/OwnerNav";
+import { PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
 import { markOutletComponent } from "@/lib/nested";
 import { PatronBrand } from "@/lib/patron-brand";
 
@@ -71,29 +72,31 @@ function Overview({ restaurantId }: { restaurantId: string }) {
   const max = Math.max(1, ...result.data.weeklyVisits);
   return (
     <main className="demo-hub page-width">
-      <p className="eyebrow">
-        <span className="eyebrow-line" />
-        Overview
-      </p>
-      <h1>Your week at a glance.</h1>
-      <div className="page-actions">
-        <a className="builder-primary" href="/stamp">
-          Open the till
-        </a>
-        <a className="builder-secondary" href="/app/campaigns/new">
-          New campaign
-        </a>
-      </div>
-      <div className="stat-grid stat-grid--five">
+      <PageHeader
+        eyebrow="Overview"
+        title="Your week at a glance"
+        actions={
+          <>
+            <a className="builder-primary" href="/stamp">
+              Open the till
+            </a>
+            <a className="builder-secondary" href="/app/campaigns/new">
+              New campaign
+            </a>
+          </>
+        }
+      />
+      <StatGrid>
         {result.data.stats.map((stat) => (
-          <a className="stat-card" key={stat.key} title={stat.tooltip} href={stat.href}>
-            <strong>{stat.display ?? stat.value}</strong>
-            <span>{stat.label}</span>
-            <small>{stat.tooltip}</small>
-            <em>{stat.action} →</em>
-          </a>
+          <StatCard
+            key={stat.key}
+            value={stat.display ?? stat.value}
+            label={stat.label}
+            hint={stat.tooltip}
+            href={stat.href}
+          />
         ))}
-      </div>
+      </StatGrid>
       <section className="builder-panel">
         <h2>Visits · last 8 weeks</h2>
         <div

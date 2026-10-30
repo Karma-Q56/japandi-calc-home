@@ -4,6 +4,7 @@ import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
 import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
+import { EmptyState, FormField, PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
 
 export const Route = createFileRoute("/app/team")({
   beforeLoad: () => {
@@ -60,15 +61,21 @@ function Team() {
 
   return (
     <main className="demo-hub page-width">
-      <p className="eyebrow">
-        <span className="eyebrow-line" />
-        Team · {restaurant.name}
-      </p>
-      <h1>Who works the till.</h1>
-      <p className="demo-intro">
-        A 4-digit PIN is a convenience, not a lock. The real protections are till pairing, lockout
-        after 5 wrong tries, restaurant scope, and the audit trail.
-      </p>
+      <PageHeader
+        eyebrow={`Team · ${restaurant.name}`}
+        title="Who works the till"
+        intro="A 4-digit PIN is a convenience, not a lock. The real protections are till pairing, lockout after 5 wrong tries, restaurant scope, and the audit trail."
+      />
+      <StatGrid>
+        <StatCard value={staff.filter((member) => member.active).length} label="Active on the till" />
+        <StatCard value={staff.length} label="People on your team" hint="Add someone below, then set their PIN" />
+      </StatGrid>
+      {staff.length === 0 && (
+        <EmptyState
+          title="No one on the team yet"
+          hint="Add the first staff member below. Each person gets their own PIN for the till."
+        />
+      )}
       {staff.map((member) => (
         <article className="guest-list-item" key={member.id}>
           <span>
@@ -115,10 +122,9 @@ function Team() {
       )}
       <section className="builder-panel">
         <h2>Add someone</h2>
-        <label className="builder-field">
-          First name
+        <FormField label="First name">
           <input value={name} onChange={(event) => setName(event.target.value)} maxLength={40} />
-        </label>
+        </FormField>
         <button className="builder-primary" onClick={add}>
           Add staff
         </button>

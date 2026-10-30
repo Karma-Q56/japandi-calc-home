@@ -3,6 +3,7 @@ import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
 import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
+import { EmptyState, PageHeader } from "@/components/patron/dash";
 
 import type { CampaignAudience } from "@/data/types";
 
@@ -46,9 +47,11 @@ function InsightsPage() {
   if (!result.ok) {
     return (
       <main className="demo-hub page-width">
-        <p className="eyebrow">Insights · {restaurant.name}</p>
-        <h1>We could not build your insights.</h1>
-        <p>{result.error.message}</p>
+        <PageHeader
+          eyebrow={`Insights · ${restaurant.name}`}
+          title="We could not build your insights."
+          intro={result.error.message}
+        />
         <p>
           <a href="/app">Back to the dashboard</a>
         </p>
@@ -71,15 +74,11 @@ function InsightsPage() {
 
   return (
     <main className="demo-hub page-width">
-      <p className="eyebrow">
-        <span className="eyebrow-line" />
-        Insights · {restaurant.name}
-      </p>
-      <h1>What your guests are telling you.</h1>
-      <p className="demo-intro">
-        Every block comes from your own stamps, orders and join list. One tap opens the message
-        window with that group already chosen.
-      </p>
+      <PageHeader
+        eyebrow={`Insights · ${restaurant.name}`}
+        title="What your guests are telling you."
+        intro="Every block comes from your own stamps, orders and join list. One tap opens the message window with that group already chosen."
+      />
       <div className="insights-grid">
         <section className="builder-panel">
           <h2>Busiest days</h2>
@@ -205,7 +204,7 @@ function BlockList({
   count?: number;
 }) {
   if (items.length === 0) {
-    return <p className="demo-data-note">{empty}</p>;
+    return <EmptyState title={empty} />;
   }
   return (
     <ul className="insights-list">

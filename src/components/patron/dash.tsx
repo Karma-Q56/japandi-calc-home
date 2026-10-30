@@ -124,7 +124,9 @@ export function DataTable<Row>(props: {
           {props.rows.map((row, index) => (
             <tr key={index}>
               {props.columns.map((column) => (
-                <td key={column.key}>{column.cell(row)}</td>
+                <td key={column.key} data-label={column.header}>
+                  {column.cell(row)}
+                </td>
               ))}
             </tr>
           ))}
