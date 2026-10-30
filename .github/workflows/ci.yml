@@ -1,0 +1,45 @@
+name: CI
+on:
+  push:
+  pull_request:
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: patron
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d patron"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - name: Apply schema and configure runtime role
+        run: pnpm db:migrate && pnpm db:role
+        env:
+          DATABASE_URL_MIGRATE: postgresql://postgres:postgres@127.0.0.1:5432/patron
+          APP_USER_PASSWORD: patron-ci-runtime-password-which-is-long
+          APP_ENV: test
+      - name: Typecheck, lint, tests, and build
+        run: pnpm build && pnpm typecheck && pnpm lint && pnpm test
+        env:
+          DATABASE_URL_MIGRATE: postgresql://postgres:postgres@127.0.0.1:5432/patron
+          DATABASE_URL_TEST: postgresql://app_user:patron-ci-runtime-password-which-is-long@127.0.0.1:5432/patron
+          APP_ENV: test
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Browser smoke test
+        run: pnpm test:e2e

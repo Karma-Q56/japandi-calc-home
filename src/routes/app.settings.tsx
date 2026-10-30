@@ -1,0 +1,144 @@
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { useState } from "react";
+import { api } from "@/api";
+import { demoRepo } from "@/data/repo";
+import { useDemoState } from "@/data/useDemoState";
+import { requireRole } from "@/data/session";
+import { Switch } from "@/components/patron/Switch";
+
+export const Route = createFileRoute("/app/settings")({
+  beforeLoad: () => {
+    if (!requireRole("owner", "manager")(demoRepo.read().session)) {
+      throw redirect({ to: "/login" });
+    }
+  },
+  component: Settings,
+});
+
+function Settings() {
+  const state = useDemoState();
+  const restaurant =
+    state.restaurants.find((item) => item.id === state.session.restaurantId) ??
+    state.restaurants[0]!;
+  const [name, setName] = useState(restaurant.name);
+  const [suburb, setSuburb] = useState(restaurant.suburb);
+  const [sender, setSender] = useState(restaurant.senderName);
+  const [capRestaurant, setCapRestaurant] = useState(restaurant.smsCapRestaurant);
+  const [capMember, setCapMember] = useState(restaurant.smsCapMember);
+  const [contact, setContact] = useState(restaurant.contact);
+  const [notice, setNotice] = useState("");
+  const [trackOrders, setTrackOrders] = useState(restaurant.trackOrders ?? false);
+  const [ordersMode, setOrdersMode] = useState<"items" | "categories">(
+    restaurant.ordersMode ?? "items",
+  );
+
+  const save = () => {
+    if (!/^[A-Za-z0-9 ]{1,11}$/.test(sender)) {
+      setNotice("Sender name: up to 11 letters and numbers.");
+      return;
+    }
+    const result = api.restaurant.update(restaurant.id, {
+      name: name.trim() || restaurant.name,
+      suburb: suburb.trim() || restaurant.suburb,
+      senderName: sender,
+      smsCapRestaurant: Math.max(1, capRestaurant),
+      smsCapMember: Math.max(1, capMember),
+      contact: contact.trim(),
+    });
+    if (!result.ok) {
+      setNotice(result.error.message);
+      return;
+    }
+    const ordersResult = api.orders.setTracking({
+      restaurantId: restaurant.id,
+      trackOrders,
+      ordersMode,
+      session: state.session.restaurantId
+        ? { role: state.session.role, restaurantId: state.session.restaurantId }
+        : { role: state.session.role },
+    });
+    setNotice(ordersResult.ok ? "Settings saved." : ordersResult.error.message);
+  };
+
+  return (
+    <main className="demo-hub page-width">
+      <p className="eyebrow">
+        <span className="eyebrow-line" />
+        Settings · {restaurant.name}
+      </p>
+      <h1>The fine details.</h1>
+      <div className="builder-fields">
+        <label className="builder-field">
+          Business name
+          <input value={name} onChange={(event) => setName(event.target.value)} />
+        </label>
+        <label className="builder-field">
+          Suburb
+          <input value={suburb} onChange={(event) => setSuburb(event.target.value)} />
+        </label>
+        <label className="builder-field">
+          SMS sender name (11 chars, letters and numbers)
+          <input
+            value={sender}
+            maxLength={11}
+            onChange={(event) => setSender(event.target.value)}
+          />
+        </label>
+        <label className="builder-field">
+          Max messages per restaurant per week
+          <input
+            type="number"
+            min={1}
+            value={capRestaurant}
+            onChange={(event) => setCapRestaurant(Number(event.target.value))}
+          />
+        </label>
+        <label className="builder-field">
+          Max messages per member per week
+          <input
+            type="number"
+            min={1}
+            value={capMember}
+            onChange={(event) => setCapMember(Number(event.target.value))}
+          />
+        </label>
+        <label className="builder-field">
+          Contact shown on the public page
+          <input value={contact} onChange={(event) => setContact(event.target.value)} />
+        </label>
+      </div>
+      <section className="builder-panel" style={{ marginTop: "1.5rem" }}>
+        <h2>Orders at the till</h2>
+        <Switch
+          label="Track what guests order"
+          hint="After each stamp, staff can tap what the guest had. Nothing gets blocked or slowed."
+          checked={trackOrders}
+          onChange={setTrackOrders}
+        />
+        <div className="builder-fields">
+          <label className="builder-field">
+            Quick buttons show
+            <select
+              value={ordersMode}
+              onChange={(event) =>
+                setOrdersMode(event.target.value === "categories" ? "categories" : "items")
+              }
+              disabled={!trackOrders}
+            >
+              <option value="items">Single items from the menu</option>
+              <option value="categories">Simple categories (breakfast, coffee, lunch)</option>
+            </select>
+          </label>
+        </div>
+      </section>
+      <button className="builder-primary" onClick={save}>
+        Save settings
+      </button>
+      {notice && (
+        <p role="status" className="demo-data-note">
+          {notice}
+        </p>
+      )}
+    </main>
+  );
+}
