@@ -1081,9 +1081,24 @@ button:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 44px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
   color: var(--ink-soft);
+  font: inherit;
+  font-weight: 600;
   text-decoration: none;
+  cursor: pointer;
+}
+.guest-back:hover {
+  border-color: var(--primary);
+  color: var(--ink);
+}
+.guest-back:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 .form-section,
 .quiet-section,
@@ -4444,5 +4459,52 @@ input[type="range"] {
   .help-bubble {
     left: 12px;
     bottom: 12px;
+  }
+}
+
+/* --------------------------------------------------------- owner extras */
+.starter-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.starter-grid a {
+  text-align: center;
+}
+.guest-list-item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+.guest-list-item:last-child {
+  border-bottom: 0;
+}
+.guest-list-item > span {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.ox-venue-select {
+  min-height: 38px;
+  max-width: 220px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--ink);
+  font: 600 13px var(--font-sans);
+}
+.ox-top .ox-venue-select {
+  margin-left: auto;
+}
+@media (max-width: 620px) {
+  .ox-venue-select {
+    max-width: 150px;
   }
 }

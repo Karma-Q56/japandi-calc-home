@@ -32,6 +32,13 @@ function Settings() {
   );
   const [notice, setNotice] = useState("");
   const [autoApprove, setAutoApprove] = useState(restaurant.campaignAutoApprove ?? false);
+  const [defaultDiscount, setDefaultDiscount] = useState(restaurant.defaultDiscountPercent ?? 10);
+  const [emailUpdates, setEmailUpdates] = useState<"weekly" | "monthly" | "off">(
+    restaurant.emailUpdates ?? "weekly",
+  );
+  const [lowCreditAlert, setLowCreditAlert] = useState(
+    Math.round((restaurant.lowCreditAlertCents ?? 2000) / 100),
+  );
   const [trackOrders, setTrackOrders] = useState(restaurant.trackOrders ?? false);
   const [ordersMode, setOrdersMode] = useState<"items" | "categories">(
     restaurant.ordersMode ?? "items",
@@ -51,6 +58,9 @@ function Settings() {
       contact: contact.trim(),
       enquiryNotifyEmail: enquiryNotifyEmail.trim(),
       campaignAutoApprove: autoApprove,
+      defaultDiscountPercent: Math.min(100, Math.max(0, defaultDiscount)),
+      emailUpdates,
+      lowCreditAlertCents: Math.max(0, Math.round(lowCreditAlert)) * 100,
     });
     if (!result.ok) {
       setNotice(result.error.message);
@@ -138,6 +148,55 @@ function Settings() {
               min={1}
               value={capMember}
               onChange={(event) => setCapMember(Number(event.target.value))}
+            />
+          </FormField>
+        </div>
+      </section>
+      <section className="builder-panel">
+        <h2>Offers and alerts</h2>
+        <div className="builder-fields">
+          <FormField
+            label="Default discount for a new offer"
+            hint="A starting percentage when you write a special. You can change it on each offer."
+          >
+            <input
+              type="number"
+              min={0}
+              max={100}
+              value={defaultDiscount}
+              onChange={(event) => setDefaultDiscount(Number(event.target.value))}
+            />
+          </FormField>
+          <FormField
+            label="Email updates"
+            hint="A short results email. Placeholder only until the mail service is connected."
+          >
+            <select
+              value={emailUpdates}
+              onChange={(event) =>
+                setEmailUpdates(
+                  event.target.value === "monthly"
+                    ? "monthly"
+                    : event.target.value === "off"
+                      ? "off"
+                      : "weekly",
+                )
+              }
+            >
+              <option value="weekly">Every week</option>
+              <option value="monthly">Once a month</option>
+              <option value="off">No email</option>
+            </select>
+          </FormField>
+          <FormField
+            label="Low SMS credit alert (rand)"
+            hint="We will flag it in the dashboard when your balance drops below this."
+          >
+            <input
+              type="number"
+              min={0}
+              value={lowCreditAlert}
+              onChange={(event) => setLowCreditAlert(Number(event.target.value))}
             />
           </FormField>
         </div>

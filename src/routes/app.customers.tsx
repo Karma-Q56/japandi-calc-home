@@ -8,10 +8,15 @@ import { withChildren } from "@/lib/nested";
 import type { CampaignAudience } from "@/data/types";
 import type { CustomerFilter, CustomerSort } from "@/domain/customers";
 import { countLabel } from "@/lib/count-label";
+import { formatRand } from "@/lib/money";
 import { EmptyState, FormField, PageHeader } from "@/components/patron/dash";
 
 const FILTERS: CustomerFilter[] = [
   "all",
+  "one_stamp_away",
+  "recent30",
+  "reward_ready",
+  "gone_quiet",
   "new14",
   "regulars",
   "lapsed30",
@@ -25,6 +30,10 @@ const SORTS: CustomerSort[] = ["stamps", "fewest_stamps", "visits", "recent", "n
 const FILTER_LABELS: Record<CustomerFilter, string> = {
   all: "All guests",
   new14: "New · 14 days",
+  one_stamp_away: "One stamp away",
+  recent30: "Visited in the last 30 days",
+  reward_ready: "Reward ready",
+  gone_quiet: "Gone quiet",
   regulars: "Regulars",
   lapsed30: "Lapsed · 30 days",
   lapsed45: "Lapsed · 45 days",
@@ -36,6 +45,10 @@ const FILTER_LABELS: Record<CustomerFilter, string> = {
 const FILTER_AUDIENCE: Record<CustomerFilter, CampaignAudience> = {
   all: { type: "everyone" },
   new14: { type: "new", days: 14 },
+  one_stamp_away: { type: "close_to_reward", remaining: 1 },
+  recent30: { type: "everyone" },
+  reward_ready: { type: "close_to_reward", remaining: 0 },
+  gone_quiet: { type: "lapsed30", days: 30 },
   regulars: { type: "close_to_reward", remaining: 2 },
   lapsed30: { type: "lapsed30", days: 30 },
   lapsed45: { type: "lapsed30", days: 45 },
@@ -206,6 +219,9 @@ function Customers() {
                     }).format(new Date(row.lastVisitAt))}`
                   : "No visits yet"}
                 {row.smsOptedIn ? " · SMS on" : ""}
+                {row.estimatedSpendCents !== null
+                  ? ` · about ${formatRand(row.estimatedSpendCents)} spent`
+                  : ""}
               </small>
               <b aria-hidden="true">›</b>
             </a>

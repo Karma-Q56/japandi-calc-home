@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { Outlet, useChildMatches } from "@tanstack/react-router";
 import { api } from "@/api";
 import { APP_NAME } from "@/config/app";
-import { demoRepo } from "@/data/repo";
+import { demoRepo, updateDemo } from "@/data/repo";
 import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
 import { OwnerSideNav, OwnerTabs } from "@/components/patron/OwnerNav";
@@ -25,6 +25,14 @@ function OwnerShell() {
   const restaurant =
     state.restaurants.find((item) => item.id === state.session.restaurantId) ??
     state.restaurants[0]!;
+  const switchVenue = (id: string) => {
+    updateDemo((current) => {
+      const session = { ...current.session, restaurantId: id };
+      delete session.tillPairedRestaurantId;
+      delete session.staffExpiresAt;
+      return { ...current, session };
+    });
+  };
   const brand = (
     <div className="ox-brand">
       <PatronBrand className="ox-brand-wordmark" />
@@ -45,7 +53,23 @@ function OwnerShell() {
         </p>
       </aside>
       <div className="ox-main">
-        <header className="ox-top">{brand}</header>
+        <header className="ox-top">
+          {brand}
+          {state.restaurants.length > 1 && (
+            <select
+              className="ox-venue-select"
+              aria-label="Switch venue"
+              value={restaurant.id}
+              onChange={(event) => switchVenue(event.target.value)}
+            >
+              {state.restaurants.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </header>
         {children.length > 0 ? <Outlet /> : <Overview restaurantId={restaurant.id} />}
       </div>
       <OwnerTabs />

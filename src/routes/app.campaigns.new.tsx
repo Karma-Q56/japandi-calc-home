@@ -33,6 +33,14 @@ export const Route = createFileRoute("/app/campaigns/new")({
         ? (search["segment"] as SegmentType)
         : undefined,
     weekday: typeof search["weekday"] === "string" && /^\d$/.test(search["weekday"]) ? Number(search["weekday"]) : undefined,
+    body:
+      typeof search["body"] === "string" && search["body"].trim()
+        ? search["body"].slice(0, 600)
+        : undefined,
+    name:
+      typeof search["name"] === "string" && search["name"].trim()
+        ? search["name"].slice(0, 80)
+        : undefined,
   }),
   component: ComposerPage,
 });
@@ -51,13 +59,19 @@ const SEGMENT_CHOICES: Array<{ type: SegmentType; title: string; hint: string }>
 function ComposerPage() {
   const state = useDemoState();
   const navigate = useNavigate();
-  const { listId: initialListId, segment: initialSegment, weekday: initialWeekday } = useSearch({
+  const {
+    listId: initialListId,
+    segment: initialSegment,
+    weekday: initialWeekday,
+    body: initialBody,
+    name: initialName,
+  } = useSearch({
     from: "/app/campaigns/new",
   });
   const restaurantId = state.session.restaurantId;
   const [step, setStep] = useState(1);
   const [draftId, setDraftId] = useState<string | null>(null);
-  const [name, setName] = useState("");
+  const [name, setName] = useState(initialName ?? "");
   const [segment, setSegment] = useState<SegmentType>(
     initialListId ? "saved_list" : (initialSegment ?? "everyone"),
   );
@@ -65,7 +79,9 @@ function ComposerPage() {
   const [weekday, setWeekday] = useState(initialWeekday ?? 3);
   const [listId, setListId] = useState(initialListId ?? "");
   const [specialId, setSpecialId] = useState("");
-  const [body, setBody] = useState("Hi {first_name}, we miss you! Pop by this week.");
+  const [body, setBody] = useState(
+    initialBody ?? "Hi {first_name}, we miss you! Pop by this week.",
+  );
   const [code, setCode] = useState("");
   const [validFrom, setValidFrom] = useState("");
   const [validTo, setValidTo] = useState("");

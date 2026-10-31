@@ -90,6 +90,12 @@ export interface Restaurant {
   enquiryNotifyEmail?: string;
   /** Operator drafts skip owner approval when this is on. Off by default. */
   campaignAutoApprove?: boolean;
+  /** Prefilled discount for a new guest offer, as a percentage. */
+  defaultDiscountPercent?: number;
+  /** How often the owner gets an email update. Placeholder until mail is connected. */
+  emailUpdates?: "weekly" | "monthly" | "off";
+  /** Warn the owner when SMS credit falls below this amount, in cents. */
+  lowCreditAlertCents?: number;
 }
 
 /** Owner's choices for bring a friend. Disabled by default. */

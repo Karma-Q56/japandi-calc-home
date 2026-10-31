@@ -163,6 +163,52 @@ describe("customers", () => {
     expect(searched.ok && searched.data.rows.every((r) => r.name.includes("Thandi"))).toBe(true);
   });
 
+  it("offers one stamp away, recent, reward ready and gone quiet filters", () => {
+    const required = demoRepo.read().restaurants.find((item) => item.id === "rest-daily-grind")!.stampsRequired;
+    const oneAway = listCustomers({ restaurantId: "rest-daily-grind", filter: "one_stamp_away", session: owner });
+    expect(oneAway.ok).toBe(true);
+    if (oneAway.ok) {
+      expect(oneAway.data.rows.every((row) => required - row.stampsCurrent === 1)).toBe(true);
+    }
+
+    const rewardReady = listCustomers({ restaurantId: "rest-daily-grind", filter: "reward_ready", session: owner });
+    expect(rewardReady.ok).toBe(true);
+    if (rewardReady.ok) {
+      expect(rewardReady.data.rows.every((row) => row.rewardsWaiting > 0)).toBe(true);
+    }
+
+    const now = demoRepo.read().now;
+    const recent = listCustomers({ restaurantId: "rest-daily-grind", filter: "recent30", session: owner });
+    expect(recent.ok).toBe(true);
+    if (recent.ok) {
+      expect(
+        recent.data.rows.every(
+          (row) => row.lastVisitAt !== null && now - Date.parse(row.lastVisitAt) <= 30 * 86400000,
+        ),
+      ).toBe(true);
+      expect(recent.data.rows.every((row) => row.estimatedSpendCents !== null)).toBe(true);
+    }
+
+    const quiet = listCustomers({ restaurantId: "rest-daily-grind", filter: "gone_quiet", session: owner });
+    expect(quiet.ok).toBe(true);
+    if (quiet.ok) {
+      expect(
+        quiet.data.rows.every(
+          (row) => row.lastVisitAt === null || now - Date.parse(row.lastVisitAt) >= 30 * 86400000,
+        ),
+      ).toBe(true);
+    }
+
+    const noTracking = listCustomers({
+      restaurantId: "rest-oak-table",
+      session: { role: "operator" },
+    });
+    expect(noTracking.ok).toBe(true);
+    if (noTracking.ok) {
+      expect(noTracking.data.rows.every((row) => row.estimatedSpendCents === null)).toBe(true);
+    }
+  });
+
   it("selects every matching guest across pages and preserves search/filter behavior", () => {
     const matches = matchingCustomerMembershipIds({
       restaurantId: "rest-daily-grind",

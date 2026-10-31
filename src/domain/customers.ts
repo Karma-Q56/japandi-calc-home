@@ -9,7 +9,18 @@ import { failure, success, type ApiResult } from "./demo";
 import { logAudit, requireScope } from "./audit";
 
 export type CustomerFilter =
-  "all" | "new14" | "regulars" | "lapsed30" | "lapsed45" | "lapsed60" | "sms" | "birthdays";
+  | "all"
+  | "new14"
+  | "regulars"
+  | "lapsed30"
+  | "lapsed45"
+  | "lapsed60"
+  | "sms"
+  | "birthdays"
+  | "one_stamp_away"
+  | "recent30"
+  | "reward_ready"
+  | "gone_quiet";
 
 export type CustomerSort = "recent" | "stamps" | "fewest_stamps" | "visits" | "name";
 
@@ -24,12 +35,29 @@ export interface CustomerRow {
   rewardsWaiting: number;
   smsOptedIn: boolean;
   visits60: number;
+  /** Only meaningful when the restaurant tracks orders. */
+  estimatedSpendCents: number | null;
 }
 
 const DAY = 86400000;
 
 function rowsFor(restaurantId: string, now: number): CustomerRow[] {
   const state = demoRepo.read();
+  const restaurant = state.restaurants.find((item) => item.id === restaurantId);
+  const sectionIds = new Set(restaurant?.menuSectionIds ?? []);
+  const menuPrices = state.items
+    .filter(
+      (item) =>
+        item.restaurantId === restaurantId &&
+        item.available &&
+        item.priceCents > 0 &&
+        sectionIds.has(item.sectionId),
+    )
+    .map((item) => item.priceCents);
+  const averageItemCents =
+    menuPrices.length > 0
+      ? Math.round(menuPrices.reduce((sum, price) => sum + price, 0) / menuPrices.length)
+      : 0;
   return state.memberships
     .filter(
       (membership) =>
@@ -44,6 +72,12 @@ function rowsFor(restaurantId: string, now: number): CustomerRow[] {
           s.status === "valid" &&
           now - new Date(s.createdAt).getTime() <= 60 * DAY,
       ).length;
+      const billedCents = state.orders
+        .filter((order) => order.membershipId === m.id && (order.billCents ?? 0) > 0)
+        .reduce((sum, order) => sum + (order.billCents ?? 0), 0);
+      const validVisits = state.stamps.filter(
+        (s) => s.membershipId === m.id && s.status === "valid",
+      ).length;
       return {
         customerId: customer.id,
         membershipId: m.id,
@@ -56,6 +90,11 @@ function rowsFor(restaurantId: string, now: number): CustomerRow[] {
           .length,
         smsOptedIn: m.marketingSms,
         visits60,
+        estimatedSpendCents: restaurant?.trackOrders
+          ? billedCents > 0
+            ? billedCents
+            : validVisits * averageItemCents
+          : null,
       };
     });
 }
@@ -109,6 +148,15 @@ export function listCustomers(input: {
       const birthday = birthdayOf(customer);
       return birthday !== null && birthday.month === month;
     });
+  } else if (filter === "one_stamp_away") {
+    const required = state.restaurants.find((item) => item.id === input.restaurantId)?.stampsRequired ?? 8;
+    rows = rows.filter((r) => required - r.stampsCurrent === 1);
+  } else if (filter === "recent30") {
+    rows = rows.filter((r) => r.lastVisitAt !== null && daysSince(r.lastVisitAt) <= 30);
+  } else if (filter === "reward_ready") {
+    rows = rows.filter((r) => r.rewardsWaiting > 0);
+  } else if (filter === "gone_quiet") {
+    rows = rows.filter((r) => daysSince(r.lastVisitAt) >= 30);
   }
   if (sort === "name") rows.sort((a, b) => a.name.localeCompare(b.name));
   else if (sort === "stamps") rows.sort((a, b) => b.stampsCurrent - a.stampsCurrent);
@@ -152,6 +200,11 @@ export function matchingCustomerMembershipIds(input: {
     if (filter === "lapsed45" && daysSince(row.lastVisitAt) < 45) return false;
     if (filter === "lapsed60" && daysSince(row.lastVisitAt) < 60) return false;
     if (filter === "sms" && !row.smsOptedIn) return false;
+    const required = state.restaurants.find((item) => item.id === input.restaurantId)?.stampsRequired ?? 8;
+    if (filter === "one_stamp_away" && required - row.stampsCurrent !== 1) return false;
+    if (filter === "recent30" && (row.lastVisitAt === null || daysSince(row.lastVisitAt) > 30)) return false;
+    if (filter === "reward_ready" && row.rewardsWaiting === 0) return false;
+    if (filter === "gone_quiet" && daysSince(row.lastVisitAt) < 30) return false;
     return true;
   });
   if (sort === "name") rows.sort((a, b) => a.name.localeCompare(b.name));

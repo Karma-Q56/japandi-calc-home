@@ -49,6 +49,26 @@ function CustomerProfile() {
   });
   const waitingRewards = profile.rewards.filter((reward) => !reward.redeemedAt).length;
   const maskedPhone = `•••• ${profile.customer.phoneE164.slice(-4)}`;
+  const starters = [
+    {
+      title: "Double stamps",
+      body: `Hi {first_name}, double stamps all day at ${restaurant.name}. Pop in and we will add two.`,
+    },
+    {
+      title: "Reward earned",
+      body: `Hi {first_name}, your reward is ready at ${restaurant.name}. Show this message at the till to claim it.`,
+    },
+    {
+      title: "Thank you",
+      body: `Hi {first_name}, thank you for visiting ${restaurant.name}. We would love to see you again soon.`,
+    },
+    {
+      title: "We miss you",
+      body: `Hi {first_name}, we have missed you at ${restaurant.name}. Pop in this week for a warm welcome.`,
+    },
+  ];
+  const starterHref = (title: string, body: string) =>
+    `/app/campaigns/new?name=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
   return (
     <main className="demo-hub page-width">
       <PageHeader
@@ -97,6 +117,20 @@ function CustomerProfile() {
           }}
         />
       </div>
+      <section className="builder-panel">
+        <h2>Message starters</h2>
+        <p className="demo-data-note">
+          Opens the composer with the wording filled in. You still pick the audience and see the cost
+          before anything sends.
+        </p>
+        <div className="starter-grid">
+          {starters.map((starter) => (
+            <a className="builder-secondary" key={starter.title} href={starterHref(starter.title, starter.body)}>
+              {starter.title}
+            </a>
+          ))}
+        </div>
+      </section>
       <section className="builder-panel">
         <h2>Contact</h2>
         <p>
@@ -187,14 +221,34 @@ function CustomerProfile() {
         <h2>Rewards</h2>
         {profile.rewards.length === 0 && <p>No rewards yet.</p>}
         {profile.rewards.map((reward) => (
-          <p className="guest-list-item" key={reward.id}>
+          <div className="guest-list-item" key={reward.id}>
             <span>
               <strong>{reward.description}</strong>
               <Badge tone={reward.redeemedAt ? undefined : "active"}>
                 {reward.redeemedAt ? "Redeemed" : "Waiting"}
               </Badge>
             </span>
-          </p>
+            {!reward.redeemedAt && (
+              <ConfirmDialog
+                label="Mark redeemed"
+                question={`Mark "${reward.description}" as redeemed at the till? This cannot be undone.`}
+                confirmLabel="Yes, mark redeemed"
+                buttonClass="builder-secondary"
+                onConfirm={() => {
+                  const redeemed = api.stamp.redeemReward({
+                    rewardId: reward.id,
+                    actorId: actor,
+                    session: scope,
+                  });
+                  setNotice(
+                    redeemed.ok
+                      ? `Marked "${reward.description}" as redeemed.`
+                      : redeemed.error.message,
+                  );
+                }}
+              />
+            )}
+          </div>
         ))}
       </section>
       <section className="builder-panel">
