@@ -100,8 +100,13 @@ export function qrSvg(value: string, foreground = '#1f3027', background = '#ffff
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" role="img" aria-label="QR code"><rect width="${size}" height="${size}" fill="${background}"/><g fill="${foreground}">${cells}</g></svg>`;
 }
 
-export async function downloadQrPng(value: string, filename: string) {
-  const svg = new Blob([qrSvg(value)], { type: 'image/svg+xml' });
+export async function downloadQrPng(
+  value: string,
+  filename: string,
+  foreground = '#1f3027',
+  background = '#ffffff',
+) {
+  const svg = new Blob([qrSvg(value, foreground, background)], { type: 'image/svg+xml' });
   const url = URL.createObjectURL(svg);
   try {
     const image = new Image(); image.src = url; await image.decode();

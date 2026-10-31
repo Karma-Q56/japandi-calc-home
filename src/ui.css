@@ -4508,3 +4508,65 @@ input[type="range"] {
     max-width: 150px;
   }
 }
+
+/* --------------------------------------------------------------- QR pack */
+.qr-print-card {
+  justify-self: start;
+  width: 100%;
+}
+.qr-layout-table-tent {
+  max-width: 620px;
+}
+.qr-layout-counter-sign {
+  max-width: 420px;
+  grid-template-columns: 1fr;
+  justify-items: center;
+  text-align: center;
+}
+.qr-layout-sticker {
+  max-width: 380px;
+  aspect-ratio: 1;
+  grid-template-columns: 1fr;
+  justify-items: center;
+  align-content: center;
+  text-align: center;
+}
+.qr-layout-poster {
+  max-width: 620px;
+  grid-template-columns: 1fr;
+  justify-items: center;
+  padding: clamp(24px, 5vw, 48px);
+  text-align: center;
+}
+.qr-layout-counter-sign .qr-code,
+.qr-layout-sticker .qr-code,
+.qr-layout-poster .qr-code {
+  width: min(100%, 220px);
+}
+.qr-logo {
+  grid-column: 1 / -1;
+  max-width: 150px;
+  max-height: 52px;
+  object-fit: contain;
+  margin-bottom: 4px;
+}
+.qr-code svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.qr-copy h2 {
+  font-family: "Bricolage Grotesque Variable", "Bricolage Grotesque", serif;
+}
+@media print {
+  .qr-pack-controls,
+  .qr-pack .no-print,
+  .help-bubble {
+    display: none !important;
+  }
+  .qr-print-card {
+    max-width: none !important;
+    border: 0 !important;
+    break-inside: avoid;
+  }
+}
