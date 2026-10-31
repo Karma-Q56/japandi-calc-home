@@ -16,6 +16,7 @@ import { Route as ConsentWordingRouteImport } from './routes/consent-wording'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as DemoRouteImport } from './routes/demo'
 import { Route as FaqRouteImport } from './routes/faq'
+import { Route as FindRouteImport } from './routes/find'
 import { Route as ForBusinessRouteImport } from './routes/for-business'
 import { Route as ForDinersRouteImport } from './routes/for-diners'
 import { Route as HealthzRouteImport } from './routes/healthz'
@@ -110,6 +111,11 @@ const DemoRoute = DemoRouteImport.update({
 const FaqRoute = FaqRouteImport.update({
   id: '/faq',
   path: '/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FindRoute = FindRouteImport.update({
+  id: '/find',
+  path: '/find',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForBusinessRoute = ForBusinessRouteImport.update({
@@ -421,6 +427,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/demo': typeof DemoRouteWithChildren
   '/faq': typeof FaqRoute
+  '/find': typeof FindRoute
   '/for-business': typeof ForBusinessRoute
   '/for-diners': typeof ForDinersRoute
   '/healthz': typeof HealthzRouteWithChildren
@@ -490,6 +497,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/demo': typeof DemoRouteWithChildren
   '/faq': typeof FaqRoute
+  '/find': typeof FindRoute
   '/for-business': typeof ForBusinessRoute
   '/for-diners': typeof ForDinersRoute
   '/healthz': typeof HealthzRouteWithChildren
@@ -560,6 +568,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/demo': typeof DemoRouteWithChildren
   '/faq': typeof FaqRoute
+  '/find': typeof FindRoute
   '/for-business': typeof ForBusinessRoute
   '/for-diners': typeof ForDinersRoute
   '/healthz': typeof HealthzRouteWithChildren
@@ -631,6 +640,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/demo'
     | '/faq'
+    | '/find'
     | '/for-business'
     | '/for-diners'
     | '/healthz'
@@ -700,6 +710,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/demo'
     | '/faq'
+    | '/find'
     | '/for-business'
     | '/for-diners'
     | '/healthz'
@@ -769,6 +780,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/demo'
     | '/faq'
+    | '/find'
     | '/for-business'
     | '/for-diners'
     | '/healthz'
@@ -839,6 +851,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   DemoRoute: typeof DemoRouteWithChildren
   FaqRoute: typeof FaqRoute
+  FindRoute: typeof FindRoute
   ForBusinessRoute: typeof ForBusinessRoute
   ForDinersRoute: typeof ForDinersRoute
   HealthzRoute: typeof HealthzRouteWithChildren
@@ -913,6 +926,13 @@ declare module '@tanstack/react-router' {
       path: '/faq'
       fullPath: '/faq'
       preLoaderRoute: typeof FaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/find': {
+      id: '/find'
+      path: '/find'
+      fullPath: '/find'
+      preLoaderRoute: typeof FindRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/for-business': {
@@ -1518,6 +1538,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   DemoRoute: DemoRouteWithChildren,
   FaqRoute: FaqRoute,
+  FindRoute: FindRoute,
   ForBusinessRoute: ForBusinessRoute,
   ForDinersRoute: ForDinersRoute,
   HealthzRoute: HealthzRouteWithChildren,

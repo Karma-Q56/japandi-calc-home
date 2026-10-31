@@ -1,8 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { MarketingShell } from "@/components/patron/MarketingShell";
 import { LeadForm } from "@/components/patron/LeadForm";
+import type { LeadKind } from "@/data/types";
 
 export const Route = createFileRoute("/contact")({
+  validateSearch: (search: Record<string, unknown>): { kind?: LeadKind | undefined } => ({
+    kind:
+      search["kind"] === "diner" || search["kind"] === "other" || search["kind"] === "owner"
+        ? search["kind"]
+        : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Book a visit | Patron" },
@@ -17,6 +24,7 @@ export const Route = createFileRoute("/contact")({
 });
 
 function Contact() {
+  const { kind } = Route.useSearch();
   return (
     <MarketingShell>
       <section className="marketing-page-hero page-width">
@@ -31,7 +39,7 @@ function Contact() {
           No slides, no pressure, and no obligation to sign anything on the day.
         </p>
       </section>
-      <LeadForm />
+      <LeadForm initialKind={kind ?? "owner"} />
     </MarketingShell>
   );
 }

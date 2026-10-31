@@ -4196,3 +4196,150 @@ input[type="range"] {
 .outbox-timeline .is-bad span {
   color: oklch(0.48 0.16 28);
 }
+
+/* ------------------------------------------------------------------- find */
+.find-hero {
+  padding-bottom: 8px;
+}
+.find-body {
+  padding-bottom: 64px;
+}
+.find-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(150px, 1fr) minmax(150px, 1fr);
+  gap: 12px;
+  align-items: end;
+  margin: 20px 0 14px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--card);
+}
+.find-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.find-controls input,
+.find-controls select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+}
+.find-search-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.find-search-field svg {
+  position: absolute;
+  left: 12px;
+  color: var(--muted-ink);
+}
+.find-search-field input {
+  padding-left: 38px;
+}
+.find-count {
+  color: var(--muted-ink);
+  font-size: 14px;
+  margin: 0 0 14px;
+}
+.find-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.find-card {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--card);
+  box-shadow: var(--shadow-lift);
+}
+.find-card-head {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.find-card-head h2 {
+  margin: 0;
+  font-size: 20px;
+}
+.find-card-head p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin: 2px 0 0;
+  color: var(--muted-ink);
+  font-size: 13px;
+}
+.find-mark {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: color-mix(in oklab, var(--primary) 12%, var(--paper-2));
+  color: var(--primary);
+  font: 700 20px "Bricolage Grotesque Variable", sans-serif;
+  text-transform: uppercase;
+}
+.find-reward {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+.find-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.find-actions a {
+  flex: 1;
+  text-align: center;
+}
+.find-empty {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+  padding: 28px;
+  border: 1.5px dashed var(--line);
+  border-radius: 18px;
+}
+.find-empty h2 {
+  margin: 0;
+}
+.find-ask {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+  margin-top: 28px;
+  padding: clamp(20px, 4vw, 32px);
+  border-radius: 20px;
+  background: color-mix(in oklab, var(--primary) 7%, var(--paper-2));
+}
+.find-ask h2 {
+  margin: 0;
+}
+.find-ask p {
+  max-width: 60ch;
+  margin: 0;
+}
+@media (max-width: 760px) {
+  .find-controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

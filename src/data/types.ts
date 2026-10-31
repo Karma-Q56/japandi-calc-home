@@ -46,6 +46,8 @@ export interface Restaurant {
   status: RestaurantStatus;
   plan: Plan;
   suburb: string;
+  /** Shown on the find page and used for filtering. */
+  venueType?: "cafe" | "bakery" | "restaurant" | "takeaway";
   address?: string;
   hours: Record<string, { open: string; close: string } | null>;
   stampsRequired: number;

@@ -17,9 +17,9 @@ const KINDS: { value: LeadKind; label: string; hint: string }[] = [
   { value: "other", label: "Something else", hint: "Suppliers, partners or a general question." },
 ];
 
-export function LeadForm() {
+export function LeadForm({ initialKind = "owner" }: { initialKind?: LeadKind }) {
   const [status, setStatus] = useState<Status>("idle");
-  const [kind, setKind] = useState<LeadKind>("owner");
+  const [kind, setKind] = useState<LeadKind>(initialKind);
   const [live, setLive] = useState(false);
   const [reference, setReference] = useState("");
   const [name, setName] = useState("");

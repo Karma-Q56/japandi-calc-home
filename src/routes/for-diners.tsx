@@ -82,7 +82,7 @@ function ForDiners() {
             see the offers that are meant for you, all from your phone&apos;s browser.
           </p>
           <div className="diners-actions">
-            <a className="builder-primary" href="#find-a-restaurant">
+            <a className="builder-primary" href="/find">
               Find a restaurant <ArrowRight size={16} />
             </a>
             <a className="text-link" href="#how-it-works">
@@ -170,9 +170,14 @@ function ForDiners() {
           <h2>Start with a demo venue.</h2>
           <p className="diners-lede">
             Every venue has its own card. Open any of these to join and see the card, menu and
-            offers. Any live Patron venue appears here after you scan its QR code.
+            offers. The find page has the same venues with search and filters.
           </p>
           <VenueGrid />
+          <p>
+            <a className="text-link" href="/find">
+              Search every venue on Patron <ArrowRight size={14} />
+            </a>
+          </p>
           <p className="find-note">
             <MapPin size={14} aria-hidden /> Currently showing venues in Johannesburg.
           </p>

@@ -86,7 +86,9 @@ export function SiteHeader() {
               ))}
             </div>
           </details>
-          <a href="/for-diners#find-a-restaurant">Find a restaurant</a>
+          <a href="/find" aria-current={path === "/find" ? "page" : undefined}>
+            Find a restaurant
+          </a>
         </nav>
         <Button variant="patron" className="header-book" asChild>
           <a href="/login" aria-current={onLogin ? "page" : undefined}>
@@ -126,7 +128,7 @@ export function SiteHeader() {
               ))}
             </div>
           </details>
-          <a href="/for-diners#find-a-restaurant" onClick={closeNav}>
+          <a href="/find" onClick={closeNav} aria-current={path === "/find" ? "page" : undefined}>
             Find a restaurant
           </a>
           <Button variant="patron" asChild>
@@ -157,7 +159,9 @@ export function SiteFooter() {
               <a href="/for-diners" aria-current={path === "/for-diners" ? "page" : undefined}>
                 What you get
               </a>
-              <a href="/for-diners#find-a-restaurant">Find a restaurant</a>
+              <a href="/find" aria-current={path === "/find" ? "page" : undefined}>
+                Find a restaurant
+              </a>
               <a href="/login" aria-current={path === "/login" ? "page" : undefined}>
                 Log in
               </a>

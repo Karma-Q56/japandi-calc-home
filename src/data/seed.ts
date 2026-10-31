@@ -68,6 +68,7 @@ const baseRestaurants: Restaurant[] = [
   {
     id: "rest-daily-grind",
     slug: "daily-grind",
+    venueType: "cafe",
     name: "The Daily Grind",
     status: "active",
     plan: "custom",
@@ -119,6 +120,7 @@ const baseRestaurants: Restaurant[] = [
   {
     id: "rest-sunrise-bakes",
     slug: "sunrise-bakes",
+    venueType: "bakery",
     name: "Sunrise Bakes",
     status: "active",
     plan: "managed",
@@ -161,6 +163,7 @@ const baseRestaurants: Restaurant[] = [
   {
     id: "rest-oak-table",
     slug: "oak-table",
+    venueType: "restaurant",
     name: "The Oak Table",
     status: "active",
     plan: "partner",
