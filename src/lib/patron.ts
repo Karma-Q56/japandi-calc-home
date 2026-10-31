@@ -1,7 +1,9 @@
-export const brand = { name: 'patron', location: 'Johannesburg' };
+import { siteDetails } from "@/config/site-details";
 
-// Placeholder: add the real WhatsApp number (international format, digits only, e.g. 27821234567) before launch.
-export const contact = { whatsappNumber: '' };
+export const brand = { name: 'patron', location: siteDetails.location.split(',')[0] ?? 'Johannesburg' };
+
+// Kept for older imports. The source of truth is src/config/site-details.ts.
+export const contact = { whatsappNumber: siteDetails.whatsappNumber };
 
 export const plans = [
   { name: 'Starter', min: 299, max: 499, description: 'A little loyalty. A lot of possibility.', features: ['Your own digital stamp card', 'QR sign-up, menu & specials', 'Your regulars list & results', 'Send your own SMS specials'] },
@@ -48,6 +50,6 @@ export function rand(value: number) {
 }
 
 export function whatsappLink(message: string) {
-  const base = contact.whatsappNumber ? `https://wa.me/${contact.whatsappNumber}` : 'https://wa.me/';
+  const base = `https://wa.me/${siteDetails.whatsappNumber}`;
   return `${base}?text=${encodeURIComponent(message)}`;
 }

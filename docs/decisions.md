@@ -132,3 +132,36 @@ to a guest who has withdrawn consent or sent STOP.
   See `src/domain/orders.ts` and `docs/decisions.md` for the record.
 - **Real authentication**: the demo session is sufficient for the
   bakery's own testing. Real sign-in can be added later.
+
+---
+
+## Before launch
+
+These values and features are placeholders. Replace them before a real
+launch, in the order below.
+
+### Contact details
+
+All public contact details live in `src/config/site-details.ts`. Every value
+there is a placeholder and must be replaced:
+
+- `supportEmail` is `hello@patron.example`, a demo address.
+- `whatsappNumber` is `27000000000`, a demo number that cannot receive
+  messages.
+- `phone` is a demo switchboard number.
+- `supportHours` and `location` are drafts for the real team.
+- `privacyEmail` is `privacy@patron.example`, a demo address.
+
+The help bubble, the footer WhatsApp links and the owner support card read
+from that one file. Update it once and every link changes.
+
+### Other launch blockers
+
+- A lawyer must review the privacy policy and terms of service.
+- The live operator sign-in must exist before the enquiry inbox or the
+  campaign approval screens read a production database. Until then the
+  admin area runs on the demo store only.
+- The notification email in Settings is a placeholder. No email is sent in
+  demo or live until the mail provider is connected.
+- The real WhatsApp business number and a monitored support inbox must be
+  in place before the public help bubble is shown.

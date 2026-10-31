@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowUpRight, ChevronDown, Heart, Menu, X } from "lucide-react";
 import { PatronBrand } from "@/lib/patron-brand";
 import { APP_NAME } from "@/config/app";
+import { HelpBubble } from "@/components/patron/HelpBubble";
 
 const businessLinks: Array<{ href: string; label: string }> = [
   { href: "/for-business", label: "Overview" },
@@ -212,6 +213,7 @@ export function MarketingShell({
       <main>{children}</main>
       {afterMain}
       <SiteFooter />
+      <HelpBubble />
     </>
   );
 }
