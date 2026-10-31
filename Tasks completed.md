@@ -184,3 +184,24 @@ Not done yet:
 - Screenshots at 375px and 1280px were not taken in this session; the browser window never drew, so the screenshot tool refused every attempt.
 
 Latest full check: tsc clean, eslint 0 errors and 12 pre-existing warnings, vitest 315 passed and 5 skipped, build passes.
+
+## Owner extras pass (second request, this session)
+
+Done and committed, with status per item:
+
+1. Owner reports page: new (owner reports with period switch, charts, CSV, print view, Is Patron worth it box).
+2. Leads and enquiries inbox: extended (admin inbox with reference, status, search, notes, copy details, demo and live repos).
+3. Richer enquiry form: extended (I am a chooser, owner and diner question sets, thank you page with reference, honeypot kept).
+4. Done for you campaigns and SMS outbox: extended (approval gate with auto approve, outbox with filters, search, message timeline and a demo simulate delivery button).
+5. Find a restaurant: new (/find with search, type filter, sorting, cards to public and join pages, diner enquiry link).
+6. Help bubble and site details: new (three inline answers plus WhatsApp and email links, one contact config marked as placeholders, listed in docs/decisions.md under Before launch).
+7. Owner extras: extended (venue switcher, settings for discount percent and SMS alerts, guest list filters with select all and estimated spend, reward redeemed confirm and one tap message starters, plain text buttons replaced with real buttons).
+8. QR print pack: rebuilt (four layouts, brand preview, PNG and PDF download, join link tests).
+9. Quiet day picker: extended (pricing and for business pickers feed the planner and pre fill the contact form).
+
+Fixes found while checking the screens in a browser:
+
+- formatRand lost its thousands separator when cents were present; fixed in src/lib/money.ts with tests (commit 81592ca).
+- Diner venue cards had cramped spacing at 375px; fixed and recaptured (commit 3171d42).
+
+Final checks on the current commit: tsc 0 errors; eslint 0 errors; vitest 345 passed, 5 skipped (350 total, the 5 skips are the live Postgres suites); vite build passes. Screenshots at 375px and 1280px were taken for every screen changed in this pass and inspected, including the venue card fix above.
