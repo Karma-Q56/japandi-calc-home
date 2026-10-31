@@ -5,6 +5,7 @@ import { whatsappLink } from "@/lib/patron";
 import { api } from "@/api";
 import { getDataModeFn, submitLeadFn } from "@/server/live";
 import type { LeadKind } from "@/data/types";
+import { useQuietDay } from "@/lib/quiet-day";
 
 type Status = "idle" | "loading" | "success" | "error";
 
@@ -17,7 +18,15 @@ const KINDS: { value: LeadKind; label: string; hint: string }[] = [
   { value: "other", label: "Something else", hint: "Suppliers, partners or a general question." },
 ];
 
-export function LeadForm({ initialKind = "owner" }: { initialKind?: LeadKind }) {
+export function LeadForm({
+  initialKind = "owner",
+  initialQuietDay,
+}: {
+  initialKind?: LeadKind;
+  initialQuietDay?: string | undefined;
+}) {
+  const storedQuietDay = useQuietDay();
+  const quietDay = initialQuietDay ?? storedQuietDay;
   const [status, setStatus] = useState<Status>("idle");
   const [kind, setKind] = useState<LeadKind>(initialKind);
   const [live, setLive] = useState(false);
@@ -239,7 +248,7 @@ export function LeadForm({ initialKind = "owner" }: { initialKind?: LeadKind }) 
                   <div className="lead-pair">
                     <label>
                       Quietest day
-                      <select name="quiet_day" defaultValue="Tuesday">
+                      <select key={quietDay} name="quiet_day" defaultValue={quietDay}>
                         {DAYS.map((day) => (
                           <option key={day}>{day}</option>
                         ))}
