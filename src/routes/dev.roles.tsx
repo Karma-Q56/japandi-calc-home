@@ -60,6 +60,12 @@ function DeveloperRoles() {
         session.restaurantId = member.restaurantId;
       }
     }
+    // An owner or manager always works inside one venue, so the deep link
+    // starts at the first one instead of leaving the session unscoped.
+    if ((role === "owner" || role === "manager") && !session.restaurantId) {
+      const first = state.restaurants[0];
+      if (first) session.restaurantId = first.id;
+    }
     updateDemo((current) => ({ ...current, session }));
     void navigate({ to: search.to ?? defaultDestination[role], replace: true });
   }, [role, search.customer, search.restaurant, search.staff, search.to, navigate]);

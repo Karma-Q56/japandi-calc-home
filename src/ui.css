@@ -3596,8 +3596,8 @@ input[type="range"] {
   margin: 12px 0 10px;
 }
 /* The reward line on a venue card keeps its icon beside the text */
-.diners-venue > span { display: flex; align-items: flex-start; gap: 6px; font-size: 12.5px; }
-.diners-venue > span svg { flex-shrink: 0; margin-top: 2px; }
+.diners-venue > span:not(.diners-venue-mark) { display: flex; align-items: flex-start; gap: 6px; font-size: 12.5px; }
+.diners-venue > span:not(.diners-venue-mark) svg { flex-shrink: 0; margin-top: 2px; }
 /* Hero helper text needs a readable chip over a photo */
 .venue-search-hint {
   display: inline-block;
@@ -4324,7 +4324,9 @@ input[type="range"] {
 }
 .find-actions a {
   flex: 1;
+  padding-inline: 12px;
   text-align: center;
+  white-space: nowrap;
 }
 .find-empty {
   display: grid;
@@ -4568,5 +4570,21 @@ input[type="range"] {
     max-width: none !important;
     border: 0 !important;
     break-inside: avoid;
+  }
+}
+
+@media (max-width: 760px) {
+  .opsx-bar {
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    overflow-x: visible;
+  }
+  .opsx-bar nav {
+    flex-wrap: wrap;
+  }
+  .opsx-bar nav a {
+    min-height: 36px;
+    padding: 0 10px;
+    font-size: 13px;
   }
 }
