@@ -37,7 +37,7 @@ function leafRoutes(route: AnyRoute, segments: string[] = [], out: Leaf[] = []):
 }
 
 // Server health endpoints are not pages.
-const NON_PAGES = ["/api", "/healthz"];
+const NON_PAGES = ["/api", "/healthz", "/blog/rss"];
 
 const NO_HEADER_OK = [
   "/consent-wording",
@@ -64,6 +64,10 @@ function fillParams(path: string): string {
   const restaurant = state.restaurants[0]!;
   const campaign = state.campaigns.find((c) => c.restaurantId === restaurant.id);
   const membership = state.memberships.find((m) => m.restaurantId === restaurant.id);
+  if (path.startsWith("/blog/$")) {
+    // The blog slug namespace is its own: use a real note, not a venue slug.
+    return path.replace("$slug", "why-the-card-still-works");
+  }
   if (path.startsWith("/app/customers/") && membership) {
     return path.replace("$id", membership.customerId);
   }

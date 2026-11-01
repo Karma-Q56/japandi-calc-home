@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/app'
-import { Route as BlogRouteImport } from './routes/blog'
 import { Route as CaseStudiesRouteImport } from './routes/case-studies'
 import { Route as ConsentWordingRouteImport } from './routes/consent-wording'
 import { Route as ContactRouteImport } from './routes/contact'
@@ -53,8 +52,9 @@ import { Route as AppReportsRouteImport } from './routes/app.reports'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppSpecialsRouteImport } from './routes/app.specials'
 import { Route as AppTeamRouteImport } from './routes/app.team'
-import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
-import { Route as BlogRssRouteImport } from './routes/blog.rss'
+import { Route as BlogIndexRouteImport } from './routes/blog/index'
+import { Route as BlogSlugRouteImport } from './routes/blog/$slug'
+import { Route as BlogRssRouteImport } from './routes/blog/rss'
 import { Route as DemoOutboxRouteImport } from './routes/demo.outbox'
 import { Route as DemoStatusRouteImport } from './routes/demo.status'
 import { Route as DevRolesRouteImport } from './routes/dev.roles'
@@ -93,11 +93,6 @@ const IndexRoute = IndexRouteImport.update({
 const AppRoute = AppRouteImport.update({
   id: '/app',
   path: '/app',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BlogRoute = BlogRouteImport.update({
-  id: '/blog',
-  path: '/blog',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CaseStudiesRoute = CaseStudiesRouteImport.update({
@@ -305,15 +300,20 @@ const AppTeamRoute = AppTeamRouteImport.update({
   path: '/team',
   getParentRoute: () => AppRoute,
 } as any)
+const BlogIndexRoute = BlogIndexRouteImport.update({
+  id: '/blog/',
+  path: '/blog/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BlogSlugRoute = BlogSlugRouteImport.update({
-  id: '/$slug',
-  path: '/$slug',
-  getParentRoute: () => BlogRoute,
+  id: '/blog/$slug',
+  path: '/blog/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const BlogRssRoute = BlogRssRouteImport.update({
-  id: '/rss',
-  path: '/rss',
-  getParentRoute: () => BlogRoute,
+  id: '/blog/rss',
+  path: '/blog/rss',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const DemoOutboxRoute = DemoOutboxRouteImport.update({
   id: '/outbox',
@@ -464,7 +464,6 @@ const OpsRestaurantsIdQrRoute = OpsRestaurantsIdQrRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
-  '/blog': typeof BlogRouteWithChildren
   '/case-studies': typeof CaseStudiesRoute
   '/consent-wording': typeof ConsentWordingRoute
   '/contact': typeof ContactRoute
@@ -523,6 +522,7 @@ export interface FileRoutesByFullPath {
   '/r/$slug': typeof RSlugRouteWithChildren
   '/s/$token': typeof STokenRoute
   '/u/$token': typeof UTokenRoute
+  '/blog/': typeof BlogIndexRoute
   '/api/cron/dispatch': typeof ApiCronDispatchRoute
   '/api/cron/nightly': typeof ApiCronNightlyRoute
   '/api/cron/settle': typeof ApiCronSettleRoute
@@ -541,7 +541,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
-  '/blog': typeof BlogRouteWithChildren
   '/case-studies': typeof CaseStudiesRoute
   '/consent-wording': typeof ConsentWordingRoute
   '/contact': typeof ContactRoute
@@ -600,6 +599,7 @@ export interface FileRoutesByTo {
   '/r/$slug': typeof RSlugRouteWithChildren
   '/s/$token': typeof STokenRoute
   '/u/$token': typeof UTokenRoute
+  '/blog': typeof BlogIndexRoute
   '/api/cron/dispatch': typeof ApiCronDispatchRoute
   '/api/cron/nightly': typeof ApiCronNightlyRoute
   '/api/cron/settle': typeof ApiCronSettleRoute
@@ -619,7 +619,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
-  '/blog': typeof BlogRouteWithChildren
   '/case-studies': typeof CaseStudiesRoute
   '/consent-wording': typeof ConsentWordingRoute
   '/contact': typeof ContactRoute
@@ -678,6 +677,7 @@ export interface FileRoutesById {
   '/r/$slug': typeof RSlugRouteWithChildren
   '/s/$token': typeof STokenRoute
   '/u/$token': typeof UTokenRoute
+  '/blog/': typeof BlogIndexRoute
   '/api/cron/dispatch': typeof ApiCronDispatchRoute
   '/api/cron/nightly': typeof ApiCronNightlyRoute
   '/api/cron/settle': typeof ApiCronSettleRoute
@@ -698,7 +698,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/app'
-    | '/blog'
     | '/case-studies'
     | '/consent-wording'
     | '/contact'
@@ -757,6 +756,7 @@ export interface FileRouteTypes {
     | '/r/$slug'
     | '/s/$token'
     | '/u/$token'
+    | '/blog/'
     | '/api/cron/dispatch'
     | '/api/cron/nightly'
     | '/api/cron/settle'
@@ -775,7 +775,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/app'
-    | '/blog'
     | '/case-studies'
     | '/consent-wording'
     | '/contact'
@@ -834,6 +833,7 @@ export interface FileRouteTypes {
     | '/r/$slug'
     | '/s/$token'
     | '/u/$token'
+    | '/blog'
     | '/api/cron/dispatch'
     | '/api/cron/nightly'
     | '/api/cron/settle'
@@ -852,7 +852,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/app'
-    | '/blog'
     | '/case-studies'
     | '/consent-wording'
     | '/contact'
@@ -911,6 +910,7 @@ export interface FileRouteTypes {
     | '/r/$slug'
     | '/s/$token'
     | '/u/$token'
+    | '/blog/'
     | '/api/cron/dispatch'
     | '/api/cron/nightly'
     | '/api/cron/settle'
@@ -930,7 +930,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
-  BlogRoute: typeof BlogRouteWithChildren
   CaseStudiesRoute: typeof CaseStudiesRoute
   ConsentWordingRoute: typeof ConsentWordingRoute
   ContactRoute: typeof ContactRoute
@@ -953,10 +952,13 @@ export interface RootRouteChildren {
   StampRoute: typeof StampRoute
   SuggestRoute: typeof SuggestRoute
   TermsRoute: typeof TermsRoute
+  BlogSlugRoute: typeof BlogSlugRoute
+  BlogRssRoute: typeof BlogRssRoute
   DevRolesRoute: typeof DevRolesRoute
   RSlugRoute: typeof RSlugRouteWithChildren
   STokenRoute: typeof STokenRoute
   UTokenRoute: typeof UTokenRoute
+  BlogIndexRoute: typeof BlogIndexRoute
   ApiCronDispatchRoute: typeof ApiCronDispatchRoute
   ApiCronNightlyRoute: typeof ApiCronNightlyRoute
   ApiCronSettleRoute: typeof ApiCronSettleRoute
@@ -977,13 +979,6 @@ declare module '@tanstack/react-router' {
       path: '/app'
       fullPath: '/app'
       preLoaderRoute: typeof AppRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/blog': {
-      id: '/blog'
-      path: '/blog'
-      fullPath: '/blog'
-      preLoaderRoute: typeof BlogRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/case-studies': {
@@ -1273,19 +1268,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTeamRouteImport
       parentRoute: typeof AppRoute
     }
+    '/blog/': {
+      id: '/blog/'
+      path: '/blog'
+      fullPath: '/blog/'
+      preLoaderRoute: typeof BlogIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/blog/$slug': {
       id: '/blog/$slug'
-      path: '/$slug'
+      path: '/blog/$slug'
       fullPath: '/blog/$slug'
       preLoaderRoute: typeof BlogSlugRouteImport
-      parentRoute: typeof BlogRoute
+      parentRoute: typeof rootRouteImport
     }
     '/blog/rss': {
       id: '/blog/rss'
-      path: '/rss'
+      path: '/blog/rss'
       fullPath: '/blog/rss'
       preLoaderRoute: typeof BlogRssRouteImport
-      parentRoute: typeof BlogRoute
+      parentRoute: typeof rootRouteImport
     }
     '/demo/outbox': {
       id: '/demo/outbox'
@@ -1565,18 +1567,6 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
-interface BlogRouteChildren {
-  BlogSlugRoute: typeof BlogSlugRoute
-  BlogRssRoute: typeof BlogRssRoute
-}
-
-const BlogRouteChildren: BlogRouteChildren = {
-  BlogSlugRoute: BlogSlugRoute,
-  BlogRssRoute: BlogRssRoute,
-}
-
-const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
-
 interface DemoRouteChildren {
   DemoOutboxRoute: typeof DemoOutboxRoute
   DemoStatusRoute: typeof DemoStatusRoute
@@ -1686,7 +1676,6 @@ const RSlugRouteWithChildren = RSlugRoute._addFileChildren(RSlugRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
-  BlogRoute: BlogRouteWithChildren,
   CaseStudiesRoute: CaseStudiesRoute,
   ConsentWordingRoute: ConsentWordingRoute,
   ContactRoute: ContactRoute,
@@ -1709,10 +1698,13 @@ const rootRouteChildren: RootRouteChildren = {
   StampRoute: StampRoute,
   SuggestRoute: SuggestRoute,
   TermsRoute: TermsRoute,
+  BlogSlugRoute: BlogSlugRoute,
+  BlogRssRoute: BlogRssRoute,
   DevRolesRoute: DevRolesRoute,
   RSlugRoute: RSlugRouteWithChildren,
   STokenRoute: STokenRoute,
   UTokenRoute: UTokenRoute,
+  BlogIndexRoute: BlogIndexRoute,
   ApiCronDispatchRoute: ApiCronDispatchRoute,
   ApiCronNightlyRoute: ApiCronNightlyRoute,
   ApiCronSettleRoute: ApiCronSettleRoute,

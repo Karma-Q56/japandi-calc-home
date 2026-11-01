@@ -38,7 +38,7 @@ describe("blog data", () => {
 
 describe("blog rss feed", () => {
   it("returns valid RSS XML for every post", async () => {
-    const { Route } = await import("@/routes/blog.rss");
+    const { Route } = await import("@/routes/blog/rss");
     const handler = Route.options.server?.handlers?.GET;
     expect(typeof handler).toBe("function");
     // Node 22 provides the global Request the server handlers use.
