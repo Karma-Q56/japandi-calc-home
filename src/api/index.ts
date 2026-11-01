@@ -140,6 +140,12 @@ import {
   toolBudgetFor,
 } from "@/domain/tools";
 import {
+  giveCustomReward,
+  presetCosts,
+  runMissYou,
+  whatHappensWhen,
+} from "@/domain/presets";
+import {
   customerProfile,
   exportCsv,
   knowYourGuest,
@@ -247,6 +253,10 @@ export const api = {
     toolsView: guestToolsView,
     saveTools,
     toolBudget: toolBudgetFor,
+    runMissYou,
+    presetCosts,
+    whatHappensWhen,
+    giveCustomReward,
   },
   orders: {
     record: recordOrder,

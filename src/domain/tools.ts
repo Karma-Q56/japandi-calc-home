@@ -27,7 +27,8 @@ export function weekdayLabel(weekday: number): string {
 }
 
 /** Johannesburg calendar date for a moment (the city keeps UTC+2 all year). */
-function johannesburgDateParts(atMs: number) {
+/** Johannesburg calendar date parts, shared by the budget key and the miss-you rule. */
+export function johannesburgDateParts(atMs: number) {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Africa/Johannesburg",
     year: "numeric",
@@ -99,15 +100,22 @@ export function toolBudgetStatus(
   const { year, month } = johannesburgDateParts(state.now);
   const thisMonth = year * 12 + month;
   const used = state.stamps.filter((stamp) => {
+    // Miss-you stamps carry "missyou" instead of "bonus" and spend the same budget.
     if (
       stamp.restaurantId !== restaurantId ||
       stamp.status !== "valid" ||
-      stamp.reason !== "bonus"
+      (stamp.reason !== "bonus" && stamp.reason !== "missyou")
     ) {
       return false;
     }
     if (!stamp.key) return false;
-    if (!stamp.key.startsWith("double:") && !stamp.key.startsWith("streak:")) return false;
+    // "We miss you" bonus stamps spend from the same monthly budget.
+    if (
+      !stamp.key.startsWith("double:") &&
+      !stamp.key.startsWith("streak:") &&
+      !stamp.key.startsWith("missyou:")
+    )
+      return false;
     const at = johannesburgDateParts(Date.parse(stamp.createdAt));
     return at.year * 12 + at.month === thisMonth;
   }).length;

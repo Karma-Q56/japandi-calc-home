@@ -1,7 +1,7 @@
 // Temporary helper for the visual pass. Run with: node scripts/shot-verify.mjs
 import { chromium } from "@playwright/test";
 
-const BASE = "http://localhost:5173";
+const BASE = process.env.SHOT_BASE ?? "http://localhost:5173";
 const targets = [
   { name: "owner-tools", role: "owner", venue: "daily-grind", path: "/app/loyalty" },
   { name: "guest-card", role: "guest", customer: "customer-1", path: "/r/daily-grind/card" },

@@ -1,14 +1,20 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
 import { StampSlots } from "@/components/patron/StampSlots";
 import { Switch } from "@/components/patron/Switch";
 import { ConfirmDialog, PageHeader } from "@/components/patron/dash";
-import { PhoneFrame, PreviewOnly, PublishSteps, WheelPreview } from "@/components/patron/preview";
+import {
+  PhoneFrame,
+  PreviewOnly,
+  PublishSteps,
+  WheelPreview,
+} from "@/components/patron/preview";
 import { SPIN_MODES } from "@/domain/spins";
-import { WEEKDAYS, weekdayLabel } from "@/domain/tools";
+import { MISS_YOU_COOLDOWN_DAYS, MISS_YOU_MAX_AFTER_DAYS, MISS_YOU_MIN_AFTER_DAYS } from "@/domain/presets";
+import { WEEKDAYS } from "@/domain/tools";
 import type { SpinConfig, SpinMode, SpinSegment } from "@/data/types";
 import { useDemoState } from "@/data/useDemoState";
 
@@ -41,12 +47,26 @@ function Loyalty() {
   const [welcomeStamps, setWelcomeStamps] = useState(restaurant.welcomeStamps);
   const [regular, setRegular] = useState(restaurant.tiers.regular);
   const [vip, setVip] = useState(restaurant.tiers.vip);
-  const [mystery, setMystery] = useState(restaurant.mysteryEveryVisits);
+  const [mysteryOn, setMysteryOn] = useState(restaurant.mysteryEveryVisits > 0);
+  const [mystery, setMystery] = useState(
+    restaurant.mysteryEveryVisits > 0 ? restaurant.mysteryEveryVisits : 5,
+  );
   const [birthday, setBirthday] = useState(restaurant.birthdayReward);
   const [birthdayKind, setBirthdayKind] = useState<"stamp" | "freeItem">(
     restaurant.birthdayRewardKind ?? "stamp",
   );
   const [birthdayItem, setBirthdayItem] = useState(restaurant.birthdayRewardItem ?? "");
+  // New in the preset section: the miss-you rule and the hand-out reward.
+  const [missYouOn, setMissYouOn] = useState(restaurant.missYou?.enabled ?? false);
+  const [missYouDays, setMissYouDays] = useState(restaurant.missYou?.afterDays ?? 30);
+  const [missYouKind, setMissYouKind] = useState<"stamp" | "freeItem">(
+    restaurant.missYou?.kind ?? "stamp",
+  );
+  const [missYouItem, setMissYouItem] = useState(restaurant.missYou?.item ?? "");
+  const [missYouRunLine, setMissYouRunLine] = useState("");
+  const [customOn, setCustomOn] = useState(restaurant.customReward?.enabled ?? false);
+  const [customName, setCustomName] = useState(restaurant.customReward?.name ?? "");
+  const [customLimit, setCustomLimit] = useState(restaurant.customReward?.limitPerGuestPerMonth ?? 1);
   // Loyalty tools: double stamp day, visit streak and the shared budget cap.
   const [doubleOn, setDoubleOn] = useState(restaurant.doubleStamp?.enabled ?? false);
   const [doubleDay, setDoubleDay] = useState(restaurant.doubleStamp?.weekday ?? 2);
@@ -55,9 +75,31 @@ function Loyalty() {
   const [streakVisits, setStreakVisits] = useState(restaurant.streak?.weeklyVisits ?? 2);
   const [streakBonus, setStreakBonus] = useState(restaurant.streak?.bonusStamps ?? 1);
   const [budget, setBudget] = useState(restaurant.toolStampBudget ?? 100);
-  const birthdayPreview = birthday
-    ? api.loyalty.birthdayPreview(restaurant.id)
-    : null;
+  const birthdayPreview = birthday ? api.loyalty.birthdayPreview(restaurant.id) : null;
+  const presetCosts = api.loyalty.presetCosts(restaurant.id);
+  const costNote = (id: string) =>
+    presetCosts.find((preset) => preset.id === id)?.note ?? "";
+  const previewRules = api.loyalty.whatHappensWhen({
+    ...restaurant,
+    stampsRequired,
+    rewardDescription: reward.trim() || restaurant.rewardDescription,
+    welcomeStamps,
+    mysteryEveryVisits: mysteryOn ? mystery : 0,
+    birthdayReward: birthday,
+    birthdayRewardKind: birthdayKind,
+    birthdayRewardItem: birthdayKind === "freeItem" ? birthdayItem.trim() : "",
+    missYou: {
+      enabled: missYouOn,
+      afterDays: missYouDays,
+      kind: missYouKind,
+      item: missYouKind === "freeItem" ? missYouItem.trim() : "",
+    },
+    customReward: {
+      enabled: customOn,
+      name: customName.trim(),
+      limitPerGuestPerMonth: customLimit,
+    },
+  });
   const [spin, setSpin] = useState<SpinConfig>(restaurant.spin);
   const [notice, setNotice] = useState("");
   const [step, setStep] = useState(1);
@@ -71,14 +113,44 @@ function Loyalty() {
       setNotice("Reward text must be 1 to 80 characters.");
       return false;
     }
-    if (birthday && birthdayKind === "freeItem" &&
-      (birthdayItem.trim().length < 2 || birthdayItem.trim().length > 60)) {
+    if (
+      birthday &&
+      birthdayKind === "freeItem" &&
+      (birthdayItem.trim().length < 2 || birthdayItem.trim().length > 60)
+    ) {
       setNotice("Name the free birthday item (2 to 60 characters) or pick a bonus stamp.");
       return false;
     }
     if (welcomeStamps < 0 || welcomeStamps > stampsRequired - 1) {
       setNotice(`Welcome stamps must be 0 to ${stampsRequired - 1}.`);
       return false;
+    }
+    if (mysteryOn && (!Number.isInteger(mystery) || mystery < 2 || mystery > 50)) {
+      setNotice("Bonus stamp every N visits must be 2 to 50.");
+      return false;
+    }
+    if (missYouOn) {
+      if (!Number.isInteger(missYouDays) || missYouDays < MISS_YOU_MIN_AFTER_DAYS || missYouDays > MISS_YOU_MAX_AFTER_DAYS) {
+        setNotice(`Miss-you days must be ${MISS_YOU_MIN_AFTER_DAYS} to ${MISS_YOU_MAX_AFTER_DAYS}.`);
+        return false;
+      }
+      if (
+        missYouKind === "freeItem" &&
+        (missYouItem.trim().length < 2 || missYouItem.trim().length > 60)
+      ) {
+        setNotice("Name the free miss-you item (2 to 60 characters) or pick a bonus stamp.");
+        return false;
+      }
+    }
+    if (customOn) {
+      if (customName.trim().length < 2 || customName.trim().length > 60) {
+        setNotice("Give the hand-out reward a name of 2 to 60 characters.");
+        return false;
+      }
+      if (!Number.isInteger(customLimit) || customLimit < 1 || customLimit > 20) {
+        setNotice("The hand-out limit per guest per month must be 1 to 20.");
+        return false;
+      }
     }
     if (regular < 1 || vip <= regular) {
       setNotice("VIP visits must be higher than Regular visits.");
@@ -91,10 +163,21 @@ function Loyalty() {
       welcomeStamps,
       welcomeStamp: welcomeStamps > 0,
       tiers: { regular, vip },
-      mysteryEveryVisits: mystery,
+      mysteryEveryVisits: mysteryOn ? mystery : 0,
       birthdayReward: birthday,
       birthdayRewardKind: birthdayKind,
       birthdayRewardItem: birthdayKind === "freeItem" ? birthdayItem.trim() : "",
+      missYou: {
+        enabled: missYouOn,
+        afterDays: missYouDays,
+        kind: missYouKind,
+        item: missYouKind === "freeItem" ? missYouItem.trim() : "",
+      },
+      customReward: {
+        enabled: customOn,
+        name: customName.trim(),
+        limitPerGuestPerMonth: customLimit,
+      },
     });
     if (!result.ok) {
       setNotice(result.error.message);
@@ -117,6 +200,33 @@ function Loyalty() {
     }
     setNotice("Loyalty rules saved.");
     return true;
+  };
+
+  const runMissYou = () => {
+    if (!missYouOn) {
+      setMissYouRunLine("Switch the rule on and save first.");
+      return;
+    }
+    const saved = save();
+    if (!saved) return;
+    const result = api.loyalty.runMissYou(restaurant.id);
+    const good = result.treated === 1 ? "guest was treated" : "guests were treated";
+    const stampWord = result.stamps === 1 ? "stamp" : "stamps";
+    const budgetWord =
+      result.skippedBudget === 1
+        ? "1 guest"
+        : result.skippedBudget === 0
+          ? ""
+          : `${result.skippedBudget} guests`;
+    setMissYouRunLine(
+      result.treated === 0
+        ? budgetWord
+          ? `${budgetWord} missed out because the monthly bonus budget is full.`
+          : "No guest qualifies right now."
+        : `${result.treated} ${good} (${result.stamps} bonus ${stampWord} given)${
+            budgetWord ? `, and ${budgetWord} skipped for the budget` : ""
+          }.`,
+    );
   };
 
   const saveSpin = (): boolean => {
@@ -144,7 +254,23 @@ function Loyalty() {
       <PublishSteps step={step} labels={["Draft", "Preview"]} />
 
       <section className="builder-panel">
-        <h2>Card</h2>
+        <h2>When do guests get a reward?</h2>
+        <div className="what-happens-when">
+          <h3>What happens when</h3>
+          {previewRules.length > 0 ? (
+            <ul>
+              {previewRules.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="demo-data-note">No rule is switched on yet.</p>
+          )}
+        </div>
+
+        <div className="preset-rule">
+        <h3>Collect stamps</h3>
+        <p className="demo-data-note">{costNote("collect")}</p>
         <div className="builder-fields">
           <label className="builder-field">
             Stamps required (2 to 30)
@@ -173,20 +299,6 @@ function Loyalty() {
               onChange={(event) => setWindowMinutes(Number(event.target.value))}
             />
           </label>
-          <label className="builder-field">
-            Welcome stamps (0 up to {Math.max(0, stampsRequired - 1)})
-            <input
-              type="number"
-              min={0}
-              max={Math.max(0, stampsRequired - 1)}
-              value={welcomeStamps}
-              onChange={(event) => setWelcomeStamps(Number(event.target.value))}
-            />
-            <small>
-              Granted once when a guest joins, as welcome stamp events. The join screen shows “You
-              start with {welcomeStamps} stamp{welcomeStamps === 1 ? "" : "s"}.”
-            </small>
-          </label>
         </div>
         <div className="live-preview">
           <StampSlots
@@ -199,39 +311,61 @@ function Loyalty() {
             {welcomeStamps > 0 ? ` · welcome starts at ${welcomeStamps}` : ""}
           </p>
         </div>
-      </section>
 
-      <section className="builder-panel">
-        <h2>Tiers &amp; extras</h2>
+        </div>
+
+        <div className="preset-rule">
+        <h3>Every Nth visit</h3>
+        <p className="demo-data-note">{costNote("every-nth")}</p>
+        <div className="builder-fields">
+          <Switch
+            label="Every Nth visit bonus stamp"
+            hint="A bonus stamp after every set number of visits"
+            checked={mysteryOn}
+            onChange={setMysteryOn}
+          />
+          {mysteryOn && (
+            <label className="builder-field">
+              Bonus stamp every N visits (2 to 50)
+              <input
+                type="number"
+                min={2}
+                max={50}
+                value={mystery}
+                onChange={(event) => setMystery(Number(event.target.value))}
+              />
+            </label>
+          )}
+        </div>
+
+        </div>
+
+        <div className="preset-rule">
+        <h3>When they join</h3>
+        <p className="demo-data-note">{costNote("join")}</p>
         <div className="builder-fields">
           <label className="builder-field">
-            Regular tier at (visits in 90 days)
-            <input
-              type="number"
-              min={1}
-              value={regular}
-              onChange={(event) => setRegular(Number(event.target.value))}
-            />
-          </label>
-          <label className="builder-field">
-            VIP tier at (visits in 90 days)
-            <input
-              type="number"
-              min={2}
-              value={vip}
-              onChange={(event) => setVip(Number(event.target.value))}
-            />
-          </label>
-          <label className="builder-field">
-            Mystery stamp every N visits (0 = off)
+            Welcome stamps (0 up to {Math.max(0, stampsRequired - 1)})
             <input
               type="number"
               min={0}
-              max={50}
-              value={mystery}
-              onChange={(event) => setMystery(Number(event.target.value))}
+              max={Math.max(0, stampsRequired - 1)}
+              value={welcomeStamps}
+              onChange={(event) => setWelcomeStamps(Number(event.target.value))}
             />
+            <small>
+              Granted once when a guest joins, as welcome stamp events. The join screen shows "You
+              start with {welcomeStamps} stamp{welcomeStamps === 1 ? "" : "s"}."
+            </small>
           </label>
+        </div>
+
+        </div>
+
+        <div className="preset-rule">
+        <h3>Birthday week</h3>
+        <p className="demo-data-note">{costNote("birthday")}</p>
+        <div className="builder-fields">
           <Switch
             label="Birthday treat"
             hint="Once a year, in the birthday week"
@@ -275,10 +409,168 @@ function Loyalty() {
             </>
           )}
         </div>
+
+        </div>
+
+        <div className="preset-rule">
+        <h3>We miss you</h3>
+        <p className="demo-data-note">{costNote("miss-you")}</p>
+        <div className="builder-fields">
+          <Switch
+            label="We miss you treat"
+            hint={`Someone who has not visited for a while gets a treat, once every ${MISS_YOU_COOLDOWN_DAYS} days`}
+            checked={missYouOn}
+            onChange={setMissYouOn}
+          />
+          {missYouOn && (
+            <>
+              <label className="builder-field">
+                Days without a visit ({MISS_YOU_MIN_AFTER_DAYS} to {MISS_YOU_MAX_AFTER_DAYS})
+                <input
+                  type="number"
+                  min={MISS_YOU_MIN_AFTER_DAYS}
+                  max={MISS_YOU_MAX_AFTER_DAYS}
+                  value={missYouDays}
+                  onChange={(event) => setMissYouDays(Number(event.target.value))}
+                />
+                <small>
+                  Default 30. Anyone away longer than this qualifies, and nobody is treated twice
+                  inside {MISS_YOU_COOLDOWN_DAYS} days.
+                </small>
+              </label>
+              <label className="builder-field">
+                What the guest gets
+                <select
+                  value={missYouKind}
+                  onChange={(event) =>
+                    setMissYouKind(event.target.value as "stamp" | "freeItem")
+                  }
+                >
+                  <option value="stamp">A bonus stamp on their card</option>
+                  <option value="freeItem">A single-use personal offer</option>
+                </select>
+              </label>
+              {missYouKind === "freeItem" && (
+                <label className="builder-field">
+                  Free item (2 to 60 characters)
+                  <input
+                    value={missYouItem}
+                    maxLength={60}
+                    placeholder="a small chips"
+                    onChange={(event) => setMissYouItem(event.target.value)}
+                  />
+                </label>
+              )}
+              <div className="page-actions">
+                <button type="button" className="builder-secondary" onClick={runMissYou}>
+                  Run the rule now
+                </button>
+              </div>
+              <p className="demo-data-note" role="status">
+                {missYouRunLine ||
+                  "Practice run for today. Nothing is sent automatically; in live mode this runs once a day."}
+              </p>
+              <PhoneFrame label="Guest miss-you preview">
+                <strong>{restaurant.name}</strong>
+                {missYouKind === "freeItem" && missYouItem.trim() ? (
+                  <p>
+                    {missYouItem.trim()} on the house. Show this code at the till.
+                  </p>
+                ) : (
+                  <p>
+                    Long time no visit. Here is a bonus stamp to say come back when you feel like
+                    it.
+                  </p>
+                )}
+                <small>
+                  Arrives on their card the next time they open it. Once every{" "}
+                  {MISS_YOU_COOLDOWN_DAYS} days at most.
+                </small>
+              </PhoneFrame>
+            </>
+          )}
+        </div>
+
+        </div>
+
+        <div className="preset-rule">
+        <h3>Quiet day bonus</h3>
+        <p className="demo-data-note">{costNote("quiet-day")}</p>
+        <p className="demo-data-note">
+          Reuse of the double stamp day tool: set it below in the Loyalty tools panel, no second
+          form here.
+        </p>
+
+        </div>
+
+        <div className="preset-rule">
+        <h3>Custom</h3>
+        <p className="demo-data-note">{costNote("custom")}</p>
+        <div className="builder-fields">
+          <Switch
+            label="Hand-out reward"
+            hint="A reward you give by hand at the till; the guest gets a single-use offer"
+            checked={customOn}
+            onChange={setCustomOn}
+          />
+          {customOn && (
+            <>
+              <label className="builder-field">
+                Reward name (2 to 60 characters)
+                <input
+                  value={customName}
+                  maxLength={60}
+                  placeholder="Cookie at 20 visits"
+                  onChange={(event) => setCustomName(event.target.value)}
+                />
+              </label>
+              <label className="builder-field">
+                Limit per guest per month (1 to 20)
+                <input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={customLimit}
+                  onChange={(event) => setCustomLimit(Number(event.target.value))}
+                />
+                <small>
+                  You hand it out on the guest page. The single-use offer appears on their card at
+                  once, so nothing else is needed.
+                </small>
+              </label>
+            </>
+          )}
+        </div>
+
+        </div>
+
+        <div className="preset-rule">
+        <h3>Tiers &amp; extras</h3>
+        <div className="builder-fields">
+          <label className="builder-field">
+            Regular tier at (visits in 90 days)
+            <input
+              type="number"
+              min={1}
+              value={regular}
+              onChange={(event) => setRegular(Number(event.target.value))}
+            />
+          </label>
+          <label className="builder-field">
+            VIP tier at (visits in 90 days)
+            <input
+              type="number"
+              min={2}
+              value={vip}
+              onChange={(event) => setVip(Number(event.target.value))}
+            />
+          </label>
+        </div>
         <p className="demo-data-note">
           Tiers unlock members-only and targeted specials. VIP members can be the only ones who see
           a particular offer.
         </p>
+        </div>
       </section>
 
       <section className="builder-panel">
@@ -356,7 +648,7 @@ function Loyalty() {
               </label>
             </div>
           )}
-          {(doubleOn || streakOn) && (
+          {(doubleOn || streakOn || missYouOn) && (
             <label className="builder-field">
               Monthly bonus stamp budget
               <input
@@ -367,8 +659,9 @@ function Loyalty() {
                 onChange={(event) => setBudget(Number(event.target.value))}
               />
               <small>
-                Double stamp day and streak stamps combined stop once this many bonus stamps have
-                gone out in one month. Used so far: {api.loyalty.toolBudget(restaurant.id).used}.
+                Double stamp day, streak and miss-you stamps combined stop once this many bonus
+                stamps have gone out in one month. Used so far:{" "}
+                {api.loyalty.toolBudget(restaurant.id).used}.
               </small>
             </label>
           )}
@@ -457,13 +750,18 @@ function Loyalty() {
               }
             />
             <small>
-              The reward decider never draws a prize worth less than this, it keeps “
-              {reward || "your advertised reward"}” as the floor.
+              The reward decider never draws a prize worth less than this, it keeps "
+              {reward || "your advertised reward"}" as the floor.
             </small>
           </label>
         )}
-        {((spin.modes ?? ["earned"]).includes("reward_decider") || (spin.modes ?? ["earned"]).includes("daily_surprise")) && (
-          <p className="demo-data-note">Reward decider draws from your prize list at random when a card completes; the guest never chooses, and nothing below the advertised reward is awarded. Daily surprises require an active, in-date special. If all modes are off, the wheel is hidden.</p>
+        {((spin.modes ?? ["earned"]).includes("reward_decider") ||
+          (spin.modes ?? ["earned"]).includes("daily_surprise")) && (
+          <p className="demo-data-note">
+            Reward decider draws from your prize list at random when a card completes; the guest
+            never chooses, and nothing below the advertised reward is awarded. Daily surprises
+            require an active, in-date special. If all modes are off, the wheel is hidden.
+          </p>
         )}
         {(spin.modes ?? ["earned"]).includes("daily_surprise") && (
           <label className="builder-field">
@@ -471,13 +769,22 @@ function Loyalty() {
             <select
               multiple
               value={spin.dailyPool ?? []}
-              onChange={(event) => setSpin({ ...spin, dailyPool: Array.from(event.target.selectedOptions, (option) => option.value) })}
+              onChange={(event) =>
+                setSpin({
+                  ...spin,
+                  dailyPool: Array.from(event.target.selectedOptions, (option) => option.value),
+                })
+              }
             >
-              {state.specials.filter((special) => special.restaurantId === restaurant.id && special.active).map((special) => (
-                <option key={special.id} value={special.id}>{special.title}</option>
-              ))}
+              {state.specials
+                .filter((special) => special.restaurantId === restaurant.id && special.active)
+                .map((special) => (
+                  <option key={special.id} value={special.id}>
+                    {special.title}
+                  </option>
+                ))}
             </select>
-            <small>Select one or more active specials. Hold Ctrl/⌘ to select multiple.</small>
+            <small>Select one or more active specials. Hold Ctrl to select multiple.</small>
           </label>
         )}
         <div className="spin-segments">
@@ -590,14 +897,14 @@ function Loyalty() {
           </button>
         </div>
         <p className="demo-data-note">
-          The published rules always include “No purchase is required to earn spins.” Only show the
+          The published rules always include "No purchase is required to earn spins." Only show the
           notice where the rules apply.
         </p>
       </section>
 
       <p className="demo-data-note">
-        Visit challenges have their own screen. <a href="/app/challenges">Write and publish a
-        challenge</a>.
+        Visit challenges have their own screen.{" "}
+        <a href="/app/challenges">Write and publish a challenge</a>.
       </p>
 
       {step >= 2 && (
@@ -619,17 +926,9 @@ function Loyalty() {
                 ? `You start with ${welcomeStamps} ${welcomeStamps === 1 ? "stamp" : "stamps"}.`
                 : "Start collecting from your first visit."}
             </p>
-            {birthday && birthdayPreview && <p>{birthdayPreview.guestLine}</p>}
-            {doubleOn && (
-              <p>Double stamp day: every {weekdayLabel(doubleDay)}. One visit that day, two stamps.</p>
-            )}
-            {streakOn && (
-              <p>
-                Visit streak: {streakVisits} {streakVisits === 1 ? "visit" : "visits"} a week for
-                {" "}{streakWeeks} {streakWeeks === 1 ? "week" : "weeks"} earns{" "}
-                {streakBonus} bonus {streakBonus === 1 ? "stamp" : "stamps"}.
-              </p>
-            )}
+            {previewRules.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
           </PhoneFrame>
           <div className="pv-test-spin">
             <h3>Test the wheel</h3>

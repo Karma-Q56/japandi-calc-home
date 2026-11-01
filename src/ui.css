@@ -1331,6 +1331,19 @@ button:focus-visible {
   display: grid;
   gap: 16px;
 }
+.preset-rule {
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 12px 14px;
+  background: var(--muted);
+}
+.what-happens-when ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 5px;
+  font-size: 12px;
+}
 .wizard-actions {
   display: flex;
   flex-wrap: wrap;

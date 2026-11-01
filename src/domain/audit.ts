@@ -30,7 +30,9 @@ export type AuditAction =
   | "referral_settings"
   | "referral_rewarded"
   | "enquiry_received"
-  | "enquiry_updated";
+  | "enquiry_updated"
+  | "miss_you_award"
+  | "custom_reward";
 
 /** Never pass PINs or full phone numbers, ids only. */
 export function logAudit(input: {

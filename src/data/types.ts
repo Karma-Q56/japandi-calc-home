@@ -13,7 +13,7 @@ export type TierName = "new" | "regular" | "vip";
 /** Three kinds of special, one redemption engine. */
 export type SpecialKind = "public" | "members" | "targeted";
 
-export type StampReason = "visit" | "welcome" | "campaign" | "challenge" | "mystery" | "birthday" | "bonus";
+export type StampReason = "visit" | "welcome" | "campaign" | "challenge" | "mystery" | "birthday" | "bonus" | "missyou";
 
 /** Pixelated logo stamp art produced in the browser from the uploaded logo. */
 export interface LogoStamp {
@@ -90,7 +90,7 @@ export interface Restaurant {
   doubleStamp?: { enabled: boolean; weekday: number };
   /** Visit streak. Off by default. */
   streak?: StreakConfig;
-  /** Monthly cap on bonus stamps from double stamp day and streaks combined. */
+  /** Monthly cap on bonus stamps from double stamp day, streaks and the miss-you rule combined. */
   toolStampBudget?: number;
   /** Placeholder address notified of new enquiries. No real email is sent in demo. */
   enquiryNotifyEmail?: string;
@@ -102,6 +102,30 @@ export interface Restaurant {
   emailUpdates?: "weekly" | "monthly" | "off";
   /** Warn the owner when SMS credit falls below this amount, in cents. */
   lowCreditAlertCents?: number;
+  /** "We miss you" rule: a guest who has not visited for N days gets a treat. Off by default. */
+  missYou?: MissYouConfig;
+  /** A hand-out reward the owner gives at the till. Off by default. */
+  customReward?: CustomRewardConfig;
+}
+
+/** "We miss you" rule. Off by default, and once per guest per 60 days. */
+export interface MissYouConfig {
+  enabled: boolean;
+  /** Days since the guest's last visit before the rule applies (14 to 90). */
+  afterDays: number;
+  /** Bonus stamp or a free item; the owner picks. */
+  kind: "stamp" | "freeItem";
+  /** The item given for free, for the freeItem kind. */
+  item?: string;
+}
+
+/** A reward the owner hands out by hand at the till. Off by default. */
+export interface CustomRewardConfig {
+  enabled: boolean;
+  /** The plain name shown to the guest, such as "Cookie at 20 visits". */
+  name: string;
+  /** How many hand-outs one guest can get each month. */
+  limitPerGuestPerMonth: number;
 }
 
 /** Visit streak. Off by default. */
