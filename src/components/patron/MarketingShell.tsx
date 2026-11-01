@@ -13,6 +13,7 @@ const businessLinks: Array<{ href: string; label: string }> = [
   { href: "/case-studies", label: "Case studies" },
   { href: "/faq", label: "FAQ" },
   { href: "/contact", label: "Book a visit" },
+  { href: "/blog", label: "Notes on loyalty" },
 ];
 
 const businessPaths = businessLinks.map((link) => link.href);
@@ -90,6 +91,9 @@ export function SiteHeader() {
           <a href="/find" aria-current={path === "/find" ? "page" : undefined}>
             Find a restaurant
           </a>
+          <a href="/blog" aria-current={path === "/blog" ? "page" : undefined}>
+            Notes
+          </a>
         </nav>
         <Button variant="patron" className="header-book" asChild>
           <a href="/login" aria-current={onLogin ? "page" : undefined}>
@@ -134,6 +138,9 @@ export function SiteHeader() {
           </a>
           <a href="/suggest" onClick={closeNav} aria-current={path === "/suggest" ? "page" : undefined}>
             Ask for a place
+          </a>
+          <a href="/blog" onClick={closeNav} aria-current={path === "/blog" ? "page" : undefined}>
+            Notes
           </a>
           <Button variant="patron" asChild>
             <a href="/login" onClick={closeNav}>

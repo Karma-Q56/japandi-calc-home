@@ -251,3 +251,7 @@ from that one file. Update it once and every link changes.
   (`/suggest`). It is dev branch only: run it on a dev database and test
   `/suggest` against it before anyone touches production. The ask page
   deliberately stores no phone number or email.
+- The blog notes in `src/data/blog.ts` are launch copy written for the
+  first sites. Re-read and refresh them, and keep the list in
+  `docs/blog-plan.md` to one note every two weeks after launch. The RSS
+  feed is served at `/blog/rss`.

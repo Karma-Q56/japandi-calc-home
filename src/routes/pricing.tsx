@@ -78,6 +78,9 @@ function Pricing() {
           <a className="text-link" href="/how-it-works">
             How it works
           </a>
+          <a className="text-link" href="/blog">
+            Notes on loyalty
+          </a>
         </div>
       </section>
 

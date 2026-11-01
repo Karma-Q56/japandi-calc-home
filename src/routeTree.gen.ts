@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/app'
+import { Route as BlogRouteImport } from './routes/blog'
 import { Route as CaseStudiesRouteImport } from './routes/case-studies'
 import { Route as ConsentWordingRouteImport } from './routes/consent-wording'
 import { Route as ContactRouteImport } from './routes/contact'
@@ -31,6 +32,7 @@ import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SessionExpiredRouteImport } from './routes/session-expired'
 import { Route as StampRouteImport } from './routes/stamp'
+import { Route as SuggestRouteImport } from './routes/suggest'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AppAuditRouteImport } from './routes/app.audit'
 import { Route as AppCampaignsRouteImport } from './routes/app.campaigns'
@@ -38,6 +40,7 @@ import { Route as AppChallengesRouteImport } from './routes/app.challenges'
 import { Route as AppCreditRouteImport } from './routes/app.credit'
 import { Route as AppCustomersRouteImport } from './routes/app.customers'
 import { Route as AppDesignRouteImport } from './routes/app.design'
+import { Route as AppIdeasRouteImport } from './routes/app.ideas'
 import { Route as AppInsightsRouteImport } from './routes/app.insights'
 import { Route as AppListsRouteImport } from './routes/app.lists'
 import { Route as AppLoyaltyRouteImport } from './routes/app.loyalty'
@@ -50,6 +53,8 @@ import { Route as AppReportsRouteImport } from './routes/app.reports'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppSpecialsRouteImport } from './routes/app.specials'
 import { Route as AppTeamRouteImport } from './routes/app.team'
+import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
+import { Route as BlogRssRouteImport } from './routes/blog.rss'
 import { Route as DemoOutboxRouteImport } from './routes/demo.outbox'
 import { Route as DemoStatusRouteImport } from './routes/demo.status'
 import { Route as DevRolesRouteImport } from './routes/dev.roles'
@@ -58,6 +63,7 @@ import { Route as MeRestaurantsRouteImport } from './routes/me.restaurants'
 import { Route as MeSettingsRouteImport } from './routes/me.settings'
 import { Route as OpsCampaignsRouteImport } from './routes/ops.campaigns'
 import { Route as OpsCreditRouteImport } from './routes/ops.credit'
+import { Route as OpsIdeasRouteImport } from './routes/ops.ideas'
 import { Route as OpsLeadsRouteImport } from './routes/ops.leads'
 import { Route as OpsOutboxRouteImport } from './routes/ops.outbox'
 import { Route as OpsRestaurantsRouteImport } from './routes/ops.restaurants'
@@ -87,6 +93,11 @@ const IndexRoute = IndexRouteImport.update({
 const AppRoute = AppRouteImport.update({
   id: '/app',
   path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogRoute = BlogRouteImport.update({
+  id: '/blog',
+  path: '/blog',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CaseStudiesRoute = CaseStudiesRouteImport.update({
@@ -189,6 +200,11 @@ const StampRoute = StampRouteImport.update({
   path: '/stamp',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SuggestRoute = SuggestRouteImport.update({
+  id: '/suggest',
+  path: '/suggest',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
@@ -222,6 +238,11 @@ const AppCustomersRoute = AppCustomersRouteImport.update({
 const AppDesignRoute = AppDesignRouteImport.update({
   id: '/design',
   path: '/design',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppIdeasRoute = AppIdeasRouteImport.update({
+  id: '/ideas',
+  path: '/ideas',
   getParentRoute: () => AppRoute,
 } as any)
 const AppInsightsRoute = AppInsightsRouteImport.update({
@@ -284,6 +305,16 @@ const AppTeamRoute = AppTeamRouteImport.update({
   path: '/team',
   getParentRoute: () => AppRoute,
 } as any)
+const BlogSlugRoute = BlogSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => BlogRoute,
+} as any)
+const BlogRssRoute = BlogRssRouteImport.update({
+  id: '/rss',
+  path: '/rss',
+  getParentRoute: () => BlogRoute,
+} as any)
 const DemoOutboxRoute = DemoOutboxRouteImport.update({
   id: '/outbox',
   path: '/outbox',
@@ -322,6 +353,11 @@ const OpsCampaignsRoute = OpsCampaignsRouteImport.update({
 const OpsCreditRoute = OpsCreditRouteImport.update({
   id: '/credit',
   path: '/credit',
+  getParentRoute: () => OpsRoute,
+} as any)
+const OpsIdeasRoute = OpsIdeasRouteImport.update({
+  id: '/ideas',
+  path: '/ideas',
   getParentRoute: () => OpsRoute,
 } as any)
 const OpsLeadsRoute = OpsLeadsRouteImport.update({
@@ -428,6 +464,7 @@ const OpsRestaurantsIdQrRoute = OpsRestaurantsIdQrRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/blog': typeof BlogRouteWithChildren
   '/case-studies': typeof CaseStudiesRoute
   '/consent-wording': typeof ConsentWordingRoute
   '/contact': typeof ContactRoute
@@ -448,6 +485,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/session-expired': typeof SessionExpiredRoute
   '/stamp': typeof StampRoute
+  '/suggest': typeof SuggestRoute
   '/terms': typeof TermsRoute
   '/app/audit': typeof AppAuditRoute
   '/app/campaigns': typeof AppCampaignsRouteWithChildren
@@ -455,6 +493,7 @@ export interface FileRoutesByFullPath {
   '/app/credit': typeof AppCreditRoute
   '/app/customers': typeof AppCustomersRouteWithChildren
   '/app/design': typeof AppDesignRoute
+  '/app/ideas': typeof AppIdeasRoute
   '/app/insights': typeof AppInsightsRoute
   '/app/lists': typeof AppListsRoute
   '/app/loyalty': typeof AppLoyaltyRoute
@@ -467,6 +506,8 @@ export interface FileRoutesByFullPath {
   '/app/settings': typeof AppSettingsRoute
   '/app/specials': typeof AppSpecialsRoute
   '/app/team': typeof AppTeamRoute
+  '/blog/$slug': typeof BlogSlugRoute
+  '/blog/rss': typeof BlogRssRoute
   '/demo/outbox': typeof DemoOutboxRoute
   '/demo/status': typeof DemoStatusRoute
   '/dev/roles': typeof DevRolesRoute
@@ -475,6 +516,7 @@ export interface FileRoutesByFullPath {
   '/me/settings': typeof MeSettingsRoute
   '/ops/campaigns': typeof OpsCampaignsRoute
   '/ops/credit': typeof OpsCreditRoute
+  '/ops/ideas': typeof OpsIdeasRoute
   '/ops/leads': typeof OpsLeadsRoute
   '/ops/outbox': typeof OpsOutboxRoute
   '/ops/restaurants': typeof OpsRestaurantsRouteWithChildren
@@ -499,6 +541,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/blog': typeof BlogRouteWithChildren
   '/case-studies': typeof CaseStudiesRoute
   '/consent-wording': typeof ConsentWordingRoute
   '/contact': typeof ContactRoute
@@ -519,6 +562,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/session-expired': typeof SessionExpiredRoute
   '/stamp': typeof StampRoute
+  '/suggest': typeof SuggestRoute
   '/terms': typeof TermsRoute
   '/app/audit': typeof AppAuditRoute
   '/app/campaigns': typeof AppCampaignsRouteWithChildren
@@ -526,6 +570,7 @@ export interface FileRoutesByTo {
   '/app/credit': typeof AppCreditRoute
   '/app/customers': typeof AppCustomersRouteWithChildren
   '/app/design': typeof AppDesignRoute
+  '/app/ideas': typeof AppIdeasRoute
   '/app/insights': typeof AppInsightsRoute
   '/app/lists': typeof AppListsRoute
   '/app/loyalty': typeof AppLoyaltyRoute
@@ -538,6 +583,8 @@ export interface FileRoutesByTo {
   '/app/settings': typeof AppSettingsRoute
   '/app/specials': typeof AppSpecialsRoute
   '/app/team': typeof AppTeamRoute
+  '/blog/$slug': typeof BlogSlugRoute
+  '/blog/rss': typeof BlogRssRoute
   '/demo/outbox': typeof DemoOutboxRoute
   '/demo/status': typeof DemoStatusRoute
   '/dev/roles': typeof DevRolesRoute
@@ -546,6 +593,7 @@ export interface FileRoutesByTo {
   '/me/settings': typeof MeSettingsRoute
   '/ops/campaigns': typeof OpsCampaignsRoute
   '/ops/credit': typeof OpsCreditRoute
+  '/ops/ideas': typeof OpsIdeasRoute
   '/ops/leads': typeof OpsLeadsRoute
   '/ops/outbox': typeof OpsOutboxRoute
   '/ops/restaurants': typeof OpsRestaurantsRouteWithChildren
@@ -571,6 +619,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/blog': typeof BlogRouteWithChildren
   '/case-studies': typeof CaseStudiesRoute
   '/consent-wording': typeof ConsentWordingRoute
   '/contact': typeof ContactRoute
@@ -591,6 +640,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/session-expired': typeof SessionExpiredRoute
   '/stamp': typeof StampRoute
+  '/suggest': typeof SuggestRoute
   '/terms': typeof TermsRoute
   '/app/audit': typeof AppAuditRoute
   '/app/campaigns': typeof AppCampaignsRouteWithChildren
@@ -598,6 +648,7 @@ export interface FileRoutesById {
   '/app/credit': typeof AppCreditRoute
   '/app/customers': typeof AppCustomersRouteWithChildren
   '/app/design': typeof AppDesignRoute
+  '/app/ideas': typeof AppIdeasRoute
   '/app/insights': typeof AppInsightsRoute
   '/app/lists': typeof AppListsRoute
   '/app/loyalty': typeof AppLoyaltyRoute
@@ -610,6 +661,8 @@ export interface FileRoutesById {
   '/app/settings': typeof AppSettingsRoute
   '/app/specials': typeof AppSpecialsRoute
   '/app/team': typeof AppTeamRoute
+  '/blog/$slug': typeof BlogSlugRoute
+  '/blog/rss': typeof BlogRssRoute
   '/demo/outbox': typeof DemoOutboxRoute
   '/demo/status': typeof DemoStatusRoute
   '/dev/roles': typeof DevRolesRoute
@@ -618,6 +671,7 @@ export interface FileRoutesById {
   '/me/settings': typeof MeSettingsRoute
   '/ops/campaigns': typeof OpsCampaignsRoute
   '/ops/credit': typeof OpsCreditRoute
+  '/ops/ideas': typeof OpsIdeasRoute
   '/ops/leads': typeof OpsLeadsRoute
   '/ops/outbox': typeof OpsOutboxRoute
   '/ops/restaurants': typeof OpsRestaurantsRouteWithChildren
@@ -644,6 +698,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/app'
+    | '/blog'
     | '/case-studies'
     | '/consent-wording'
     | '/contact'
@@ -664,6 +719,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/session-expired'
     | '/stamp'
+    | '/suggest'
     | '/terms'
     | '/app/audit'
     | '/app/campaigns'
@@ -671,6 +727,7 @@ export interface FileRouteTypes {
     | '/app/credit'
     | '/app/customers'
     | '/app/design'
+    | '/app/ideas'
     | '/app/insights'
     | '/app/lists'
     | '/app/loyalty'
@@ -683,6 +740,8 @@ export interface FileRouteTypes {
     | '/app/settings'
     | '/app/specials'
     | '/app/team'
+    | '/blog/$slug'
+    | '/blog/rss'
     | '/demo/outbox'
     | '/demo/status'
     | '/dev/roles'
@@ -691,6 +750,7 @@ export interface FileRouteTypes {
     | '/me/settings'
     | '/ops/campaigns'
     | '/ops/credit'
+    | '/ops/ideas'
     | '/ops/leads'
     | '/ops/outbox'
     | '/ops/restaurants'
@@ -715,6 +775,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/app'
+    | '/blog'
     | '/case-studies'
     | '/consent-wording'
     | '/contact'
@@ -735,6 +796,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/session-expired'
     | '/stamp'
+    | '/suggest'
     | '/terms'
     | '/app/audit'
     | '/app/campaigns'
@@ -742,6 +804,7 @@ export interface FileRouteTypes {
     | '/app/credit'
     | '/app/customers'
     | '/app/design'
+    | '/app/ideas'
     | '/app/insights'
     | '/app/lists'
     | '/app/loyalty'
@@ -754,6 +817,8 @@ export interface FileRouteTypes {
     | '/app/settings'
     | '/app/specials'
     | '/app/team'
+    | '/blog/$slug'
+    | '/blog/rss'
     | '/demo/outbox'
     | '/demo/status'
     | '/dev/roles'
@@ -762,6 +827,7 @@ export interface FileRouteTypes {
     | '/me/settings'
     | '/ops/campaigns'
     | '/ops/credit'
+    | '/ops/ideas'
     | '/ops/leads'
     | '/ops/outbox'
     | '/ops/restaurants'
@@ -786,6 +852,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/app'
+    | '/blog'
     | '/case-studies'
     | '/consent-wording'
     | '/contact'
@@ -806,6 +873,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/session-expired'
     | '/stamp'
+    | '/suggest'
     | '/terms'
     | '/app/audit'
     | '/app/campaigns'
@@ -813,6 +881,7 @@ export interface FileRouteTypes {
     | '/app/credit'
     | '/app/customers'
     | '/app/design'
+    | '/app/ideas'
     | '/app/insights'
     | '/app/lists'
     | '/app/loyalty'
@@ -825,6 +894,8 @@ export interface FileRouteTypes {
     | '/app/settings'
     | '/app/specials'
     | '/app/team'
+    | '/blog/$slug'
+    | '/blog/rss'
     | '/demo/outbox'
     | '/demo/status'
     | '/dev/roles'
@@ -833,6 +904,7 @@ export interface FileRouteTypes {
     | '/me/settings'
     | '/ops/campaigns'
     | '/ops/credit'
+    | '/ops/ideas'
     | '/ops/leads'
     | '/ops/outbox'
     | '/ops/restaurants'
@@ -858,6 +930,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
+  BlogRoute: typeof BlogRouteWithChildren
   CaseStudiesRoute: typeof CaseStudiesRoute
   ConsentWordingRoute: typeof ConsentWordingRoute
   ContactRoute: typeof ContactRoute
@@ -878,6 +951,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   SessionExpiredRoute: typeof SessionExpiredRoute
   StampRoute: typeof StampRoute
+  SuggestRoute: typeof SuggestRoute
   TermsRoute: typeof TermsRoute
   DevRolesRoute: typeof DevRolesRoute
   RSlugRoute: typeof RSlugRouteWithChildren
@@ -903,6 +977,13 @@ declare module '@tanstack/react-router' {
       path: '/app'
       fullPath: '/app'
       preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog': {
+      id: '/blog'
+      path: '/blog'
+      fullPath: '/blog'
+      preLoaderRoute: typeof BlogRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/case-studies': {
@@ -1045,6 +1126,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StampRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/suggest': {
+      id: '/suggest'
+      path: '/suggest'
+      fullPath: '/suggest'
+      preLoaderRoute: typeof SuggestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/terms': {
       id: '/terms'
       path: '/terms'
@@ -1092,6 +1180,13 @@ declare module '@tanstack/react-router' {
       path: '/design'
       fullPath: '/app/design'
       preLoaderRoute: typeof AppDesignRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/ideas': {
+      id: '/app/ideas'
+      path: '/ideas'
+      fullPath: '/app/ideas'
+      preLoaderRoute: typeof AppIdeasRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/insights': {
@@ -1178,6 +1273,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTeamRouteImport
       parentRoute: typeof AppRoute
     }
+    '/blog/$slug': {
+      id: '/blog/$slug'
+      path: '/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof BlogSlugRouteImport
+      parentRoute: typeof BlogRoute
+    }
+    '/blog/rss': {
+      id: '/blog/rss'
+      path: '/rss'
+      fullPath: '/blog/rss'
+      preLoaderRoute: typeof BlogRssRouteImport
+      parentRoute: typeof BlogRoute
+    }
     '/demo/outbox': {
       id: '/demo/outbox'
       path: '/outbox'
@@ -1232,6 +1341,13 @@ declare module '@tanstack/react-router' {
       path: '/credit'
       fullPath: '/ops/credit'
       preLoaderRoute: typeof OpsCreditRouteImport
+      parentRoute: typeof OpsRoute
+    }
+    '/ops/ideas': {
+      id: '/ops/ideas'
+      path: '/ideas'
+      fullPath: '/ops/ideas'
+      preLoaderRoute: typeof OpsIdeasRouteImport
       parentRoute: typeof OpsRoute
     }
     '/ops/leads': {
@@ -1410,6 +1526,7 @@ interface AppRouteChildren {
   AppCreditRoute: typeof AppCreditRoute
   AppCustomersRoute: typeof AppCustomersRouteWithChildren
   AppDesignRoute: typeof AppDesignRoute
+  AppIdeasRoute: typeof AppIdeasRoute
   AppInsightsRoute: typeof AppInsightsRoute
   AppListsRoute: typeof AppListsRoute
   AppLoyaltyRoute: typeof AppLoyaltyRoute
@@ -1431,6 +1548,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCreditRoute: AppCreditRoute,
   AppCustomersRoute: AppCustomersRouteWithChildren,
   AppDesignRoute: AppDesignRoute,
+  AppIdeasRoute: AppIdeasRoute,
   AppInsightsRoute: AppInsightsRoute,
   AppListsRoute: AppListsRoute,
   AppLoyaltyRoute: AppLoyaltyRoute,
@@ -1446,6 +1564,18 @@ const AppRouteChildren: AppRouteChildren = {
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
+interface BlogRouteChildren {
+  BlogSlugRoute: typeof BlogSlugRoute
+  BlogRssRoute: typeof BlogRssRoute
+}
+
+const BlogRouteChildren: BlogRouteChildren = {
+  BlogSlugRoute: BlogSlugRoute,
+  BlogRssRoute: BlogRssRoute,
+}
+
+const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
 
 interface DemoRouteChildren {
   DemoOutboxRoute: typeof DemoOutboxRoute
@@ -1524,6 +1654,7 @@ const OpsRestaurantsRouteWithChildren = OpsRestaurantsRoute._addFileChildren(
 interface OpsRouteChildren {
   OpsCampaignsRoute: typeof OpsCampaignsRoute
   OpsCreditRoute: typeof OpsCreditRoute
+  OpsIdeasRoute: typeof OpsIdeasRoute
   OpsLeadsRoute: typeof OpsLeadsRoute
   OpsOutboxRoute: typeof OpsOutboxRoute
   OpsRestaurantsRoute: typeof OpsRestaurantsRouteWithChildren
@@ -1532,6 +1663,7 @@ interface OpsRouteChildren {
 const OpsRouteChildren: OpsRouteChildren = {
   OpsCampaignsRoute: OpsCampaignsRoute,
   OpsCreditRoute: OpsCreditRoute,
+  OpsIdeasRoute: OpsIdeasRoute,
   OpsLeadsRoute: OpsLeadsRoute,
   OpsOutboxRoute: OpsOutboxRoute,
   OpsRestaurantsRoute: OpsRestaurantsRouteWithChildren,
@@ -1554,6 +1686,7 @@ const RSlugRouteWithChildren = RSlugRoute._addFileChildren(RSlugRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
+  BlogRoute: BlogRouteWithChildren,
   CaseStudiesRoute: CaseStudiesRoute,
   ConsentWordingRoute: ConsentWordingRoute,
   ContactRoute: ContactRoute,
@@ -1574,6 +1707,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   SessionExpiredRoute: SessionExpiredRoute,
   StampRoute: StampRoute,
+  SuggestRoute: SuggestRoute,
   TermsRoute: TermsRoute,
   DevRolesRoute: DevRolesRoute,
   RSlugRoute: RSlugRouteWithChildren,
