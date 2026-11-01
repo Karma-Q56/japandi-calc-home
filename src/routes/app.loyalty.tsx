@@ -8,6 +8,7 @@ import { Switch } from "@/components/patron/Switch";
 import { ConfirmDialog, PageHeader } from "@/components/patron/dash";
 import { PhoneFrame, PreviewOnly, PublishSteps, WheelPreview } from "@/components/patron/preview";
 import { SPIN_MODES } from "@/domain/spins";
+import { WEEKDAYS, weekdayLabel } from "@/domain/tools";
 import type { SpinConfig, SpinMode, SpinSegment } from "@/data/types";
 import { useDemoState } from "@/data/useDemoState";
 
@@ -46,6 +47,14 @@ function Loyalty() {
     restaurant.birthdayRewardKind ?? "stamp",
   );
   const [birthdayItem, setBirthdayItem] = useState(restaurant.birthdayRewardItem ?? "");
+  // Loyalty tools: double stamp day, visit streak and the shared budget cap.
+  const [doubleOn, setDoubleOn] = useState(restaurant.doubleStamp?.enabled ?? false);
+  const [doubleDay, setDoubleDay] = useState(restaurant.doubleStamp?.weekday ?? 2);
+  const [streakOn, setStreakOn] = useState(restaurant.streak?.enabled ?? false);
+  const [streakWeeks, setStreakWeeks] = useState(restaurant.streak?.weeks ?? 3);
+  const [streakVisits, setStreakVisits] = useState(restaurant.streak?.weeklyVisits ?? 2);
+  const [streakBonus, setStreakBonus] = useState(restaurant.streak?.bonusStamps ?? 1);
+  const [budget, setBudget] = useState(restaurant.toolStampBudget ?? 100);
   const birthdayPreview = birthday
     ? api.loyalty.birthdayPreview(restaurant.id)
     : null;
@@ -87,8 +96,27 @@ function Loyalty() {
       birthdayRewardKind: birthdayKind,
       birthdayRewardItem: birthdayKind === "freeItem" ? birthdayItem.trim() : "",
     });
-    setNotice(result.ok ? "Loyalty rules saved." : result.error.message);
-    return result.ok;
+    if (!result.ok) {
+      setNotice(result.error.message);
+      return false;
+    }
+    const toolsResult = api.loyalty.saveTools({
+      restaurantId: restaurant.id,
+      doubleStamp: { enabled: doubleOn, weekday: doubleDay },
+      streak: {
+        enabled: streakOn,
+        weeks: streakWeeks,
+        weeklyVisits: streakVisits,
+        bonusStamps: streakBonus,
+      },
+      toolStampBudget: budget,
+    });
+    if (!toolsResult.ok) {
+      setNotice(toolsResult.error.message);
+      return false;
+    }
+    setNotice("Loyalty rules saved.");
+    return true;
   };
 
   const saveSpin = (): boolean => {
@@ -119,7 +147,7 @@ function Loyalty() {
         <h2>Card</h2>
         <div className="builder-fields">
           <label className="builder-field">
-            Stamps required (2–30)
+            Stamps required (2 to 30)
             <input
               type="number"
               min={2}
@@ -146,7 +174,7 @@ function Loyalty() {
             />
           </label>
           <label className="builder-field">
-            Welcome stamps (0–{Math.max(0, stampsRequired - 1)})
+            Welcome stamps (0 up to {Math.max(0, stampsRequired - 1)})
             <input
               type="number"
               min={0}
@@ -251,6 +279,104 @@ function Loyalty() {
           Tiers unlock members-only and targeted specials. VIP members can be the only ones who see
           a particular offer.
         </p>
+      </section>
+
+      <section className="builder-panel">
+        <h2>Loyalty tools</h2>
+        <p className="demo-data-note">
+          Off until you switch them on. Double stamp day pulls visits onto a quieter weekday and
+          streaks reward the habit of coming back. A week only counts toward a run once it meets
+          the visits, so a week in progress never breaks the run or spends the budget.
+        </p>
+        <div className="builder-fields">
+          <Switch
+            label="Double stamp day"
+            hint="One extra stamp on visits on your chosen weekday"
+            checked={doubleOn}
+            onChange={setDoubleOn}
+          />
+          {doubleOn && (
+            <>
+              <label className="builder-field">
+                Which weekday
+                <select
+                  value={doubleDay}
+                  onChange={(event) => setDoubleDay(Number(event.target.value))}
+                >
+                  {WEEKDAYS.map((day, index) => (
+                    <option key={day} value={index}>
+                      {day}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <p className="demo-data-note">
+                Every visit on that Johannesburg weekday earns one extra stamp, not only the
+                first. Never stacks with another multiplier.
+              </p>
+            </>
+          )}
+          <Switch
+            label="Visit streak"
+            hint="Reward coming back week after week"
+            checked={streakOn}
+            onChange={setStreakOn}
+          />
+          {streakOn && (
+            <div className="builder-fields streak-fields">
+              <label className="builder-field">
+                Visits each week to keep the run
+                <input
+                  type="number"
+                  min={1}
+                  max={7}
+                  value={streakVisits}
+                  onChange={(event) => setStreakVisits(Number(event.target.value))}
+                />
+              </label>
+              <label className="builder-field">
+                Weeks in a row for the bonus
+                <input
+                  type="number"
+                  min={2}
+                  max={12}
+                  value={streakWeeks}
+                  onChange={(event) => setStreakWeeks(Number(event.target.value))}
+                />
+              </label>
+              <label className="builder-field">
+                Bonus stamps at the end of the run
+                <input
+                  type="number"
+                  min={1}
+                  max={5}
+                  value={streakBonus}
+                  onChange={(event) => setStreakBonus(Number(event.target.value))}
+                />
+              </label>
+            </div>
+          )}
+          {(doubleOn || streakOn) && (
+            <label className="builder-field">
+              Monthly bonus stamp budget
+              <input
+                type="number"
+                min={1}
+                max={2000}
+                value={budget}
+                onChange={(event) => setBudget(Number(event.target.value))}
+              />
+              <small>
+                Double stamp day and streak stamps combined stop once this many bonus stamps have
+                gone out in one month. Used so far: {api.loyalty.toolBudget(restaurant.id).used}.
+              </small>
+            </label>
+          )}
+          <p className="demo-data-note">
+            No purchase is required to earn any tool reward, and guests who opted out of messages
+            still collect stamps, offers and spins. Nothing here sends messages.
+          </p>
+        </div>
       </section>
 
       <section className="builder-panel">
@@ -494,6 +620,16 @@ function Loyalty() {
                 : "Start collecting from your first visit."}
             </p>
             {birthday && birthdayPreview && <p>{birthdayPreview.guestLine}</p>}
+            {doubleOn && (
+              <p>Double stamp day: every {weekdayLabel(doubleDay)}. One visit that day, two stamps.</p>
+            )}
+            {streakOn && (
+              <p>
+                Visit streak: {streakVisits} {streakVisits === 1 ? "visit" : "visits"} a week for
+                {" "}{streakWeeks} {streakWeeks === 1 ? "week" : "weeks"} earns{" "}
+                {streakBonus} bonus {streakBonus === 1 ? "stamp" : "stamps"}.
+              </p>
+            )}
           </PhoneFrame>
           <div className="pv-test-spin">
             <h3>Test the wheel</h3>

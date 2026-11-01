@@ -134,6 +134,12 @@ import {
   tierState,
 } from "@/domain/loyalty";
 import {
+  evaluateToolsAfterVisit,
+  guestToolsView,
+  saveTools,
+  toolBudgetFor,
+} from "@/domain/tools";
+import {
   customerProfile,
   exportCsv,
   knowYourGuest,
@@ -238,6 +244,9 @@ export const api = {
     saveChallenge,
     setChallengeActive,
     birthdayPreview: birthdayRewardPreview,
+    toolsView: guestToolsView,
+    saveTools,
+    toolBudget: toolBudgetFor,
   },
   orders: {
     record: recordOrder,

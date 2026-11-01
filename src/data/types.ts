@@ -86,6 +86,12 @@ export interface Restaurant {
   ordersMode?: "items" | "categories";
   /** Bring a friend settings. Off until the owner switches it on. */
   referral?: ReferralConfig;
+  /** Double stamp day. Off by default. One visit on that weekday earns an extra stamp. */
+  doubleStamp?: { enabled: boolean; weekday: number };
+  /** Visit streak. Off by default. */
+  streak?: StreakConfig;
+  /** Monthly cap on bonus stamps from double stamp day and streaks combined. */
+  toolStampBudget?: number;
   /** Placeholder address notified of new enquiries. No real email is sent in demo. */
   enquiryNotifyEmail?: string;
   /** Operator drafts skip owner approval when this is on. Off by default. */
@@ -96,6 +102,16 @@ export interface Restaurant {
   emailUpdates?: "weekly" | "monthly" | "off";
   /** Warn the owner when SMS credit falls below this amount, in cents. */
   lowCreditAlertCents?: number;
+}
+
+/** Visit streak. Off by default. */
+export interface StreakConfig {
+  enabled: boolean;
+  /** The run length that earns the bonus. */
+  weeks: number;
+  /** Visits needed inside each Johannesburg calendar week. */
+  weeklyVisits: number;
+  bonusStamps: number;
 }
 
 /** Owner's choices for bring a friend. Disabled by default. */

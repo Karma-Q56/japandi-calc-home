@@ -132,6 +132,7 @@ function GuestCard() {
   const { restaurant, customer, membership, rewards, offers, visits, stampsGained } = result.data;
   const tier = api.loyalty.tierState(state, membership);
   const challenges = api.loyalty.challenges(state, membership);
+  const tools = api.loyalty.toolsView(state, membership);
   const spins = api.spin.state(membership.id);
   const specialResult = api.special.offersFor(membership.id);
   const specialOffers = specialResult.ok ? specialResult.data.offers : [];
@@ -175,6 +176,41 @@ function GuestCard() {
         )}
 
         <SpinWheel membershipId={membership.id} />
+
+        {tools.doubleDayLine && (
+          <section className="gx-panel">
+            <h2>Double stamps</h2>
+            <p className="gx-note">{tools.doubleDayLine}</p>
+          </section>
+        )}
+
+        {tools.streak && (
+          <section className="gx-panel">
+            <h2>Visit streak</h2>
+            <p>
+              <strong>
+                {tools.streak.run} {tools.streak.run === 1 ? "week" : "weeks"} in a row
+              </strong>
+            </p>
+            {tools.streak.visitsThisWeek < tools.streak.weeklyVisits ? (
+              <p className="gx-note">
+                {tools.streak.weeklyVisits - tools.streak.visitsThisWeek} more
+                {" "}{tools.streak.weeklyVisits - tools.streak.visitsThisWeek === 1 ? "visit" : "visits"} this week keeps the run alive.
+              </p>
+            ) : (
+              <p className="gx-note">This week already counts. Next week, same again.</p>
+            )}
+            <ChallengeRow
+              title={`${tools.streak.bonusStamps} bonus ${tools.streak.bonusStamps === 1 ? "stamp" : "stamps"} at ${tools.streak.weeks} ${tools.streak.weeks === 1 ? "week" : "weeks"}`}
+              visits={tools.streak.run}
+              needed={tools.streak.weeks}
+              windowDays={7}
+              bonusStamps={tools.streak.bonusStamps}
+              done={tools.streak.run >= tools.streak.weeks}
+              claimed={false}
+            />
+          </section>
+        )}
 
         {challenges.length > 0 && (
           <section className="gx-panel">
@@ -349,10 +385,17 @@ const cardSearchSchema = z.object({ customerId: z.string().optional() });
 
 /** The guest side of bring a friend: their own link, or code, to share. */
 function BringAFriend({ slug, membershipId }: { slug: string; membershipId: string }) {
-  const result = api.referral.myCode(membershipId);
   const [notice, setNotice] = useState("");
-  if (!result.ok) return null;
-  const link = `${window.location.origin}/r/${slug}/join?ref=${result.data.code}&src=friend_referral`;
+  // The share code is created on the first view, so it must not write the store
+  // while React is still rendering. Doing it in an effect keeps the console
+  // free of "cannot update a component while rendering" warnings.
+  const [code, setCode] = useState<string | null>(null);
+  useEffect(() => {
+    const result = api.referral.myCode(membershipId);
+    if (result.ok) setCode(result.data.code);
+  }, [membershipId]);
+  if (!code) return null;
+  const link = `${window.location.origin}/r/${slug}/join?ref=${code}&src=friend_referral`;
   return (
     <section className="gx-panel">
       <h2>Bring a friend</h2>
@@ -361,7 +404,7 @@ function BringAFriend({ slug, membershipId }: { slug: string; membershipId: stri
         little something from the venue.
       </p>
       <p className="gx-note">
-        Your friend code: <strong>{result.data.code}</strong>
+        Your friend code: <strong>{code}</strong>
       </p>
       <div className="page-actions">
         <button
