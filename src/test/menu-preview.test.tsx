@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { routeTree } from "@/routeTree.gen";
 import { demoRepo, updateDemo } from "@/data/repo";
+import { formatRand } from "@/lib/money";
 
 vi.mock("@/server/live", () => ({
   getDataModeFn: async () => ({ mode: "demo" }),
@@ -78,5 +79,11 @@ describe("menu preview before publish", () => {
 
     expect(minimal.getAttribute("aria-pressed")).toBe("true");
     expect(restaurant.pageTemplate).toBe(liveTemplate);
+  });
+
+  it("shows seeded menu prices as ordinary cafe prices", () => {
+    const prices = demoRepo.read().items.map((item) => formatRand(item.priceCents));
+    expect(prices).toEqual(["R38", "R24", "R26", "R32", "R45", "R95"]);
+    for (const price of prices) expect(price).not.toMatch(",");
   });
 });

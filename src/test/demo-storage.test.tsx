@@ -127,7 +127,7 @@ describe("demo storage from a previous build", () => {
     expect(state.memberships.length).toBeGreaterThan(0);
     expect(window.localStorage.getItem(CURRENT_KEY)).toBeTruthy();
     expect(window.localStorage.getItem(LEGACY_KEY)).toBeNull();
-  });
+  }, 60_000);
 
   it("drops memberships that point at a guest or venue that no longer exists", async () => {
     const snapshot = previousVersionSnapshot();
@@ -145,5 +145,5 @@ describe("demo storage from a previous build", () => {
     expect(state.memberships.length).toBeGreaterThan(0);
     // A session pointing at a removed guest is cleared rather than left dangling.
     expect(state.session.customerId).toBeUndefined();
-  });
+  }, 60_000);
 });

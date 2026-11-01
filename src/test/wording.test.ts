@@ -20,6 +20,8 @@ describe("countLabel", () => {
     expect(countLabel(7, "day")).toBe("7 days");
     expect(countLabel(1, "time", "times")).toBe("1 time");
     expect(countLabel(3, "time", "times")).toBe("3 times");
+    expect(countLabel(1, "guest")).toBe("1 guest");
+    expect(countLabel(15, "guest")).toBe("15 guests");
   });
 });
 

@@ -1,4 +1,5 @@
 import { createFileRoute, redirect, useNavigate, useSearch } from "@tanstack/react-router";
+import { countLabel } from "@/lib/count-label";
 import { useState, useSyncExternalStore } from "react";
 import { api } from "@/api";
 import {
@@ -199,7 +200,7 @@ function ComposerPage() {
       setNotice(created.error.message);
       return;
     }
-    setNotice(`Saved “${created.data.name}” with ${created.data.membershipIds.length} guests.`);
+    setNotice(`Saved “${created.data.name}” with ${countLabel(created.data.membershipIds.length, "guest")}.`);
     setNewListName("");
     setListId(created.data.id);
     setSegment("saved_list");
@@ -293,12 +294,14 @@ function ComposerPage() {
                 <span>{choice.hint}</span>
                 <strong>
                   {choice.type === "saved_list" ? (
-                    selectedList ? `${selectedList.membershipIds.length} guest${selectedList.membershipIds.length === 1 ? "" : "s"}` : "Choose a list"
+                    selectedList ? countLabel(selectedList.membershipIds.length, "guest") : "Choose a list"
                   ) : (
-                    <>
-                      {segment === choice.type ? rawCount : api.audience.count(restaurant.id, segmentAudience(choice.type, weekday, listId))}{" "}
-                      guests
-                    </>
+                    countLabel(
+                      segment === choice.type
+                        ? rawCount
+                        : api.audience.count(restaurant.id, segmentAudience(choice.type, weekday, listId)),
+                      "guest",
+                    )
                   )}
                 </strong>
               </button>

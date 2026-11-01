@@ -381,12 +381,12 @@ export function createSeed(now = Date.UTC(2026, 9, 1, 8)): DemoState {
     { id: "sec-lunch", restaurantId: restaurants[2]!.id, name: "Lunch favourites", sortOrder: 0 },
   ];
   const items = [
-    ["sec-coffee", "Flat white", "Double espresso, silky milk", 380],
-    ["sec-coffee", "Long black", "A smooth double espresso", 300],
-    ["sec-bakes", "Butter croissant", "Baked fresh each morning", 420],
-    ["sec-pastry", "Almond croissant", "Filled with almond cream", 480],
-    ["sec-pastry", "Sourdough loaf", "Slow-fermented overnight", 650],
-    ["sec-lunch", "Roast chicken bowl", "Seasonal greens and grains", 1250],
+    ["sec-coffee", "Flat white", "Double espresso, silky milk", 38],
+    ["sec-coffee", "Long black", "A smooth double espresso", 24],
+    ["sec-bakes", "Butter croissant", "Baked fresh each morning", 26],
+    ["sec-pastry", "Almond croissant", "Filled with almond cream", 32],
+    ["sec-pastry", "Sourdough loaf", "Slow-fermented overnight", 45],
+    ["sec-lunch", "Roast chicken bowl", "Seasonal greens and grains", 95],
   ].map(([sectionId, name, description, price], i) => ({
     id: `item-${i + 1}`,
     restaurantId: sections.find((s) => s.id === sectionId)!.restaurantId,

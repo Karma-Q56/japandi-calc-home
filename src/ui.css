@@ -3804,11 +3804,17 @@ input[type="range"] {
 .pv-phone .pt a,
 .pv-phone .pt button,
 .pv-phone .pt summary { pointer-events: none; }
+/* Desktop template widths use 92vw, which overflows a phone screen. */
+.pv-phone .pt-wrap,
+.pv-phone .pt-masthead,
+.pv-phone .pt-hero-photo-inner,
+.pv-phone .pt-footer,
+.pv-phone .pt-min-wrap { width: min(1120px, 100%); }
 .pv-phone .pt img { max-width: 100%; height: auto; }
 /* A phone screen scrolls; the preview should not turn into a 3000px page. */
 .pv-phone .pv-screen {
   max-height: 560px;
-  overflow-y: auto;
+  overflow: hidden auto; /* x never bleeds onto the owner page */
   overscroll-behavior: contain;
   scrollbar-width: thin;
 }
