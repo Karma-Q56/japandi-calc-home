@@ -135,6 +135,88 @@ to a guest who has withdrawn consent or sent STOP.
 
 ---
 
+## 12. Loyalty tools researched from other programs
+
+Two new owner tools ship with this release: a double stamp day and a
+visit streak. Both were chosen after checking what long running coffee
+and restaurant loyalty programs actually do, so the ideas below link to
+where they come from. Every tool can be switched off, and together they
+share one monthly bonus stamp budget so the free give-away stays under
+control.
+
+### Stamp card with a visible gap to the reward (the base tool)
+
+The card itself leans on the goal gradient effect: people visit faster
+the closer they get to the reward. Kivetz, Urminsky and Zheng tested
+this with a real cafe punch card and found the pace of visits speeds up
+as the card fills (Columbia Business School, 2006:
+https://www.columbia.edu/~rk566/Session4/Goal-Gradient_Illusionary_Goal_Progress.pdf).
+Patron cards always show the stamps earned and the stamps still needed.
+
+### Double stamp day (quiet weekday bonus)
+
+Starbucks Rewards runs "Double Star Days", limited-time days when stars
+earn at twice the normal rate, about six a year (Starbucks Rewards FAQ:
+https://about.starbucks.com/starbucks-rewards-faq/).
+Loyalty platforms describe the same rule as bonus points on specific
+dates or times (Preferred Patron feature list:
+https://www.preferredpatron.com/mid-market-business-loyalty-programs).
+Patron's version is pinned to the restaurant's own quietest weekday and
+repeats every week, so the busy Saturday crowd is never paid extra and
+the quiet day gets the nudge. A visit that day earns one extra stamp,
+on top of the normal stamp, and two bonus visits in a row earn two
+bonus stamps.
+
+### Visit streak (reward the habit, not one visit)
+
+Streak rewards are a proven habit builder: a longitudinal study of
+reward-driven habit formation found rewards work through repeated
+behaviour, which then carries on on its own (Judah et al, 2018,
+PeerJ / PMC: https://pmc.ncbi.nlm.nih.gov/articles/PMC6302524). Apps
+that use streaks keep customers returning because they protect the run
+they already have (a streak gamification case study:
+https://trophy.so/blog/streaks-gamification-case-study).
+Patron's streak works in weeks: the owner picks a target such as 2
+visits a week, and after the run reaches the chosen number of weeks the
+guest earns bonus stamps. A week that misses the target does not reset
+the earned run, it only pauses it, so one missed week in a busy month
+does not destroy a regular's progress.
+
+### Monthly bonus stamp budget (the guardrail)
+
+Reward costs need a ceiling. Patron already capped the bring a friend
+reward per guest per month (decision 8); the new tools get the same
+treatment as one number: every bonus stamp the double day and the
+streak pay out, all guests combined, must together stay under the
+restaurant's monthly budget. When the budget is used up for the month,
+no further bonus stamps are granted until it resets on the first of the
+month (Johannesburg time). This is Patron's own rule, written to keep
+the tools affordable for a small cafe.
+
+### Birthday reward (already shipped, sources for the choice)
+
+Birthday rewards are the highest converting promotion in the
+restaurant industry (RaftLabs guide:
+https://www.raftlabs.com/blog/loyalty-program-for-restaurants), and
+Experian's email study found birthday messages drive a 481% higher
+transaction rate than ordinary promotions (summarised here:
+https://business.stampix.com/blog/birthday-rewards-when-why-and-how-they-work-or-dont).
+Starbucks, as reference, gives members a birthday reward and 30 days to
+redeem it (Starbucks Rewards FAQ, link above). Patron's version is
+decision 2: day and month only, owner chooses a bonus stamp or a free
+item.
+
+### Bring a friend referral (already shipped, source for the choice)
+
+Referral rewards are standard across restaurant programs. The Raising
+Cane's "Spread the Love" campaign gives both guests a free item when a
+friend joins through the share link (summary of US programs:
+https://blog.simpleloyalty.com/best-restaurant-loyalty-program-usa).
+Patron's version is decision 8, with the monthly cap and the checks
+against self referral and repeated phones.
+
+---
+
 ## Before launch
 
 These values and features are placeholders. Replace them before a real

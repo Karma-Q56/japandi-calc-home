@@ -1,8 +1,10 @@
 // Temporary helper for the visual pass. Run with: node scripts/shot-verify.mjs
 import { chromium } from "@playwright/test";
 
-const BASE = "http://127.0.0.1:5173";
+const BASE = "http://localhost:5173";
 const targets = [
+  { name: "owner-tools", role: "owner", venue: "daily-grind", path: "/app/loyalty" },
+  { name: "guest-card", role: "guest", customer: "customer-1", path: "/r/daily-grind/card" },
   { name: "owner-reports", role: "owner", venue: "daily-grind", path: "/app/reports" },
   { name: "ops-leads", role: "operator", path: "/ops/leads" },
   { name: "ops-outbox", role: "operator", path: "/ops/outbox" },
@@ -34,6 +36,7 @@ for (const width of [375, 1280]) {
     if (target.role) {
       const params = new URLSearchParams({ role: target.role, to: target.path });
       if (target.venue) params.set("restaurant", target.venue);
+      if (target.customer) params.set("customer", target.customer);
       url = `${BASE}/dev/roles?${params.toString()}`;
     }
     await page.goto(url, { waitUntil: "load" });

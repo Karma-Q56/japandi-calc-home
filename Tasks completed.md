@@ -205,3 +205,64 @@ Fixes found while checking the screens in a browser:
 - Diner venue cards had cramped spacing at 375px; fixed and recaptured (commit 3171d42).
 
 Final checks on the current commit: tsc 0 errors; eslint 0 errors; vitest 345 passed, 5 skipped (350 total, the 5 skips are the live Postgres suites); vite build passes. Screenshots at 375px and 1280px were taken for every screen changed in this pass and inspected, including the venue card fix above.
+
+## Loyalty tools pass (third request, this session)
+
+Researched first, written into `docs/decisions.md` section 12 with links to
+the sources: six proven tools from real programs (the stamp card and its
+goal gradient effect, double stamp day like Starbucks Double Star Days,
+streaks backed by habit formation research, a monthly reward budget like
+the existing per-guest monthly caps, plus the birthday reward and the
+bring a friend referral that were already shipped).
+
+Status per item:
+
+1. Double stamp day: new. One extra bonus stamp when a guest visits on the
+   owner's chosen Johannesburg weekday. Stack free: two visits that day earn
+   two bonus stamps, and a visit that is already a multiplier (never double
+   counts with another multiplier).
+2. Visit streak: new. Runs in Johannesburg calendar weeks with a target of
+   visits per week. A week only joins the run once it meets the target, so
+   a week in progress pauses the run instead of breaking it. The payout is
+   one grant per milestone (`streak:run` key), so retries never double pay.
+3. Monthly bonus stamp budget: new. One shared cap for both tools per
+   restaurant per Johannesburg month, resetting on the 1st, 1 to 2000
+   stamps, off when zero. When used up, no further bonus stamps are granted
+   for either tool until it resets.
+4. Owner settings: extended the loyalty page (`/app/loyalty`) with a
+   "Loyalty tools" panel in the same Draft, Preview and Publish flow the
+   card rules already use. Saving is validated (weekday range, run length 2
+   to 12 weeks, weekly visits 1 to 7, bonus stamps 1 to 5, budget 1 to 2000).
+5. Guest view: extended the guest card (`/r/slug/card`) with a "Double"
+   stamps" panel and a "Visit streak" panel that show the run so far, how
+   many more visits keep it alive, and correct singular and plural wording.
+   The guest never guesses anything: disabled tools stay invisible.
+6. Consent and STOP: not touched by the tools by design. Bonus stamps are
+   stamped by the browser, they are not messages, so no consent rules were
+   weakened or extended.
+
+Test fixes made in code, not by weakening assertions:
+
+- `streakRun` walked back one calendar week when it had to walk back seven,
+   after a week merge two "weeks" showed as two. Fixed to step per
+   Johannesburg calendar week (`week -= 7`) and the test timeline now uses
+   real back-to-back weeks.
+- The streak test's early visits were swallowed by the seed data's later
+   visits (the visit window guard returned `too_soon` for dates before the
+   seed's last stamp). The timeline starts after the seed data instead of
+   changing the guard.
+- `BringAFriend` on the guest card called `api.referral.myCode` during
+   render, which writes the share code into the demo store on first view and
+   raised React's "cannot update a component while rendering" warning. The
+   code is now created in an effect, so the card page console is clean.
+
+Verification on the final commit:
+
+- tsc: 0 errors.
+- eslint: 0 errors, 12 pre-existing warnings (shadcn/ui files, untouched).
+- vitest: 356 passed, 5 skipped (2 live-Postgres files need real credentials;
+   production never touched).
+- vite build: passes.
+- Screenshots: the loyalty page (owner tools panel) and the guest card at
+   375px and 1280px, via `scripts/shot-verify.mjs`. No element crossed the
+   viewport, no console errors on either screen.
