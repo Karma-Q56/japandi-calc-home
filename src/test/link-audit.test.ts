@@ -25,7 +25,7 @@ describe("link audit library", () => {
       '<Link to="/find" />',
       '<Link to="$slug" />',
     ].join("\n");
-    const targets = collectLinkTargets(live).map((item) => item.href);
+    const targets = collectLinkTargets(live).map((item: { href: string }) => item.href);
     expect(targets).toEqual(["/blog", "/find"]);
   });
 
@@ -50,9 +50,9 @@ describe("link audit over the repo", () => {
   it.runIf(fs.existsSync(genPath))("reports no dead internal links in src", () => {
     const report = runAudit(process.cwd());
     expect(report.checked).toBeGreaterThan(50);
-    expect(
-      report.violations,
-      report.violations.map((finding) => `${finding.file}:${finding.line} ${finding.href}`).join("\n"),
-    ).toEqual([]);
+    const findings: string[] = report.violations.map(
+      (finding: { file: string; line: number; href: string }) => `${finding.file}:${finding.line} ${finding.href}`,
+    );
+    expect(report.violations, findings.join("\n")).toEqual([]);
   });
 });

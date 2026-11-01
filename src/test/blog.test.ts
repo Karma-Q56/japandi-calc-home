@@ -14,13 +14,15 @@ describe("blog data", () => {
     }
   });
 
-  it("avoids em dashes in titles and paragraphs", () => {
+  it("avoids long dashes in titles and paragraphs", () => {
+    // Guarded with escapes so this test file itself never carries one.
+    const dash = /[\u2014\u2013]/;
     for (const post of blogPosts) {
-      expect(post.title).not.toMatch(/[—–]/);
-      expect(post.excerpt).not.toMatch(/[—–]/);
+      expect(post.title).not.toMatch(dash);
+      expect(post.excerpt).not.toMatch(dash);
       for (const section of post.sections) {
         for (const paragraph of section.paragraphs) {
-          expect(paragraph).not.toMatch(/[—–]/);
+          expect(paragraph).not.toMatch(dash);
         }
       }
     }
@@ -39,7 +41,12 @@ describe("blog data", () => {
 describe("blog rss feed", () => {
   it("returns valid RSS XML for every post", async () => {
     const { Route } = await import("@/routes/blog/rss");
-    const handler = Route.options.server?.handlers?.GET;
+    // The typed route spins the handler record through several unions; for the
+    // test only the GET function shape matters.
+    const options = Route.options as unknown as {
+      server?: { handlers?: Record<string, (ctx: { request: Request }) => Promise<Response>> };
+    };
+    const handler = options.server?.handlers?.["GET"];
     expect(typeof handler).toBe("function");
     // Node 22 provides the global Request the server handlers use.
     const response = await handler!({ request: new Request("https://patron.example/blog/rss") });
@@ -51,6 +58,6 @@ describe("blog rss feed", () => {
       expect(xml).toContain(post.title);
       expect(xml).toContain(`/blog/${post.slug}`);
     }
-    expect(xml).not.toMatch(/[—–]/);
+    expect(xml).not.toMatch(/[\u2014\u2013]/);
   });
 });

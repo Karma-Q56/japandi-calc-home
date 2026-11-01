@@ -17,6 +17,11 @@ const targets = [
   { name: "site-contact", path: "/contact" },
   { name: "site-pricing", path: "/pricing" },
   { name: "site-home-help", path: "/" },
+  { name: "site-suggest", path: "/suggest" },
+  { name: "site-blog", path: "/blog" },
+  { name: "site-blog-post", path: "/blog/why-the-card-still-works" },
+  { name: "owner-ideas", role: "owner", venue: "daily-grind", path: "/app/ideas" },
+  { name: "ops-ideas", role: "operator", path: "/ops/ideas" },
 ];
 
 const browser = await chromium.launch();

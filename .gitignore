@@ -44,4 +44,5 @@ test-results/
 .dev-server.log
 .dev.vars.review-backup
 *.handoff.md
+.shot-report.json
 tsconfig.tsbuildinfo

@@ -266,3 +266,50 @@ Verification on the final commit:
 - Screenshots: the loyalty page (owner tools panel) and the guest card at
    375px and 1280px, via `scripts/shot-verify.mjs`. No element crossed the
    viewport, no console errors on either screen.
+
+## Presets, owner editing, Ideas, blog and page audit pass (fourth request)
+
+Status per item, checked against what already existed before each one was
+built:
+
+1. Reward presets: new. `/app/loyalty` gained a presets section with the
+   miss-you rule and hand-out rewards, beside the loyalty tools panel, in the
+   same Draft, Preview and Publish flow. Commit `0948a56`.
+2. Owner editing of the public page: new. `/app/page` lets the owner edit
+   their public page with preview, publish and version history. Draft and
+   preview never touch live data; Publish is the only write. Commit `aa6955d`.
+3. Ideas (guest suggestions): new. The smart message suggestions in
+   `src/domain/suggestions.ts` already existed, so the new feature is called
+   Ideas in code and in the navigation. Guests ask for their favourite place
+   or feature on the card, owners see the board with counts at `/app/ideas`,
+   and Patron staff see the operator inbox at `/ops/ideas`. Demo repo and
+   tests for counting and status changes. Commit `f4699ac`.
+4. Blog: new. `/blog` with three notes, one note each at `/blog/{slug}` and
+   an RSS feed at `/blog/rss`, plain data in `src/data/blog.ts` and a plan in
+   `docs/blog-plan.md` for the next notes. Linked from the header, footer and
+   the Ideas page. Commit `9e17a85`.
+5. Page audit: new. `scripts/link-audit.mjs` walks the route tree and the blog
+   data and `src/test/link-audit.test.ts` fails on any internal link without a
+   matching route, plus a test that every page renders without console errors
+   already existed in the routes audit and stays. Commit `78c294e`.
+
+Fix made in code, not by weakening a test:
+
+- The flat blog files made `blog.tsx` a layout rule, so `/blog/$slug`
+  rendered the list instead of the note. The routes now live in a
+  `src/routes/blog/` directory so the list, the note and the feed are
+  standalone routes. The blog tests then pointed at the new filenames and
+  two em dashes in the blog test text were replaced, found by the guard
+  test and the char check, never by loosening it.
+
+Verification on the final commit:
+
+- tsc: 0 errors.
+- eslint: 0 errors, 12 pre-existing warnings (shadcn/ui files, untouched).
+- vitest: 405 passed, 5 skipped (61 files passed, 2 skipped files are the
+  live-Postgres suites that need dev credentials; production never touched).
+- vite build: passes.
+- Screenshots: `scripts/shot-verify.mjs` grew its target list and the two
+  width walk now covers 38 screens, including the blog, the Ideas board and
+  inbox and the owner public page editor. No element crossed the viewport
+  and no console errors, so the walk ended clean.
