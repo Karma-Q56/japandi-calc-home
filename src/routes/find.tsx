@@ -160,7 +160,7 @@ function FindPage() {
             Tell us which cafe, bakery or restaurant deserves a loyalty card. We count every ask and
             talk to the places guests mention most.
           </p>
-          <a className="builder-primary" href="/contact?kind=diner#visit">
+          <a className="builder-primary" href="/suggest">
             Ask for a place
           </a>
         </aside>

@@ -550,6 +550,25 @@ export interface AuditEvent {
   createdAt: string;
 }
 export type LeadKind = "owner" | "diner" | "other";
+export type IdeaStatus = "new" | "exploring" | "added";
+
+/**
+ * One guest ask for a place to join Patron. Kept separate from the contact
+ * enquiry so an ask never needs a consent form and stores no contact details.
+ */
+export interface Idea {
+  id: string;
+  place: string;
+  suburb: string;
+  /** How many guests asked for this place. One row per place and suburb. */
+  asks: number;
+  note?: string;
+  /** Optional. Kept only so staff can thank the guest in the app reply. */
+  name?: string;
+  status: IdeaStatus;
+  adminNotes?: string;
+  createdAt: string;
+}
 export type LeadStatus = "new" | "replied" | "closed";
 
 /** One contact enquiry, with every answer the visitor gave. */
@@ -679,6 +698,7 @@ export interface DemoState {
   pushSubscriptions: PushSubscription[];
   audit: AuditEvent[];
   leads: Lead[];
+  ideas: Idea[];
   dataRequests: DataRequest[];
   rateLimitHits: RateLimitHit[];
   orders: Order[];

@@ -247,3 +247,7 @@ from that one file. Update it once and every link changes.
   demo or live until the mail provider is connected.
 - The real WhatsApp business number and a monitored support inbox must be
   in place before the public help bubble is shown.
+- `db/migrations/0005_ideas_dev.sql` backs the guest ask for a place page
+  (`/suggest`). It is dev branch only: run it on a dev database and test
+  `/suggest` against it before anyone touches production. The ask page
+  deliberately stores no phone number or email.

@@ -132,6 +132,9 @@ export function SiteHeader() {
           <a href="/find" onClick={closeNav} aria-current={path === "/find" ? "page" : undefined}>
             Find a restaurant
           </a>
+          <a href="/suggest" onClick={closeNav} aria-current={path === "/suggest" ? "page" : undefined}>
+            Ask for a place
+          </a>
           <Button variant="patron" asChild>
             <a href="/login" onClick={closeNav}>
               Log in <ArrowUpRight />
@@ -162,6 +165,9 @@ export function SiteFooter() {
               </a>
               <a href="/find" aria-current={path === "/find" ? "page" : undefined}>
                 Find a restaurant
+              </a>
+              <a href="/suggest" aria-current={path === "/suggest" ? "page" : undefined}>
+                Ask for a place
               </a>
               <a href="/login" aria-current={path === "/login" ? "page" : undefined}>
                 Log in

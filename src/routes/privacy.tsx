@@ -54,6 +54,14 @@ function Privacy() {
           number, birthday and orders, while keeping anonymous activity counts where needed for
           accounting. No real personal data leaves this device in the demo preview.
         </p>
+        <h2>Asking for a place</h2>
+        <p>
+          On the ask for a place page you may send us the name of a cafe, bakery or restaurant
+          you want on Patron. That page keeps only the place name, the suburb and an optional
+          note. It does not ask for a phone number or an email, so the ask cannot be used to
+          contact you. A first name is optional and never published, and we contact the
+          restaurant, not the guest.
+        </p>
         <h2>Third parties</h2>
         <p>
           The live build sends SMS through a provider, which receives the destination number and
