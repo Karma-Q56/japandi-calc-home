@@ -93,6 +93,13 @@ import { ownerInsights } from "@/domain/insights";
 import { ownerReport, reportCsv } from "@/domain/reports";
 import { leadDetails, listEnquiries, submitEnquiry, updateEnquiry } from "@/domain/leads";
 import {
+  applyPageEdit,
+  pageEditFor,
+  pageVersionsFor,
+  publishPageEdit,
+  validatePageEdit,
+} from "@/domain/page";
+import {
   codesForMembership,
   createPrizeOffer,
   createSpecial,
@@ -282,6 +289,13 @@ export const api = {
     list: listEnquiries,
     update: updateEnquiry,
     details: leadDetails,
+  },
+  page: {
+    editFor: pageEditFor,
+    validate: validatePageEdit,
+    apply: applyPageEdit,
+    publish: publishPageEdit,
+    versions: pageVersionsFor,
   },
   customers: {
     list: listCustomers,

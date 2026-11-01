@@ -19,6 +19,7 @@ import {
   UsersRound,
   Palette,
   Target,
+  Globe,
 } from "lucide-react";
 
 type Item = { to: string; label: string; icon: ComponentType; end?: boolean };
@@ -35,6 +36,7 @@ export const OWNER_NAV: Item[] = [
   { to: "/app/loyalty", label: "Loyalty card", icon: Gift },
   { to: "/app/challenges", label: "Challenges", icon: Target },
   { to: "/app/design", label: "Card design", icon: Palette },
+  { to: "/app/page", label: "Public page", icon: Globe },
   { to: "/app/menu", label: "Menu", icon: UtensilsCrossed },
   { to: "/app/qr", label: "QR codes", icon: QrCode },
   { to: "/app/team", label: "Team", icon: UserCog },

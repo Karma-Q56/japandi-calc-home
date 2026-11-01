@@ -708,6 +708,7 @@ export function createSeed(now = Date.UTC(2026, 9, 1, 8)): DemoState {
     pinAttempts: [],
     pinLockouts: [],
     onboarding: restaurants.map((r) => ({ restaurantId: r.id, done: {} })),
+    pageVersions: [],
     orders,
     referrals,
   };

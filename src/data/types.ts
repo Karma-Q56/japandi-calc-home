@@ -39,6 +39,29 @@ export interface Theme {
   logoStamp?: LogoStamp;
   tagline: string;
 }
+
+/** One published version of the public page words and hours, kept to undo by hand. */
+export interface PageVersion {
+  id: string;
+  restaurantId: string;
+  /** Johannesburg time as ISO, when this version was published. */
+  at: string;
+  edit: PageEdit;
+}
+
+/** The words and hours an owner edits on the public page. */
+export interface PageEdit {
+  /** Under the venue name on every template. 2 to 70 characters. */
+  tagline: string;
+  /** The short story on the page. Empty keeps the calm default wording. */
+  about: string;
+  /** Street address, optional. */
+  address: string;
+  /** Suburb, shown next to the venue name everywhere. */
+  suburb: string;
+  /** Monday to Sunday; null means closed that day. */
+  hours: Restaurant["hours"];
+}
 export interface Restaurant {
   id: string;
   slug: string;
@@ -106,6 +129,8 @@ export interface Restaurant {
   missYou?: MissYouConfig;
   /** A hand-out reward the owner gives at the till. Off by default. */
   customReward?: CustomRewardConfig;
+  /** The short story on the public page. Empty keeps the calm default wording. */
+  aboutText?: string;
 }
 
 /** "We miss you" rule. Off by default, and once per guest per 60 days. */
@@ -664,6 +689,7 @@ export interface DemoState {
   pinAttempts: PinAttempt[];
   pinLockouts: PinLockout[];
   onboarding: OnboardingChecklist[];
+  pageVersions: PageVersion[];
 }
 
 export interface Repo {

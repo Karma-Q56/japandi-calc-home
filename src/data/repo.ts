@@ -197,6 +197,7 @@ function normalise(raw: unknown): DemoState | null {
     pinAttempts: parsed.pinAttempts ?? [],
     pinLockouts: parsed.pinLockouts ?? [],
     onboarding: parsed.onboarding ?? [],
+    pageVersions: parsed.pageVersions ?? [],
     pushSubscriptions: parsed.pushSubscriptions ?? [],
     orders: convertedOrders,
     referrals: (parsed.referrals ?? []).filter(

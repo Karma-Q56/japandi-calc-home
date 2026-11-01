@@ -12,6 +12,7 @@ const targets = [
   { name: "owner-customers", role: "owner", venue: "daily-grind", path: "/app/customers" },
   { name: "owner-settings", role: "owner", venue: "daily-grind", path: "/app/settings" },
   { name: "owner-qr", role: "owner", venue: "daily-grind", path: "/app/qr" },
+  { name: "owner-page", role: "owner", venue: "daily-grind", path: "/app/page" },
   { name: "site-find", path: "/find" },
   { name: "site-contact", path: "/contact" },
   { name: "site-pricing", path: "/pricing" },

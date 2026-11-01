@@ -43,6 +43,7 @@ import { Route as AppListsRouteImport } from './routes/app.lists'
 import { Route as AppLoyaltyRouteImport } from './routes/app.loyalty'
 import { Route as AppMenuRouteImport } from './routes/app.menu'
 import { Route as AppOnboardingRouteImport } from './routes/app.onboarding'
+import { Route as AppPageRouteImport } from './routes/app.page'
 import { Route as AppQrRouteImport } from './routes/app.qr'
 import { Route as AppReferralsRouteImport } from './routes/app.referrals'
 import { Route as AppReportsRouteImport } from './routes/app.reports'
@@ -246,6 +247,11 @@ const AppMenuRoute = AppMenuRouteImport.update({
 const AppOnboardingRoute = AppOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPageRoute = AppPageRouteImport.update({
+  id: '/page',
+  path: '/page',
   getParentRoute: () => AppRoute,
 } as any)
 const AppQrRoute = AppQrRouteImport.update({
@@ -454,6 +460,7 @@ export interface FileRoutesByFullPath {
   '/app/loyalty': typeof AppLoyaltyRoute
   '/app/menu': typeof AppMenuRoute
   '/app/onboarding': typeof AppOnboardingRoute
+  '/app/page': typeof AppPageRoute
   '/app/qr': typeof AppQrRoute
   '/app/referrals': typeof AppReferralsRoute
   '/app/reports': typeof AppReportsRoute
@@ -524,6 +531,7 @@ export interface FileRoutesByTo {
   '/app/loyalty': typeof AppLoyaltyRoute
   '/app/menu': typeof AppMenuRoute
   '/app/onboarding': typeof AppOnboardingRoute
+  '/app/page': typeof AppPageRoute
   '/app/qr': typeof AppQrRoute
   '/app/referrals': typeof AppReferralsRoute
   '/app/reports': typeof AppReportsRoute
@@ -595,6 +603,7 @@ export interface FileRoutesById {
   '/app/loyalty': typeof AppLoyaltyRoute
   '/app/menu': typeof AppMenuRoute
   '/app/onboarding': typeof AppOnboardingRoute
+  '/app/page': typeof AppPageRoute
   '/app/qr': typeof AppQrRoute
   '/app/referrals': typeof AppReferralsRoute
   '/app/reports': typeof AppReportsRoute
@@ -667,6 +676,7 @@ export interface FileRouteTypes {
     | '/app/loyalty'
     | '/app/menu'
     | '/app/onboarding'
+    | '/app/page'
     | '/app/qr'
     | '/app/referrals'
     | '/app/reports'
@@ -737,6 +747,7 @@ export interface FileRouteTypes {
     | '/app/loyalty'
     | '/app/menu'
     | '/app/onboarding'
+    | '/app/page'
     | '/app/qr'
     | '/app/referrals'
     | '/app/reports'
@@ -807,6 +818,7 @@ export interface FileRouteTypes {
     | '/app/loyalty'
     | '/app/menu'
     | '/app/onboarding'
+    | '/app/page'
     | '/app/qr'
     | '/app/referrals'
     | '/app/reports'
@@ -1117,6 +1129,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOnboardingRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/page': {
+      id: '/app/page'
+      path: '/page'
+      fullPath: '/app/page'
+      preLoaderRoute: typeof AppPageRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/qr': {
       id: '/app/qr'
       path: '/qr'
@@ -1396,6 +1415,7 @@ interface AppRouteChildren {
   AppLoyaltyRoute: typeof AppLoyaltyRoute
   AppMenuRoute: typeof AppMenuRoute
   AppOnboardingRoute: typeof AppOnboardingRoute
+  AppPageRoute: typeof AppPageRoute
   AppQrRoute: typeof AppQrRoute
   AppReferralsRoute: typeof AppReferralsRoute
   AppReportsRoute: typeof AppReportsRoute
@@ -1416,6 +1436,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppLoyaltyRoute: AppLoyaltyRoute,
   AppMenuRoute: AppMenuRoute,
   AppOnboardingRoute: AppOnboardingRoute,
+  AppPageRoute: AppPageRoute,
   AppQrRoute: AppQrRoute,
   AppReferralsRoute: AppReferralsRoute,
   AppReportsRoute: AppReportsRoute,
