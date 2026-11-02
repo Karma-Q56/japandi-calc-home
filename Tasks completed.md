@@ -234,3 +234,19 @@ lint result is recorded here.
 Not verified: the live queries have not run against the Neon dev branch.
 
 Lint: 0 errors, 12 warnings.
+
+---
+
+## 2 November 2026: Phase D4 live customer profile and campaign results
+
+Built: read-only live customer profiles with stamps, rewards and consent
+history, read-only live campaign results with recipient status, delivery counts
+and cost, and tested campaign total helpers. Live list links now open the real
+detail pages. Writes and builders remain for D5.
+
+Verified: 87 focused and route tests pass; production build passes; lint has 0
+errors and 12 warnings; final typecheck recorded here.
+
+Not verified: the live detail queries have not run against the Neon dev branch.
+
+Typecheck: 0 errors. Build: client 56.90s, server 34.40s. Lint: 0 errors, 12 warnings. Tests: 87 passed.

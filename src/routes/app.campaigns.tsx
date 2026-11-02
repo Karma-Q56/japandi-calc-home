@@ -106,6 +106,13 @@ function LiveCampaigns({ data }: { data: LiveCampaignList | null }) {
                   return cents > 0 ? formatRand(cents) : "R0.00";
                 },
               },
+              {
+                key: "open",
+                header: "",
+                cell: (campaign) => (
+                  <a href={`/app/campaigns/${campaign.id}`}>Open →</a>
+                ),
+              },
             ]}
           />
         )}

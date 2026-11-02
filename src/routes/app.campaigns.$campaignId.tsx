@@ -5,12 +5,30 @@ import { campaignBadge, Badge, ConfirmDialog, DataTable, EmptyState, PageHeader,
 import { campaignRecipients, campaignResults, messageStatusLabel, VISITS_LABEL } from "@/domain/campaigns";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
+import { getCampaignResultsFn, getDataModeFn } from "@/server/live";
+import type { LiveCampaignResults } from "@/server/live-dashboard";
+import {
+  campaignTotals,
+  messageStatusText,
+  type CampaignMessageStatus,
+} from "@/lib/live-campaigns";
+import { maskLivePhone } from "@/lib/live-customers";
 import { formatRand } from "@/lib/money";
 import { useDemoState } from "@/data/useDemoState";
 
 export const Route = createFileRoute("/app/campaigns/$campaignId")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode === "live") return;
     if (!requireRole("owner", "manager")(demoRepo.read().session)) throw redirect({ to: "/login" });
+  },
+  loader: async ({ params }) => {
+    const { mode } = await getDataModeFn();
+    if (mode !== "live") return { mode, live: null };
+    return {
+      mode,
+      live: await getCampaignResultsFn({ data: { campaignId: params.campaignId } }),
+    };
   },
   component: ResultsPage,
 });
@@ -41,6 +59,12 @@ function audienceLabel(audience: { type: string; days?: number; weekday?: number
 }
 
 function ResultsPage() {
+  const data = Route.useLoaderData();
+  if (data.mode === "live") return <LiveCampaignResults data={data.live} />;
+  return <DemoResultsPage />;
+}
+
+function DemoResultsPage() {
   const { campaignId } = Route.useParams();
   const state = useDemoState();
   const [notice, setNotice] = useState("");
@@ -287,6 +311,104 @@ function ResultsPage() {
           {notice}
         </p>
       )}
+    </main>
+  );
+}
+
+function LiveCampaignResults({ data }: { data: LiveCampaignResults | null }) {
+  if (!data) {
+    return (
+      <main className="demo-hub page-width">
+        <EmptyState
+          title="Campaign not found."
+          hint="It may belong to another restaurant, or the link is out of date."
+          action={
+            <a className="builder-primary" href="/app/campaigns">
+              Back to campaigns
+            </a>
+          }
+        />
+      </main>
+    );
+  }
+  const totals = campaignTotals(
+    data.messages.map((message) => message.status as CampaignMessageStatus),
+  );
+  const badge = campaignBadge(
+    data.campaign.status as Parameters<typeof campaignBadge>[0],
+  );
+  const cost =
+    data.campaign.status === "sent"
+      ? data.campaign.actualCostCents
+      : (data.campaign.estimatedCostCents ?? 0);
+  return (
+    <main className="demo-hub page-width">
+      <PageHeader
+        eyebrow={`Campaign ${data.campaign.code}`}
+        title={data.campaign.name}
+        intro={data.campaign.body}
+        actions={
+          <a className="builder-secondary" href="/app/campaigns">
+            Back to campaigns
+          </a>
+        }
+      />
+      <p className="eyebrow" aria-label="Campaign status">
+        <Badge tone={badge.tone}>{badge.label}</Badge>
+      </p>
+      <StatGrid>
+        <StatCard value={data.campaign.recipients} label="guests selected" />
+        <StatCard value={totals.delivered} label="delivered" tone="good" />
+        <StatCard value={totals.failed} label="failed" />
+        <StatCard value={formatRand(cost)} label="cost" />
+      </StatGrid>
+      <section className="builder-panel">
+        <h2>Recipients</h2>
+        {data.messages.length === 0 ? (
+          <p className="demo-data-note">
+            No messages have been queued yet. This is a read-only live view.
+          </p>
+        ) : (
+          <DataTable
+            caption={`Recipients for ${data.campaign.name}`}
+            rows={data.messages}
+            columns={[
+              {
+                key: "guest",
+                header: "Guest",
+                cell: (message) => (
+                  <>
+                    {message.name}
+                    <small>{maskLivePhone(message.phoneE164)}</small>
+                  </>
+                ),
+              },
+              {
+                key: "status",
+                header: "Status",
+                cell: (message) => (
+                  <Badge tone={message.status === "delivered" ? "sent" : undefined}>
+                    {messageStatusText(message.status as CampaignMessageStatus)}
+                  </Badge>
+                ),
+              },
+              {
+                key: "segments",
+                header: "Segments",
+                cell: (message) => message.segments,
+              },
+              {
+                key: "cost",
+                header: "Cost",
+                cell: (message) => formatRand(message.costCents),
+              },
+            ]}
+          />
+        )}
+      </section>
+      <p className="demo-data-note">
+        Read-only live view. Approving, sending, settling and cancelling campaigns come next.
+      </p>
     </main>
   );
 }

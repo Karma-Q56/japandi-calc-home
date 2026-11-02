@@ -444,3 +444,26 @@ route tests and the production build passed in demo mode.
 
 Next in D4: customer profiles and consent actions, campaign results, then the
 loyalty, menu and page builders.
+
+---
+
+## 20. Phase D4: live customer profile and campaign results
+
+Both detail screens behind the D3 lists now read live rows through the signed-in
+owner's restaurant. They are read only.
+
+- A customer profile shows the card states, recent stamps, rewards and consent
+  history. Phone numbers stay masked. Manual stamps, consent edits, phone reveal
+  and CSV export still wait for D5.
+- Campaign results show the message, status, recipient rows, delivery and failed
+  counts, segments and cost. Approving, sending, settling and cancelling still
+  wait for D5.
+- The live campaign status counts come from the pure `campaignTotals` helper and
+  are covered by Vitest.
+- Both routes still scope by `app_user.restaurant_id` and run inside RLS. A
+  campaign or customer id from another restaurant returns null.
+
+Not verified: neither live query has run against the Neon dev branch.
+
+Next in D5: customer actions and consent, campaign actions, then the loyalty,
+menu and page builders.

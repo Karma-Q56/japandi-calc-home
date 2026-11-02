@@ -42,7 +42,11 @@ function OwnerShell() {
   const state = useDemoState();
   const children = useChildMatches();
   const location = useLocation();
-  const liveChild = /^\/app\/(customers|campaigns)\/?$/.test(location.pathname);
+  const parts = location.pathname.replace(/\/$/, "").split("/");
+  const liveChild =
+    parts[1] === "app" &&
+    (parts[2] === "customers" || parts[2] === "campaigns") &&
+    (parts.length === 3 || (parts.length === 4 && parts[3] !== "new"));
   const restaurant =
     state.restaurants.find((item) => item.id === state.session.restaurantId) ??
     state.restaurants[0]!;

@@ -5,18 +5,37 @@ import { Badge, ConfirmDialog, PageHeader, StatCard, StatGrid } from "@/componen
 import { demoRepo } from "@/data/repo";
 import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
+import { getCustomerProfileFn, getDataModeFn } from "@/server/live";
+import type { LiveCustomerProfile } from "@/server/live-dashboard";
+import { maskLivePhone } from "@/lib/live-customers";
 import { birthdayLabel, birthdayOf } from "@/lib/birthday";
 
 export const Route = createFileRoute("/app/customers/$customerId")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode === "live") return;
     if (!requireRole("owner", "manager")(demoRepo.read().session)) {
       throw redirect({ to: "/login" });
     }
+  },
+  loader: async ({ params }) => {
+    const { mode } = await getDataModeFn();
+    if (mode !== "live") return { mode, live: null };
+    return {
+      mode,
+      live: await getCustomerProfileFn({ data: { customerId: params.customerId } }),
+    };
   },
   component: CustomerProfile,
 });
 
 function CustomerProfile() {
+  const data = Route.useLoaderData();
+  if (data.mode === "live") return <LiveCustomerProfile data={data.live} />;
+  return <DemoCustomerProfile />;
+}
+
+function DemoCustomerProfile() {
   const { customerId } = Route.useParams();
   const state = useDemoState();
   const session = state.session;
@@ -278,6 +297,102 @@ function CustomerProfile() {
       <p>
         <a href="/app/customers">Back to customers</a>
       </p>
+    </main>
+  );
+}
+
+function LiveCustomerProfile({ data }: { data: LiveCustomerProfile | null }) {
+  if (!data) {
+    return (
+      <main className="demo-hub page-width">
+        <PageHeader
+          eyebrow="Live mode"
+          title="We could not find that guest."
+          intro="The guest may belong to another restaurant, or the link is out of date."
+        />
+        <a className="builder-secondary" href="/app/customers">
+          Back to customers
+        </a>
+      </main>
+    );
+  }
+  const when = (iso: string) =>
+    new Intl.DateTimeFormat("en-ZA", {
+      dateStyle: "medium",
+      timeZone: "Africa/Johannesburg",
+    }).format(new Date(iso));
+  return (
+    <main className="demo-hub page-width">
+      <PageHeader
+        eyebrow={`Customer · ${data.restaurantName}`}
+        title={data.name}
+        intro="Read from the live guest record. Editing, manual stamps and phone reveal come next."
+      />
+      <StatGrid dense>
+        <StatCard
+          value={`${data.stampsCurrent} / ${data.stampsRequired}`}
+          label="stamps on the card"
+        />
+        <StatCard
+          value={data.rewardsWaiting}
+          label={data.rewardsWaiting === 1 ? "reward waiting" : "rewards waiting"}
+          tone={data.rewardsWaiting > 0 ? "good" : undefined}
+        />
+        <StatCard value={data.stampsTotal} label="visits recorded" />
+      </StatGrid>
+      <section className="builder-panel">
+        <h2>Contact</h2>
+        <p>{maskLivePhone(data.phoneE164)}</p>
+        <p className="demo-data-note">
+          SMS marketing is {data.smsOptedIn ? "on" : "off"}. Joined {when(data.joinedAt)}.
+        </p>
+      </section>
+      <section className="builder-panel">
+        <h2>Recent visits</h2>
+        {data.stamps.length === 0 ? (
+          <p className="demo-data-note">No visits recorded yet.</p>
+        ) : (
+          <ul className="clean-list">
+            {data.stamps.map((stamp) => (
+              <li key={stamp.id}>
+                {when(stamp.createdAt)} · {stamp.status === "valid" ? "Stamp" : "Undone"}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+      <section className="builder-panel">
+        <h2>Rewards</h2>
+        {data.rewards.length === 0 ? (
+          <p className="demo-data-note">No rewards earned yet.</p>
+        ) : (
+          data.rewards.map((reward) => (
+            <div className="outbox-meta" key={reward.id}>
+              <span>{reward.description}</span>
+              <Badge tone={reward.status === "available" ? "active" : undefined}>
+                {reward.status === "available" ? "Ready" : reward.status}
+              </Badge>
+            </div>
+          ))
+        )}
+      </section>
+      <section className="builder-panel">
+        <h2>Consent history</h2>
+        {data.consents.length === 0 ? (
+          <p className="demo-data-note">No consent changes recorded.</p>
+        ) : (
+          <ul className="clean-list">
+            {data.consents.map((consent) => (
+              <li key={consent.id}>
+                {when(consent.createdAt)} · {consent.purpose.replace("_", " ")} · {consent.action}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+      <a className="builder-secondary" href="/app/customers">
+        Back to customers
+      </a>
     </main>
   );
 }

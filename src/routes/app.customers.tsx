@@ -340,7 +340,9 @@ function LiveCustomers({ data }: { data: LiveCustomerList | null }) {
           <div className="customer-row" key={row.membershipId}>
             <div className="customer-row-main">
               <span>
-                <strong>{row.name}</strong>
+                <strong>
+                  <a href={`/app/customers/${row.customerId}`}>{row.name}</a>
+                </strong>
                 <small>{maskLivePhone(row.phoneE164)}</small>
               </span>
               <span className="customer-row-meta">

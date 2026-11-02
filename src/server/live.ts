@@ -266,3 +266,29 @@ export const getCampaignListFn = createServerFn({ method: "GET" }).handler(async
   if (!viewer) return null;
   return loadCampaignList(viewer);
 });
+
+/** One live guest profile for the signed-in owner. */
+export const getCustomerProfileFn = createServerFn({ method: "GET" })
+  .validator(z.object({ customerId: uuidSchema }))
+  .handler(async ({ data }) => {
+    const [{ readViewer }, { loadCustomerProfile }] = await Promise.all([
+      import("./auth-viewer"),
+      import("./live-dashboard"),
+    ]);
+    const viewer = await readViewer();
+    if (!viewer) return null;
+    return loadCustomerProfile(viewer, data.customerId);
+  });
+
+/** One live campaign result for the signed-in owner. */
+export const getCampaignResultsFn = createServerFn({ method: "GET" })
+  .validator(z.object({ campaignId: uuidSchema }))
+  .handler(async ({ data }) => {
+    const [{ readViewer }, { loadCampaignResults }] = await Promise.all([
+      import("./auth-viewer"),
+      import("./live-dashboard"),
+    ]);
+    const viewer = await readViewer();
+    if (!viewer) return null;
+    return loadCampaignResults(viewer, data.campaignId);
+  });

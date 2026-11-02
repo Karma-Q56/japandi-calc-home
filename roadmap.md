@@ -84,3 +84,10 @@ guest search, filters and sorting covered by tests. Profiles, exports, campaign
 details and all builders remain next-phase work, so live links do not expose
 demo data. The live queries are written and typechecked, not run against the
 dev database.
+
+## 2 November 2026, Phase D4
+
+Customer profiles and campaign results now open real Postgres data from the live
+guest and campaign lists. Both are read only: manual stamps, consent changes,
+phone reveal, export, approve, send, settle and cancel are next. The live queries
+are typechecked and built, not run against the dev database.
