@@ -8,9 +8,12 @@ import { api } from "@/api";
 import { SpinWheel } from "@/components/patron/SpinWheel";
 import { ChallengeRow } from "@/components/patron/ChallengeRow";
 import { formatRand } from "@/lib/money";
+import { getDataModeFn } from "@/server/live";
 
 export const Route = createFileRoute("/me/restaurants/$slug")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode === "live") throw redirect({ to: "/me" });
     if (
       !requireRole("guest")(demoRepo.read().session) ||
       (typeof window !== "undefined" && !demoRepo.read().session.customerId)

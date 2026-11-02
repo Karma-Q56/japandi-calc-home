@@ -199,3 +199,22 @@ rules have Vitest coverage.
 Not verified: the migration has not been run on the dev branch, Google and the
 reset email are not configured, and no live sign-up or session test has run
 against Postgres. Until Phase D2, live-mode screens still read demo content.
+
+---
+
+## 2 November 2026: Phase D2 live owner overview and guest cards
+
+Built: session-scoped Postgres reads for the owner overview and the guest's
+cards, a pure overview builder with tests, live-mode empty states, and clear
+"comes next" panels for owner tools that still need migration. Live guest
+restaurant and settings pages redirect to `/me` so demo rows never sit behind a
+real login.
+
+Verified: `pnpm run typecheck` passes; `pnpm run lint` has 0 errors and 12
+warnings; 79 tests passed across the new overview tests, the route audit and
+the route-children suite; production build result is recorded below.
+
+Not verified: the live SQL and session path have not run against the Neon dev
+branch. That needs the Better Auth secret and the applied migration.
+
+Production build passed: client 34.67s, server 13.09s.

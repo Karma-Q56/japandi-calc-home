@@ -130,54 +130,58 @@ export async function ensureViewer(user: AuthUser, email: string): Promise<Viewe
   };
 }
 
+/** Read the session on the server. Shared by every live server function. */
+export async function readViewer(): Promise<Viewer | null> {
+  const session = await getAuth().api.getSession({
+    headers: getRequestHeaders(),
+  });
+  if (!session?.user?.email) return null;
+  return ensureViewer(
+    {
+      id: session.user.id,
+      email: session.user.email,
+      name: session.user.name,
+      phoneNumber:
+        (session.user as { phoneNumber?: string | null }).phoneNumber ?? null,
+    },
+    session.user.email,
+  );
+}
+
 /** The one place a route learns who is signed in. Returns null when signed out. */
-export const getViewerFn = createServerFn({ method: "GET" }).handler(
-  async (): Promise<Viewer | null> => {
-    const session = await getAuth().api.getSession({
-      headers: getRequestHeaders(),
-    });
-    if (!session?.user?.email) return null;
-    return ensureViewer(
-      {
-        id: session.user.id,
-        email: session.user.email,
-        name: session.user.name,
-        phoneNumber: (session.user as { phoneNumber?: string | null }).phoneNumber,
-      },
-      session.user.email,
-    );
-  },
-);
+export const getViewerFn = createServerFn({ method: "GET" }).handler(readViewer);
 
 /** Finish a Google profile with the phone the guest wants on their card. */
-export const completePhoneFn = createServerFn({ method: "POST" })
-  .validator((value: unknown) => {
-    const phone = typeof value === "string" ? value : "";
-    return phone;
-  })
-  .handler(async ({ data: phoneInput }) => {
-    const session = await getAuth().api.getSession({
-      headers: getRequestHeaders(),
-    });
-    if (!session?.user?.email) {
-      return { ok: false as const, message: "Sign in again to finish your details." };
-    }
-    const phone = normalizePhone(phoneInput);
-    if (!phone || !isValidSAMobile(phone)) {
-      return { ok: false as const, message: "Enter a valid South African mobile number." };
-    }
-    await getAuth().api.updateUser({
-      headers: getRequestHeaders(),
-      body: { phoneNumber: phone },
-    });
-    const viewer = await ensureViewer(
-      {
-        id: session.user.id,
-        email: session.user.email,
-        name: session.user.name,
-        phoneNumber: phone,
-      },
-      session.user.email,
-    );
-    return { ok: true as const, viewer };
+export async function completePhone(phoneInput: string) {
+  const session = await getAuth().api.getSession({
+    headers: getRequestHeaders(),
   });
+  if (!session?.user?.email) {
+    return { ok: false as const, message: "Sign in again to finish your details." };
+  }
+  const phone = normalizePhone(phoneInput);
+  if (!phone || !isValidSAMobile(phone)) {
+    return { ok: false as const, message: "Enter a valid South African mobile number." };
+  }
+  await withContext({ databaseUrl: databaseUrl(), isOperator: true }, async (tx) => {
+    await tx.execute(sql`
+      update "user"
+      set "phoneNumber" = ${phone}, "updatedAt" = now()
+      where id = ${session.user.id}
+    `);
+  });
+  const viewer = await ensureViewer(
+    {
+      id: session.user.id,
+      email: session.user.email,
+      name: session.user.name,
+      phoneNumber: phone,
+    },
+    session.user.email,
+  );
+  return { ok: true as const, viewer };
+}
+
+export const completePhoneFn = createServerFn({ method: "POST" })
+  .validator((value: unknown) => (typeof value === "string" ? value : ""))
+  .handler(async ({ data }) => completePhone(data));

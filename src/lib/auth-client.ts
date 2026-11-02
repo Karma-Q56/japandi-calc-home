@@ -1,11 +1,8 @@
 import { createAuthClient } from "better-auth/react";
-import { inferAdditionalFields } from "better-auth/client/plugins";
-import type { auth } from "@/server/auth";
 
 /**
  * Browser auth client. The base URL is this origin, so the HttpOnly session
- * cookie stays first-party. The type import is erased at build time.
+ * cookie stays first-party. The server owns the extra phone field; the sign-up
+ * form supplies it where needed.
  */
-export const authClient = createAuthClient({
-  plugins: [inferAdditionalFields<typeof auth>()],
-});
+export const authClient = createAuthClient();

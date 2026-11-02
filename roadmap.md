@@ -69,3 +69,10 @@ copy, and the browser page audit.
 
 Still open: run `0006_feedback_dev.sql` on a development database; real SMS,
 email and production sign-in remain out of scope for the demo.
+
+## 2 November 2026, Phase D2
+
+The owner overview and `/me` guest cards now read real Postgres rows through the
+session viewer. Other owner tools show a "comes next" panel in live mode, and
+the guest restaurant and settings routes return to `/me` until D3. The live
+query path is written and typechecked, but not run against the dev database.

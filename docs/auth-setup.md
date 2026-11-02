@@ -61,8 +61,10 @@ Do these in your own accounts. Never paste a secret into chat or commit it.
   sent or tested.
 - No live auth test has run against Postgres. Only the role and phone rules are
   covered by Vitest.
-- Until Phase D2, live-mode screens still read the browser demo store for their
-  content. The guards are real; the data behind them is not migrated yet.
+- Phase D2 connects the owner overview and `/me` cards to Postgres. Other
+  owner tools show a "comes next" panel in live mode, and guest restaurant and
+  settings pages return to `/me` until D3. The live query path has not run
+  against the dev branch yet.
 
 ## Phone verification decision
 

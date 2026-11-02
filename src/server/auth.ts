@@ -65,7 +65,7 @@ async function logAuthEvent(
 }
 
 export function getAuth(): Auth {
-  if (cached) return cached;
+  if (cached) return cached as Auth;
   const databaseUrl = required("DATABASE_URL");
   const secret = required("BETTER_AUTH_SECRET");
   const baseURL =
@@ -154,6 +154,6 @@ export function getAuth(): Auth {
       }),
     },
     plugins: [tanstackStartCookies()],
-  });
+  }) as unknown as Auth;
   return cached;
 }

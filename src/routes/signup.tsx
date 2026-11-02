@@ -3,8 +3,7 @@ import { useEffect, useState } from "react";
 import { MarketingShell } from "@/components/patron/MarketingShell";
 import { authClient } from "@/lib/auth-client";
 import { landingForRole } from "@/lib/auth-rules";
-import { getDataModeFn } from "@/server/live";
-import { completePhoneFn, getViewerFn } from "@/server/auth-viewer";
+import { completePhoneFn, getDataModeFn, getViewerFn } from "@/server/live";
 
 export const Route = createFileRoute("/signup")({
   loader: async () => getDataModeFn(),
@@ -46,7 +45,10 @@ function SignUpPage() {
     event.preventDefault();
     setBusy(true);
     setStatus("");
-    const result = await authClient.signUp.email({ name, email, password, phoneNumber: phone });
+    const signUpBody = { name, email, password, phoneNumber: phone } as unknown as Parameters<
+      typeof authClient.signUp.email
+    >[0];
+    const result = await authClient.signUp.email(signUpBody);
     if (result.error) {
       setStatus("We could not create that account. Check your details and try again.");
       setBusy(false);

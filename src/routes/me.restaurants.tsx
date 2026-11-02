@@ -6,11 +6,14 @@ import { withChildren } from "@/lib/nested";
 import { GuestShell } from "@/components/patron/GuestShell";
 import { PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
 import { api } from "@/api";
+import { getDataModeFn } from "@/server/live";
 
 const RestaurantsWithChildren = withChildren(RestaurantsPage);
 
 export const Route = createFileRoute("/me/restaurants")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode === "live") throw redirect({ to: "/me" });
     if (
       !requireRole("guest")(demoRepo.read().session) ||
       (typeof window !== "undefined" && !demoRepo.read().session.customerId)

@@ -391,3 +391,32 @@ Sources for the Better Auth setup: https://better-auth.com/docs/integrations/tan
 https://better-auth.com/docs/adapters/drizzle, https://better-auth.com/docs/installation,
 https://better-auth.com/docs/concepts/rate-limit, https://better-auth.com/docs/concepts/hooks,
 https://better-auth.com/docs/authentication/email-password
+
+---
+
+## 18. Phase D2: the first live screens
+
+The owner overview and the guest's cards now read Postgres through the signed-in
+viewer. No route sends a customer id or restaurant id from the browser for
+these reads.
+
+- `loadOwnerOverview` takes the restaurant from `app_user` and runs inside that
+  restaurant's row level security context. It counts stamps today, returning
+  guests, ready rewards, the credit ledger balance and campaign sends, and
+  builds the same overview shape as demo mode.
+- `loadMyCards` takes the customer from `app_user` and returns only that
+  customer's memberships, with restaurant name and reward count.
+- The pure `buildLiveOverview` helper owns the date maths and is covered by
+  four Vitest cases.
+- In live mode, owner child tools show a clear "comes next" panel instead of
+  demo data. Guest restaurant and settings pages redirect to `/me` until their
+  live versions exist in D3. This is deliberate: no demo rows appear behind a
+  real login.
+
+Not verified: no migration or session test has run against the Neon dev branch.
+The SQL was typechecked and the route tests use demo mode, so the live branch
+still needs a real sign-in and a development database.
+
+Next in D3: owner customers, campaigns, loyalty, menu, page and settings, then
+the guest restaurant and consent screens. The till and operator screens follow
+after that.

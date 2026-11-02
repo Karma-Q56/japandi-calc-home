@@ -4,6 +4,7 @@ import { useDemoState } from "@/data/useDemoState";
 import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
+import { getDataModeFn } from "@/server/live";
 import { birthdayOf, MONTH_NAMES } from "@/lib/birthday";
 import { maskPhone } from "@/lib/phone";
 import { Switch } from "@/components/patron/Switch";
@@ -12,7 +13,9 @@ import { FormField, PageHeader } from "@/components/patron/dash";
 import { enableBrowserPush, disableBrowserPush, showLocalPushTest } from "@/lib/web-push-client";
 
 export const Route = createFileRoute("/me/settings")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode === "live") throw redirect({ to: "/me" });
     if (
       !requireRole("guest")(demoRepo.read().session) ||
       (typeof window !== "undefined" && !demoRepo.read().session.customerId)

@@ -4,8 +4,7 @@ import { ArrowRight } from "lucide-react";
 import { MarketingShell } from "@/components/patron/MarketingShell";
 import { authClient } from "@/lib/auth-client";
 import { landingForRole } from "@/lib/auth-rules";
-import { getDataModeFn } from "@/server/live";
-import { getViewerFn } from "@/server/auth-viewer";
+import { getDataModeFn, getViewerFn } from "@/server/live";
 import { DEMO_ACCOUNTS, signInAsDemoAccount, type DemoAccount } from "@/lib/demo-signin";
 
 export const Route = createFileRoute("/login")({

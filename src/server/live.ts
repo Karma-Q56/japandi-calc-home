@@ -205,3 +205,42 @@ export const recordStampFn = createServerFn({ method: "POST" })
       };
     }
   });
+
+/**
+ * Signed-in owner overview. The restaurant comes from the session, never from
+ * the caller, and the query runs inside that restaurant's RLS context.
+ */
+export const getOwnerOverviewFn = createServerFn({ method: "GET" }).handler(async () => {
+  const [{ readViewer }, { loadOwnerOverview }] = await Promise.all([
+    import("./auth-viewer"),
+    import("./live-dashboard"),
+  ]);
+  const viewer = await readViewer();
+  if (!viewer) return null;
+  return loadOwnerOverview(viewer);
+});
+
+/** Signed-in guest cards. The customer id comes from the session. */
+export const getMyCardsFn = createServerFn({ method: "GET" }).handler(async () => {
+  const [{ readViewer }, { loadMyCards }] = await Promise.all([
+    import("./auth-viewer"),
+    import("./live-dashboard"),
+  ]);
+  const viewer = await readViewer();
+  if (!viewer) return null;
+  return loadMyCards(viewer);
+});
+
+/** Session lookup for route guards. The auth module stays off the client graph. */
+export const getViewerFn = createServerFn({ method: "GET" }).handler(async () => {
+  const { readViewer } = await import("./auth-viewer");
+  return readViewer();
+});
+
+/** Finish the phone step for a Google account. */
+export const completePhoneFn = createServerFn({ method: "POST" })
+  .validator((value: unknown) => (typeof value === "string" ? value : ""))
+  .handler(async ({ data }) => {
+    const { completePhone } = await import("./auth-viewer");
+    return completePhone(data);
+  });

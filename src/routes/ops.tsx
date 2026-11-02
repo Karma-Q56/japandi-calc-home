@@ -3,8 +3,7 @@ import { createFileRoute, redirect, Link, Outlet, useChildMatches, useRouterStat
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
 import { canOpenArea } from "@/lib/auth-rules";
-import { getDataModeFn } from "@/server/live";
-import { getViewerFn } from "@/server/auth-viewer";
+import { getDataModeFn, getViewerFn } from "@/server/live";
 import { APP_NAME } from "@/config/app";
 import { DemoPlaceholder } from "@/components/patron/DemoPlaceholder";
 
