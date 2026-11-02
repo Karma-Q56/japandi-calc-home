@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { withContext } from "./db";
 import type { Viewer } from "./auth-viewer";
+import type { LiveCustomerRow } from "@/lib/live-customers";
 import { buildLiveOverview, type LiveCampaign, type LiveStamp } from "@/lib/live-overview";
 
 type RestaurantRow = {
@@ -201,4 +202,159 @@ export async function loadMyCards(viewer: Viewer): Promise<LiveMyCards | null> {
         lastVisitAt: iso(card.last_visit_at),
       })),
     };
+}
+
+export type LiveCustomerList = {
+  restaurantName: string;
+  rows: LiveCustomerRow[];
+};
+
+export type LiveCampaignRow = {
+  id: string;
+  name: string;
+  code: string;
+  status: string;
+  channel: string;
+  recipients: number;
+  estimatedCostCents: number | null;
+  actualCostCents: number;
+  sentAt: string | null;
+  createdAt: string;
+};
+
+export type LiveCampaignList = {
+  restaurantName: string;
+  campaigns: LiveCampaignRow[];
+};
+
+type CustomerListRow = {
+  membership_id: string;
+  customer_id: string;
+  name: string;
+  phone_e164: string;
+  stamps_current: number;
+  stamps_total: number;
+  stamps_required: number;
+  rewards_waiting: number;
+  last_visit_at: string | Date | null;
+  joined_at: string | Date;
+  marketing_sms: string;
+  birthday: string | Date | null;
+};
+
+type CampaignListRow = {
+  id: string;
+  name: string;
+  code: string;
+  status: string;
+  channel: string;
+  recipients: number;
+  estimated_cost_cents: number | null;
+  actual_cost_cents: number;
+  sent_at: string | Date | null;
+  created_at: string | Date;
+};
+
+/** The guest list for the signed-in owner's restaurant. */
+export async function loadCustomerList(viewer: Viewer): Promise<LiveCustomerList | null> {
+  if ((viewer.role !== "owner" && viewer.role !== "manager") || !viewer.restaurantId) {
+    return null;
+  }
+  return withContext(
+    { databaseUrl: databaseUrl(), restaurantId: viewer.restaurantId, isOperator: false },
+    async (transaction) => {
+      const restaurant = await transaction.execute<{ name: string }>(sql`
+        select name from restaurant where id = ${viewer.restaurantId} limit 1
+      `);
+      const result = await transaction.execute<CustomerListRow>(sql`
+        select
+          m.id as membership_id,
+          c.id as customer_id,
+          c.name,
+          c.phone_e164,
+          m.stamps_current,
+          m.stamps_total,
+          r.stamps_required,
+          (
+            select count(*)::integer from reward rw
+            where rw.membership_id = m.id and rw.status = 'available'
+          ) as rewards_waiting,
+          m.last_visit_at,
+          m.joined_at,
+          m.marketing_sms::text as marketing_sms,
+          c.birthday
+        from membership m
+        join customer c on c.id = m.customer_id
+        join restaurant r on r.id = m.restaurant_id
+        where m.restaurant_id = ${viewer.restaurantId}
+        order by m.last_visit_at desc nulls last, m.joined_at desc
+        limit 1000
+      `);
+      return {
+        restaurantName: restaurant.rows[0]?.name ?? "Your restaurant",
+        rows: result.rows.map((row) => ({
+          membershipId: row.membership_id,
+          customerId: row.customer_id,
+          name: row.name,
+          phoneE164: row.phone_e164,
+          stampsCurrent: Number(row.stamps_current),
+          stampsTotal: Number(row.stamps_total),
+          stampsRequired: Number(row.stamps_required),
+          rewardsWaiting: Number(row.rewards_waiting),
+          lastVisitAt: iso(row.last_visit_at),
+          joinedAt: new Date(row.joined_at).toISOString(),
+          smsOptedIn: row.marketing_sms === "opted_in",
+          birthdayMonth: row.birthday ? new Date(row.birthday).getUTCMonth() : null,
+        })),
+      };
+    },
+  );
+}
+
+/** The campaign list for the signed-in owner's restaurant. */
+export async function loadCampaignList(viewer: Viewer): Promise<LiveCampaignList | null> {
+  if ((viewer.role !== "owner" && viewer.role !== "manager") || !viewer.restaurantId) {
+    return null;
+  }
+  return withContext(
+    { databaseUrl: databaseUrl(), restaurantId: viewer.restaurantId, isOperator: false },
+    async (transaction) => {
+      const restaurant = await transaction.execute<{ name: string }>(sql`
+        select name from restaurant where id = ${viewer.restaurantId} limit 1
+      `);
+      const result = await transaction.execute<CampaignListRow>(sql`
+        select
+          c.id,
+          c.name,
+          c.code,
+          c.status::text as status,
+          c.channel::text as channel,
+          coalesce(c.est_recipients, count(m.id), 0)::integer as recipients,
+          c.est_cost_cents,
+          c.actual_cost_cents,
+          c.sent_at,
+          c.created_at
+        from campaign c
+        left join message m on m.campaign_id = c.id
+        where c.restaurant_id = ${viewer.restaurantId}
+        group by c.id
+        order by c.created_at desc
+      `);
+      return {
+        restaurantName: restaurant.rows[0]?.name ?? "Your restaurant",
+        campaigns: result.rows.map((row) => ({
+          id: row.id,
+          name: row.name,
+          code: row.code,
+          status: row.status,
+          channel: row.channel,
+          recipients: Number(row.recipients),
+          estimatedCostCents: row.estimated_cost_cents === null ? null : Number(row.estimated_cost_cents),
+          actualCostCents: Number(row.actual_cost_cents),
+          sentAt: iso(row.sent_at),
+          createdAt: new Date(row.created_at).toISOString(),
+        })),
+      };
+    },
+  );
 }

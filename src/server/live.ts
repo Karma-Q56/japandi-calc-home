@@ -244,3 +244,25 @@ export const completePhoneFn = createServerFn({ method: "POST" })
     const { completePhone } = await import("./auth-viewer");
     return completePhone(data);
   });
+
+/** The signed-in owner's guest list. */
+export const getCustomerListFn = createServerFn({ method: "GET" }).handler(async () => {
+  const [{ readViewer }, { loadCustomerList }] = await Promise.all([
+    import("./auth-viewer"),
+    import("./live-dashboard"),
+  ]);
+  const viewer = await readViewer();
+  if (!viewer) return null;
+  return loadCustomerList(viewer);
+});
+
+/** The signed-in owner's campaign list. */
+export const getCampaignListFn = createServerFn({ method: "GET" }).handler(async () => {
+  const [{ readViewer }, { loadCampaignList }] = await Promise.all([
+    import("./auth-viewer"),
+    import("./live-dashboard"),
+  ]);
+  const viewer = await readViewer();
+  if (!viewer) return null;
+  return loadCampaignList(viewer);
+});

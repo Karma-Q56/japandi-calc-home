@@ -420,3 +420,27 @@ still needs a real sign-in and a development database.
 Next in D3: owner customers, campaigns, loyalty, menu, page and settings, then
 the guest restaurant and consent screens. The till and operator screens follow
 after that.
+
+---
+
+## 19. Phase D3: live guest and campaign lists
+
+The owner's guest list and campaign history now read Postgres through the
+signed-in viewer. Both queries use the restaurant from `app_user`, never one
+from the browser.
+
+- `/app/customers` shows live memberships with name, masked phone, stamps,
+  rewards waiting, last visit and SMS consent. Filtering, search and sorting run
+  on the returned rows through the pure `filterLiveCustomers` helper.
+- `/app/campaigns` shows live campaigns with status, recipient count and cost.
+- Both screens are read only in this phase. Customer profiles, manual stamps,
+  phone reveal, CSV export, the campaign composer and campaign results still
+  open the "comes next" panel in live mode.
+- The live query returns at most 1,000 guests for one restaurant. Server-side
+  paging arrives when profiles and exports do.
+
+Not verified: neither query has run against the Neon dev branch. Type checking,
+route tests and the production build passed in demo mode.
+
+Next in D4: customer profiles and consent actions, campaign results, then the
+loyalty, menu and page builders.

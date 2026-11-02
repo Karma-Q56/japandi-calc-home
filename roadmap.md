@@ -76,3 +76,11 @@ The owner overview and `/me` guest cards now read real Postgres rows through the
 session viewer. Other owner tools show a "comes next" panel in live mode, and
 the guest restaurant and settings routes return to `/me` until D3. The live
 query path is written and typechecked, but not run against the dev database.
+
+## 2 November 2026, Phase D3
+
+The owner guest list and campaign history now read live Postgres rows, with the
+guest search, filters and sorting covered by tests. Profiles, exports, campaign
+details and all builders remain next-phase work, so live links do not expose
+demo data. The live queries are written and typechecked, not run against the
+dev database.

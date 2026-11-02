@@ -218,3 +218,19 @@ Not verified: the live SQL and session path have not run against the Neon dev
 branch. That needs the Better Auth secret and the applied migration.
 
 Production build passed: client 34.67s, server 13.09s.
+
+---
+
+## 2 November 2026: Phase D3 live guest and campaign lists
+
+Built: session-scoped live guest and campaign lists for owners, client-side
+guest search, filters and sorting with tests, and live empty states. Customer
+profiles, exports, campaign details and all builders stay behind the "comes
+next" panel in live mode.
+
+Verified: typecheck passes; 8 focused tests pass; production build passes;
+lint result is recorded here.
+
+Not verified: the live queries have not run against the Neon dev branch.
+
+Lint: 0 errors, 12 warnings.

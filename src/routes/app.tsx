@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { Outlet, useChildMatches } from "@tanstack/react-router";
+import { Outlet, useChildMatches, useLocation } from "@tanstack/react-router";
 import { api } from "@/api";
 import { APP_NAME } from "@/config/app";
 import type { Overview } from "@/domain/dash";
@@ -41,6 +41,8 @@ function OwnerShell() {
   const live = isLive ? data.live : null;
   const state = useDemoState();
   const children = useChildMatches();
+  const location = useLocation();
+  const liveChild = /^\/app\/(customers|campaigns)\/?$/.test(location.pathname);
   const restaurant =
     state.restaurants.find((item) => item.id === state.session.restaurantId) ??
     state.restaurants[0]!;
@@ -92,7 +94,11 @@ function OwnerShell() {
         </header>
         {children.length > 0 ? (
           isLive ? (
-            <LiveToolsNotice />
+            liveChild ? (
+              <Outlet />
+            ) : (
+              <LiveToolsNotice />
+            )
           ) : (
             <Outlet />
           )
