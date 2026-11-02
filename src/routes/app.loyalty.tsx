@@ -5,7 +5,7 @@ import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
 import { StampSlots } from "@/components/patron/StampSlots";
 import { Switch } from "@/components/patron/Switch";
-import { ConfirmDialog, PageHeader } from "@/components/patron/dash";
+import { ConfirmDialog, Helper, PageHeader } from "@/components/patron/dash";
 import {
   PhoneFrame,
   PreviewOnly,
@@ -26,6 +26,15 @@ export const Route = createFileRoute("/app/loyalty")({
   },
   component: Loyalty,
 });
+
+const TABS = [
+  { id: "rewards", label: "Rewards" },
+  { id: "tools", label: "Loyalty tools" },
+  { id: "wheel", label: "Spin wheel" },
+  { id: "tiers", label: "Tiers and challenges" },
+] as const;
+
+type Tab = (typeof TABS)[number]["id"];
 
 function blankSegment(): SpinSegment {
   return {
@@ -101,16 +110,30 @@ function Loyalty() {
     },
   });
   const [spin, setSpin] = useState<SpinConfig>(restaurant.spin);
+  const [tab, setTab] = useState<Tab>("rewards");
+  const [steps, setSteps] = useState<Record<Tab, number>>({
+    rewards: 1,
+    tools: 1,
+    wheel: 1,
+    tiers: 1,
+  });
+  const [published, setPublished] = useState<Record<Tab, boolean>>({
+    rewards: false,
+    tools: false,
+    wheel: false,
+    tiers: false,
+  });
   const [notice, setNotice] = useState("");
-  const [step, setStep] = useState(1);
-  const [published, setPublished] = useState(false);
-  const save = (): boolean => {
+  const step = steps[tab];
+  const setStep = (next: number) => setSteps((current) => ({ ...current, [tab]: next }));
+
+  const saveRules = (): boolean => {
     if (stampsRequired < 2 || stampsRequired > 30) {
-      setNotice("Stamps required must be between 2 and 30.");
+      setNotice("Pick 2 to 30 stamps for a full card.");
       return false;
     }
     if (reward.trim().length < 1 || reward.trim().length > 80) {
-      setNotice("Reward text must be 1 to 80 characters.");
+      setNotice("Add the reward in a few words, up to 80 letters.");
       return false;
     }
     if (
@@ -118,15 +141,15 @@ function Loyalty() {
       birthdayKind === "freeItem" &&
       (birthdayItem.trim().length < 2 || birthdayItem.trim().length > 60)
     ) {
-      setNotice("Name the free birthday item (2 to 60 characters) or pick a bonus stamp.");
+      setNotice("Name the free birthday item in 2 to 60 letters, or pick a bonus stamp.");
       return false;
     }
     if (welcomeStamps < 0 || welcomeStamps > stampsRequired - 1) {
-      setNotice(`Welcome stamps must be 0 to ${stampsRequired - 1}.`);
+      setNotice(`Stamps to start with must be 0 to ${stampsRequired - 1}.`);
       return false;
     }
     if (mysteryOn && (!Number.isInteger(mystery) || mystery < 2 || mystery > 50)) {
-      setNotice("Bonus stamp every N visits must be 2 to 50.");
+      setNotice("The bonus stamp visit number must be 2 to 50.");
       return false;
     }
     if (missYouOn) {
@@ -138,23 +161,19 @@ function Loyalty() {
         missYouKind === "freeItem" &&
         (missYouItem.trim().length < 2 || missYouItem.trim().length > 60)
       ) {
-        setNotice("Name the free miss-you item (2 to 60 characters) or pick a bonus stamp.");
+        setNotice("Name the free miss-you item in 2 to 60 letters, or pick a bonus stamp.");
         return false;
       }
     }
     if (customOn) {
       if (customName.trim().length < 2 || customName.trim().length > 60) {
-        setNotice("Give the hand-out reward a name of 2 to 60 characters.");
+        setNotice("Give the hand-out reward a name of 2 to 60 letters.");
         return false;
       }
       if (!Number.isInteger(customLimit) || customLimit < 1 || customLimit > 20) {
-        setNotice("The hand-out limit per guest per month must be 1 to 20.");
+        setNotice("The hand-out limit must be 1 to 20 per guest each month.");
         return false;
       }
-    }
-    if (regular < 1 || vip <= regular) {
-      setNotice("VIP visits must be higher than Regular visits.");
-      return false;
     }
     const result = api.restaurant.update(restaurant.id, {
       stampsRequired,
@@ -162,7 +181,6 @@ function Loyalty() {
       visitWindowMinutes: windowMinutes,
       welcomeStamps,
       welcomeStamp: welcomeStamps > 0,
-      tiers: { regular, vip },
       mysteryEveryVisits: mysteryOn ? mystery : 0,
       birthdayReward: birthday,
       birthdayRewardKind: birthdayKind,
@@ -183,6 +201,25 @@ function Loyalty() {
       setNotice(result.error.message);
       return false;
     }
+    setNotice("Card rules saved.");
+    return true;
+  };
+
+  const saveTiers = (): boolean => {
+    if (regular < 1 || vip <= regular) {
+      setNotice("The VIP visits must be higher than the Regular visits.");
+      return false;
+    }
+    const result = api.restaurant.update(restaurant.id, { tiers: { regular, vip } });
+    if (!result.ok) {
+      setNotice(result.error.message);
+      return false;
+    }
+    setNotice("Tiers saved.");
+    return true;
+  };
+
+  const saveTools = (): boolean => {
     const toolsResult = api.loyalty.saveTools({
       restaurantId: restaurant.id,
       doubleStamp: { enabled: doubleOn, weekday: doubleDay },
@@ -198,7 +235,7 @@ function Loyalty() {
       setNotice(toolsResult.error.message);
       return false;
     }
-    setNotice("Loyalty rules saved.");
+    setNotice("Loyalty tools saved.");
     return true;
   };
 
@@ -207,7 +244,7 @@ function Loyalty() {
       setMissYouRunLine("Switch the rule on and save first.");
       return;
     }
-    const saved = save();
+    const saved = saveRules();
     if (!saved) return;
     const result = api.loyalty.runMissYou(restaurant.id);
     const good = result.treated === 1 ? "guest was treated" : "guests were treated";
@@ -244,6 +281,44 @@ function Loyalty() {
     }));
   };
 
+  const publishBar = (question: string, save: () => boolean) => (
+    <div className="page-actions">
+      {step === 1 && (
+        <button className="builder-primary" onClick={() => setStep(2)}>
+          Preview changes
+        </button>
+      )}
+      {step === 2 && (
+        <>
+          <ConfirmDialog
+            label="Publish this tab"
+            question={question}
+            confirmLabel="Yes, publish"
+            buttonClass="builder-primary"
+            onConfirm={() => {
+              if (!save()) return;
+              setPublished((current) => ({ ...current, [tab]: true }));
+              setStep(3);
+            }}
+          />
+          <button className="builder-secondary" onClick={() => setStep(1)}>
+            Back to editing
+          </button>
+        </>
+      )}
+      {step === 3 && (
+        <>
+          <p role="status" className="builder-hint">
+            Published. Guests see this now. Any further change needs Preview and Publish again.
+          </p>
+          <button className="builder-secondary" onClick={() => setStep(1)}>
+            Edit again
+          </button>
+        </>
+      )}
+    </div>
+  );
+
   return (
     <main className="demo-hub page-width">
       <PageHeader
@@ -251,743 +326,775 @@ function Loyalty() {
         title="The card rules"
         intro="Changing rules never alters rewards already earned. Stamps above a lowered threshold convert on the next stamp."
       />
-      <PublishSteps step={step} labels={["Draft", "Preview"]} />
+      <nav className="loyalty-tabs" aria-label="Loyalty sections">
+        {TABS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            className={`loyalty-tab${tab === item.id ? " is-active" : ""}`}
+            aria-current={tab === item.id ? "page" : undefined}
+            onClick={() => setTab(item.id)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </nav>
+      <PublishSteps step={step} labels={["Draft", "Preview", "Publish"]} />
 
-      <section className="builder-panel">
-        <h2>When do guests get a reward?</h2>
-        <div className="what-happens-when">
-          <h3>What happens when</h3>
-          {previewRules.length > 0 ? (
-            <ul>
-              {previewRules.map((line) => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
-          ) : (
-            <p className="demo-data-note">No rule is switched on yet.</p>
-          )}
-        </div>
+      {tab === "rewards" && (
+        <section className="builder-panel" aria-label="Rewards">
+          <h2>When do guests get a reward?</h2>
+          <div className="what-happens-when">
+            <h3>What happens when</h3>
+            {previewRules.length > 0 ? (
+              <ul>
+                {previewRules.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            ) : (
+              <Helper>No rule is switched on yet.</Helper>
+            )}
+          </div>
 
-        <div className="preset-rule">
-        <h3>Collect stamps</h3>
-        <p className="demo-data-note">{costNote("collect")}</p>
-        <div className="builder-fields">
-          <label className="builder-field">
-            Stamps required (2 to 30)
-            <input
-              type="number"
-              min={2}
-              max={30}
-              value={stampsRequired}
-              onChange={(event) => setStampsRequired(Number(event.target.value))}
-            />
-          </label>
-          <label className="builder-field">
-            Reward (noun phrase, 80 chars)
-            <input
-              value={reward}
-              maxLength={80}
-              onChange={(event) => setReward(event.target.value)}
-            />
-          </label>
-          <label className="builder-field">
-            Visit window (minutes)
-            <input
-              type="number"
-              min={30}
-              value={windowMinutes}
-              onChange={(event) => setWindowMinutes(Number(event.target.value))}
-            />
-          </label>
-        </div>
-        <div className="live-preview">
-          <StampSlots
-            filled={Math.min(welcomeStamps, stampsRequired - 1)}
-            total={stampsRequired}
-            theme={restaurant.theme}
-          />
-          <p>
-            {stampsRequired} stamps to {reward || "…"}
-            {welcomeStamps > 0 ? ` · welcome starts at ${welcomeStamps}` : ""}
-          </p>
-        </div>
-
-        </div>
-
-        <div className="preset-rule">
-        <h3>Every Nth visit</h3>
-        <p className="demo-data-note">{costNote("every-nth")}</p>
-        <div className="builder-fields">
-          <Switch
-            label="Every Nth visit bonus stamp"
-            hint="A bonus stamp after every set number of visits"
-            checked={mysteryOn}
-            onChange={setMysteryOn}
-          />
-          {mysteryOn && (
-            <label className="builder-field">
-              Bonus stamp every N visits (2 to 50)
-              <input
-                type="number"
-                min={2}
-                max={50}
-                value={mystery}
-                onChange={(event) => setMystery(Number(event.target.value))}
-              />
-            </label>
-          )}
-        </div>
-
-        </div>
-
-        <div className="preset-rule">
-        <h3>When they join</h3>
-        <p className="demo-data-note">{costNote("join")}</p>
-        <div className="builder-fields">
-          <label className="builder-field">
-            Welcome stamps (0 up to {Math.max(0, stampsRequired - 1)})
-            <input
-              type="number"
-              min={0}
-              max={Math.max(0, stampsRequired - 1)}
-              value={welcomeStamps}
-              onChange={(event) => setWelcomeStamps(Number(event.target.value))}
-            />
-            <small>
-              Granted once when a guest joins, as welcome stamp events. The join screen shows "You
-              start with {welcomeStamps} stamp{welcomeStamps === 1 ? "" : "s"}."
-            </small>
-          </label>
-        </div>
-
-        </div>
-
-        <div className="preset-rule">
-        <h3>Birthday week</h3>
-        <p className="demo-data-note">{costNote("birthday")}</p>
-        <div className="builder-fields">
-          <Switch
-            label="Birthday treat"
-            hint="Once a year, in the birthday week"
-            checked={birthday}
-            onChange={setBirthday}
-          />
-          {birthday && (
-            <>
+          <details className="preset-rule" open>
+            <summary>Collect stamps</summary>
+            <Helper>{costNote("collect")}</Helper>
+            <div className="builder-fields">
               <label className="builder-field">
-                What birthday guests get
-                <select
-                  value={birthdayKind}
-                  onChange={(event) =>
-                    setBirthdayKind(event.target.value as "stamp" | "freeItem")
-                  }
-                >
-                  <option value="stamp">A bonus stamp on their card</option>
-                  <option value="freeItem">A free item at the till</option>
-                </select>
-              </label>
-              {birthdayKind === "freeItem" && (
-                <label className="builder-field">
-                  Free item (2 to 60 characters)
-                  <input
-                    value={birthdayItem}
-                    maxLength={60}
-                    placeholder="birthday cupcake"
-                    onChange={(event) => setBirthdayItem(event.target.value)}
-                  />
-                </label>
-              )}
-              <div className="birthday-preview" aria-live="polite">
-                <span className="eyebrow">Preview</span>
-                {birthdayPreview && (
-                  <>
-                    <p className="birthday-preview-line">Guest sees: {birthdayPreview.guestLine}</p>
-                    <p className="birthday-preview-line">Till sees: {birthdayPreview.tillLine}</p>
-                  </>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-
-        </div>
-
-        <div className="preset-rule">
-        <h3>We miss you</h3>
-        <p className="demo-data-note">{costNote("miss-you")}</p>
-        <div className="builder-fields">
-          <Switch
-            label="We miss you treat"
-            hint={`Someone who has not visited for a while gets a treat, once every ${MISS_YOU_COOLDOWN_DAYS} days`}
-            checked={missYouOn}
-            onChange={setMissYouOn}
-          />
-          {missYouOn && (
-            <>
-              <label className="builder-field">
-                Days without a visit ({MISS_YOU_MIN_AFTER_DAYS} to {MISS_YOU_MAX_AFTER_DAYS})
-                <input
-                  type="number"
-                  min={MISS_YOU_MIN_AFTER_DAYS}
-                  max={MISS_YOU_MAX_AFTER_DAYS}
-                  value={missYouDays}
-                  onChange={(event) => setMissYouDays(Number(event.target.value))}
-                />
-                <small>
-                  Default 30. Anyone away longer than this qualifies, and nobody is treated twice
-                  inside {MISS_YOU_COOLDOWN_DAYS} days.
-                </small>
-              </label>
-              <label className="builder-field">
-                What the guest gets
-                <select
-                  value={missYouKind}
-                  onChange={(event) =>
-                    setMissYouKind(event.target.value as "stamp" | "freeItem")
-                  }
-                >
-                  <option value="stamp">A bonus stamp on their card</option>
-                  <option value="freeItem">A single-use personal offer</option>
-                </select>
-              </label>
-              {missYouKind === "freeItem" && (
-                <label className="builder-field">
-                  Free item (2 to 60 characters)
-                  <input
-                    value={missYouItem}
-                    maxLength={60}
-                    placeholder="a small chips"
-                    onChange={(event) => setMissYouItem(event.target.value)}
-                  />
-                </label>
-              )}
-              <div className="page-actions">
-                <button type="button" className="builder-secondary" onClick={runMissYou}>
-                  Run the rule now
-                </button>
-              </div>
-              <p className="demo-data-note" role="status">
-                {missYouRunLine ||
-                  "Practice run for today. Nothing is sent automatically; in live mode this runs once a day."}
-              </p>
-              <PhoneFrame label="Guest miss-you preview">
-                <strong>{restaurant.name}</strong>
-                {missYouKind === "freeItem" && missYouItem.trim() ? (
-                  <p>
-                    {missYouItem.trim()} on the house. Show this code at the till.
-                  </p>
-                ) : (
-                  <p>
-                    Long time no visit. Here is a bonus stamp to say come back when you feel like
-                    it.
-                  </p>
-                )}
-                <small>
-                  Arrives on their card the next time they open it. Once every{" "}
-                  {MISS_YOU_COOLDOWN_DAYS} days at most.
-                </small>
-              </PhoneFrame>
-            </>
-          )}
-        </div>
-
-        </div>
-
-        <div className="preset-rule">
-        <h3>Quiet day bonus</h3>
-        <p className="demo-data-note">{costNote("quiet-day")}</p>
-        <p className="demo-data-note">
-          Reuse of the double stamp day tool: set it below in the Loyalty tools panel, no second
-          form here.
-        </p>
-
-        </div>
-
-        <div className="preset-rule">
-        <h3>Custom</h3>
-        <p className="demo-data-note">{costNote("custom")}</p>
-        <div className="builder-fields">
-          <Switch
-            label="Hand-out reward"
-            hint="A reward you give by hand at the till; the guest gets a single-use offer"
-            checked={customOn}
-            onChange={setCustomOn}
-          />
-          {customOn && (
-            <>
-              <label className="builder-field">
-                Reward name (2 to 60 characters)
-                <input
-                  value={customName}
-                  maxLength={60}
-                  placeholder="Cookie at 20 visits"
-                  onChange={(event) => setCustomName(event.target.value)}
-                />
-              </label>
-              <label className="builder-field">
-                Limit per guest per month (1 to 20)
-                <input
-                  type="number"
-                  min={1}
-                  max={20}
-                  value={customLimit}
-                  onChange={(event) => setCustomLimit(Number(event.target.value))}
-                />
-                <small>
-                  You hand it out on the guest page. The single-use offer appears on their card at
-                  once, so nothing else is needed.
-                </small>
-              </label>
-            </>
-          )}
-        </div>
-
-        </div>
-
-        <div className="preset-rule">
-        <h3>Tiers &amp; extras</h3>
-        <div className="builder-fields">
-          <label className="builder-field">
-            Regular tier at (visits in 90 days)
-            <input
-              type="number"
-              min={1}
-              value={regular}
-              onChange={(event) => setRegular(Number(event.target.value))}
-            />
-          </label>
-          <label className="builder-field">
-            VIP tier at (visits in 90 days)
-            <input
-              type="number"
-              min={2}
-              value={vip}
-              onChange={(event) => setVip(Number(event.target.value))}
-            />
-          </label>
-        </div>
-        <p className="demo-data-note">
-          Tiers unlock members-only and targeted specials. VIP members can be the only ones who see
-          a particular offer.
-        </p>
-        </div>
-      </section>
-
-      <section className="builder-panel">
-        <h2>Loyalty tools</h2>
-        <p className="demo-data-note">
-          Off until you switch them on. Double stamp day pulls visits onto a quieter weekday and
-          streaks reward the habit of coming back. A week only counts toward a run once it meets
-          the visits, so a week in progress never breaks the run or spends the budget.
-        </p>
-        <div className="builder-fields">
-          <Switch
-            label="Double stamp day"
-            hint="One extra stamp on visits on your chosen weekday"
-            checked={doubleOn}
-            onChange={setDoubleOn}
-          />
-          {doubleOn && (
-            <>
-              <label className="builder-field">
-                Which weekday
-                <select
-                  value={doubleDay}
-                  onChange={(event) => setDoubleDay(Number(event.target.value))}
-                >
-                  {WEEKDAYS.map((day, index) => (
-                    <option key={day} value={index}>
-                      {day}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <p className="demo-data-note">
-                Every visit on that Johannesburg weekday earns one extra stamp, not only the
-                first. Never stacks with another multiplier.
-              </p>
-            </>
-          )}
-          <Switch
-            label="Visit streak"
-            hint="Reward coming back week after week"
-            checked={streakOn}
-            onChange={setStreakOn}
-          />
-          {streakOn && (
-            <div className="builder-fields streak-fields">
-              <label className="builder-field">
-                Visits each week to keep the run
-                <input
-                  type="number"
-                  min={1}
-                  max={7}
-                  value={streakVisits}
-                  onChange={(event) => setStreakVisits(Number(event.target.value))}
-                />
-              </label>
-              <label className="builder-field">
-                Weeks in a row for the bonus
+                How many stamps fill the card?
                 <input
                   type="number"
                   min={2}
-                  max={12}
-                  value={streakWeeks}
-                  onChange={(event) => setStreakWeeks(Number(event.target.value))}
+                  max={30}
+                  value={stampsRequired}
+                  onChange={(event) => setStampsRequired(Number(event.target.value))}
                 />
+                <Helper>Pick 2 to 30.</Helper>
               </label>
               <label className="builder-field">
-                Bonus stamps at the end of the run
+                What do they get?
+                <input
+                  value={reward}
+                  maxLength={80}
+                  placeholder="a free coffee"
+                  onChange={(event) => setReward(event.target.value)}
+                />
+                <Helper>Keep it short. For example: a free coffee.</Helper>
+              </label>
+              <label className="builder-field">
+                Minutes allowed between stamps
                 <input
                   type="number"
-                  min={1}
-                  max={5}
-                  value={streakBonus}
-                  onChange={(event) => setStreakBonus(Number(event.target.value))}
+                  min={30}
+                  value={windowMinutes}
+                  onChange={(event) => setWindowMinutes(Number(event.target.value))}
                 />
+                <Helper>Stamps on the same visit count only inside this window.</Helper>
               </label>
             </div>
-          )}
-          {(doubleOn || streakOn || missYouOn) && (
-            <label className="builder-field">
-              Monthly bonus stamp budget
-              <input
-                type="number"
-                min={1}
-                max={2000}
-                value={budget}
-                onChange={(event) => setBudget(Number(event.target.value))}
+            <div className="live-preview">
+              <StampSlots
+                filled={Math.min(welcomeStamps, stampsRequired - 1)}
+                total={stampsRequired}
+                theme={restaurant.theme}
               />
-              <small>
-                Double stamp day, streak and miss-you stamps combined stop once this many bonus
-                stamps have gone out in one month. Used so far:{" "}
-                {api.loyalty.toolBudget(restaurant.id).used}.
-              </small>
-            </label>
-          )}
-          <p className="demo-data-note">
-            No purchase is required to earn any tool reward, and guests who opted out of messages
-            still collect stamps, offers and spins. Nothing here sends messages.
-          </p>
-        </div>
-      </section>
-
-      <section className="builder-panel">
-        <h2>Spin wheel</h2>
-        <Switch
-          label="Show the spin wheel to guests"
-          checked={spin.enabled}
-          onChange={(next) => setSpin({ ...spin, enabled: next })}
-        />
-        <p className="demo-data-note">
-          Guests earn spins from visits, never from spending. Results are picked on the server and
-          logged. Prizes become personal single-use offers.
-        </p>
-        <div className="builder-fields">
-          <label className="builder-field">
-            One spin every N visits
-            <input
-              type="number"
-              min={1}
-              max={50}
-              value={spin.earnEveryVisits}
-              onChange={(event) =>
-                setSpin({ ...spin, earnEveryVisits: Number(event.target.value) })
-              }
-            />
-          </label>
-          <label className="builder-field">
-            Weekly prize budget (R)
-            <input
-              type="number"
-              min={0}
-              step="0.01"
-              value={spin.weeklyBudgetCents / 100}
-              onChange={(event) =>
-                setSpin({
-                  ...spin,
-                  weeklyBudgetCents: Math.round(Number(event.target.value) * 100),
-                })
-              }
-            />
-          </label>
-          <Switch
-            label="Also award a spin at each reward milestone"
-            checked={spin.earnAtMilestone}
-            onChange={(next) => setSpin({ ...spin, earnAtMilestone: next })}
-          />
-        </div>
-        <div className="spin-mode-options">
-          <h3>Guest spin modes</h3>
-          {SPIN_MODES.map(({ mode, title, description }) => (
-            <Switch
-              key={mode}
-              label={title}
-              hint={description}
-              checked={(spin.modes ?? ["earned"]).includes(mode)}
-              onChange={(next) => {
-                const modes = new Set<SpinMode>(spin.modes ?? ["earned"]);
-                if (next) modes.add(mode);
-                else modes.delete(mode);
-                setSpin({ ...spin, modes: [...modes] });
-              }}
-            />
-          ))}
-        </div>
-        {(spin.modes ?? ["earned"]).includes("reward_decider") && (
-          <label className="builder-field">
-            Advertised reward value (R)
-            <input
-              type="number"
-              min={0}
-              step="0.01"
-              value={(spin.rewardFloorCents ?? 0) / 100}
-              onChange={(event) =>
-                setSpin({
-                  ...spin,
-                  rewardFloorCents: Math.round(Number(event.target.value) * 100),
-                })
-              }
-            />
-            <small>
-              The reward decider never draws a prize worth less than this, it keeps "
-              {reward || "your advertised reward"}" as the floor.
-            </small>
-          </label>
-        )}
-        {((spin.modes ?? ["earned"]).includes("reward_decider") ||
-          (spin.modes ?? ["earned"]).includes("daily_surprise")) && (
-          <p className="demo-data-note">
-            Reward decider draws from your prize list at random when a card completes; the guest
-            never chooses, and nothing below the advertised reward is awarded. Daily surprises
-            require an active, in-date special. If all modes are off, the wheel is hidden.
-          </p>
-        )}
-        {(spin.modes ?? ["earned"]).includes("daily_surprise") && (
-          <label className="builder-field">
-            Daily surprise specials
-            <select
-              multiple
-              value={spin.dailyPool ?? []}
-              onChange={(event) =>
-                setSpin({
-                  ...spin,
-                  dailyPool: Array.from(event.target.selectedOptions, (option) => option.value),
-                })
-              }
-            >
-              {state.specials
-                .filter((special) => special.restaurantId === restaurant.id && special.active)
-                .map((special) => (
-                  <option key={special.id} value={special.id}>
-                    {special.title}
-                  </option>
-                ))}
-            </select>
-            <small>Select one or more active specials. Hold Ctrl to select multiple.</small>
-          </label>
-        )}
-        <div className="spin-segments">
-          <h3>Segments</h3>
-          {spin.segments.map((segment) => (
-            <div className="spin-segment-row" key={segment.id}>
-              <input
-                value={segment.label}
-                placeholder="Prize"
-                aria-label="Prize label"
-                onChange={(event) => setSegment(segment.id, { label: event.target.value })}
-              />
-              <label>
-                Weight
-                <input
-                  type="number"
-                  min={0}
-                  value={segment.weight}
-                  onChange={(event) =>
-                    setSegment(segment.id, { weight: Number(event.target.value) })
-                  }
-                />
-              </label>
-              <label>
-                Value R
-                <input
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  value={segment.valueCents / 100}
-                  onChange={(event) =>
-                    setSegment(segment.id, {
-                      valueCents: Math.round(Number(event.target.value) * 100),
-                    })
-                  }
-                />
-              </label>
-              <label>
-                Bonus stamps
-                <input
-                  type="number"
-                  min={0}
-                  max={5}
-                  value={segment.bonusStamps ?? 0}
-                  onChange={(event) => {
-                    const value = Number(event.target.value);
-                    const next: SpinSegment = { ...segment };
-                    if (value > 0) next.bonusStamps = value;
-                    else delete next.bonusStamps;
-                    setSegment(segment.id, next);
-                  }}
-                />
-              </label>
-              <label>
-                Daily cap
-                <input
-                  type="number"
-                  min={0}
-                  value={segment.cap?.period === "day" ? segment.cap.max : 0}
-                  onChange={(event) => {
-                    const value = Number(event.target.value);
-                    const next: SpinSegment = { ...segment };
-                    if (value > 0) next.cap = { period: "day", max: value };
-                    else delete next.cap;
-                    setSegment(segment.id, next);
-                  }}
-                />
-              </label>
-              <button
-                type="button"
-                className="guest-back"
-                onClick={() =>
-                  setSpin({
-                    ...spin,
-                    segments: spin.segments.filter((item) => item.id !== segment.id),
-                  })
-                }
-              >
-                Remove
-              </button>
-            </div>
-          ))}
-          <button
-            type="button"
-            className="builder-secondary"
-            onClick={() => setSpin({ ...spin, segments: [...spin.segments, blankSegment()] })}
-          >
-            Add segment
-          </button>
-        </div>
-        <label className="builder-field">
-          Rules and T&amp;Cs shown to guests
-          <textarea
-            rows={5}
-            value={spin.rules}
-            onChange={(event) => setSpin({ ...spin, rules: event.target.value })}
-          />
-        </label>
-        <div className="page-actions">
-          <button
-            className="builder-secondary"
-            onClick={() =>
-              setSpin({
-                ...spin,
-                rules: api.spin.rulesText({ ...restaurant, spin }),
-              })
-            }
-          >
-            Generate rules text
-          </button>
-        </div>
-        <p className="demo-data-note">
-          The published rules always include "No purchase is required to earn spins." Only show the
-          notice where the rules apply.
-        </p>
-      </section>
-
-      <p className="demo-data-note">
-        Visit challenges have their own screen.{" "}
-        <a href="/app/challenges">Write and publish a challenge</a>.
-      </p>
-
-      {step >= 2 && (
-        <section className="builder-panel">
-          <h2>Preview: what guests see</h2>
-          <PhoneFrame label="Guest loyalty card">
-            <strong>{restaurant.name}</strong>
-            <small>{reward || "your reward"}</small>
-            <StampSlots
-              filled={Math.min(welcomeStamps, Math.max(1, stampsRequired - 1))}
-              total={stampsRequired}
-              theme={restaurant.theme}
-            />
-            <p>
-              {stampsRequired} stamps to {reward || "your reward"}
-            </p>
-            <p>
-              {welcomeStamps > 0
-                ? `You start with ${welcomeStamps} ${welcomeStamps === 1 ? "stamp" : "stamps"}.`
-                : "Start collecting from your first visit."}
-            </p>
-            {previewRules.map((line) => (
-              <p key={line}>{line}</p>
-            ))}
-          </PhoneFrame>
-          <div className="pv-test-spin">
-            <h3>Test the wheel</h3>
-            <p className="demo-data-note">
-              A test spin draws from these draft prizes only. It never touches your weekly budget
-              and never creates an offer, code or reward.
-            </p>
-            {!spin.enabled && (
-              <p className="demo-data-note">
-                The wheel is off for guests right now. Turn it on above when you are happy with
-                the prizes.
+              <p>
+                {stampsRequired} stamps to {reward || "your reward"}
+                {welcomeStamps > 0 ? ` · they start with ${welcomeStamps}` : ""}
               </p>
-            )}
-            <PhoneFrame label="Guest spin wheel preview">
-              <WheelPreview segments={spin.segments} />
-            </PhoneFrame>
-          </div>
-          <PreviewOnly>
-            Preview only, nothing was sent. Guests see these rules only after you publish.
-          </PreviewOnly>
-          <div className="page-actions">
-            <button className="guest-back" onClick={() => setStep(1)}>
-              Back to edit
-            </button>
-            {step === 2 && (
-              <ConfirmDialog
-                label="Publish loyalty rules"
-                question="Publish these card rules and wheel settings? Guests will see the new card straight away."
-                confirmLabel="Yes, publish"
-                buttonClass="builder-primary"
-                onConfirm={() => {
-                  const savedRules = save();
-                  if (!savedRules) return;
-                  const savedSpin = saveSpin();
-                  if (!savedSpin) return;
-                  setPublished(true);
-                  setStep(1);
-                }}
+            </div>
+          </details>
+
+          <details className="preset-rule">
+            <summary>Every so many visits</summary>
+            <Helper>{costNote("every-nth")}</Helper>
+            <div className="builder-fields">
+              <Switch
+                label="Bonus stamp every so often"
+                hint="A bonus stamp after a set number of visits"
+                checked={mysteryOn}
+                onChange={setMysteryOn}
               />
-            )}
-          </div>
+              {mysteryOn && (
+                <label className="builder-field">
+                  Give a bonus stamp every how many visits?
+                  <input
+                    type="number"
+                    min={2}
+                    max={50}
+                    value={mystery}
+                    onChange={(event) => setMystery(Number(event.target.value))}
+                  />
+                  <Helper>Pick 2 to 50.</Helper>
+                </label>
+              )}
+            </div>
+          </details>
+
+          <details className="preset-rule">
+            <summary>When they join</summary>
+            <Helper>{costNote("join")}</Helper>
+            <div className="builder-fields">
+              <label className="builder-field">
+                Stamps to start with
+                <input
+                  type="number"
+                  min={0}
+                  max={Math.max(0, stampsRequired - 1)}
+                  value={welcomeStamps}
+                  onChange={(event) => setWelcomeStamps(Number(event.target.value))}
+                />
+                <Helper>
+                  From 0 up to {Math.max(0, stampsRequired - 1)}. The join screen shows "You start
+                  with {welcomeStamps} stamp{welcomeStamps === 1 ? "" : "s"}."
+                </Helper>
+              </label>
+            </div>
+          </details>
+
+          <details className="preset-rule">
+            <summary>Birthday week</summary>
+            <Helper>{costNote("birthday")}</Helper>
+            <div className="builder-fields">
+              <Switch
+                label="Birthday treat"
+                hint="Once a year, in the birthday week"
+                checked={birthday}
+                onChange={setBirthday}
+              />
+              {birthday && (
+                <>
+                  <label className="builder-field">
+                    What birthday guests get
+                    <select
+                      value={birthdayKind}
+                      onChange={(event) =>
+                        setBirthdayKind(event.target.value as "stamp" | "freeItem")
+                      }
+                    >
+                      <option value="stamp">A bonus stamp on their card</option>
+                      <option value="freeItem">A free item at the till</option>
+                    </select>
+                  </label>
+                  {birthdayKind === "freeItem" && (
+                    <label className="builder-field">
+                      Name the free item
+                      <input
+                        value={birthdayItem}
+                        maxLength={60}
+                        placeholder="birthday cupcake"
+                        onChange={(event) => setBirthdayItem(event.target.value)}
+                      />
+                      <Helper>2 to 60 letters, for example birthday cupcake.</Helper>
+                    </label>
+                  )}
+                  <div className="birthday-preview" aria-live="polite">
+                    <span className="eyebrow">Preview</span>
+                    {birthdayPreview && (
+                      <>
+                        <p className="birthday-preview-line">Guest sees: {birthdayPreview.guestLine}</p>
+                        <p className="birthday-preview-line">Till sees: {birthdayPreview.tillLine}</p>
+                      </>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </details>
+
+          <details className="preset-rule">
+            <summary>We miss you</summary>
+            <Helper>{costNote("miss-you")}</Helper>
+            <div className="builder-fields">
+              <Switch
+                label="We miss you treat"
+                hint={`Someone who has not visited for a while gets a treat, once every ${MISS_YOU_COOLDOWN_DAYS} days`}
+                checked={missYouOn}
+                onChange={setMissYouOn}
+              />
+              {missYouOn && (
+                <>
+                  <label className="builder-field">
+                    Days without a visit ({MISS_YOU_MIN_AFTER_DAYS} to {MISS_YOU_MAX_AFTER_DAYS})
+                    <input
+                      type="number"
+                      min={MISS_YOU_MIN_AFTER_DAYS}
+                      max={MISS_YOU_MAX_AFTER_DAYS}
+                      value={missYouDays}
+                      onChange={(event) => setMissYouDays(Number(event.target.value))}
+                    />
+                    <Helper>
+                      Default 30. Anyone away longer than this qualifies, and nobody is treated
+                      twice inside {MISS_YOU_COOLDOWN_DAYS} days.
+                    </Helper>
+                  </label>
+                  <label className="builder-field">
+                    What the guest gets
+                    <select
+                      value={missYouKind}
+                      onChange={(event) =>
+                        setMissYouKind(event.target.value as "stamp" | "freeItem")
+                      }
+                    >
+                      <option value="stamp">A bonus stamp on their card</option>
+                      <option value="freeItem">A single-use personal offer</option>
+                    </select>
+                  </label>
+                  {missYouKind === "freeItem" && (
+                    <label className="builder-field">
+                      Name the free item
+                      <input
+                        value={missYouItem}
+                        maxLength={60}
+                        placeholder="a small chips"
+                        onChange={(event) => setMissYouItem(event.target.value)}
+                      />
+                      <Helper>2 to 60 letters, for example a small chips.</Helper>
+                    </label>
+                  )}
+                  <div className="page-actions">
+                    <button type="button" className="builder-secondary" onClick={runMissYou}>
+                      Try the rule now
+                    </button>
+                  </div>
+                  <Helper>
+                    {missYouRunLine ||
+                      "Practice run for today. Nothing is sent by itself; in live mode this runs once a day."}
+                  </Helper>
+                  <PhoneFrame label="Guest miss-you preview">
+                    <strong>{restaurant.name}</strong>
+                    {missYouKind === "freeItem" && missYouItem.trim() ? (
+                      <p>{missYouItem.trim()} on the house. Show this code at the till.</p>
+                    ) : (
+                      <p>
+                        Long time no visit. Here is a bonus stamp to say come back when you feel
+                        like it.
+                      </p>
+                    )}
+                    <small>
+                      Arrives on their card the next time they open it. Once every{" "}
+                      {MISS_YOU_COOLDOWN_DAYS} days at most.
+                    </small>
+                  </PhoneFrame>
+                </>
+              )}
+            </div>
+          </details>
+
+          <details className="preset-rule">
+            <summary>Quiet day bonus</summary>
+            <Helper>{costNote("quiet-day")}</Helper>
+            <Helper>
+              This uses the double stamp day you switch on under Loyalty tools. There is no second
+              form here.
+            </Helper>
+          </details>
+
+          <details className="preset-rule">
+            <summary>Hand-out reward</summary>
+            <Helper>{costNote("custom")}</Helper>
+            <div className="builder-fields">
+              <Switch
+                label="Hand-out reward"
+                hint="A reward you give by hand at the till; the guest gets a single-use offer"
+                checked={customOn}
+                onChange={setCustomOn}
+              />
+              {customOn && (
+                <>
+                  <label className="builder-field">
+                    Name the reward
+                    <input
+                      value={customName}
+                      maxLength={60}
+                      placeholder="a cookie at 20 visits"
+                      onChange={(event) => setCustomName(event.target.value)}
+                    />
+                    <Helper>2 to 60 letters, for example a cookie at 20 visits.</Helper>
+                  </label>
+                  <label className="builder-field">
+                    How many can one guest get in a month?
+                    <input
+                      type="number"
+                      min={1}
+                      max={20}
+                      value={customLimit}
+                      onChange={(event) => setCustomLimit(Number(event.target.value))}
+                    />
+                    <Helper>
+                      Pick 1 to 20. You hand it out on the guest page, and the single-use offer
+                      appears on their card at once.
+                    </Helper>
+                  </label>
+                </>
+              )}
+            </div>
+          </details>
+
+          {step >= 2 && (
+            <section className="builder-panel" aria-label="Rewards preview">
+              <h3>What guests see</h3>
+              <PreviewOnly>Preview only. Guests still see the old rules until you publish.</PreviewOnly>
+              <PhoneFrame label="Guest loyalty card">
+                <strong>{restaurant.name}</strong>
+                <small>{reward || "your reward"}</small>
+                <StampSlots
+                  filled={Math.min(welcomeStamps, Math.max(1, stampsRequired - 1))}
+                  total={stampsRequired}
+                  theme={restaurant.theme}
+                />
+                <p>
+                  {stampsRequired} stamps to {reward || "your reward"}
+                </p>
+                <p>
+                  {welcomeStamps > 0
+                    ? `You start with ${welcomeStamps} ${welcomeStamps === 1 ? "stamp" : "stamps"}.`
+                    : "Start collecting from your first visit."}
+                </p>
+                {previewRules.map((line) => (
+                  <p key={line}>{line}</p>
+                ))}
+              </PhoneFrame>
+            </section>
+          )}
+
+          {publishBar(
+            "Publish these card rules? Guests see the new card straight away.",
+            saveRules,
+          )}
         </section>
       )}
 
-      {step === 1 && (
-        <div className="page-actions">
-          <button className="builder-primary" onClick={() => setStep(2)}>
-            Preview changes
-          </button>
-          {published && (
-            <p role="status" className="gx-note">
-              Published. Guests now see these rules. Any further edit needs Preview changes again.
-            </p>
+      {tab === "tools" && (
+        <section className="builder-panel" aria-label="Loyalty tools">
+          <h2>Loyalty tools</h2>
+          <Helper>
+            Off until you switch them on. Double stamp day pulls visits onto a quieter weekday and
+            streaks reward the habit of coming back. A week only counts toward a run once it meets
+            the visits, so a week in progress never breaks the run or spends the budget.
+          </Helper>
+          <div className="builder-fields">
+            <Switch
+              label="Double stamp day"
+              hint="One extra stamp on visits on your chosen weekday"
+              checked={doubleOn}
+              onChange={setDoubleOn}
+            />
+            {doubleOn && (
+              <>
+                <label className="builder-field">
+                  Which weekday
+                  <select
+                    value={doubleDay}
+                    onChange={(event) => setDoubleDay(Number(event.target.value))}
+                  >
+                    {WEEKDAYS.map((day, index) => (
+                      <option key={day} value={index}>
+                        {day}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <Helper>
+                  Every visit on that Johannesburg weekday earns one extra stamp, not only the
+                  first. It never stacks with another double.
+                </Helper>
+              </>
+            )}
+            <Switch
+              label="Visit streak"
+              hint="Reward coming back week after week"
+              checked={streakOn}
+              onChange={setStreakOn}
+            />
+            {streakOn && (
+              <div className="builder-fields streak-fields">
+                <label className="builder-field">
+                  Visits each week to keep the run
+                  <input
+                    type="number"
+                    min={1}
+                    max={7}
+                    value={streakVisits}
+                    onChange={(event) => setStreakVisits(Number(event.target.value))}
+                  />
+                </label>
+                <label className="builder-field">
+                  Weeks in a row for the bonus
+                  <input
+                    type="number"
+                    min={2}
+                    max={12}
+                    value={streakWeeks}
+                    onChange={(event) => setStreakWeeks(Number(event.target.value))}
+                  />
+                </label>
+                <label className="builder-field">
+                  Bonus stamps at the end of the run
+                  <input
+                    type="number"
+                    min={1}
+                    max={5}
+                    value={streakBonus}
+                    onChange={(event) => setStreakBonus(Number(event.target.value))}
+                  />
+                </label>
+              </div>
+            )}
+            {(doubleOn || streakOn || missYouOn) && (
+              <label className="builder-field">
+                Bonus stamps you can give in a month
+                <input
+                  type="number"
+                  min={1}
+                  max={2000}
+                  value={budget}
+                  onChange={(event) => setBudget(Number(event.target.value))}
+                />
+                <Helper>
+                  Double day, streak and miss-you stamps together stop once this many bonus stamps
+                  have gone out in one month. Used so far: {api.loyalty.toolBudget(restaurant.id).used}.
+                </Helper>
+              </label>
+            )}
+            <Helper>
+              No purchase is required to earn any of these, and guests who opted out of messages
+              still collect stamps, offers and spins. Nothing here sends messages.
+            </Helper>
+          </div>
+
+          {step >= 2 && (
+            <section className="builder-panel" aria-label="Loyalty tools preview">
+              <h3>What guests see</h3>
+              <PreviewOnly>Preview only. None of this is live until you publish.</PreviewOnly>
+              <PhoneFrame label="Guest tools preview">
+                <strong>{restaurant.name}</strong>
+                {doubleOn ? (
+                  <p>Double stamps every {WEEKDAYS[doubleDay]}.</p>
+                ) : (
+                  <p>No double stamp day right now.</p>
+                )}
+                {streakOn ? (
+                  <p>
+                    Come in {streakVisits} {streakVisits === 1 ? "time" : "times"} a week for{" "}
+                    {streakWeeks} weeks and get {streakBonus} bonus{" "}
+                    {streakBonus === 1 ? "stamp" : "stamps"}.
+                  </p>
+                ) : (
+                  <p>No visit streak right now.</p>
+                )}
+                <small>A guest sees these two lines on their card.</small>
+              </PhoneFrame>
+            </section>
           )}
-        </div>
+
+          {publishBar("Publish these loyalty tools? Guests see them straight away.", saveTools)}
+        </section>
+      )}
+
+      {tab === "wheel" && (
+        <section className="builder-panel" aria-label="Spin wheel">
+          <h2>Spin wheel</h2>
+          <Switch
+            label="Show the spin wheel to guests"
+            checked={spin.enabled}
+            onChange={(next) => setSpin({ ...spin, enabled: next })}
+          />
+          <Helper>
+            Guests earn spins from visits, never from spending. Results are picked on our side and
+            kept in the log. Prizes become personal single-use offers.
+          </Helper>
+          <div className="builder-fields">
+            <label className="builder-field">
+              One spin every how many visits?
+              <input
+                type="number"
+                min={1}
+                max={50}
+                value={spin.earnEveryVisits}
+                onChange={(event) => setSpin({ ...spin, earnEveryVisits: Number(event.target.value) })}
+              />
+            </label>
+            <label className="builder-field">
+              Weekly prize budget (R)
+              <input
+                type="number"
+                min={0}
+                step="0.01"
+                value={spin.weeklyBudgetCents / 100}
+                onChange={(event) =>
+                  setSpin({
+                    ...spin,
+                    weeklyBudgetCents: Math.round(Number(event.target.value) * 100),
+                  })
+                }
+              />
+            </label>
+            <Switch
+              label="Also give a spin at each reward milestone"
+              checked={spin.earnAtMilestone}
+              onChange={(next) => setSpin({ ...spin, earnAtMilestone: next })}
+            />
+          </div>
+          <div className="spin-mode-options">
+            <h3>Guest spin modes</h3>
+            {SPIN_MODES.map(({ mode, title, description }) => (
+              <Switch
+                key={mode}
+                label={title}
+                hint={description}
+                checked={(spin.modes ?? ["earned"]).includes(mode)}
+                onChange={(next) => {
+                  const modes = new Set<SpinMode>(spin.modes ?? ["earned"]);
+                  if (next) modes.add(mode);
+                  else modes.delete(mode);
+                  setSpin({ ...spin, modes: [...modes] });
+                }}
+              />
+            ))}
+          </div>
+          {(spin.modes ?? ["earned"]).includes("reward_decider") && (
+            <label className="builder-field">
+              Advertised reward value (R)
+              <input
+                type="number"
+                min={0}
+                step="0.01"
+                value={(spin.rewardFloorCents ?? 0) / 100}
+                onChange={(event) =>
+                  setSpin({
+                    ...spin,
+                    rewardFloorCents: Math.round(Number(event.target.value) * 100),
+                  })
+                }
+              />
+              <Helper>
+                The reward decider never draws a prize worth less than this. It keeps "
+                {reward || "your advertised reward"}" as the lowest value.
+              </Helper>
+            </label>
+          )}
+          {((spin.modes ?? ["earned"]).includes("reward_decider") ||
+            (spin.modes ?? ["earned"]).includes("daily_surprise")) && (
+            <Helper>
+              The reward decider picks a prize from your list at random when a card fills. The guest
+              never chooses, and nothing below the advertised value is given. Daily surprises need a
+              special that is live today. If all modes are off, the wheel is hidden.
+            </Helper>
+          )}
+          {(spin.modes ?? ["earned"]).includes("daily_surprise") && (
+            <label className="builder-field">
+              Daily surprise specials
+              <select
+                multiple
+                value={spin.dailyPool ?? []}
+                onChange={(event) =>
+                  setSpin({
+                    ...spin,
+                    dailyPool: Array.from(event.target.selectedOptions, (option) => option.value),
+                  })
+                }
+              >
+                {state.specials
+                  .filter((special) => special.restaurantId === restaurant.id && special.active)
+                  .map((special) => (
+                    <option key={special.id} value={special.id}>
+                      {special.title}
+                    </option>
+                  ))}
+              </select>
+              <Helper>Pick one or more live specials. Hold Ctrl to pick more than one.</Helper>
+            </label>
+          )}
+          <div className="spin-segments">
+            <h3>Prizes on the wheel</h3>
+            {spin.segments.map((segment) => (
+              <div className="spin-segment-row" key={segment.id}>
+                <input
+                  value={segment.label}
+                  placeholder="Prize"
+                  aria-label="Prize label"
+                  onChange={(event) => setSegment(segment.id, { label: event.target.value })}
+                />
+                <label>
+                  Chance
+                  <input
+                    type="number"
+                    min={0}
+                    value={segment.weight}
+                    onChange={(event) =>
+                      setSegment(segment.id, { weight: Number(event.target.value) })
+                    }
+                  />
+                </label>
+                <label>
+                  Value R
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={segment.valueCents / 100}
+                    onChange={(event) =>
+                      setSegment(segment.id, {
+                        valueCents: Math.round(Number(event.target.value) * 100),
+                      })
+                    }
+                  />
+                </label>
+                <label>
+                  Bonus stamps
+                  <input
+                    type="number"
+                    min={0}
+                    max={5}
+                    value={segment.bonusStamps ?? 0}
+                    onChange={(event) => {
+                      const value = Number(event.target.value);
+                      const next: SpinSegment = { ...segment };
+                      if (value > 0) next.bonusStamps = value;
+                      else delete next.bonusStamps;
+                      setSegment(segment.id, next);
+                    }}
+                  />
+                </label>
+                <label>
+                  Most per day
+                  <input
+                    type="number"
+                    min={0}
+                    value={segment.cap?.period === "day" ? segment.cap.max : 0}
+                    onChange={(event) => {
+                      const value = Number(event.target.value);
+                      const next: SpinSegment = { ...segment };
+                      if (value > 0) next.cap = { period: "day", max: value };
+                      else delete next.cap;
+                      setSegment(segment.id, next);
+                    }}
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="builder-secondary"
+                  onClick={() =>
+                    setSpin({
+                      ...spin,
+                      segments: spin.segments.filter((item) => item.id !== segment.id),
+                    })
+                  }
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              className="builder-secondary"
+              onClick={() => setSpin({ ...spin, segments: [...spin.segments, blankSegment()] })}
+            >
+              Add a prize
+            </button>
+          </div>
+          <label className="builder-field">
+            Rules shown to guests
+            <textarea
+              rows={5}
+              value={spin.rules}
+              onChange={(event) => setSpin({ ...spin, rules: event.target.value })}
+            />
+          </label>
+          <div className="page-actions">
+            <button
+              className="builder-secondary"
+              onClick={() =>
+                setSpin({
+                  ...spin,
+                  rules: api.spin.rulesText({ ...restaurant, spin }),
+                })
+              }
+            >
+              Write the rules for me
+            </button>
+          </div>
+          <Helper>
+            The published rules always include "No purchase is required to earn spins." Only show
+            the notice where the rules apply.
+          </Helper>
+
+          {step >= 2 && (
+            <section className="builder-panel" aria-label="Spin wheel preview">
+              <h3>Test the wheel</h3>
+              <Helper>
+                A test spin draws from these draft prizes only. It never touches your weekly budget
+                and never creates an offer, code or reward.
+              </Helper>
+              {!spin.enabled && (
+                <Helper>
+                  The wheel is off for guests right now. Turn it on above when you are happy with
+                  the prizes.
+                </Helper>
+              )}
+              <PreviewOnly>Preview only. Guests see the wheel after you publish.</PreviewOnly>
+              <PhoneFrame label="Guest spin wheel preview">
+                <WheelPreview segments={spin.segments} />
+              </PhoneFrame>
+            </section>
+          )}
+
+          {publishBar("Publish the spin wheel? Guests see the new prizes straight away.", saveSpin)}
+        </section>
+      )}
+
+      {tab === "tiers" && (
+        <section className="builder-panel" aria-label="Tiers and challenges">
+          <h2>Tiers and challenges</h2>
+          <div className="builder-fields">
+            <label className="builder-field">
+              Regular from how many visits in 90 days?
+              <input
+                type="number"
+                min={1}
+                value={regular}
+                onChange={(event) => setRegular(Number(event.target.value))}
+              />
+            </label>
+            <label className="builder-field">
+              VIP from how many visits in 90 days?
+              <input
+                type="number"
+                min={2}
+                value={vip}
+                onChange={(event) => setVip(Number(event.target.value))}
+              />
+            </label>
+          </div>
+          <Helper>
+            Tiers unlock members-only and targeted specials. VIP guests can be the only ones who see
+            a particular offer.
+          </Helper>
+          <Helper>
+            Visit challenges have their own screen.{" "}
+            <a href="/app/challenges">Write and publish a challenge</a>.
+          </Helper>
+
+          {step >= 2 && (
+            <section className="builder-panel" aria-label="Tiers preview">
+              <h3>What guests see</h3>
+              <PreviewOnly>Preview only. The tiers stay as they are until you publish.</PreviewOnly>
+              <PhoneFrame label="Guest tier preview">
+                <strong>{restaurant.name}</strong>
+                <p>Regular from {regular} visits in 90 days.</p>
+                <p>VIP from {vip} visits in 90 days.</p>
+              </PhoneFrame>
+            </section>
+          )}
+
+          {publishBar("Publish these tiers? Guests see them straight away.", saveTiers)}
+        </section>
       )}
 
       {notice && (
-        <p role="status" className="demo-data-note">
+        <p role="status" className="builder-hint">
           {notice}
         </p>
       )}

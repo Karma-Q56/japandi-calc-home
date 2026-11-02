@@ -5,6 +5,7 @@
 import { demoRepo } from "@/data/repo";
 import type { Restaurant } from "@/data/types";
 import { johannesburgTime } from "@/lib/johannesburg-time";
+import { guestDisplayName } from "@/lib/wording";
 import { failure, success, type ApiResult } from "./demo";
 import { requireScope } from "./audit";
 
@@ -343,7 +344,10 @@ export function ownerReport(input: {
     .slice(0, 5);
 
   const names = new Map(
-    state.customers.map((customer) => [customer.id, customer.name || "Removed guest"]),
+    state.customers.map((customer) => [
+      customer.id,
+      guestDisplayName(customer.name || "Removed guest"),
+    ]),
   );
   const guestVisits = new Map<string, number>();
   for (const stamp of stampsInRange) {

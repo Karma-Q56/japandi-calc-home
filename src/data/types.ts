@@ -46,6 +46,10 @@ export interface PageVersion {
   restaurantId: string;
   /** Johannesburg time as ISO, when this version was published. */
   at: string;
+  /** Who pressed publish, in plain words. */
+  by: string;
+  /** One line about what changed in this version. */
+  summary: string;
   edit: PageEdit;
 }
 
@@ -235,6 +239,18 @@ export interface MenuItem {
   priceCents: number;
   available: boolean;
   sortOrder: number;
+}
+
+/** One published menu, kept so an owner can step back to it. */
+export interface MenuVersion {
+  id: string;
+  restaurantId: string;
+  /** Johannesburg time as ISO. */
+  at: string;
+  by: string;
+  summary: string;
+  sections: MenuSection[];
+  items: MenuItem[];
 }
 export interface Special {
   id: string;
@@ -569,6 +585,35 @@ export interface Idea {
   adminNotes?: string;
   createdAt: string;
 }
+
+export type FeedbackCategory = "broken" | "feature" | "confusing" | "other";
+export type FeedbackStatus = "new" | "seen" | "planned" | "done" | "not_now";
+export type FeedbackSource = "owner" | "guest" | "public";
+
+/** A picture the sender attached. Demo mode keeps it in this browser only. */
+export interface FeedbackScreenshot {
+  name: string;
+  type: string;
+  dataUrl: string;
+}
+
+/** One note from an owner, a diner or a visitor on the public page. */
+export interface Feedback {
+  id: string;
+  /** The venue the note is about. A public note may have none. */
+  restaurantId?: string;
+  source: FeedbackSource;
+  category: FeedbackCategory;
+  message: string;
+  contactOk: boolean;
+  contact?: string;
+  status: FeedbackStatus;
+  /** Private operator note. Never shown to the sender. */
+  note: string;
+  screenshot?: FeedbackScreenshot;
+  createdAt: string;
+}
+
 export type LeadStatus = "new" | "replied" | "closed";
 
 /** One contact enquiry, with every answer the visitor gave. */
@@ -710,6 +755,8 @@ export interface DemoState {
   pinLockouts: PinLockout[];
   onboarding: OnboardingChecklist[];
   pageVersions: PageVersion[];
+  menuVersions: MenuVersion[];
+  feedback: Feedback[];
 }
 
 export interface Repo {

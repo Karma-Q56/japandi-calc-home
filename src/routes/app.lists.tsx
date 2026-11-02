@@ -6,6 +6,7 @@ import { requireRole } from "@/data/session";
 import type { Customer, Membership, SavedList } from "@/data/types";
 import { useDemoState } from "@/data/useDemoState";
 import { EmptyState, PageHeader } from "@/components/patron/dash";
+import { guestDisplayName } from "@/lib/wording";
 
 export const Route = createFileRoute("/app/lists")({
   beforeLoad: () => {
@@ -27,7 +28,7 @@ function ListsPage() {
         <PageHeader
           eyebrow="Saved lists"
           title="Saved lists."
-          intro="Open this page from a restaurant tunnel."
+          intro="Choose a venue first, then open this page again."
         />
       </main>
     );
@@ -69,7 +70,11 @@ function ListsPage() {
             .filter((m): m is Membership => !!m);
           const names = members
             .slice(0, 6)
-            .map((m) => state.customers.find((c: Customer) => c.id === m.customerId)?.name ?? "A guest");
+            .map((m) =>
+              guestDisplayName(
+                state.customers.find((c: Customer) => c.id === m.customerId)?.name ?? "A guest",
+              ),
+            );
           const updated = new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium" }).format(
             new Date(list.updatedAt),
           );

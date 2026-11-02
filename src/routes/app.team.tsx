@@ -131,7 +131,7 @@ function Team() {
       </section>
       <section className="builder-panel">
         <h2>Pair a till</h2>
-        <p>Codes are 8 characters, valid 10 minutes, single use.</p>
+        <p>Codes are 8 letters or numbers, valid for 10 minutes and can be used once.</p>
         <button className="builder-secondary" onClick={() => void createCode()}>
           Generate pairing code
         </button>

@@ -11,6 +11,7 @@ const LINKS = [
   { to: "/ops/campaigns", label: "Campaigns" },
   { to: "/ops/credit", label: "Credit" },
   { to: "/ops/outbox", label: "SMS outbox" },
+  { to: "/ops/feedback", label: "Feedback" },
 ] as const;
 
 function OpsShell() {

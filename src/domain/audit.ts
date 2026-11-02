@@ -33,6 +33,8 @@ export type AuditAction =
   | "enquiry_updated"
   | "idea_received"
   | "idea_updated"
+  | "feedback_received"
+  | "feedback_updated"
   | "miss_you_award"
   | "custom_reward";
 

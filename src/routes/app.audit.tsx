@@ -95,6 +95,7 @@ function Audit() {
                 new Intl.DateTimeFormat("en-ZA", {
                   dateStyle: "medium",
                   timeStyle: "short",
+                  timeZone: "Africa/Johannesburg",
                 }).format(new Date(event.createdAt)),
             },
           ]}

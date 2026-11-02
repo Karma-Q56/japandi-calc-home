@@ -1,86 +1,87 @@
 # Screenshot pass
 
-Every screen now has one current pair: a 375px phone shot and a 1280px desktop shot, both taken on 2026-11-01 with `scripts/shot-verify.mjs` (it signs in through `/dev/roles?role=...`). Every pair was opened and looked at. Problems found were fixed in code and the shot was retaken.
+Every page was captured at 375px and 1280px on 2 November 2026 with
+`scripts/shot-verify.mjs`, signed in through `/dev/roles?role=...`.
 
-The walk also measures each page: every element is checked against the viewport, and the document scroll width is compared with the window width. In the final walk, 60 stages x 2 widths = 120 shots, 0 console or page errors, 0 stages with failed actions, and no page scrolls sideways at 375px.
+The walk now hides the demo pill and every fixed or sticky bottom bar before the
+full-page shot, waits for any click navigation to finish, and writes
+`screenshots/<stage>-<width>.png`. Any page taller than 1500px is also cut into
+bands of at most 1500px under `screenshots/pieces/`, so every part can be
+opened.
+
+Final walk: **66 stages x 2 widths = 132 shots**, 0 failed stages, 0 console or
+page errors, and 0 pages whose document scrolls sideways. 69 of the shots were
+taller than 1500px and produced **167 crops**. The only elements reported past
+the viewport are deliberate: the honeypot field (hidden anti-spam field), the
+home marquee ticker, and the for-business snap strip on phones. Each page's
+scroll width stays at the viewport width.
+
+## Changed screens
+
+Opened as full shots and crops on 2 November. Heights are at 375px unless
+stated.
+
+| Screen | Height / crops | What the crops show |
+| --- | --- | --- |
+| Owner customer profile | 2286 / 2 | Crop 1: header, one row of three stat cards, both actions, Message starters. Crop 2: Contact, birthday line, Know your guest sentence ("Thandi usually comes in on Thursday mornings and usually has a flat white. They have 0 stamps on their card, and their birthday is 1 October."), visit timeline, rewards, and the new empty state on Consent history. |
+| Owner customers list | 3344 / 3 | Crop 1: heading, Export CSV, search and filters. Crops 2 and 3: 20 guest rows, every name in first name plus initial form (James M., Sipho M., Thandi N., Naledi N.), with stamps, last visit and reward pill. No duplicate first names without an initial. |
+| Owner loyalty, Rewards tab | 1881 / 2 | Four tabs wrap three plus one on the phone, no sideways scroll. Draft, Preview and Publish steps are visible. Crop 2: card rules with collapsed preset sections, so the page is short. |
+| Owner loyalty, Preview step | 2637 / 2 | Preview banner and phone frame. Slightly over 2,500px because the whole card preview is shown; no overflow. |
+| Owner loyalty, Loyalty tools | 1084 / 1 | One helper style, preset details collapsed. |
+| Owner loyalty, Spin wheel | 2519 / 2 | Tab is 2,519px. The prize list scrolls inside its own panel so the page stays near 2,500px. |
+| Owner loyalty, Tiers and challenges | 1024 / 1 | Short tab, no empty gap under the heading. |
+| Guest card | 3046 / 3 | Crop 1: card, stamps, tiers, welcome spin. Crop 2: QR, Bring a friend, rewards. Crop 3: offers, real buttons for Menu and specials, All restaurants, Notifications and details, then recent visits. Nothing is covered by a fixed bar. |
+| Till order step, items | 2 | Demo pill and fixed bar are gone, so the Offer code field and Undo last stamp (now a secondary button) are fully visible. Nothing overlaps. |
+| Owner public page | 2642 / 2 | Crop 1: words and the first opening-hours rows. Crop 2: remaining days, Preview button. Day labels and time fields are tight at 375px but readable. The version list appears below once a version exists. |
+| Owner menu | 2 | Menu rows, preview form, and the new Previous versions panel. With no publishes yet it shows "No published menu yet. Publish an item to start." |
+| Owner feedback | 2 | Form with category, note, picture, contact tick box, and Your past feedback with Planned and Done status pills. |
+| Ops feedback | 2 | Operator nav includes Feedback; filters, four seeded notes and the open-note panel with status and private note. |
+| Blog post | 2 | "Placeholder draft, not final" banner above the title. |
+
+The remaining screens kept their existing layout; their full shots and crops
+were measured in the same walk (no console errors, no sideways scroll) but were
+not opened again by hand this pass. Nothing in their code changed except shared
+spacing, helper text and guest names.
 
 ## Fixes made during this pass
 
 | Fix | Where |
 | --- | --- |
-| Menu item preview prices printed R380 for a flat white. The demo seed doubled its own rand prices. Seeded items are now R38, R24, R26, R32, R45 and R95, and a test pins them. | `src/data/seed.ts`, `src/test/menu-preview.test.tsx` |
-| The public-template phone preview on the menu page overflowed its phone frame at 375px because template blocks use `92vw` widths. The frame now clips and resizes them. | `src/ui.css` |
-| The audience choice card on the campaign builder could print the count twice ("3 0 guests"). The active choice now uses one `countLabel` call. | `src/routes/app.campaigns.new.tsx` |
-| The walk script used field names the challenge form does not have, so its preview step filled nothing and hit 30 second timeouts. It now targets the number inputs by type and position. | `scripts/shot-verify.mjs` |
+| The demo pill and fixed bottom bars covered real content in full-page shots. They are hidden for the capture, and clicks that navigate no longer abort the walk. | `scripts/shot-verify.mjs` |
+| Tall pages were unreadable in one image. They are now cut into 1500px bands. | `scripts/shot-verify.mjs` |
+| The loyalty tabs ran past the phone edge. They wrap at 700px. | `src/ui.css` |
+| The spin wheel tab was 3,784px. The prize list scrolls inside its panel, bringing the tab to 2,519px. | `src/ui.css` |
+| "Know your guest" repeated the name and said "has flat white". One sentence now, name once, then "they". | `src/domain/customers.ts` |
+| Guest names in owner lists showed the full name twice in Insights. Lists now use first name plus last initial, including names that end in a number. | `src/lib/wording.ts`, `src/domain/insights.ts`, `src/domain/campaigns.ts` |
+| The guest profile stat cards wrapped two plus one. They sit in one row, or one column below 340px. | `src/components/patron/dash.tsx`, `src/ui.css` |
+| Plain text acted as buttons on the guest card and till. They are the shared button styles now. | `src/routes/r.$slug.card.tsx`, `src/routes/r.$slug.join.tsx`, `src/routes/stamp.tsx` |
 
-## Rows
+## Browser page audit
 
-One row per screen. "Checked" is the visual and metric check; "Fixed" names what changed this pass, or nothing.
+`scripts/audit-pages.mjs` opens every page route in a real Chromium browser,
+375px and 1280px, each page in a fresh session signed in through `/dev/roles`.
+It reports console errors, links that answer 404, pages with no content and no
+empty state, pages with more than one `h1`, text styled as a button that is not
+one, and buttons that produce no DOM change.
 
-| Screen | Files | Checked and fixed |
-| --- | --- | --- |
-| Owner dashboard | owner-dashboard-375.png, owner-dashboard-1280.png | Stat cards, nav and quick actions fit both widths. Nothing to fix. |
-| Owner customer profile (Know your guest) | owner-customer-375.png, owner-customer-1280.png | Name, pattern card and actions checked. Plural wording already uses countLabel; nothing to fix. |
-| Owner insights | owner-insights-375.png, owner-insights-1280.png | No big gaps at 375px; numbers are whole. Nothing to fix. |
-| Owner customers list | owner-customers-375.png, owner-customers-1280.png | Table scrolls as designed inside its card. Nothing to fix. |
-| Owner saved lists | owner-lists-375.png, owner-lists-1280.png | Empty state and rows fit. Nothing to fix. |
-| Owner reports | owner-reports-375.png, owner-reports-1280.png | Numbers and tables fit. Nothing to fix. |
-| Owner menu | owner-menu-375.png, owner-menu-1280.png | Fixed: seeded prices now read R38 and R24, not R380 and R300. |
-| Owner menu preview step | owner-menu-preview-375.png, owner-menu-preview-1280.png | Fixed: the public page inside the phone frame no longer overflows the page at 375px. |
-| Owner specials | owner-specials-375.png, owner-specials-1280.png | Cards and actions fit. Nothing to fix. |
-| Owner loyalty tools | owner-loyalty-375.png, owner-loyalty-1280.png | Tools panel and card rules checked. Nothing to fix. |
-| Owner loyalty preview step | owner-loyalty-preview-375.png, owner-loyalty-preview-1280.png | Preview banner and phone frame fit. Nothing to fix. |
-| Owner card design | owner-design-375.png, owner-design-1280.png | Card, colours and hosts fit. Nothing to fix. |
-| Owner design preview step | owner-design-preview-375.png, owner-design-preview-1280.png | Card preview fits. Nothing to fix. |
-| Owner challenges | owner-challenges-375.png, owner-challenges-1280.png | List and write form fit. Nothing to fix. |
-| Owner challenge preview step | owner-challenges-preview-375.png, owner-challenges-preview-1280.png | Fixed this pass: the walk now fills the form, so the shot shows the real guest preview. |
-| Owner campaigns | owner-campaigns-375.png, owner-campaigns-1280.png | Campaign table fits. Nothing to fix. |
-| Owner campaign builder | owner-campaign-new-375.png, owner-campaign-new-1280.png | Fixed: the "N guests" counts on audience choices now print once, singular aware. |
-| Owner campaign results | owner-campaign-results-375.png, owner-campaign-results-1280.png | Result stats fit. Nothing to fix. |
-| Owner credit | owner-credit-375.png, owner-credit-1280.png | Balance and top up fit. Nothing to fix. |
-| Owner team | owner-team-375.png, owner-team-1280.png | Team table fits. Nothing to fix. |
-| Owner QR pack | owner-qr-375.png, owner-qr-1280.png | QR cards fit. Nothing to fix. |
-| Owner public page editor | owner-page-375.png, owner-page-1280.png | Version list and editor fit. Nothing to fix. |
-| Owner onboarding | owner-onboarding-375.png, owner-onboarding-1280.png | Steps fit. Nothing to fix. |
-| Owner audit log | owner-audit-375.png, owner-audit-1280.png | Event rows fit. Nothing to fix. |
-| Owner settings | owner-settings-375.png, owner-settings-1280.png | Form fields and toggles fit. Nothing to fix. |
-| Owner referrals draft | owner-referrals-draft-375.png, owner-referrals-draft-1280.png | Settings form and invite copy fit. Nothing to fix. |
-| Owner referrals preview | owner-referrals-preview-375.png, owner-referrals-preview-1280.png | Banner and steps fit. Nothing to fix. |
-| Owner referrals publish | owner-referrals-publish-375.png, owner-referrals-publish-1280.png | Published state fits. Nothing to fix. |
-| Owner guest ideas | owner-ideas-375.png, owner-ideas-1280.png | Idea board fits. Nothing to fix. |
-| Staff till sign in | till-sign-in-375.png, till-sign-in-1280.png | Pairing form fits. Demo pill sits below the button on narrow screens. Nothing to fix beyond that. |
-| Staff till pair code | till-pair-375.png, till-pair-1280.png | Pair state fits. Nothing to fix. |
-| Staff till order step, items | till-order-items-375.png, till-order-items-1280.png | Item picker fits its card. Nothing to fix. |
-| Staff till order step, categories | till-order-categories-375.png, till-order-categories-1280.png | Simple category picker fits. Nothing to fix. |
-| Guest card | guest-card-375.png, guest-card-1280.png | Stamps, double stamp day and streak panels fit. Nothing to fix. |
-| Guest join, birthday step | join-birthday-375.png, join-birthday-1280.png | Birthday inputs fit. Nothing to fix. |
-| Guest join, referral banner | join-referral-375.png, join-referral-1280.png | Fixed earlier this pass: the banner shows the seeded referral link. |
-| Guest home (me) | me-home-375.png, me-home-1280.png | Cards and links fit. Nothing to fix. |
-| Guest restaurants list | me-restaurants-375.png, me-restaurants-1280.png | Venue cards fit. Nothing to fix. |
-| Guest settings, birthday field | me-settings-375.png, me-settings-1280.png | Fields fit. Nothing to fix. |
-| Ops restaurants | ops-restaurants-375.png, ops-restaurants-1280.png | List fits. Nothing to fix. |
-| Ops one restaurant | ops-restaurant-375.png, ops-restaurant-1280.png | Rows fit. Nothing to fix. |
-| Ops look editor | ops-look-375.png, ops-look-1280.png | Theme controls fit. Nothing to fix. |
-| Ops credit | ops-credit-375.png, ops-credit-1280.png | Balances and list fit. Nothing to fix. |
-| Ops leads inbox | ops-leads-375.png, ops-leads-1280.png | Lead cards fit. Nothing to fix. |
-| Ops outbox | ops-outbox-375.png, ops-outbox-1280.png | Message rows fit. Nothing to fix. |
-| Ops guest ideas | ops-ideas-375.png, ops-ideas-1280.png | Board columns fit. Nothing to fix. |
-| Site home | site-home-help-375.png, site-home-help-1280.png | The flagged tall list is the marquee ticker, which clips intentionally; the page never scrolls sideways. Nothing to fix. |
-| Site pricing | site-pricing-375.png, site-pricing-1280.png | Plan cards stack and fit. Nothing to fix. |
-| Site how it works | site-how-it-works-375.png, site-how-it-works-1280.png | Steps fit. Nothing to fix. |
-| Site FAQ | site-faq-375.png, site-faq-1280.png | Accordion rows fit. Nothing to fix. |
-| Site contact | site-contact-375.png, site-contact-1280.png | The only off-screen item is the hidden honeypot field, which is deliberate anti-spam. Nothing to fix. |
-| Site for business | site-for-business-375.png, site-for-business-1280.png | The three screens form a snap scroll strip on phones by design; doc scroll width stays 375. Nothing to fix. |
-| Site for diners | site-for-diners-375.png, site-for-diners-1280.png | Sections fit. Nothing to fix. |
-| Site blog list | site-blog-375.png, site-blog-1280.png | Post cards fit. Nothing to fix. |
-| Site blog post | site-blog-post-375.png, site-blog-post-1280.png | Copy fits. Nothing to fix. |
-| Site find | site-find-375.png, site-find-1280.png | Search rows fit. Nothing to fix. |
-| Site suggest | site-suggest-375.png, site-suggest-1280.png | Honeypot only is off screen. Nothing to fix. |
-| Site login | site-login-375.png, site-login-1280.png | Form fits. Nothing to fix. |
-| Site privacy | site-privacy-375.png, site-privacy-1280.png | Copy fits. Nothing to fix. |
-| Site terms | site-terms-375.png, site-terms-1280.png | Copy fits. Nothing to fix. |
+```bash
+AUDIT_BASE=http://127.0.0.1:5174 node scripts/audit-pages.mjs
+AUDIT_BASE=http://127.0.0.1:5174 AUDIT_ONLY=owner node scripts/audit-pages.mjs
+```
+
+Results on 2 November: owner 48 pages, public plus operator 46 pages, guest and
+staff 10 pages. No console errors, no 404 links, no double headers, no empty
+page without an empty state and no fake buttons. The only notes were buttons
+with no visible change in 250ms. They were already-selected options, the
+first-row move arrow, the browser print dialog, and the pricing day picker on
+its default day. All are expected. Two real problems found earlier in the audit
+were fixed: the QR pack read `window.location.origin` during the first render
+(hydration mismatch), and the activity log printed times without the
+Johannesburg timezone.
 
 ## Not done by screenshot
 
-- Real SMS delivery and operator notifications are noticed in text, not pixel state, so they stay covered by the domain tests instead.
-- The fullPage shots pin sticky bars (the demo pill and the owner bottom nav) at one spot mid page. That is how fullPage capture handles sticky elements; the live page is not affected.
+- Real SMS delivery, email and operator notifications are covered by domain
+  tests, not pixels.
+- The audit's button check is a 250ms heuristic; a slow modal or an external
+  dialog can land after the window.

@@ -221,6 +221,13 @@ function GuestSettings() {
             ))}
         </section>
         <section className="builder-panel">
+          <h2>Help us improve</h2>
+          <p>Found something confusing, or want a feature? The form needs no sign in.</p>
+          <a className="builder-secondary" href="/feedback">
+            Suggest a feature
+          </a>
+        </section>
+        <section className="builder-panel">
           <h2>Your data</h2>
           <div className="settings-actions">
             <button className="builder-secondary" onClick={download}>

@@ -28,6 +28,11 @@ function BlogPost() {
         <p className="demo-data-note">
           {formatDate(post.date)} · {post.readMinutes} minute read
         </p>
+        {!post.reviewed && (
+          <p className="blog-banner" role="status">
+            Placeholder draft, not final
+          </p>
+        )}
         <h1>{post.title}</h1>
         {post.sections.map((section) => (
           <section key={section.heading}>

@@ -4,10 +4,11 @@ import type { DemoState, Repo } from "./types";
 // Bump the key when the demo seed changes shape. Older keys are migrated into this
 // one (or discarded when their shape no longer fits), so a browser that still holds
 // a snapshot from a previous build never renders stale or half-shaped data.
-const STORAGE_KEY = "patron-demo-v7";
+const STORAGE_KEY = "patron-demo-v8";
 
 /** Keys written by earlier builds, newest first. */
 const LEGACY_STORAGE_KEYS = [
+  "patron-demo-v7",
   "patron-demo-v6",
   "patron-demo-v5",
   "patron-demo-v4",
@@ -198,6 +199,8 @@ function normalise(raw: unknown): DemoState | null {
     pinLockouts: parsed.pinLockouts ?? [],
     onboarding: parsed.onboarding ?? [],
     pageVersions: parsed.pageVersions ?? [],
+    menuVersions: parsed.menuVersions ?? [],
+    feedback: parsed.feedback ?? [],
     pushSubscriptions: parsed.pushSubscriptions ?? [],
     orders: convertedOrders,
     referrals: (parsed.referrals ?? []).filter(

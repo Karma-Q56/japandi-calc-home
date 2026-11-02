@@ -16,6 +16,7 @@ import { Route as ConsentWordingRouteImport } from './routes/consent-wording'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as DemoRouteImport } from './routes/demo'
 import { Route as FaqRouteImport } from './routes/faq'
+import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as FindRouteImport } from './routes/find'
 import { Route as ForBusinessRouteImport } from './routes/for-business'
 import { Route as ForDinersRouteImport } from './routes/for-diners'
@@ -39,6 +40,7 @@ import { Route as AppChallengesRouteImport } from './routes/app.challenges'
 import { Route as AppCreditRouteImport } from './routes/app.credit'
 import { Route as AppCustomersRouteImport } from './routes/app.customers'
 import { Route as AppDesignRouteImport } from './routes/app.design'
+import { Route as AppFeedbackRouteImport } from './routes/app.feedback'
 import { Route as AppIdeasRouteImport } from './routes/app.ideas'
 import { Route as AppInsightsRouteImport } from './routes/app.insights'
 import { Route as AppListsRouteImport } from './routes/app.lists'
@@ -63,6 +65,7 @@ import { Route as MeRestaurantsRouteImport } from './routes/me.restaurants'
 import { Route as MeSettingsRouteImport } from './routes/me.settings'
 import { Route as OpsCampaignsRouteImport } from './routes/ops.campaigns'
 import { Route as OpsCreditRouteImport } from './routes/ops.credit'
+import { Route as OpsFeedbackRouteImport } from './routes/ops.feedback'
 import { Route as OpsIdeasRouteImport } from './routes/ops.ideas'
 import { Route as OpsLeadsRouteImport } from './routes/ops.leads'
 import { Route as OpsOutboxRouteImport } from './routes/ops.outbox'
@@ -118,6 +121,11 @@ const DemoRoute = DemoRouteImport.update({
 const FaqRoute = FaqRouteImport.update({
   id: '/faq',
   path: '/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedbackRoute = FeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FindRoute = FindRouteImport.update({
@@ -233,6 +241,11 @@ const AppCustomersRoute = AppCustomersRouteImport.update({
 const AppDesignRoute = AppDesignRouteImport.update({
   id: '/design',
   path: '/design',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFeedbackRoute = AppFeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
   getParentRoute: () => AppRoute,
 } as any)
 const AppIdeasRoute = AppIdeasRouteImport.update({
@@ -355,6 +368,11 @@ const OpsCreditRoute = OpsCreditRouteImport.update({
   path: '/credit',
   getParentRoute: () => OpsRoute,
 } as any)
+const OpsFeedbackRoute = OpsFeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
+  getParentRoute: () => OpsRoute,
+} as any)
 const OpsIdeasRoute = OpsIdeasRouteImport.update({
   id: '/ideas',
   path: '/ideas',
@@ -469,6 +487,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/demo': typeof DemoRouteWithChildren
   '/faq': typeof FaqRoute
+  '/feedback': typeof FeedbackRoute
   '/find': typeof FindRoute
   '/for-business': typeof ForBusinessRoute
   '/for-diners': typeof ForDinersRoute
@@ -492,6 +511,7 @@ export interface FileRoutesByFullPath {
   '/app/credit': typeof AppCreditRoute
   '/app/customers': typeof AppCustomersRouteWithChildren
   '/app/design': typeof AppDesignRoute
+  '/app/feedback': typeof AppFeedbackRoute
   '/app/ideas': typeof AppIdeasRoute
   '/app/insights': typeof AppInsightsRoute
   '/app/lists': typeof AppListsRoute
@@ -515,6 +535,7 @@ export interface FileRoutesByFullPath {
   '/me/settings': typeof MeSettingsRoute
   '/ops/campaigns': typeof OpsCampaignsRoute
   '/ops/credit': typeof OpsCreditRoute
+  '/ops/feedback': typeof OpsFeedbackRoute
   '/ops/ideas': typeof OpsIdeasRoute
   '/ops/leads': typeof OpsLeadsRoute
   '/ops/outbox': typeof OpsOutboxRoute
@@ -546,6 +567,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/demo': typeof DemoRouteWithChildren
   '/faq': typeof FaqRoute
+  '/feedback': typeof FeedbackRoute
   '/find': typeof FindRoute
   '/for-business': typeof ForBusinessRoute
   '/for-diners': typeof ForDinersRoute
@@ -569,6 +591,7 @@ export interface FileRoutesByTo {
   '/app/credit': typeof AppCreditRoute
   '/app/customers': typeof AppCustomersRouteWithChildren
   '/app/design': typeof AppDesignRoute
+  '/app/feedback': typeof AppFeedbackRoute
   '/app/ideas': typeof AppIdeasRoute
   '/app/insights': typeof AppInsightsRoute
   '/app/lists': typeof AppListsRoute
@@ -592,6 +615,7 @@ export interface FileRoutesByTo {
   '/me/settings': typeof MeSettingsRoute
   '/ops/campaigns': typeof OpsCampaignsRoute
   '/ops/credit': typeof OpsCreditRoute
+  '/ops/feedback': typeof OpsFeedbackRoute
   '/ops/ideas': typeof OpsIdeasRoute
   '/ops/leads': typeof OpsLeadsRoute
   '/ops/outbox': typeof OpsOutboxRoute
@@ -624,6 +648,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/demo': typeof DemoRouteWithChildren
   '/faq': typeof FaqRoute
+  '/feedback': typeof FeedbackRoute
   '/find': typeof FindRoute
   '/for-business': typeof ForBusinessRoute
   '/for-diners': typeof ForDinersRoute
@@ -647,6 +672,7 @@ export interface FileRoutesById {
   '/app/credit': typeof AppCreditRoute
   '/app/customers': typeof AppCustomersRouteWithChildren
   '/app/design': typeof AppDesignRoute
+  '/app/feedback': typeof AppFeedbackRoute
   '/app/ideas': typeof AppIdeasRoute
   '/app/insights': typeof AppInsightsRoute
   '/app/lists': typeof AppListsRoute
@@ -670,6 +696,7 @@ export interface FileRoutesById {
   '/me/settings': typeof MeSettingsRoute
   '/ops/campaigns': typeof OpsCampaignsRoute
   '/ops/credit': typeof OpsCreditRoute
+  '/ops/feedback': typeof OpsFeedbackRoute
   '/ops/ideas': typeof OpsIdeasRoute
   '/ops/leads': typeof OpsLeadsRoute
   '/ops/outbox': typeof OpsOutboxRoute
@@ -703,6 +730,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/demo'
     | '/faq'
+    | '/feedback'
     | '/find'
     | '/for-business'
     | '/for-diners'
@@ -726,6 +754,7 @@ export interface FileRouteTypes {
     | '/app/credit'
     | '/app/customers'
     | '/app/design'
+    | '/app/feedback'
     | '/app/ideas'
     | '/app/insights'
     | '/app/lists'
@@ -749,6 +778,7 @@ export interface FileRouteTypes {
     | '/me/settings'
     | '/ops/campaigns'
     | '/ops/credit'
+    | '/ops/feedback'
     | '/ops/ideas'
     | '/ops/leads'
     | '/ops/outbox'
@@ -780,6 +810,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/demo'
     | '/faq'
+    | '/feedback'
     | '/find'
     | '/for-business'
     | '/for-diners'
@@ -803,6 +834,7 @@ export interface FileRouteTypes {
     | '/app/credit'
     | '/app/customers'
     | '/app/design'
+    | '/app/feedback'
     | '/app/ideas'
     | '/app/insights'
     | '/app/lists'
@@ -826,6 +858,7 @@ export interface FileRouteTypes {
     | '/me/settings'
     | '/ops/campaigns'
     | '/ops/credit'
+    | '/ops/feedback'
     | '/ops/ideas'
     | '/ops/leads'
     | '/ops/outbox'
@@ -857,6 +890,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/demo'
     | '/faq'
+    | '/feedback'
     | '/find'
     | '/for-business'
     | '/for-diners'
@@ -880,6 +914,7 @@ export interface FileRouteTypes {
     | '/app/credit'
     | '/app/customers'
     | '/app/design'
+    | '/app/feedback'
     | '/app/ideas'
     | '/app/insights'
     | '/app/lists'
@@ -903,6 +938,7 @@ export interface FileRouteTypes {
     | '/me/settings'
     | '/ops/campaigns'
     | '/ops/credit'
+    | '/ops/feedback'
     | '/ops/ideas'
     | '/ops/leads'
     | '/ops/outbox'
@@ -935,6 +971,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   DemoRoute: typeof DemoRouteWithChildren
   FaqRoute: typeof FaqRoute
+  FeedbackRoute: typeof FeedbackRoute
   FindRoute: typeof FindRoute
   ForBusinessRoute: typeof ForBusinessRoute
   ForDinersRoute: typeof ForDinersRoute
@@ -1014,6 +1051,13 @@ declare module '@tanstack/react-router' {
       path: '/faq'
       fullPath: '/faq'
       preLoaderRoute: typeof FaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feedback': {
+      id: '/feedback'
+      path: '/feedback'
+      fullPath: '/feedback'
+      preLoaderRoute: typeof FeedbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/find': {
@@ -1175,6 +1219,13 @@ declare module '@tanstack/react-router' {
       path: '/design'
       fullPath: '/app/design'
       preLoaderRoute: typeof AppDesignRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/feedback': {
+      id: '/app/feedback'
+      path: '/feedback'
+      fullPath: '/app/feedback'
+      preLoaderRoute: typeof AppFeedbackRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/ideas': {
@@ -1343,6 +1394,13 @@ declare module '@tanstack/react-router' {
       path: '/credit'
       fullPath: '/ops/credit'
       preLoaderRoute: typeof OpsCreditRouteImport
+      parentRoute: typeof OpsRoute
+    }
+    '/ops/feedback': {
+      id: '/ops/feedback'
+      path: '/feedback'
+      fullPath: '/ops/feedback'
+      preLoaderRoute: typeof OpsFeedbackRouteImport
       parentRoute: typeof OpsRoute
     }
     '/ops/ideas': {
@@ -1528,6 +1586,7 @@ interface AppRouteChildren {
   AppCreditRoute: typeof AppCreditRoute
   AppCustomersRoute: typeof AppCustomersRouteWithChildren
   AppDesignRoute: typeof AppDesignRoute
+  AppFeedbackRoute: typeof AppFeedbackRoute
   AppIdeasRoute: typeof AppIdeasRoute
   AppInsightsRoute: typeof AppInsightsRoute
   AppListsRoute: typeof AppListsRoute
@@ -1550,6 +1609,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCreditRoute: AppCreditRoute,
   AppCustomersRoute: AppCustomersRouteWithChildren,
   AppDesignRoute: AppDesignRoute,
+  AppFeedbackRoute: AppFeedbackRoute,
   AppIdeasRoute: AppIdeasRoute,
   AppInsightsRoute: AppInsightsRoute,
   AppListsRoute: AppListsRoute,
@@ -1644,6 +1704,7 @@ const OpsRestaurantsRouteWithChildren = OpsRestaurantsRoute._addFileChildren(
 interface OpsRouteChildren {
   OpsCampaignsRoute: typeof OpsCampaignsRoute
   OpsCreditRoute: typeof OpsCreditRoute
+  OpsFeedbackRoute: typeof OpsFeedbackRoute
   OpsIdeasRoute: typeof OpsIdeasRoute
   OpsLeadsRoute: typeof OpsLeadsRoute
   OpsOutboxRoute: typeof OpsOutboxRoute
@@ -1653,6 +1714,7 @@ interface OpsRouteChildren {
 const OpsRouteChildren: OpsRouteChildren = {
   OpsCampaignsRoute: OpsCampaignsRoute,
   OpsCreditRoute: OpsCreditRoute,
+  OpsFeedbackRoute: OpsFeedbackRoute,
   OpsIdeasRoute: OpsIdeasRoute,
   OpsLeadsRoute: OpsLeadsRoute,
   OpsOutboxRoute: OpsOutboxRoute,
@@ -1681,6 +1743,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   DemoRoute: DemoRouteWithChildren,
   FaqRoute: FaqRoute,
+  FeedbackRoute: FeedbackRoute,
   FindRoute: FindRoute,
   ForBusinessRoute: ForBusinessRoute,
   ForDinersRoute: ForDinersRoute,

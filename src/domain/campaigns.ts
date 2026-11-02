@@ -10,6 +10,7 @@ import type {
   Message,
 } from "@/data/types";
 import { countSegments, sanitizeForGsm7 } from "@/lib/segments";
+import { guestDisplayName } from "@/lib/wording";
 import { logAudit } from "./audit";
 import { segmentMemberships } from "./audiences";
 import { balanceFor, planEntries, type NewEntry } from "./credit";
@@ -823,7 +824,9 @@ export function campaignRecipients(state: DemoState, campaignId: string): Campai
     .filter((message) => message.campaignId === campaignId)
     .map((message) => ({
       messageId: message.id,
-      name: state.customers.find((c) => c.id === message.customerId)?.name ?? "Removed guest",
+      name: guestDisplayName(
+        state.customers.find((c) => c.id === message.customerId)?.name ?? "Removed guest",
+      ),
       channel: message.channel,
       status: message.status,
       segments: message.segments,

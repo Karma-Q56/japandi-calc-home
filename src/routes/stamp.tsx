@@ -552,7 +552,7 @@ function Till() {
             </button>
           ))}
           {lastStampId && (
-            <button className="guest-back" onClick={undo}>
+            <button className="builder-secondary" onClick={undo}>
               Undo last stamp
             </button>
           )}

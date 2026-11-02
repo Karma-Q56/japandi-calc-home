@@ -255,3 +255,42 @@ from that one file. Update it once and every link changes.
   first sites. Re-read and refresh them, and keep the list in
   `docs/blog-plan.md` to one note every two weeks after launch. The RSS
   feed is served at `/blog/rss`.
+
+---
+
+## 13. Previous versions are restored as a draft (page and menu)
+
+- The public page and the menu each keep the last **10** published versions per
+  restaurant. The cap is per venue: one restaurant's history never appears in
+  another's list and is never trimmed by the other venue's publishes.
+- "Restore" never writes to the live page or menu. It loads the old words,
+  hours or menu into the editor as a draft, and the owner still goes through
+  Preview and Publish. Tests pin that the live copy does not change on restore.
+- A version stores who pressed publish and one plain line about what changed
+  (for example "Changed the tagline and Tuesday hours"), so the list is
+  readable without opening each version.
+
+## 14. Feedback is separate from the guest Ideas board
+
+- **Ideas** (`/suggest`, `/app/ideas`, `/ops/ideas`) asks guests which place
+  should join Patron. It stores no contact details.
+- **Feedback** (`/app/feedback`, `/feedback`, `/ops/feedback`) is a bug report
+  or feature request. It has three sources: owner, diner and public page. A
+  note is 10 to 1000 characters, one optional picture (PNG, JPG or WebP, under
+  300 KB), and an optional "You may contact me about this" tick box.
+- Status is one of New, Seen, Planned, Done, Not now. The sender sees the
+  status of their own notes; only a Patron operator can change it or add a
+  private note. Screenshots are visible only to the operator and the sender.
+- Notes are kept for twelve months. Public submissions are rate limited to
+  five an hour per place, with a honeypot that silently drops bots.
+- `db/migrations/0006_feedback_dev.sql` is dev branch only. It keeps row level
+  security: owners read their own restaurant, operators read all, and the
+  public may only insert an unassigned note.
+
+## 15. Blog posts stay marked as drafts until reviewed
+
+- Each post shows "Placeholder draft, not final" until the owner sets
+  `reviewed: true` in `src/data/blog.ts`.
+- Invented statistics, quotes and customer stories were removed. Posts keep
+  only claims that link to a real source, or plain reasoning with no number.
+- `docs/blog-plan.md` holds 15 one-line topics.

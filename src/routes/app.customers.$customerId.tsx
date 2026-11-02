@@ -76,7 +76,7 @@ function CustomerProfile() {
         title={profile.customer.name || "(removed)"}
         intro="Their card, visits and consent in one place."
       />
-      <StatGrid>
+      <StatGrid dense>
         <StatCard
           value={`${profile.membership.stampsCurrent} / ${restaurant.stampsRequired}`}
           label="stamps on the card"
@@ -253,6 +253,9 @@ function CustomerProfile() {
       </section>
       <section className="builder-panel">
         <h2>Consent history</h2>
+        {profile.consents.length === 0 && (
+          <p className="builder-hint">No changes to messages or permissions yet.</p>
+        )}
         {profile.consents.map((event) => (
           <p className="consent-history-row" key={event.id}>
             <strong>

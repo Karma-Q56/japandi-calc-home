@@ -322,9 +322,15 @@ function GuestCard() {
         </section>
 
         <section className="gx-panel guest-shortcuts">
-          <a href={`/r/${slug}`}>Menu &amp; specials</a>
-          <a href="/me/restaurants">All restaurants</a>
-          <a href="/me/settings">Notifications &amp; details</a>
+          <a className="builder-secondary" href={`/r/${slug}`}>
+            Menu &amp; specials
+          </a>
+          <a className="builder-secondary" href="/me/restaurants">
+            All restaurants
+          </a>
+          <a className="builder-secondary" href="/me/settings">
+            Notifications &amp; details
+          </a>
         </section>
 
         <section className="gx-panel">
@@ -408,6 +414,7 @@ function BringAFriend({ slug, membershipId }: { slug: string; membershipId: stri
       </p>
       <div className="page-actions">
         <button
+          className="builder-secondary"
           onClick={() => {
             void navigator.clipboard?.writeText(link).then(
               () => setNotice("Link copied. Send it to your friend."),
@@ -417,7 +424,9 @@ function BringAFriend({ slug, membershipId }: { slug: string; membershipId: stri
         >
           Copy my link
         </button>
-        <a href={link}>Open my join link</a>
+        <a className="builder-secondary" href={link}>
+          Open my join link
+        </a>
       </div>
       {notice && (
         <p className="gx-note" role="status">

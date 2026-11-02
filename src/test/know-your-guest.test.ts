@@ -2,13 +2,82 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { demoRepo, updateDemo } from "@/data/repo";
 import { joinRestaurant } from "@/domain/members";
 import { recordOrder } from "@/domain/orders";
-import { knowYourGuest } from "@/domain/customers";
+import { guestSentence, knowYourGuest, withArticle } from "@/domain/customers";
 
 beforeEach(() => {
   demoRepo.reset();
 });
 
 const OWNER = { role: "owner", restaurantId: "rest-daily-grind" };
+
+describe("guest sentence", () => {
+  const base = {
+    firstName: "Thandi",
+    usualDays: [4],
+    usualTime: "morning" as const,
+    visits: 4,
+    topItem: "Flat white" as string | null,
+    stamps: 3,
+    birthday: "1 October" as string | null,
+    slipping: false,
+  };
+
+  it("names the guest once, then says they", () => {
+    expect(guestSentence(base)).toBe(
+      "Thandi usually comes in on Thursday mornings and usually has a flat white. They have 3 stamps on their card, and their birthday is 1 October.",
+    );
+    expect(guestSentence(base).match(/Thandi/g)).toHaveLength(1);
+  });
+
+  it("joins two days with 'and'", () => {
+    expect(guestSentence({ ...base, usualDays: [4, 5] })).toContain(
+      "usually comes in on Thursdays and Fridays, usually in the mornings",
+    );
+  });
+
+  it("joins three days with commas and 'and'", () => {
+    expect(guestSentence({ ...base, usualDays: [4, 5, 6] })).toContain(
+      "usually comes in on Thursdays, Fridays and Saturdays, usually in the mornings",
+    );
+  });
+
+  it("leaves out the item when nothing was captured", () => {
+    const sentence = guestSentence({ ...base, topItem: null });
+    expect(sentence).toContain("on Thursday mornings.");
+    expect(sentence).not.toContain("usually has");
+  });
+
+  it("leaves out the birthday when the guest did not share one", () => {
+    const sentence = guestSentence({ ...base, birthday: null });
+    expect(sentence).toContain("They have 3 stamps on their card.");
+    expect(sentence).not.toContain("birthday");
+  });
+
+  it("uses one stamp and many stamps correctly", () => {
+    expect(guestSentence({ ...base, stamps: 1 })).toContain("They have 1 stamp on their card");
+    expect(guestSentence({ ...base, stamps: 2 })).toContain("They have 2 stamps on their card");
+  });
+
+  it("stays plain for a guest with no recorded visit", () => {
+    expect(
+      guestSentence({
+        ...base,
+        visits: 0,
+        usualDays: [],
+        usualTime: null,
+        topItem: null,
+        stamps: 0,
+        birthday: null,
+      }),
+    ).toBe("Thandi has a card, but has not come in yet. They have 0 stamps on their card.");
+  });
+
+  it("adds an article to a single item and leaves plurals alone", () => {
+    expect(withArticle("Flat white")).toBe("a flat white");
+    expect(withArticle("Ameretto biscuit")).toBe("an ameretto biscuit");
+    expect(withArticle("Chips")).toBe("chips");
+  });
+});
 
 describe("know your guest card", () => {
   it("builds one plain sentence with the usual day, time and top item", () => {
@@ -60,10 +129,10 @@ describe("know your guest card", () => {
     });
     expect(know.ok).toBe(true);
     if (!know.ok) return;
-    expect(know.data.sentence).toContain("Thandi usually comes in on Tuesdays");
-    expect(know.data.sentence).toContain("mornings");
-    expect(know.data.sentence).toContain("flat white");
+    expect(know.data.sentence).toContain("Thandi usually comes in on Tuesday mornings");
+    expect(know.data.sentence).toContain("usually has a flat white");
     expect(know.data.sentence).toContain("birthday is 12 March");
+    expect(know.data.sentence.match(/Thandi/g)).toHaveLength(1);
     expect(know.data.topItems[0]).toEqual({ label: "Flat white", qty: 2 });
     expect(know.data.lastMessage).toBeNull();
   });
@@ -85,7 +154,9 @@ describe("know your guest card", () => {
     });
     expect(know.ok).toBe(true);
     if (!know.ok) return;
-    expect(know.data.sentence).toContain("Anna has stamped 1 time");
+    expect(know.data.sentence).toContain("Anna has visited 1 time");
+    expect(know.data.sentence).not.toContain("usually comes in");
+    expect(know.data.sentence).not.toContain("birthday");
     expect(know.data.topItems).toEqual([]);
     expect(know.data.patternSummary).toContain("no usual day");
     expect(know.data.birthday).toBeNull();

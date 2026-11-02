@@ -9,6 +9,8 @@ import {
   pageEditFor,
   pageVersionsFor,
   publishPageEdit,
+  restorePageDraft,
+  summarisePageChange,
   validatePageEdit,
 } from "@/domain/page";
 
@@ -151,5 +153,42 @@ describe("publishPageEdit", () => {
     const result = publishPageEdit("rest-nowhere", goodEdit());
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.code).toBe("NOT_FOUND");
+  });
+});
+
+describe("restorePageDraft", () => {
+  it("loads an old version as a draft and leaves the live page alone", () => {
+    const first = goodEdit();
+    publishPageEdit(RESTAURANT, first);
+    const archived = pageVersionsFor(RESTAURANT)[0]!;
+    const second = { ...first, tagline: "A newer tagline" };
+    clock.advance(60000);
+    publishPageEdit(RESTAURANT, second);
+
+    const draft = restorePageDraft(RESTAURANT, archived.id);
+    expect(draft.ok).toBe(true);
+    if (draft.ok) expect(draft.data.tagline).toBe(first.tagline);
+    // Loading the draft is not publishing it.
+    expect(
+      demoRepo.read().restaurants.find((item) => item.id === RESTAURANT)!.theme.tagline,
+    ).toBe(second.tagline);
+    expect(pageVersionsFor(RESTAURANT)).toHaveLength(2);
+  });
+
+  it("never loads another venue's version", () => {
+    publishPageEdit("rest-sunrise-bakes", goodEdit());
+    const other = pageVersionsFor("rest-sunrise-bakes")[0]!;
+    const draft = restorePageDraft(RESTAURANT, other.id);
+    expect(draft.ok).toBe(false);
+    if (!draft.ok) expect(draft.error.code).toBe("NOT_FOUND");
+  });
+
+  it("summarises what changed in plain words", () => {
+    const venue = demoRepo.read().restaurants.find((item) => item.id === RESTAURANT)!;
+    const edit = goodEdit();
+    expect(summarisePageChange(venue, edit)).toContain("tagline");
+    expect(summarisePageChange(venue, pageEditFor(venue))).toBe(
+      "Published with no changes",
+    );
   });
 });

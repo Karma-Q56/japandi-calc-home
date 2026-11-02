@@ -3,7 +3,7 @@ import { useState } from "react";
 import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
-import type { MenuItem, PageTemplate } from "@/data/types";
+import type { MenuItem, MenuVersion, PageTemplate } from "@/data/types";
 import { useDemoState } from "@/data/useDemoState";
 import { EmptyState, FormField, PageHeader } from "@/components/patron/dash";
 import { PhoneFrame, PreviewOnly, PublishSteps } from "@/components/patron/preview";
@@ -16,6 +16,14 @@ export const Route = createFileRoute("/app/menu")({
   },
   component: MenuEditor,
 });
+
+function timeLabel(iso: string): string {
+  return new Intl.DateTimeFormat("en-ZA", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Africa/Johannesburg",
+  }).format(new Date(iso));
+}
 
 const TEMPLATES: ReadonlyArray<{ id: PageTemplate; label: string }> = [
   { id: "classic", label: "Classic" },
@@ -53,7 +61,9 @@ function MenuEditor() {
   const [publishedName, setPublishedName] = useState("");
   const [template, setTemplate] = useState<PageTemplate>(restaurant.pageTemplate ?? "classic");
   const [templateNotice, setTemplateNotice] = useState("");
+  const [restoring, setRestoring] = useState<MenuVersion | null>(null);
 
+  const versions = api.menu.versions(restaurant.id);
   const sections = state.sections
     .filter((value) => value.restaurantId === restaurant.id)
     .sort((a, b) => a.sortOrder - b.sortOrder);
@@ -102,6 +112,7 @@ function MenuEditor() {
       setNotice(result.error.message);
       return;
     }
+    api.menu.snapshot(restaurant.id, `${pending.name} published`);
     const nextSection = pending.sectionId;
     setPublishedName(pending.name);
     setPending(null);
@@ -120,6 +131,20 @@ function MenuEditor() {
   const backToDraft = () => {
     setPending(null);
     setStep(1);
+  };
+
+  /** The restored menu is only a draft until the owner publishes it. */
+  const publishRestore = () => {
+    if (!restoring) return;
+    const result = api.menu.restore(restaurant.id, restoring.id);
+    if (!result.ok) {
+      setNotice(result.error.message);
+      return;
+    }
+    setRestoring(null);
+    setPublishedName("Restored menu");
+    setNotice("");
+    setStep(3);
   };
 
   const useTemplate = () => {
@@ -183,6 +208,51 @@ function MenuEditor() {
 
       {step === 1 && (
         <>
+          {restoring && (
+            <section className="builder-panel">
+              <PreviewOnly>
+                Preview only. Your live menu stays as it is until you publish this restored
+                menu.
+              </PreviewOnly>
+              <h2>Menu from {timeLabel(restoring.at)}</h2>
+              <p className="builder-hint">{restoring.summary}</p>
+              {restoring.sections.map((section) => {
+                const items = restoring.items.filter(
+                  (entry) => entry.sectionId === section.id,
+                );
+                return (
+                  <div key={section.id}>
+                    <strong>{section.name}</strong>
+                    {items.length === 0 ? (
+                      <p className="builder-hint">No items in this section.</p>
+                    ) : (
+                      <ul>
+                        {items.map((entry) => (
+                          <li key={entry.id}>
+                            {entry.name} · R
+                            {(entry.priceCents / 100).toFixed(
+                              entry.priceCents % 100 ? 2 : 0,
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })}
+              <div className="page-actions">
+                <button className="builder-primary" onClick={publishRestore}>
+                  Publish this menu
+                </button>
+                <button
+                  className="builder-secondary"
+                  onClick={() => setRestoring(null)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </section>
+          )}
           <section className="builder-panel">
             <h2>Menu sections</h2>
             <div className="menu-add-section">
@@ -296,6 +366,32 @@ function MenuEditor() {
                 Preview item
               </button>
             </div>
+          </section>
+          <section className="builder-panel">
+            <h2>Previous versions</h2>
+            <p className="builder-hint">
+              The last published menus, newest first. Restore loads one as a draft. Your live
+              menu does not change until you publish it.
+            </p>
+            {versions.length === 0 ? (
+              <p className="builder-hint">No published menu yet. Publish an item to start.</p>
+            ) : (
+              <div className="menu-owner-list">
+                {versions.map((version) => (
+                  <article className="menu-owner-row" key={version.id}>
+                    <div>
+                      <strong>
+                        {timeLabel(version.at)} · {version.by}
+                      </strong>
+                      <small>{version.summary}</small>
+                    </div>
+                    <div className="menu-row-actions">
+                      <button onClick={() => setRestoring(version)}>Restore</button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
           </section>
           <p className="demo-data-note">
             Specials have their own page. <a href="/app/specials">Write and publish a special</a>.

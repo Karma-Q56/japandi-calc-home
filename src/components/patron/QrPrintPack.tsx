@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { APP_URL } from "@/config/app";
 import { downloadQrPng, qrSvg } from "@/lib/qr";
 import { downloadBlob, qrPdf } from "@/lib/qr-pdf";
@@ -18,7 +18,11 @@ export function QrPrintPack({ restaurant }: { restaurant: Restaurant }) {
   const [layoutId, setLayoutId] = useState<LayoutId>("table-tent");
   const [notice, setNotice] = useState("");
   const layout = LAYOUTS.find((item) => item.id === layoutId) ?? LAYOUTS[0];
-  const origin = typeof window === "undefined" ? APP_URL : window.location.origin;
+  // Start with the configured address on both server and client, then use the
+  // browser's own origin after mount. Reading window during the first render
+  // made the server and client markup disagree.
+  const [origin, setOrigin] = useState(APP_URL);
+  useEffect(() => setOrigin(window.location.origin), []);
   const url = useMemo(
     () => joinUrl(origin, restaurant.slug, layout.source),
     [origin, restaurant.slug, layout.source],

@@ -1,10 +1,10 @@
 import { clock } from "@/lib/clock";
 import { demoRepo, updateDemo } from "@/data/repo";
 import { maskPhone } from "@/lib/phone";
-import { averageGapPhrase, countLabel } from "@/lib/wording";
+import { averageGapPhrase, countLabel, guestDisplayName } from "@/lib/wording";
 import { birthdayOf, birthdayLabel, johannesburgMonthDay } from "@/lib/birthday";
 import { dayName, TIME_OF_DAY_LABEL, visitPattern } from "@/lib/visits";
-import type { VisitPattern } from "@/lib/visits";
+import type { TimeOfDay, VisitPattern } from "@/lib/visits";
 import { failure, success, type ApiResult } from "./demo";
 import { logAudit, requireScope } from "./audit";
 
@@ -81,7 +81,7 @@ function rowsFor(restaurantId: string, now: number): CustomerRow[] {
       return {
         customerId: customer.id,
         membershipId: m.id,
-        name: customer.name || "(removed)",
+        name: guestDisplayName(customer.name || "(removed)"),
         maskedPhone: maskPhone(customer.phoneE164),
         joinedAt: m.joinedAt,
         lastVisitAt: m.lastVisitAt,
@@ -316,6 +316,76 @@ export interface GuestKnowledge {
 }
 
 /**
+ * One plain sentence about a guest. The first name appears once, then "they".
+ * Every part is left out when there is no data for it, so a new guest never
+ * gets an empty phrase such as "usually comes in on".
+ */
+export function guestSentence(input: {
+  firstName: string;
+  usualDays: number[];
+  usualTime: TimeOfDay | null;
+  visits: number;
+  topItem: string | null;
+  stamps: number;
+  birthday: string | null;
+  slipping: boolean;
+}): string {
+  const first = input.firstName.trim() || "This guest";
+  const parts: string[] = [];
+
+  if (input.visits === 0) {
+    parts.push(`${first} has a card, but has not come in yet.`);
+  } else if (input.usualDays.length === 0) {
+    const item = input.topItem ? withArticle(input.topItem) : null;
+    const base = `${first} has visited ${countLabel(input.visits, "time", "times")}`;
+    parts.push(`${item ? `${base} and usually has ${item}` : base}.`);
+  } else {
+    const item = input.topItem ? withArticle(input.topItem) : null;
+    const base = `${first} usually comes in ${whenPhrase(input.usualDays, input.usualTime)}`;
+    parts.push(`${item ? `${base} and usually has ${item}` : base}.`);
+  }
+
+  const birthday = input.birthday ? `, and their birthday is ${input.birthday}` : "";
+  parts.push(`They have ${countLabel(input.stamps, "stamp")} on their card${birthday}.`);
+
+  if (input.slipping) {
+    parts.push("It has been a while. A friendly hello might bring them back.");
+  }
+  return parts.join(" ");
+}
+
+/** "Flat white" reads as "a flat white"; "Chips" stays "chips". */
+export function withArticle(label: string): string {
+  const text = label.trim();
+  if (!text) return text;
+  const lower = text.toLowerCase();
+  if (/^(a|an|the|some|our|your)\b/.test(lower)) return lower;
+  if (/s$/.test(lower)) return lower;
+  return `${/^[aeiou]/.test(lower) ? "an" : "a"} ${lower}`;
+}
+
+/** "on Thursday mornings", "on Thursdays and Fridays, usually in the mornings". */
+function whenPhrase(days: number[], time: TimeOfDay | null): string {
+  const names = days.map(dayName);
+  if (days.length === 1) {
+    const one = names[0]!.replace(/s$/, "");
+    return time ? `on ${one} ${timePhrase(time, false)}` : `on ${one}`;
+  }
+  const listed =
+    names.length === 2
+      ? `${names[0]} and ${names[1]}`
+      : `${names[0]}, ${names[1]} and ${names[2]}${names.length > 3 ? " and other days" : ""}`;
+  return time ? `on ${listed}, ${timePhrase(time, true)}` : `on ${listed}`;
+}
+
+function timePhrase(time: TimeOfDay, manyDays: boolean): string {
+  if (time === "morning") return manyDays ? "usually in the mornings" : "mornings";
+  if (time === "lunch") return "at lunchtime";
+  if (time === "afternoon") return "in the afternoon";
+  return "in the evening";
+}
+
+/**
  * One plain sentence plus the facts behind it, from this restaurant's own
  * records only: stamps, orders, rewards, birthdays and messages.
  */
@@ -358,31 +428,16 @@ export function knowYourGuest(input: {
   const birthday = birthdayOf(customer);
 
   const dayList = pattern.usualDays.map(dayName);
-  const sentenceParts: string[] = [];
-  if (pattern.visits === 0) {
-    sentenceParts.push(`${firstName} has a card but has not come in yet.`);
-  } else {
-    const parts: string[] = [];
-    parts.push(
-      dayList.length > 0
-        ? `${firstName} usually comes in on ${dayList.slice(0, 2).join(" and ")}`
-        : `${firstName} has stamped ${countLabel(pattern.visits, "time", "times")}`,
-    );
-    if (dayList.length > 0 && pattern.usualTime) {
-      parts.push(`${TIME_OF_DAY_LABEL[pattern.usualTime]}`);
-    }
-    sentenceParts.push(`${parts.join(", ")}.`);
-    if (topItems.length > 0) {
-      sentenceParts.push(`${firstName} usually has ${topItems[0]!.label.toLowerCase()}.`);
-    }
-  }
-  sentenceParts.push(
-    `${firstName} has ${countLabel(membership.stampsCurrent, "stamp")} on their card.`,
-  );
-  if (birthday) sentenceParts.push(`Their birthday is ${birthdayLabel(birthday)}.`);
-  if (pattern.slipping) {
-    sentenceParts.push(`It has been a while. A friendly hello might bring ${firstName} back.`);
-  }
+  const sentence = guestSentence({
+    firstName,
+    usualDays: pattern.usualDays,
+    usualTime: pattern.usualTime,
+    visits: pattern.visits,
+    topItem: topItems[0]?.label ?? null,
+    stamps: membership.stampsCurrent,
+    birthday: birthday ? birthdayLabel(birthday) : null,
+    slipping: pattern.slipping,
+  });
 
   const patternSummary =
     pattern.visits === 0
@@ -415,7 +470,7 @@ export function knowYourGuest(input: {
     : null;
 
   return success({
-    sentence: sentenceParts.join(" "),
+    sentence,
     topItems,
     pattern,
     patternSummary,

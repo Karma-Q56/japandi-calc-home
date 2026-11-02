@@ -98,8 +98,21 @@ import {
   pageEditFor,
   pageVersionsFor,
   publishPageEdit,
+  restorePageDraft,
   validatePageEdit,
 } from "@/domain/page";
+import {
+  menuVersionsFor,
+  publishRestoredMenu,
+  restoreMenuDraft,
+  snapshotMenu,
+} from "@/domain/menuVersions";
+import {
+  feedbackForOwner,
+  listFeedback,
+  submitFeedback,
+  updateFeedback,
+} from "@/domain/feedback";
 import {
   codesForMembership,
   createPrizeOffer,
@@ -180,6 +193,10 @@ export const api = {
     hideItem: hideMenuItem,
     reorder: updateMenuOrder,
     saveSpecial,
+    versions: menuVersionsFor,
+    snapshot: snapshotMenu,
+    restoreDraft: restoreMenuDraft,
+    restore: publishRestoredMenu,
   },
   member: {
     cards: customerCards,
@@ -304,6 +321,13 @@ export const api = {
     apply: applyPageEdit,
     publish: publishPageEdit,
     versions: pageVersionsFor,
+    restoreDraft: restorePageDraft,
+  },
+  feedback: {
+    submit: submitFeedback,
+    mine: feedbackForOwner,
+    list: listFeedback,
+    update: updateFeedback,
   },
   customers: {
     list: listCustomers,

@@ -26,7 +26,7 @@ function CreditPage() {
     return (
       <main className="demo-hub page-width">
         <h1>Credit.</h1>
-        <p className="demo-intro">Open this page from a restaurant tunnel.</p>
+        <p className="demo-intro">Choose a venue first, then open this page again.</p>
       </main>
     );
   }

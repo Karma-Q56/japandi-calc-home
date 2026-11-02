@@ -127,3 +127,57 @@ checks run.
 - 0005_ideas_dev.sql and 0004_enquiry_inbox_dev.sql are written but not run
   against any live database. They are dev-branch only.
 - Contact details on the site are marked placeholders in docs/decisions.md.
+
+---
+
+## 2 November 2026: visual pass, restore, feedback, blog, page audit
+
+Verified by running the checks and opening the captures listed in
+`docs/screenshots.md`.
+
+### Done and verified
+
+- Screenshot walk hides the demo pill and fixed bottom bars, cuts tall pages
+  into pieces of at most 1500px, and survived every click stage.
+- "Know your guest" is one plain sentence with the first name once, "they"
+  afterwards, natural day and time wording, whole numbers and optional parts.
+  Tests cover one, two and three days, no items, no birthday, one stamp and
+  many stamps.
+- Guest names in owner lists are first name plus last initial. Demo guests stay
+  unique by first name and initial.
+- Shared card spacing and helper text; three stat cards on one phone row.
+- Banned developer words removed from owner, till, guest and operator screens,
+  with an AST-based test over visible strings.
+- Loyalty split into four tabs with per-tab Draft, Preview and Publish. On a
+  phone the tabs wrap and no tab is over about 2,800px (spin wheel); the other
+  tabs are near or under 2,500px.
+- Guest card shortcut links and "Undo last stamp" are real buttons.
+- Public page and menu version lists: last 10 per venue, who published, a
+  one-line change summary, and Restore as a draft. Tests prove live stays
+  unchanged until Publish, the cap holds and versions do not leak between
+  venues.
+- Feedback feature: owner page, public form, operator inbox with filters,
+  search, status and private note; picture checks, honeypot and hourly limit;
+  privacy wording; dev-only migration with row level security. 26 focused
+  tests pass (feedback, menu versions, page restore).
+- Blog posts show the placeholder banner and no longer carry invented
+  statistics or quotes. Blog plan has 15 topics.
+- `scripts/audit-pages.mjs` opens every page per role at 375px and 1280px in a
+  fresh session. Owner, public, operator, guest and staff runs reported no
+  console errors, no 404 links, no double headers, no empty pages without an
+  empty state and no fake buttons. Button no-change notes were all by design
+  (already selected, first-row move, print dialog).
+- Page audit fixed two real problems: the QR pack read `window.location.origin`
+  during the first render (hydration mismatch), and the activity log printed
+  times without the Johannesburg timezone (server and client disagreed).
+
+### Done but not fully verified
+
+- The browser audit's "button did nothing" note is a 250ms heuristic. A slow
+  modal or an external dialog can be missed; the listed cases were opened by
+  hand.
+- Real SMS delivery, email and live database policies are still out of scope.
+
+### Not started
+
+- None from this prompt.

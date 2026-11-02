@@ -78,9 +78,9 @@ describe("know your guest wording", () => {
     expect(know.ok).toBe(true);
     if (!know.ok) return;
     const text = JSON.stringify(know.data);
-    expect(text).toMatch(/Thandi has \d+ stamps? on their card/);
+    expect(text).toMatch(/They have \d+ stamps? on their card/);
     expect(text).not.toMatch(/\b1 stamps\b/);
-    expect(text).toMatch(/Thandi/);
+    expect(text.match(/Thandi/g)).toHaveLength(1);
     expect(countLabel(1, "stamp")).toBe("1 stamp");
   });
 
@@ -114,7 +114,8 @@ describe("know your guest wording", () => {
     expect(know.ok).toBe(true);
     if (!know.ok) return;
     const text = JSON.stringify(know.data);
-    expect(text).toMatch(/James usually has flat white/);
+    expect(text).toMatch(/James .*usually has a flat white/);
+    expect(text.match(/James/g)).toHaveLength(1);
     expect(text).not.toMatch(/\b(she|he|her|hers|his|him|himself|herself)\b/i);
   });
 });

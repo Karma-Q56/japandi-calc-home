@@ -12,6 +12,8 @@ export interface BlogPost {
   title: string;
   date: string;
   readMinutes: number;
+  /** True only after the owner has read and approved the final copy. */
+  reviewed?: boolean;
   excerpt: string;
   sections: BlogSection[];
 }
@@ -28,7 +30,7 @@ export const blogPosts: BlogPost[] = [
       {
         heading: "You can see the gap",
         paragraphs: [
-          "A loyalty card works because you can see it filling up. Six stamps in, four to go, and suddenly a Tuesday sandwich includes a visit to your counter. Researchers call it the goal gradient effect, and a real cafe study measured it: customers visit faster the closer they get to the reward.",
+          "A loyalty card works because you can see it filling up. Six stamps in, four to go, and suddenly a Tuesday sandwich includes a visit to your counter. Researchers call it the goal gradient effect: people move faster when the reward is in sight.",
           "That is also why a card hidden inside an app with a login screen loses most of its power. If the guest cannot see the gap, there is no pull.",
         ],
       },
@@ -74,7 +76,7 @@ export const blogPosts: BlogPost[] = [
         heading: "How to choose the day",
         paragraphs: [
           "Use your quietest hour, not your worst day. A double stamp day across a slow lunch window usually beats rewarding an entire dead weekday. Then keep the wording simple at the till: stamp twice today, one more visit sooner.",
-          "Starbucks runs limited double star days for the same reason, and their rewards FAQ shows the cadence: https://about.starbucks.com/starbucks-rewards-faq/",
+          "Bonus days work best when they are limited and predictable. Say the same thing every week, and let the extra stamp do the persuading.",
         ],
       },
     ],
@@ -104,7 +106,7 @@ export const blogPosts: BlogPost[] = [
       {
         heading: "A number you can check",
         paragraphs: [
-          "Judge messages by visits, not clicks. Patron marks how many guests visited within seven days of a campaign, and the reports page shows sent, delivered and returned alongside the cost. If a campaign cannot beat a quiet thank you at bringing people back, run the thank you instead.",
+          "Judge messages by visits, not clicks. After a campaign, compare the week with the weeks before it. If a campaign cannot beat a quiet thank you at bringing people back, run the thank you instead.",
         ],
       },
     ],

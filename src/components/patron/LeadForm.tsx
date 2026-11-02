@@ -347,7 +347,7 @@ export function LeadForm({
                   placeholder={kind === "diner" ? "Optional. Tell us why this place is worth it." : "What would you like help with?"}
                 />
                 <small className="lead-counter">
-                  {message.length} of {MAX_MESSAGE} characters
+                  {message.length} of {MAX_MESSAGE} letters
                 </small>
               </label>
 

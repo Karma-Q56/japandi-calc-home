@@ -47,6 +47,13 @@ function Privacy() {
           every Patron venue. Every message includes a STOP line. We keep an opt-out record so a
           venue cannot message you again without a new choice from you.
         </p>
+        <h2>Feedback you send</h2>
+        <p>
+          You can send a note from the feedback page or from your diner settings. We keep the
+          category, your message, any contact detail you choose to leave and the date. Notes are
+          kept for twelve months, then removed. A picture, if you attach one, is visible only to
+          the Patron team and to you. We do not use your feedback for marketing.
+        </p>
         <h2>Your data</h2>
         <p>
           You can download your data and request deletion from Me. The download includes your

@@ -1,6 +1,6 @@
 import { demoRepo } from "@/data/repo";
 import { birthdayOf, birthdayLabel } from "@/lib/birthday";
-import { averageGapPhrase, countLabel } from "@/lib/wording";
+import { averageGapPhrase, countLabel, guestDisplayName } from "@/lib/wording";
 import { dayName, timeOfDayFor, TIME_OF_DAY_LABEL, visitPattern } from "@/lib/visits";
 import type { TimeOfDay } from "@/lib/visits";
 import { failure, success, type ApiResult } from "./demo";
@@ -56,7 +56,7 @@ export function ownerInsights(input: {
     const customer = membership
       ? state.customers.find((item) => item.id === membership.customerId)
       : undefined;
-    return (customer?.name || "").split(" ")[0] || "Guest";
+    return guestDisplayName(customer?.name || "");
   };
 
   // Visit days and hours from every valid stamp in this restaurant.

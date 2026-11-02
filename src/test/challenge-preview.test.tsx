@@ -72,7 +72,7 @@ describe("challenge preview before publish", () => {
     await renderChallenges();
     fireEvent.change(screen.getByLabelText(/Challenge name/), { target: { value: "A" } });
     fireEvent.click(screen.getByRole("button", { name: "Preview this challenge" }));
-    expect(screen.getByRole("status").textContent).toMatch(/2 to 70 characters/);
+    expect(screen.getByRole("status").textContent).toMatch(/2 to 70 letters/);
     expect(screen.queryByText(/Preview only/)).toBeNull();
   });
 });

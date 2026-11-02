@@ -42,7 +42,7 @@ function Challenges() {
   const preview = () => {
     const clean = title.trim();
     if (clean.length < 2 || clean.length > 70) {
-      setNotice("Give the challenge a title of 2 to 70 characters.");
+      setNotice("Give the challenge a title of 2 to 70 letters.");
       return;
     }
     if (visits < 2 || visits > 50) {

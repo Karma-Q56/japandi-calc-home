@@ -1,5 +1,7 @@
 import { demoRepo, updateDemo } from "@/data/repo";
-import type { PageEdit, PageVersion, Restaurant } from "@/data/types";import { failure, success, type ApiResult } from "./demo";
+import type { PageEdit, PageVersion, Restaurant } from "@/data/types";
+import { publishedBy } from "./actor";
+import { failure, success, type ApiResult } from "./demo";
 
 /** Days shown on the page editor, in the same order the page prints them. */
 export const PAGE_DAYS = [
@@ -110,6 +112,8 @@ export function publishPageEdit(
     id: `pageversion-${crypto.randomUUID()}`,
     restaurantId,
     at: new Date(state.now).toISOString(),
+    by: publishedBy(),
+    summary: summarisePageChange(restaurant, edit),
     edit,
   };
   updateDemo((current) => ({
@@ -121,6 +125,52 @@ export function publishPageEdit(
     pageVersions: renovateVersions(current.pageVersions, version, VERSION_LIMIT),
   }));
   return success(version);
+}
+
+/** One line an owner can scan: what this publish changed. */
+export function summarisePageChange(restaurant: Restaurant, edit: PageEdit): string {
+  const parts: string[] = [];
+  if (edit.tagline.trim() !== restaurant.theme.tagline) parts.push("tagline");
+  if (edit.about.trim() !== (restaurant.aboutText ?? "")) parts.push("story");
+  if (edit.suburb.trim() !== restaurant.suburb) parts.push("suburb");
+  if (edit.address.trim() !== (restaurant.address ?? "")) parts.push("address");
+  const changedDays = PAGE_DAYS.filter((day) => {
+    const before = restaurant.hours[day] ?? null;
+    const after = edit.hours[day] ?? null;
+    return JSON.stringify(before) !== JSON.stringify(after);
+  });
+  if (changedDays.length === 1) parts.push(`${changedDays[0]} hours`);
+  else if (changedDays.length > 1) parts.push(`${changedDays.length} days of hours`);
+  if (parts.length === 0) return "Published with no changes";
+  return `Changed the ${joinWords(parts)}`;
+}
+
+function joinWords(parts: string[]): string {
+  if (parts.length === 1) return parts[0]!;
+  if (parts.length === 2) return `${parts[0]} and ${parts[1]}`;
+  return `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
+}
+
+/**
+ * Load an old version as a draft. Nothing live changes: the owner still has to
+ * preview it and press Publish, exactly like any other edit.
+ */
+export function restorePageDraft(
+  restaurantId: string,
+  versionId: string,
+): ApiResult<PageEdit> {
+  const state = demoRepo.read();
+  const version = state.pageVersions.find(
+    (item) => item.id === versionId && item.restaurantId === restaurantId,
+  );
+  if (!version) return failure("NOT_FOUND", "That version is no longer kept.");
+  return success({
+    ...version.edit,
+    hours: PAGE_DAYS.reduce((all, day) => {
+      all[day] = version.edit.hours[day] ?? null;
+      return all;
+    }, {} as Restaurant["hours"]),
+  });
 }
 
 /** Newest first; this venue only. */

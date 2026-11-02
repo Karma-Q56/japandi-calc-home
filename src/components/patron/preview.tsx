@@ -55,7 +55,7 @@ export function SmsPreview(props: {
         ))}
       </p>
       <p className="pv-meta">
-        {characters} characters · {segments} {segments === 1 ? "message" : "messages"} ·{" "}
+        {characters} letters · {segments} {segments === 1 ? "message" : "messages"} ·{" "}
         {props.recipients} {props.recipients === 1 ? "guest" : "guests"} · {formatRand(cost)}
       </p>
     </div>

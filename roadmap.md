@@ -56,3 +56,16 @@ Working order from the brief. Stop points get noted per section.
 ## Notes
 - Commits go through the normal save flow on branch freebuff/b8bfff140b08360ec8ca4786.
 - Campaign results page: /app/campaigns/:id shows messages sent, delivery per guest, redemptions and total cost; seed messages now belong to campaign-1 so the page shows real rows in demo mode.
+
+---
+
+## 2 November 2026
+
+Done and verified in this branch: the visual pass (screenshot capture, guest
+sentence, names, spacing, plain wording, loyalty tabs, real buttons), restore a
+previous page or menu version as a draft, the Feedback feature on owner, public
+and operator screens with its dev migration, blog placeholder banners and clean
+copy, and the browser page audit.
+
+Still open: run `0006_feedback_dev.sql` on a development database; real SMS,
+email and production sign-in remain out of scope for the demo.

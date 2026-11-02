@@ -3,8 +3,14 @@
 // 1280px, and writes .shot-report.json with overflow, title, url and console
 // errors per shot. Click stages use real button and field labels so the walk
 // exercises the same steps an owner or staff member touches.
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium } from "@playwright/test";
+
+// Full-page shots must show the page, not the demo furniture. The demo pill and
+// the fixed bottom bars are pinned to the window, so in a full-page capture they
+// land in the middle of the image and cover real content. They are hidden for
+// the shot only, and tall pages are also cut into pieces of at most 1500px so
+// every band can be opened and looked at.
 
 const BASE = process.env.SHOT_BASE ?? "http://localhost:5173";
 
@@ -46,6 +52,24 @@ const groups = [
     path: "/app/loyalty",
     stages: [{ name: "owner-loyalty-preview", acts: [{ click: "Preview changes" }] }],
   },
+  {
+    role: "owner",
+    venue: "rest-daily-grind",
+    path: "/app/loyalty",
+    stages: [{ name: "owner-loyalty-tools", acts: [{ click: "Loyalty tools" }] }],
+  },
+  {
+    role: "owner",
+    venue: "rest-daily-grind",
+    path: "/app/loyalty",
+    stages: [{ name: "owner-loyalty-wheel", acts: [{ click: "Spin wheel" }] }],
+  },
+  {
+    role: "owner",
+    venue: "rest-daily-grind",
+    path: "/app/loyalty",
+    stages: [{ name: "owner-loyalty-tiers", acts: [{ click: "Tiers and challenges" }] }],
+  },
   { role: "owner", venue: "rest-daily-grind", path: "/app/design", stages: [{ name: "owner-design" }] },
   {
     role: "owner",
@@ -86,6 +110,7 @@ const groups = [
   { role: "owner", venue: "rest-daily-grind", path: "/app/onboarding", stages: [{ name: "owner-onboarding" }] },
   { role: "owner", venue: "rest-daily-grind", path: "/app/audit", stages: [{ name: "owner-audit" }] },
   { role: "owner", venue: "rest-daily-grind", path: "/app/ideas", stages: [{ name: "owner-ideas" }] },
+  { role: "owner", venue: "rest-daily-grind", path: "/app/feedback", stages: [{ name: "owner-feedback" }] },
   { role: "owner", venue: "rest-daily-grind", path: "/app/page", stages: [{ name: "owner-page" }] },
   { role: "owner", venue: "rest-daily-grind", path: "/app/referrals", stages: [{ name: "owner-referrals-draft" }] },
   {
@@ -185,6 +210,7 @@ const groups = [
   { role: "operator", path: "/ops/leads", stages: [{ name: "ops-leads" }] },
   { role: "operator", path: "/ops/outbox", stages: [{ name: "ops-outbox" }] },
   { role: "operator", path: "/ops/ideas", stages: [{ name: "ops-ideas" }] },
+  { role: "operator", path: "/ops/feedback", stages: [{ name: "ops-feedback" }] },
   // --- Marketing ---
   { path: "/", stages: [{ name: "site-home-help" }] },
   { path: "/pricing", stages: [{ name: "site-pricing" }] },
@@ -200,6 +226,7 @@ const groups = [
   { path: "/blog", stages: [{ name: "site-blog" }] },
   { path: "/blog/why-the-card-still-works", stages: [{ name: "site-blog-post" }] },
   { path: "/suggest", stages: [{ name: "site-suggest" }] },
+  { path: "/feedback", stages: [{ name: "site-feedback" }] },
 ];
 
 const report = [];
@@ -266,6 +293,28 @@ for (const width of widths) {
         }
       }
       await page.waitForTimeout(700);
+      // A click can still be finishing a navigation; wait for it before touching
+      // the page, otherwise addStyleTag throws and the whole run stops.
+      await page.waitForLoadState("load", { timeout: 10000 }).catch(() => {});
+      await page.waitForTimeout(300);
+      // Hide the demo pill and every fixed bar that would float over the page.
+      await page
+        .addStyleTag({
+          content:
+            ".demo-control,.demo-control-panel,.gx-tabs,.owner-bottom,.ox-bottom,.till-bar,.till-actions-bar,[data-shot-hide]{display:none !important}",
+        })
+        .catch(() => {});
+      await page.evaluate(() => {
+        for (const el of document.querySelectorAll("body *")) {
+          const style = getComputedStyle(el);
+          if (style.position !== "fixed" && style.position !== "sticky") continue;
+          const rect = el.getBoundingClientRect();
+          if (rect.height > 0 && rect.top > window.innerHeight / 2) {
+            el.setAttribute("data-shot-hide", "");
+          }
+        }
+      });
+      await page.waitForTimeout(200);
       const metrics = await page.evaluate(() => {
         const doc = document.documentElement;
         const wide = [...document.querySelectorAll("body *")]
@@ -278,19 +327,56 @@ for (const width of widths) {
         return {
           title: document.title,
           scrollWidth: doc.scrollWidth,
+          scrollHeight: doc.scrollHeight,
           innerWidth: window.innerWidth,
           wide,
           bodyText: document.body.innerText.slice(0, 140).replace(/\n/g, " | "),
         };
-      });
-      await page.screenshot({
-        path: `screenshots/${stage.name}-${width}.png`,
-        fullPage: true,
-      });
+      }).catch(() => ({
+        title: "",
+        scrollWidth: 0,
+        scrollHeight: 0,
+        innerWidth: width,
+        wide: [],
+        bodyText: "",
+      }));
+      await page
+        .screenshot({
+          path: `screenshots/${stage.name}-${width}.png`,
+          fullPage: true,
+        })
+        .catch((error) => problems.push(`screenshot: ${String(error).slice(0, 100)}`));
+      // Pages taller than 1500px are also saved as pieces of at most 1500px.
+      const pageHeight = metrics.scrollHeight;
+      const pieceCount = pageHeight > 1500 ? Math.ceil(pageHeight / 1500) : 0;
+      if (pieceCount > 0) {
+        mkdirSync("screenshots/pieces", { recursive: true });
+        try {
+          const client = await context.newCDPSession(page);
+          for (let index = 0; index < pieceCount; index += 1) {
+            const y = index * 1500;
+            const height = Math.min(1500, pageHeight - y);
+            const shot = await client.send("Page.captureScreenshot", {
+              format: "png",
+              captureBeyondViewport: true,
+              clip: { x: 0, y, width, height, scale: 1 },
+            });
+            writeFileSync(
+              `screenshots/pieces/${stage.name}-${width}-p${String(index + 1).padStart(2, "0")}.png`,
+              Buffer.from(shot.data, "base64"),
+            );
+          }
+          await client.detach();
+        } catch (error) {
+          problems.push(`pieces: ${String(error).slice(0, 100)}`);
+        }
+      }
       report.push({
         target: stage.name,
         width,
         url: page.url(),
+        pageHeight,
+        pieces: pieceCount,
         ...metrics,
         problems: problems.length ? problems : undefined,
         errors: [...new Set(errors)].slice(0, 4),
@@ -301,10 +387,13 @@ for (const width of widths) {
   }
 }
 await browser.close();
-writeFileSync(".shot-report.json", JSON.stringify(report, null, 1));
+writeFileSync(process.env.SHOT_REPORT ?? ".shot-report.json", JSON.stringify(report, null, 1));
 const flagged = report.filter(
   (entry) =>
-    (entry.wide && entry.wide.length > 0) || entry.errors || entry.problems || entry.fatal,
+    (entry.wide && entry.wide.length > 0) ||
+    (entry.errors && entry.errors.length > 0) ||
+    (entry.problems && entry.problems.length > 0) ||
+    entry.fatal,
 );
 console.log(`Stages: ${stageCount}, shots: ${report.length}, flagged: ${flagged.length}`);
 for (const entry of flagged) {

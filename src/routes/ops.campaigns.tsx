@@ -73,7 +73,7 @@ function OpsCampaigns() {
           </FormField>
           <FormField
             label="Message"
-            hint={`${body.trim().length} of 600 characters. ${segments} SMS segment${segments === 1 ? "" : "s"} with the STOP footer. First names are filled in per guest.`}
+            hint={`${body.trim().length} of 600 letters. ${segments} SMS segment${segments === 1 ? "" : "s"} with the STOP footer. First names are filled in per guest.`}
           >
             <textarea
               value={body}

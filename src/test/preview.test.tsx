@@ -14,7 +14,7 @@ describe("guest preview surfaces", () => {
     );
     expect(screen.getByText(/Hi Naledi, your flat white is waiting\./)).toBeInTheDocument();
     expect(screen.getByText(/10 guests/)).toBeInTheDocument();
-    expect(screen.getByText(/\d+ characters/)).toBeInTheDocument();
+    expect(screen.getByText(/\d+ letters/)).toBeInTheDocument();
     expect(screen.getByText(/1 message/)).toBeInTheDocument();
     expect(screen.getByText(/R3\.50/)).toBeInTheDocument();
   });

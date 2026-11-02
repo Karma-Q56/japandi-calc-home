@@ -65,7 +65,7 @@ function JoinPage() {
   const details = () => {
     setError("");
     if (name.trim().length < 1 || name.trim().length > 40) {
-      return setError("Enter your first name (up to 40 characters).");
+      return setError("Enter your first name (up to 40 letters).");
     }
     if (!isValidSAMobile(phone)) {
       return setError("Enter a valid South African mobile number. Landlines cannot receive SMS.");

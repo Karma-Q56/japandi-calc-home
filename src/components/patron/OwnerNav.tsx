@@ -20,6 +20,7 @@ import {
   Palette,
   Target,
   Globe,
+  MessageSquareText,
 } from "lucide-react";
 
 type Item = { to: string; label: string; icon: ComponentType; end?: boolean };
@@ -40,6 +41,7 @@ export const OWNER_NAV: Item[] = [
   { to: "/app/menu", label: "Menu", icon: UtensilsCrossed },
   { to: "/app/qr", label: "QR codes", icon: QrCode },
   { to: "/app/team", label: "Team", icon: UserCog },
+  { to: "/app/feedback", label: "Feedback", icon: MessageSquareText },
   { to: "/app/audit", label: "Activity log", icon: ScrollText },
   { to: "/app/settings", label: "Settings", icon: Settings },
   { to: "/app/lists", label: "Lists", icon: List },

@@ -176,6 +176,9 @@ export function SiteFooter() {
               <a href="/suggest" aria-current={path === "/suggest" ? "page" : undefined}>
                 Ask for a place
               </a>
+              <a href="/feedback" aria-current={path === "/feedback" ? "page" : undefined}>
+                Send feedback
+              </a>
               <a href="/login" aria-current={path === "/login" ? "page" : undefined}>
                 Log in
               </a>

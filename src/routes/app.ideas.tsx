@@ -22,7 +22,7 @@ function OwnerIdeas() {
   if (!restaurant) {
     return (
       <main className="demo-hub page-width">
-        <PageHeader eyebrow="Ideas" title="Open this page from a restaurant tunnel." />
+        <PageHeader eyebrow="Ideas" title="Choose a venue first, then open this page again." />
       </main>
     );
   }

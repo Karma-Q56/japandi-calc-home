@@ -3,7 +3,7 @@ import { useState } from "react";
 import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
-import type { PageEdit } from "@/data/types";
+import type { PageEdit, PageVersion } from "@/data/types";
 import { useDemoState } from "@/data/useDemoState";
 import { PAGE_DAYS, TAGLINE_LIMIT, ABOUT_LIMIT } from "@/domain/page";
 import { ConfirmDialog, FormField, PageHeader } from "@/components/patron/dash";
@@ -78,6 +78,7 @@ function PageWordsEditor() {
   const [step, setStep] = useState(1);
   const [notice, setNotice] = useState("");
   const [published, setPublished] = useState(false);
+  const [restoredAt, setRestoredAt] = useState("");
   const versions = api.page.versions(restaurant.id);
 
   const set = (patch: Partial<PageEdit>) => setEdit((current) => ({ ...current, ...patch }));
@@ -107,15 +108,19 @@ function PageWordsEditor() {
     setStep(1);
   };
 
-  const loadVersion = (previous: PageEdit, at: string) => {
-    setEdit(previous);
+  /** Restore loads the old words as a draft. The live page changes only on Publish. */
+  const restore = (version: PageVersion) => {
+    const result = api.page.restoreDraft(restaurant.id, version.id);
+    if (!result.ok) {
+      setNotice(result.error.message);
+      return;
+    }
+    setEdit(result.data);
     setPublished(false);
-    setNotice("");
+    setRestoredAt(version.at);
     setStep(1);
-    return `You are editing the words from ${timeLabel(at)}. Preview them, then publish.`;
+    setNotice("");
   };
-
-  const versionNotice = (at: string) => timeLabel(at);
 
   return (
     <main className="demo-hub page-width">
@@ -125,6 +130,12 @@ function PageWordsEditor() {
         intro="The words and opening hours on your public page. You see every change before it goes live, and the last versions are kept so you can undo by hand."
       />
       <PublishSteps step={step} labels={["Edit", "Preview", "Publish"]} />
+      {restoredAt && step === 1 && (
+        <p className="preview-banner" role="status">
+          You are editing the version from {timeLabel(restoredAt)} as a draft. Guests still see
+          the live page until you preview it and publish.
+        </p>
+      )}
       {notice && (
         <p role="status" className="demo-data-note">
           {notice}
@@ -136,14 +147,14 @@ function PageWordsEditor() {
           <section className="builder-panel">
             <h2>Words</h2>
             <div className="builder-fields">
-              <FormField label={`Tagline · up to ${TAGLINE_LIMIT} characters`}>
+              <FormField label={`Tagline · up to ${TAGLINE_LIMIT} letters`}>
                 <input
                   value={edit.tagline}
                   maxLength={TAGLINE_LIMIT}
                   onChange={(event) => set({ tagline: event.target.value })}
                 />
               </FormField>
-              <FormField label={`Your story · up to ${ABOUT_LIMIT} characters`}>
+              <FormField label={`Your story · up to ${ABOUT_LIMIT} letters`}>
                 <input
                   value={edit.about}
                   maxLength={ABOUT_LIMIT}
@@ -159,7 +170,7 @@ function PageWordsEditor() {
               </FormField>
             </div>
             {edit.about.length >= ABOUT_LIMIT - 20 && (
-              <p className="te-help">{ABOUT_LIMIT - edit.about.length} characters left on your story.</p>
+              <p className="te-help">{ABOUT_LIMIT - edit.about.length} letters left on your story.</p>
             )}
           </section>
 
@@ -201,24 +212,23 @@ function PageWordsEditor() {
           {versions.length > 0 && (
             <section className="builder-panel">
               <h2>Earlier versions</h2>
-              <p className="te-help">The last published versions, newest first. Nothing on the page changes until you publish again.</p>
+              <p className="te-help">
+                The last published versions, newest first. Restore loads one as a draft. Nothing
+                on the live page changes until you preview it and publish.
+              </p>
               <div className="menu-owner-list">
                 {versions.map((version) => (
                   <article className="menu-owner-row" key={version.id}>
                     <div>
-                      <strong>{versionNotice(version.at)}</strong>
+                      <strong>
+                        {timeLabel(version.at)} · {version.by}
+                      </strong>
                       <small>
-                        {version.edit.tagline} · {summariseHours(version.edit)}
+                        {version.summary} · {summariseHours(version.edit)}
                       </small>
                     </div>
                     <div className="menu-row-actions">
-                      <button
-                        onClick={() => {
-                          setNotice(loadVersion(version.edit, version.at));
-                        }}
-                      >
-                        Edit that version
-                      </button>
+                      <button onClick={() => restore(version)}>Restore</button>
                     </div>
                   </article>
                 ))}
