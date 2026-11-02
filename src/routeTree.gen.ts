@@ -20,6 +20,7 @@ import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as FindRouteImport } from './routes/find'
 import { Route as ForBusinessRouteImport } from './routes/for-business'
 import { Route as ForDinersRouteImport } from './routes/for-diners'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as HealthzRouteImport } from './routes/healthz'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as LinkExpiredRouteImport } from './routes/link-expired'
@@ -30,7 +31,9 @@ import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as OpsRouteImport } from './routes/ops'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SessionExpiredRouteImport } from './routes/session-expired'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as StampRouteImport } from './routes/stamp'
 import { Route as SuggestRouteImport } from './routes/suggest'
 import { Route as TermsRouteImport } from './routes/terms'
@@ -73,6 +76,7 @@ import { Route as OpsRestaurantsRouteImport } from './routes/ops.restaurants'
 import { Route as RSlugRouteImport } from './routes/r.$slug'
 import { Route as STokenRouteImport } from './routes/s/$token'
 import { Route as UTokenRouteImport } from './routes/u/$token'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiCronDispatchRouteImport } from './routes/api/cron/dispatch'
 import { Route as ApiCronNightlyRouteImport } from './routes/api/cron/nightly'
 import { Route as ApiCronSettleRouteImport } from './routes/api/cron/settle'
@@ -143,6 +147,11 @@ const ForDinersRoute = ForDinersRouteImport.update({
   path: '/for-diners',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HealthzRoute = HealthzRouteImport.update({
   id: '/healthz',
   path: '/healthz',
@@ -193,9 +202,19 @@ const PrivacyRoute = PrivacyRouteImport.update({
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SessionExpiredRoute = SessionExpiredRouteImport.update({
   id: '/session-expired',
   path: '/session-expired',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StampRoute = StampRouteImport.update({
@@ -408,6 +427,11 @@ const UTokenRoute = UTokenRouteImport.update({
   path: '/u/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCronDispatchRoute = ApiCronDispatchRouteImport.update({
   id: '/api/cron/dispatch',
   path: '/api/cron/dispatch',
@@ -491,6 +515,7 @@ export interface FileRoutesByFullPath {
   '/find': typeof FindRoute
   '/for-business': typeof ForBusinessRoute
   '/for-diners': typeof ForDinersRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/healthz': typeof HealthzRouteWithChildren
   '/how-it-works': typeof HowItWorksRoute
   '/link-expired': typeof LinkExpiredRoute
@@ -501,7 +526,9 @@ export interface FileRoutesByFullPath {
   '/ops': typeof OpsRouteWithChildren
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/session-expired': typeof SessionExpiredRoute
+  '/signup': typeof SignupRoute
   '/stamp': typeof StampRoute
   '/suggest': typeof SuggestRoute
   '/terms': typeof TermsRoute
@@ -544,6 +571,7 @@ export interface FileRoutesByFullPath {
   '/s/$token': typeof STokenRoute
   '/u/$token': typeof UTokenRoute
   '/blog/': typeof BlogIndexRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/dispatch': typeof ApiCronDispatchRoute
   '/api/cron/nightly': typeof ApiCronNightlyRoute
   '/api/cron/settle': typeof ApiCronSettleRoute
@@ -571,6 +599,7 @@ export interface FileRoutesByTo {
   '/find': typeof FindRoute
   '/for-business': typeof ForBusinessRoute
   '/for-diners': typeof ForDinersRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/healthz': typeof HealthzRouteWithChildren
   '/how-it-works': typeof HowItWorksRoute
   '/link-expired': typeof LinkExpiredRoute
@@ -581,7 +610,9 @@ export interface FileRoutesByTo {
   '/ops': typeof OpsRouteWithChildren
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/session-expired': typeof SessionExpiredRoute
+  '/signup': typeof SignupRoute
   '/stamp': typeof StampRoute
   '/suggest': typeof SuggestRoute
   '/terms': typeof TermsRoute
@@ -624,6 +655,7 @@ export interface FileRoutesByTo {
   '/s/$token': typeof STokenRoute
   '/u/$token': typeof UTokenRoute
   '/blog': typeof BlogIndexRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/dispatch': typeof ApiCronDispatchRoute
   '/api/cron/nightly': typeof ApiCronNightlyRoute
   '/api/cron/settle': typeof ApiCronSettleRoute
@@ -652,6 +684,7 @@ export interface FileRoutesById {
   '/find': typeof FindRoute
   '/for-business': typeof ForBusinessRoute
   '/for-diners': typeof ForDinersRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/healthz': typeof HealthzRouteWithChildren
   '/how-it-works': typeof HowItWorksRoute
   '/link-expired': typeof LinkExpiredRoute
@@ -662,7 +695,9 @@ export interface FileRoutesById {
   '/ops': typeof OpsRouteWithChildren
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/session-expired': typeof SessionExpiredRoute
+  '/signup': typeof SignupRoute
   '/stamp': typeof StampRoute
   '/suggest': typeof SuggestRoute
   '/terms': typeof TermsRoute
@@ -705,6 +740,7 @@ export interface FileRoutesById {
   '/s/$token': typeof STokenRoute
   '/u/$token': typeof UTokenRoute
   '/blog/': typeof BlogIndexRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/dispatch': typeof ApiCronDispatchRoute
   '/api/cron/nightly': typeof ApiCronNightlyRoute
   '/api/cron/settle': typeof ApiCronSettleRoute
@@ -734,6 +770,7 @@ export interface FileRouteTypes {
     | '/find'
     | '/for-business'
     | '/for-diners'
+    | '/forgot-password'
     | '/healthz'
     | '/how-it-works'
     | '/link-expired'
@@ -744,7 +781,9 @@ export interface FileRouteTypes {
     | '/ops'
     | '/pricing'
     | '/privacy'
+    | '/reset-password'
     | '/session-expired'
+    | '/signup'
     | '/stamp'
     | '/suggest'
     | '/terms'
@@ -787,6 +826,7 @@ export interface FileRouteTypes {
     | '/s/$token'
     | '/u/$token'
     | '/blog/'
+    | '/api/auth/$'
     | '/api/cron/dispatch'
     | '/api/cron/nightly'
     | '/api/cron/settle'
@@ -814,6 +854,7 @@ export interface FileRouteTypes {
     | '/find'
     | '/for-business'
     | '/for-diners'
+    | '/forgot-password'
     | '/healthz'
     | '/how-it-works'
     | '/link-expired'
@@ -824,7 +865,9 @@ export interface FileRouteTypes {
     | '/ops'
     | '/pricing'
     | '/privacy'
+    | '/reset-password'
     | '/session-expired'
+    | '/signup'
     | '/stamp'
     | '/suggest'
     | '/terms'
@@ -867,6 +910,7 @@ export interface FileRouteTypes {
     | '/s/$token'
     | '/u/$token'
     | '/blog'
+    | '/api/auth/$'
     | '/api/cron/dispatch'
     | '/api/cron/nightly'
     | '/api/cron/settle'
@@ -894,6 +938,7 @@ export interface FileRouteTypes {
     | '/find'
     | '/for-business'
     | '/for-diners'
+    | '/forgot-password'
     | '/healthz'
     | '/how-it-works'
     | '/link-expired'
@@ -904,7 +949,9 @@ export interface FileRouteTypes {
     | '/ops'
     | '/pricing'
     | '/privacy'
+    | '/reset-password'
     | '/session-expired'
+    | '/signup'
     | '/stamp'
     | '/suggest'
     | '/terms'
@@ -947,6 +994,7 @@ export interface FileRouteTypes {
     | '/s/$token'
     | '/u/$token'
     | '/blog/'
+    | '/api/auth/$'
     | '/api/cron/dispatch'
     | '/api/cron/nightly'
     | '/api/cron/settle'
@@ -975,6 +1023,7 @@ export interface RootRouteChildren {
   FindRoute: typeof FindRoute
   ForBusinessRoute: typeof ForBusinessRoute
   ForDinersRoute: typeof ForDinersRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   HealthzRoute: typeof HealthzRouteWithChildren
   HowItWorksRoute: typeof HowItWorksRoute
   LinkExpiredRoute: typeof LinkExpiredRoute
@@ -985,7 +1034,9 @@ export interface RootRouteChildren {
   OpsRoute: typeof OpsRouteWithChildren
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SessionExpiredRoute: typeof SessionExpiredRoute
+  SignupRoute: typeof SignupRoute
   StampRoute: typeof StampRoute
   SuggestRoute: typeof SuggestRoute
   TermsRoute: typeof TermsRoute
@@ -996,6 +1047,7 @@ export interface RootRouteChildren {
   STokenRoute: typeof STokenRoute
   UTokenRoute: typeof UTokenRoute
   BlogIndexRoute: typeof BlogIndexRoute
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiCronDispatchRoute: typeof ApiCronDispatchRoute
   ApiCronNightlyRoute: typeof ApiCronNightlyRoute
   ApiCronSettleRoute: typeof ApiCronSettleRoute
@@ -1081,6 +1133,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ForDinersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/healthz': {
       id: '/healthz'
       path: '/healthz'
@@ -1151,11 +1210,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/session-expired': {
       id: '/session-expired'
       path: '/session-expired'
       fullPath: '/session-expired'
       preLoaderRoute: typeof SessionExpiredRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/stamp': {
@@ -1450,6 +1523,13 @@ declare module '@tanstack/react-router' {
       path: '/u/$token'
       fullPath: '/u/$token'
       preLoaderRoute: typeof UTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/cron/dispatch': {
@@ -1747,6 +1827,7 @@ const rootRouteChildren: RootRouteChildren = {
   FindRoute: FindRoute,
   ForBusinessRoute: ForBusinessRoute,
   ForDinersRoute: ForDinersRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   HealthzRoute: HealthzRouteWithChildren,
   HowItWorksRoute: HowItWorksRoute,
   LinkExpiredRoute: LinkExpiredRoute,
@@ -1757,7 +1838,9 @@ const rootRouteChildren: RootRouteChildren = {
   OpsRoute: OpsRouteWithChildren,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SessionExpiredRoute: SessionExpiredRoute,
+  SignupRoute: SignupRoute,
   StampRoute: StampRoute,
   SuggestRoute: SuggestRoute,
   TermsRoute: TermsRoute,
@@ -1768,6 +1851,7 @@ const rootRouteChildren: RootRouteChildren = {
   STokenRoute: STokenRoute,
   UTokenRoute: UTokenRoute,
   BlogIndexRoute: BlogIndexRoute,
+  ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiCronDispatchRoute: ApiCronDispatchRoute,
   ApiCronNightlyRoute: ApiCronNightlyRoute,
   ApiCronSettleRoute: ApiCronSettleRoute,

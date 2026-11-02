@@ -294,3 +294,100 @@ from that one file. Update it once and every link changes.
 - Invented statistics, quotes and customer stories were removed. Posts keep
   only claims that link to a real source, or plain reasoning with no number.
 - `docs/blog-plan.md` holds 15 one-line topics.
+
+---
+
+## 16. Phase D1 auth research (2 November 2026)
+
+Checked against the current Neon Auth documentation before writing code.
+
+### Confirmed
+
+- Email and password, Google and Apple sign-in are supported. Apple needs a
+  paid Apple developer account, so it stays later as the founder said.
+- The session cookie is HttpOnly and Secure and is managed by the SDK. The
+  client reads it with `getSession()`. A JWT is also available for database
+  row level security.
+- Auth is enabled per Neon branch, not per project. Each branch gets its own
+  users, sessions and `neon_auth` schema.
+- Enabling can be done from the Neon console, the Neon CLI, or the API. The
+  client and server keys are returned only when auth is enabled, so they must
+  be captured once and stored as secrets.
+- Email and password and Google are included in all Neon plans, billed by
+  monthly active users. The free plan allows up to 60,000.
+- There is no documented way to add custom user fields. `updateUser()` covers
+  the display name, not a preferred name or phone. Our own `customer` table
+  keyed by the auth user id is the workable place for those fields.
+- MFA is not supported yet.
+
+### Not documented, therefore not assumed
+
+- Cloudflare Workers runtime support for the Neon Auth SDK.
+- A server-side session read outside the Next.js server SDK. The Next.js
+  `getSession()` helper is Next-specific and cannot be used in TanStack Start.
+- Numeric rate limits for the auth service. Only the shared email sender is
+  described as rate limited.
+- Whether a newly created branch inherits auth settings.
+
+The missing Workers server session is the blocker. D1 requires real server
+guards on `/me`, `/app`, `/ops` and `/stamp`, HttpOnly cookies and rate limits
+stored in Postgres. A client-only session check would not meet that and would
+leave the owner and operator areas protected by browser code alone.
+
+### Options put to the founder
+
+1. Self-host Better Auth on the Neon database. Users, sessions and accounts
+   live in our schema, so server functions on Workers can read the session,
+   custom fields are ordinary columns, and rate limits are ours. This keeps
+   the Neon database choice and replaces only the managed auth service.
+2. Use Supabase Auth, which is already connected and has Workers-friendly JWT
+   checks, while keeping data in Neon. This adds a second platform.
+3. Continue with Neon Auth as planned and accept client-only guards, or add a
+   separate Node auth proxy. Neither is recommended for the owner area.
+4. Pause D1 until Neon documents Workers support.
+
+No auth package was installed and no Neon Auth branch was enabled while this
+decision is open.
+
+Sources read: https://neon.com/docs/auth/about,
+https://neon.com/docs/auth/quick-start/tanstack-router,
+https://neon.com/docs/auth/authentication-flow,
+https://neon.com/docs/auth/reference/nextjs-server,
+https://neon.com/docs/auth/guides/manage-auth-api,
+https://neon.com/docs/auth/production-checklist,
+https://neon.com/docs/auth/roadmap
+
+---
+
+## 17. Auth implementation: Better Auth self-hosted on Neon
+
+After the Neon Auth review in section 16, the founder chose self-hosted Better
+Auth on the Neon dev branch. Neon Auth is not enabled and no Neon Auth package
+is installed.
+
+- Users, sessions, accounts, verification tokens and rate limits live in the
+  Neon dev branch (`0007_auth_dev.sql`). Sessions are read in TanStack Start
+  server functions from the HttpOnly cookie, so `/me`, `/app` and `/ops` have
+  real server guards on Workers.
+- `app_user` maps an auth user to one role: guest, owner, manager or operator.
+  Owners, managers and operators are linked by hand; a new sign-up is always a
+  guest. Guests get a `customer` row keyed by the auth user id.
+- Google is configured only when both Google secrets exist. Apple waits for a
+  paid Apple developer account.
+- Password reset uses an email webhook owned by the founder. No email provider
+  secret lives in this repository.
+- Rate limits are database-backed (Better Auth `rateLimit` table), not process
+  memory. Sign-in, sign-up and password reset have their own limits.
+- Audit events are written for sign-in, failed sign-in and password change.
+- Demo mode remains the default. The demo role switcher is hidden and
+  `/dev/roles` redirects to `/login` when `DATA_MODE=live`.
+
+Not verified: the migration has not been run against the dev branch, Google and
+the reset email have not been configured, and no live auth test has run against
+Postgres. Until Phase D2, live-mode screens still read demo content even though
+the guards are real.
+
+Sources for the Better Auth setup: https://better-auth.com/docs/integrations/tanstack,
+https://better-auth.com/docs/adapters/drizzle, https://better-auth.com/docs/installation,
+https://better-auth.com/docs/concepts/rate-limit, https://better-auth.com/docs/concepts/hooks,
+https://better-auth.com/docs/authentication/email-password

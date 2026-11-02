@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { z } from "zod";
 import { demoRepo, updateDemo } from "@/data/repo";
+import { getDataModeFn } from "@/server/live";
 import { DEMO_ACCOUNTS, signInAsDemoAccount } from "@/lib/demo-signin";
 import type { DemoRole } from "@/data/types";
 
@@ -24,6 +25,10 @@ const defaultDestination: Record<(typeof roles)[number], string> = {
 };
 
 export const Route = createFileRoute("/dev/roles")({
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode === "live") throw redirect({ to: "/login" });
+  },
   validateSearch: (search) => searchSchema.parse(search),
   head: () => ({
     meta: [{ title: "Developer roles | Patron" }, { name: "robots", content: "noindex" }],

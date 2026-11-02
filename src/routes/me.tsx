@@ -5,6 +5,9 @@ import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
 import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
+import { canOpenArea } from "@/lib/auth-rules";
+import { getDataModeFn } from "@/server/live";
+import { getViewerFn } from "@/server/auth-viewer";
 import { GuestShell } from "@/components/patron/GuestShell";
 import { LoyaltyCard } from "@/components/patron/LoyaltyCard";
 import { PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
@@ -13,7 +16,16 @@ import { signInAsDemoAccount } from "@/lib/demo-signin";
 
 const MyCardsPage = withChildren(MyCards);
 export const Route = createFileRoute("/me")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode === "live") {
+      const viewer = await getViewerFn();
+      if (!viewer || !canOpenArea(viewer.role, "me")) {
+        throw redirect({ to: "/login" });
+      }
+      if (viewer.needsPhone) throw redirect({ to: "/signup" });
+      return;
+    }
     if (!requireRole("guest")(demoRepo.read().session)) {
       throw redirect({ to: "/login" });
     }

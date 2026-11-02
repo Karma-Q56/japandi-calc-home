@@ -5,13 +5,24 @@ import { APP_NAME } from "@/config/app";
 import { demoRepo, updateDemo } from "@/data/repo";
 import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
+import { canOpenArea } from "@/lib/auth-rules";
+import { getDataModeFn } from "@/server/live";
+import { getViewerFn } from "@/server/auth-viewer";
 import { OwnerSideNav, OwnerTabs } from "@/components/patron/OwnerNav";
 import { PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
 import { markOutletComponent } from "@/lib/nested";
 import { PatronBrand } from "@/lib/patron-brand";
 
 export const Route = createFileRoute("/app")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode === "live") {
+      const viewer = await getViewerFn();
+      if (!viewer || !canOpenArea(viewer.role, "app")) {
+        throw redirect({ to: "/login" });
+      }
+      return;
+    }
     if (!requireRole("owner", "manager")(demoRepo.read().session)) {
       throw redirect({ to: "/login" });
     }

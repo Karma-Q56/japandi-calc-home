@@ -181,3 +181,21 @@ Verified by running the checks and opening the captures listed in
 ### Not started
 
 - None from this prompt.
+
+---
+
+## 2 November 2026: Phase D1 real accounts
+
+Built: self-hosted Better Auth on Neon, one login page for every role, sign-up
+with preferred name, mobile and password, Google when configured, forgotten and
+reset password, a finish-phone step for Google users, real server guards on
+`/me`, `/app` and `/ops`, database-backed auth rate limits, audit events for
+sign-in failures and password changes, `app_user` role linking, the demo
+switcher hidden in live mode, and `db/migrations/0007_auth_dev.sql`.
+
+Verified: `pnpm run typecheck` and `pnpm run lint` pass, and the role and phone
+rules have Vitest coverage.
+
+Not verified: the migration has not been run on the dev branch, Google and the
+reset email are not configured, and no live sign-up or session test has run
+against Postgres. Until Phase D2, live-mode screens still read demo content.
