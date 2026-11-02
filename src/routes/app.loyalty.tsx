@@ -5,7 +5,7 @@ import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
 import { StampSlots } from "@/components/patron/StampSlots";
 import { Switch } from "@/components/patron/Switch";
-import { ConfirmDialog, Helper, PageHeader } from "@/components/patron/dash";
+import { ConfirmDialog, FormField, Helper, PageHeader } from "@/components/patron/dash";
 import {
   PhoneFrame,
   PreviewOnly,
@@ -17,12 +17,25 @@ import { MISS_YOU_COOLDOWN_DAYS, MISS_YOU_MAX_AFTER_DAYS, MISS_YOU_MIN_AFTER_DAY
 import { WEEKDAYS } from "@/domain/tools";
 import type { SpinConfig, SpinMode, SpinSegment } from "@/data/types";
 import { useDemoState } from "@/data/useDemoState";
+import {
+  getDataModeFn,
+  getLoyaltySettingsFn,
+  updateLoyaltySettingsFn,
+} from "@/server/live";
+import type { LiveLoyaltySettings } from "@/server/live-loyalty";
 
 export const Route = createFileRoute("/app/loyalty")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode === "live") return;
     if (!requireRole("owner", "manager")(demoRepo.read().session)) {
       throw redirect({ to: "/login" });
     }
+  },
+  loader: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode !== "live") return { mode, live: null };
+    return { mode, live: await getLoyaltySettingsFn() };
   },
   component: Loyalty,
 });
@@ -46,6 +59,12 @@ function blankSegment(): SpinSegment {
 }
 
 function Loyalty() {
+  const data = Route.useLoaderData();
+  if (data.mode === "live") return <LiveLoyalty data={data.live} />;
+  return <DemoLoyalty />;
+}
+
+function DemoLoyalty() {
   const state = useDemoState();
   const restaurant =
     state.restaurants.find((item) => item.id === state.session.restaurantId) ??
@@ -1095,6 +1114,140 @@ function Loyalty() {
 
       {notice && (
         <p role="status" className="builder-hint">
+          {notice}
+        </p>
+      )}
+    </main>
+  );
+}
+
+function LiveLoyalty({ data }: { data: LiveLoyaltySettings | null }) {
+  const [stampsRequired, setStampsRequired] = useState(data?.stampsRequired ?? 8);
+  const [reward, setReward] = useState(data?.rewardDescription ?? "");
+  const [windowMinutes, setWindowMinutes] = useState(data?.visitWindowMinutes ?? 240);
+  const [welcomeStamp, setWelcomeStamp] = useState(data?.welcomeStamp ?? false);
+  const [marketingCap, setMarketingCap] = useState(data?.marketingWeeklyCap ?? 3);
+  const [memberCap, setMemberCap] = useState(data?.memberWeeklyCap ?? 2);
+  const [notice, setNotice] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  if (!data) {
+    return (
+      <main className="demo-hub page-width">
+        <PageHeader
+          eyebrow="Live mode"
+          title="This login is not linked to a restaurant."
+          intro="Ask Patron to link your owner account to a restaurant, then sign in again."
+        />
+      </main>
+    );
+  }
+
+  const save = async () => {
+    setBusy(true);
+    const result = await updateLoyaltySettingsFn({
+      data: {
+        stampsRequired,
+        rewardDescription: reward,
+        visitWindowMinutes: windowMinutes,
+        welcomeStamp,
+        marketingWeeklyCap: marketingCap,
+        memberWeeklyCap: memberCap,
+      },
+    });
+    setBusy(false);
+    if (!result.ok) {
+      setNotice(result.message);
+      return;
+    }
+    setStampsRequired(result.settings.stampsRequired);
+    setReward(result.settings.rewardDescription);
+    setWindowMinutes(result.settings.visitWindowMinutes);
+    setWelcomeStamp(result.settings.welcomeStamp);
+    setMarketingCap(result.settings.marketingWeeklyCap);
+    setMemberCap(result.settings.memberWeeklyCap);
+    setNotice("Saved. The live card uses these rules now.");
+  };
+
+  return (
+    <main className="demo-hub page-width">
+      <PageHeader
+        eyebrow={`Loyalty · ${data.restaurantName}`}
+        title="Set the card rules."
+        intro="These are the live rules your guests see. Saving here applies them immediately and writes an activity log entry."
+        actions={
+          <button className="builder-primary" type="button" disabled={busy} onClick={save}>
+            {busy ? "Saving…" : "Save rules"}
+          </button>
+        }
+      />
+      <section className="builder-panel">
+        <h2>Reward</h2>
+        <div className="builder-fields">
+          <FormField label="Stamps needed" hint="Whole number from 2 to 30.">
+            <input
+              type="number"
+              min={2}
+              max={30}
+              value={stampsRequired}
+              onChange={(event) => setStampsRequired(Number(event.target.value))}
+            />
+          </FormField>
+          <FormField label="What the guest gets" hint="Keep it short and plain.">
+            <input
+              maxLength={120}
+              value={reward}
+              onChange={(event) => setReward(event.target.value)}
+            />
+          </FormField>
+          <FormField label="Minutes between visits" hint="Zero allows a stamp every time.">
+            <input
+              type="number"
+              min={0}
+              max={1440}
+              value={windowMinutes}
+              onChange={(event) => setWindowMinutes(Number(event.target.value))}
+            />
+          </FormField>
+        </div>
+        <Helper>
+          A guest can earn one stamp in this window. Keep it at 240 minutes for a normal cafe.
+        </Helper>
+      </section>
+      <section className="builder-panel">
+        <h2>Starting stamp</h2>
+        <Switch
+          checked={welcomeStamp}
+          onChange={setWelcomeStamp}
+          label="Give one welcome stamp at join"
+          hint="A small head start. It does not earn a reward on its own."
+        />
+      </section>
+      <section className="builder-panel">
+        <h2>Message limits</h2>
+        <div className="builder-fields">
+          <FormField label="Marketing SMS each week" hint="0 to 14 messages per guest.">
+            <input
+              type="number"
+              min={0}
+              max={14}
+              value={marketingCap}
+              onChange={(event) => setMarketingCap(Number(event.target.value))}
+            />
+          </FormField>
+          <FormField label="Card messages each week" hint="0 to 14 messages per guest.">
+            <input
+              type="number"
+              min={0}
+              max={14}
+              value={memberCap}
+              onChange={(event) => setMemberCap(Number(event.target.value))}
+            />
+          </FormField>
+        </div>
+      </section>
+      {notice && (
+        <p className="builder-hint" role="status">
           {notice}
         </p>
       )}

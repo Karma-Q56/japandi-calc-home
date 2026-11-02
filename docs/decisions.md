@@ -493,3 +493,27 @@ Not verified: none of these mutations has run against the Neon dev branch.
 
 Next in D6: the loyalty, menu and page builders, and the remaining operator
 surfaces.
+
+---
+
+## 22. Phase D6: live loyalty rules
+
+The loyalty page now has a live branch for the signed-in owner. It reads and
+writes the core restaurant rules that already exist in Postgres.
+
+- Live owners can change stamps needed, the reward wording, the minutes between
+  visits, the welcome stamp and both weekly message caps.
+- Saving validates every range on the server, updates the restaurant row and
+  writes a `loyalty_settings_updated` audit event.
+- Changes apply immediately because this schema has no loyalty draft table. The
+  existing Draft, Preview, Publish flow stays in demo mode only. Adding a live
+  draft and version history needs its own migration and is part of D7.
+- The menu and page builders also stay in demo mode. They need draft storage for
+  sections, items, page words and versions before live editing is safe.
+- The operator console remains on demo data.
+
+Not verified: none of the live loyalty reads or writes has run against the Neon
+dev branch.
+
+Next in D7: loyalty draft versions, menu builder storage, page builder storage
+and the operator surfaces.

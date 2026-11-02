@@ -99,3 +99,11 @@ approve a pending campaign and cancel a scheduled campaign. Cancelling releases
 the reservation and skips queued messages. Sending, settling, manual stamps and
 the builders stay for D6. The mutations are typechecked and built, not run
 against the dev database.
+
+## 2 November 2026, Phase D6
+
+The loyalty screen now has a live branch for the core card rules: stamps needed,
+reward, visit window, welcome stamp and message caps. Saves validate, audit and
+apply immediately. Menu, page and operator builders stay for D7 because they
+need draft storage. The live path is typechecked and built, not run against the
+dev database.

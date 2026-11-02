@@ -265,3 +265,18 @@ Verified: typecheck 0 errors; production build passed in 34.65s client and
 helpers and route suites.
 
 Not verified: the live mutations have not run against the Neon dev branch.
+
+---
+
+## 2 November 2026: Phase D6 live loyalty rules
+
+Built: a live loyalty settings screen for stamps needed, reward wording, visit
+window, welcome stamp and weekly message caps. Every save is validated on the
+server, scoped to the signed-in restaurant and written to the audit log. Menu,
+page and operator builders remain for D7 because they need draft storage.
+
+Verified: typecheck 0 errors; 94 tests passed across 7 files; production build
+passed in 21.37s client and 20.72s server; lint 0 errors and 12 warnings.
+
+Not verified: the live loyalty read and write have not run against the Neon dev
+branch.

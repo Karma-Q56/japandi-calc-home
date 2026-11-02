@@ -344,3 +344,36 @@ export const cancelCampaignFn = createServerFn({ method: "POST" })
     if (!viewer) return { ok: false as const, message: "Sign in again." };
     return cancelCampaign(viewer, data.campaignId);
   });
+
+/** Read the live loyalty rules for the signed-in owner's restaurant. */
+export const getLoyaltySettingsFn = createServerFn({ method: "GET" }).handler(async () => {
+  const [{ readViewer }, { loadLoyaltySettings }] = await Promise.all([
+    import("./auth-viewer"),
+    import("./live-loyalty"),
+  ]);
+  const viewer = await readViewer();
+  if (!viewer) return null;
+  return loadLoyaltySettings(viewer);
+});
+
+/** Save the live loyalty rules with validation and an audit event. */
+export const updateLoyaltySettingsFn = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      stampsRequired: z.number().int().min(2).max(30),
+      rewardDescription: z.string().trim().min(1).max(120),
+      visitWindowMinutes: z.number().int().min(0).max(1440),
+      welcomeStamp: z.boolean(),
+      marketingWeeklyCap: z.number().int().min(0).max(14),
+      memberWeeklyCap: z.number().int().min(0).max(14),
+    }),
+  )
+  .handler(async ({ data }) => {
+    const [{ readViewer }, { saveLoyaltySettings }] = await Promise.all([
+      import("./auth-viewer"),
+      import("./live-loyalty"),
+    ]);
+    const viewer = await readViewer();
+    if (!viewer) return { ok: false as const, message: "Sign in again." };
+    return saveLoyaltySettings(viewer, data);
+  });
