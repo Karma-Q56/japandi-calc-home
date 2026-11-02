@@ -280,3 +280,18 @@ passed in 21.37s client and 20.72s server; lint 0 errors and 12 warnings.
 
 Not verified: the live loyalty read and write have not run against the Neon dev
 branch.
+
+---
+
+## 2 November 2026: Phase D7 live menu builder
+
+Built: a live menu screen that reads sections and items, adds sections, adds
+priced items, and shows or hides items. All writes validate on the server, stay
+inside the signed-in restaurant and are audited. Menu drafts, page builder and
+operator console remain for D8.
+
+Verified: typecheck 0 errors; 98 tests passed across 8 files; production build
+passed in 19.97s client and 20.73s server; lint 0 errors and 12 warnings.
+
+Not verified: the live menu reads and writes have not run against the Neon dev
+branch.

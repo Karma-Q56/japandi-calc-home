@@ -107,3 +107,11 @@ reward, visit window, welcome stamp and message caps. Saves validate, audit and
 apply immediately. Menu, page and operator builders stay for D7 because they
 need draft storage. The live path is typechecked and built, not run against the
 dev database.
+
+## 2 November 2026, Phase D7
+
+The menu screen now has a live builder for sections, items and visibility, with
+server validation and audit events. Changes apply directly. Menu drafts and
+versions, the page builder and the operator console stay for D8 because they
+need more storage and cross-tenant views. The live path is typechecked and
+built, not run against the dev database.

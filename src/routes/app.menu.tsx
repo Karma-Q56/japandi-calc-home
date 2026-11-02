@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
@@ -9,10 +9,26 @@ import { EmptyState, FormField, PageHeader } from "@/components/patron/dash";
 import { PhoneFrame, PreviewOnly, PublishSteps } from "@/components/patron/preview";
 import { PublicTemplate, type VenueSection } from "@/components/patron/PublicTemplates";
 import { ThemeProvider } from "@/theme";
+import {
+  createMenuItemFn,
+  createMenuSectionFn,
+  getDataModeFn,
+  getMenuFn,
+  setMenuItemAvailableFn,
+} from "@/server/live";
+import type { LiveMenu } from "@/server/live-menu";
+import { formatRand } from "@/lib/money";
 
 export const Route = createFileRoute("/app/menu")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode === "live") return;
     if (!requireRole("owner", "manager")(demoRepo.read().session)) throw redirect({ to: "/login" });
+  },
+  loader: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode !== "live") return { mode, live: null };
+    return { mode, live: await getMenuFn() };
   },
   component: MenuEditor,
 });
@@ -40,6 +56,12 @@ type PendingItem = Partial<MenuItem> & {
 };
 
 function MenuEditor() {
+  const data = Route.useLoaderData();
+  if (data.mode === "live") return <LiveMenuEditor data={data.live} />;
+  return <DemoMenuEditor />;
+}
+
+function DemoMenuEditor() {
   const state = useDemoState();
   const restaurant =
     state.restaurants.find((item) => item.id === state.session.restaurantId) ??
@@ -482,6 +504,205 @@ function MenuEditor() {
           </div>
         </section>
       )}
+    </main>
+  );
+}
+
+function LiveMenuEditor({ data }: { data: LiveMenu | null }) {
+  const router = useRouter();
+  const [sectionName, setSectionName] = useState("");
+  const [activeSection, setActiveSection] = useState(data?.sections[0]?.id ?? "");
+  const [itemName, setItemName] = useState("");
+  const [description, setDescription] = useState("");
+  const [price, setPrice] = useState("");
+  const [notice, setNotice] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  if (!data) {
+    return (
+      <main className="demo-hub page-width">
+        <PageHeader
+          eyebrow="Live mode"
+          title="This login is not linked to a restaurant."
+          intro="Ask Patron to link your owner account to a restaurant, then sign in again."
+        />
+      </main>
+    );
+  }
+
+  const sectionId = activeSection || data.sections[0]?.id || "";
+  const addSection = async () => {
+    setBusy(true);
+    const result = await createMenuSectionFn({ data: { name: sectionName } });
+    setBusy(false);
+    if (!result.ok) {
+      setNotice(result.message);
+      return;
+    }
+    setSectionName("");
+    setActiveSection(result.id);
+    setNotice("Section added.");
+    await router.invalidate();
+  };
+  const addItem = async () => {
+    if (!sectionId) {
+      setNotice("Add a section before adding an item.");
+      return;
+    }
+    setBusy(true);
+    const result = await createMenuItemFn({
+      data: {
+        sectionId,
+        name: itemName,
+        description,
+        priceCents: Math.round(Number(price) * 100),
+      },
+    });
+    setBusy(false);
+    if (!result.ok) {
+      setNotice(result.message);
+      return;
+    }
+    setItemName("");
+    setDescription("");
+    setPrice("");
+    setNotice("Item added to the live menu.");
+    await router.invalidate();
+  };
+  const toggle = async (itemId: string, available: boolean) => {
+    setBusy(true);
+    const result = await setMenuItemAvailableFn({ data: { itemId, available } });
+    setBusy(false);
+    setNotice(result.ok ? (available ? "Item is visible." : "Item hidden.") : result.message);
+    if (result.ok) await router.invalidate();
+  };
+
+  return (
+    <main className="demo-hub page-width">
+      <PageHeader
+        eyebrow={`Menu · ${data.restaurantName}`}
+        title="Build your menu."
+        intro="These items are live on your public page. New sections and items save directly and write an activity log entry."
+      />
+      <section className="builder-panel">
+        <h2>Sections</h2>
+        <div className="builder-fields">
+          <FormField label="New section" hint="For example Coffee, Breakfast or Cold drinks.">
+            <input
+              maxLength={80}
+              value={sectionName}
+              onChange={(event) => setSectionName(event.target.value)}
+            />
+          </FormField>
+          <button
+            className="builder-primary"
+            type="button"
+            disabled={busy || !sectionName.trim()}
+            onClick={addSection}
+          >
+            Add section
+          </button>
+        </div>
+        {data.sections.length === 0 ? (
+          <EmptyState
+            title="No sections yet."
+            hint="Add a section first, then add items to it."
+          />
+        ) : (
+          <div className="builder-fields">
+            <FormField label="Working section">
+              <select value={sectionId} onChange={(event) => setActiveSection(event.target.value)}>
+                {data.sections.map((section) => (
+                  <option key={section.id} value={section.id}>
+                    {section.name}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+          </div>
+        )}
+      </section>
+      <section className="builder-panel">
+        <h2>Add an item</h2>
+        <div className="builder-fields">
+          <FormField label="Item name">
+            <input
+              maxLength={120}
+              value={itemName}
+              onChange={(event) => setItemName(event.target.value)}
+            />
+          </FormField>
+          <FormField label="Description" hint="Optional. Keep it short.">
+            <input
+              maxLength={300}
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+            />
+          </FormField>
+          <FormField label="Price in rand">
+            <input
+              type="number"
+              min={0}
+              step={0.01}
+              value={price}
+              onChange={(event) => setPrice(event.target.value)}
+            />
+          </FormField>
+          <button
+            className="builder-primary"
+            type="button"
+            disabled={busy || !sectionId || !itemName.trim()}
+            onClick={addItem}
+          >
+            Add item
+          </button>
+        </div>
+        {notice && (
+          <p className="builder-hint" role="status">
+            {notice}
+          </p>
+        )}
+      </section>
+      <section className="builder-panel">
+        <h2>Live menu</h2>
+        {data.sections.length === 0 ? (
+          <p className="demo-data-note">Your menu is empty.</p>
+        ) : (
+          data.sections.map((section) => (
+            <div className="venue-menu-section" key={section.id}>
+              <h3>{section.name}</h3>
+              {section.items.length === 0 ? (
+                <p className="demo-data-note">No items in this section yet.</p>
+              ) : (
+                section.items.map((item) => (
+                  <div className="venue-menu-item" key={item.id}>
+                    <span>
+                      <strong>{item.name}</strong>
+                      <small>
+                        {item.description || "No description"} · {formatRand(item.priceCents)}
+                      </small>
+                    </span>
+                    <button
+                      className="builder-secondary"
+                      type="button"
+                      disabled={busy}
+                      onClick={() => {
+                        void toggle(item.id, !item.available);
+                      }}
+                    >
+                      {item.available ? "Hide" : "Show"}
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          ))
+        )}
+        <p className="demo-data-note">
+          Draft, preview and publish for the menu come next. This live builder saves each change
+          directly.
+        </p>
+      </section>
     </main>
   );
 }

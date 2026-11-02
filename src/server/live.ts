@@ -377,3 +377,60 @@ export const updateLoyaltySettingsFn = createServerFn({ method: "POST" })
     if (!viewer) return { ok: false as const, message: "Sign in again." };
     return saveLoyaltySettings(viewer, data);
   });
+
+/** Read the live menu for the signed-in owner. */
+export const getMenuFn = createServerFn({ method: "GET" }).handler(async () => {
+  const [{ readViewer }, { loadMenu }] = await Promise.all([
+    import("./auth-viewer"),
+    import("./live-menu"),
+  ]);
+  const viewer = await readViewer();
+  if (!viewer) return null;
+  return loadMenu(viewer);
+});
+
+/** Add a live menu section. */
+export const createMenuSectionFn = createServerFn({ method: "POST" })
+  .validator(z.object({ name: z.string().trim().min(1).max(80) }))
+  .handler(async ({ data }) => {
+    const [{ readViewer }, { createSection }] = await Promise.all([
+      import("./auth-viewer"),
+      import("./live-menu"),
+    ]);
+    const viewer = await readViewer();
+    if (!viewer) return { ok: false as const, message: "Sign in again." };
+    return createSection(viewer, data.name);
+  });
+
+/** Add a live menu item. */
+export const createMenuItemFn = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      sectionId: z.string().uuid(),
+      name: z.string().trim().min(1).max(120),
+      description: z.string().trim().max(300),
+      priceCents: z.number().int().min(0),
+    }),
+  )
+  .handler(async ({ data }) => {
+    const [{ readViewer }, { createItem }] = await Promise.all([
+      import("./auth-viewer"),
+      import("./live-menu"),
+    ]);
+    const viewer = await readViewer();
+    if (!viewer) return { ok: false as const, message: "Sign in again." };
+    return createItem(viewer, data);
+  });
+
+/** Show or hide a live menu item. */
+export const setMenuItemAvailableFn = createServerFn({ method: "POST" })
+  .validator(z.object({ itemId: z.string().uuid(), available: z.boolean() }))
+  .handler(async ({ data }) => {
+    const [{ readViewer }, { setItemAvailable }] = await Promise.all([
+      import("./auth-viewer"),
+      import("./live-menu"),
+    ]);
+    const viewer = await readViewer();
+    if (!viewer) return { ok: false as const, message: "Sign in again." };
+    return setItemAvailable(viewer, data.itemId, data.available);
+  });

@@ -517,3 +517,26 @@ dev branch.
 
 Next in D7: loyalty draft versions, menu builder storage, page builder storage
 and the operator surfaces.
+
+---
+
+## 23. Phase D7: live menu builder
+
+The menu page now has a live branch for sections and items that already have
+Postgres tables. The demo editor is unchanged.
+
+- Live owners can add sections, add priced items to a section, and show or hide
+  an item. Every change is scoped to the signed-in restaurant and writes an
+  audit event.
+- Prices are entered in rand and stored as integer cents. Names, descriptions
+  and prices are validated on the server as well as the form.
+- Changes apply immediately. Draft, preview, publish and version history still
+  need their own tables, so they remain in demo mode.
+- The page builder and operator console stay on demo data. Both need storage
+  and cross-tenant views before live editing is safe.
+
+Not verified: none of the live menu reads or writes has run against the Neon dev
+branch.
+
+Next in D8: menu drafts and versions, the page builder, then the operator
+surfaces.
