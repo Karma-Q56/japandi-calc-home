@@ -467,3 +467,29 @@ Not verified: neither live query has run against the Neon dev branch.
 
 Next in D5: customer actions and consent, campaign actions, then the loyalty,
 menu and page builders.
+
+---
+
+## 21. Phase D5: live consent and campaign actions
+
+The live customer profile and campaign results now have a small, audited set of
+write actions. Each one takes the restaurant from the signed-in viewer and runs
+inside that restaurant's RLS context.
+
+- SMS consent can be turned on or off. The membership status changes, a consent
+  event stores the current wording version and exact text, and an audit event
+  records the change without the phone number.
+- Revealing a phone number returns it once and writes a `phone_reveal` audit
+  event. The number is never stored in the audit row.
+- An owner can approve a draft or pending campaign. Approval records the user
+  and time but does not send anything.
+- A scheduled campaign can be cancelled. Queued messages become skipped, the
+  estimated reservation is released through the credit ledger once, and the
+  change is audited. Sending, settling and editing campaign wording remain off.
+- Manual stamps, consent history export and customer deletion remain off until
+  the stamp policy and deletion workflow are connected.
+
+Not verified: none of these mutations has run against the Neon dev branch.
+
+Next in D6: the loyalty, menu and page builders, and the remaining operator
+surfaces.

@@ -91,3 +91,11 @@ Customer profiles and campaign results now open real Postgres data from the live
 guest and campaign lists. Both are read only: manual stamps, consent changes,
 phone reveal, export, approve, send, settle and cancel are next. The live queries
 are typechecked and built, not run against the dev database.
+
+## 2 November 2026, Phase D5
+
+Live owners can now change SMS consent, reveal a phone with an audit event,
+approve a pending campaign and cancel a scheduled campaign. Cancelling releases
+the reservation and skips queued messages. Sending, settling, manual stamps and
+the builders stay for D6. The mutations are typechecked and built, not run
+against the dev database.

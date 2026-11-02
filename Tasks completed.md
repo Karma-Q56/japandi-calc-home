@@ -250,3 +250,18 @@ errors and 12 warnings; final typecheck recorded here.
 Not verified: the live detail queries have not run against the Neon dev branch.
 
 Typecheck: 0 errors. Build: client 56.90s, server 34.40s. Lint: 0 errors, 12 warnings. Tests: 87 passed.
+
+---
+
+## 2 November 2026: Phase D5 live consent and campaign actions
+
+Built: audited SMS consent changes, phone reveal with an audit trail, campaign
+approval, and cancellation of a scheduled campaign with its reservation
+released and queued messages skipped. The action rules have tests. Manual
+stamps, sending, settling and builders remain for D6.
+
+Verified: typecheck 0 errors; production build passed in 34.65s client and
+9.50s server; lint 0 errors and 12 warnings; 90 tests passed across the action
+helpers and route suites.
+
+Not verified: the live mutations have not run against the Neon dev branch.

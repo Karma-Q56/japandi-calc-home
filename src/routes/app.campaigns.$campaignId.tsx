@@ -5,7 +5,13 @@ import { campaignBadge, Badge, ConfirmDialog, DataTable, EmptyState, PageHeader,
 import { campaignRecipients, campaignResults, messageStatusLabel, VISITS_LABEL } from "@/domain/campaigns";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
-import { getCampaignResultsFn, getDataModeFn } from "@/server/live";
+import {
+  approveCampaignFn,
+  cancelCampaignFn,
+  getCampaignResultsFn,
+  getDataModeFn,
+} from "@/server/live";
+import { canApproveLiveCampaign, canCancelLiveCampaign } from "@/lib/live-actions";
 import type { LiveCampaignResults } from "@/server/live-dashboard";
 import {
   campaignTotals,
@@ -316,6 +322,10 @@ function DemoResultsPage() {
 }
 
 function LiveCampaignResults({ data }: { data: LiveCampaignResults | null }) {
+  const [approved, setApproved] = useState(data?.campaign.approved ?? false);
+  const [status, setStatus] = useState(data?.campaign.status ?? "");
+  const [notice, setNotice] = useState("");
+  const [busy, setBusy] = useState(false);
   if (!data) {
     return (
       <main className="demo-hub page-width">
@@ -334,13 +344,31 @@ function LiveCampaignResults({ data }: { data: LiveCampaignResults | null }) {
   const totals = campaignTotals(
     data.messages.map((message) => message.status as CampaignMessageStatus),
   );
-  const badge = campaignBadge(
-    data.campaign.status as Parameters<typeof campaignBadge>[0],
-  );
+  const badge = campaignBadge(status as Parameters<typeof campaignBadge>[0]);
   const cost =
-    data.campaign.status === "sent"
-      ? data.campaign.actualCostCents
-      : (data.campaign.estimatedCostCents ?? 0);
+    status === "sent" ? data.campaign.actualCostCents : (data.campaign.estimatedCostCents ?? 0);
+  const approve = async () => {
+    setBusy(true);
+    const result = await approveCampaignFn({ data: { campaignId: data.campaign.id } });
+    setBusy(false);
+    if (result.ok) {
+      setApproved(true);
+      setNotice("Campaign approved. Sending still waits for a later phase.");
+    } else {
+      setNotice(result.message);
+    }
+  };
+  const cancel = async () => {
+    setBusy(true);
+    const result = await cancelCampaignFn({ data: { campaignId: data.campaign.id } });
+    setBusy(false);
+    if (result.ok) {
+      setStatus("cancelled");
+      setNotice("Campaign cancelled and the reservation released.");
+    } else {
+      setNotice(result.message);
+    }
+  };
   return (
     <main className="demo-hub page-width">
       <PageHeader
@@ -348,9 +376,30 @@ function LiveCampaignResults({ data }: { data: LiveCampaignResults | null }) {
         title={data.campaign.name}
         intro={data.campaign.body}
         actions={
-          <a className="builder-secondary" href="/app/campaigns">
-            Back to campaigns
-          </a>
+          <>
+            {canApproveLiveCampaign({
+              status,
+              requiresApproval: data.campaign.requiresApproval,
+              approved,
+            }) && (
+              <button className="builder-primary" type="button" disabled={busy} onClick={approve}>
+                Approve campaign
+              </button>
+            )}
+            {canCancelLiveCampaign(status) && (
+              <ConfirmDialog
+                label="Cancel"
+                question="Cancel this scheduled campaign and release its SMS reservation?"
+                confirmLabel="Yes, cancel it"
+                onConfirm={() => {
+                  void cancel();
+                }}
+              />
+            )}
+            <a className="builder-secondary" href="/app/campaigns">
+              Back to campaigns
+            </a>
+          </>
         }
       />
       <p className="eyebrow" aria-label="Campaign status">
@@ -406,8 +455,9 @@ function LiveCampaignResults({ data }: { data: LiveCampaignResults | null }) {
           />
         )}
       </section>
+      {notice && <p className="demo-data-note" role="status">{notice}</p>}
       <p className="demo-data-note">
-        Read-only live view. Approving, sending, settling and cancelling campaigns come next.
+        Sending, settling and editing campaign wording still come next.
       </p>
     </main>
   );

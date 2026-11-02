@@ -5,7 +5,12 @@ import { Badge, ConfirmDialog, PageHeader, StatCard, StatGrid } from "@/componen
 import { demoRepo } from "@/data/repo";
 import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
-import { getCustomerProfileFn, getDataModeFn } from "@/server/live";
+import {
+  getCustomerProfileFn,
+  getDataModeFn,
+  revealCustomerPhoneFn,
+  setSmsConsentFn,
+} from "@/server/live";
 import type { LiveCustomerProfile } from "@/server/live-dashboard";
 import { maskLivePhone } from "@/lib/live-customers";
 import { birthdayLabel, birthdayOf } from "@/lib/birthday";
@@ -302,6 +307,10 @@ function DemoCustomerProfile() {
 }
 
 function LiveCustomerProfile({ data }: { data: LiveCustomerProfile | null }) {
+  const [smsOn, setSmsOn] = useState(data?.smsOptedIn ?? false);
+  const [phone, setPhone] = useState<string | null>(null);
+  const [notice, setNotice] = useState("");
+  const [busy, setBusy] = useState(false);
   if (!data) {
     return (
       <main className="demo-hub page-width">
@@ -342,10 +351,53 @@ function LiveCustomerProfile({ data }: { data: LiveCustomerProfile | null }) {
       </StatGrid>
       <section className="builder-panel">
         <h2>Contact</h2>
-        <p>{maskLivePhone(data.phoneE164)}</p>
+        <p>{phone ?? maskLivePhone(data.phoneE164)}</p>
+        <div className="demo-control-actions">
+          <button
+            className="builder-secondary"
+            type="button"
+            disabled={busy || phone !== null}
+            onClick={async () => {
+              setBusy(true);
+              const result = await revealCustomerPhoneFn({
+                data: { customerId: data.customerId },
+              });
+              setBusy(false);
+              if (result.ok) {
+                setPhone(result.phone);
+                setNotice("Phone revealed. This was written to the activity log.");
+              } else {
+                setNotice(result.message);
+              }
+            }}
+          >
+            {phone ? "Phone revealed" : "Reveal phone"}
+          </button>
+          <button
+            className="builder-secondary"
+            type="button"
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              const result = await setSmsConsentFn({
+                data: { membershipId: data.membershipId, enabled: !smsOn },
+              });
+              setBusy(false);
+              if (result.ok) {
+                setSmsOn(result.enabled);
+                setNotice(result.enabled ? "SMS consent turned on." : "SMS consent turned off.");
+              } else {
+                setNotice(result.message);
+              }
+            }}
+          >
+            {smsOn ? "Turn SMS off" : "Turn SMS on"}
+          </button>
+        </div>
         <p className="demo-data-note">
-          SMS marketing is {data.smsOptedIn ? "on" : "off"}. Joined {when(data.joinedAt)}.
+          SMS marketing is {smsOn ? "on" : "off"}. Joined {when(data.joinedAt)}.
         </p>
+        {notice && <p className="demo-data-note" role="status">{notice}</p>}
       </section>
       <section className="builder-panel">
         <h2>Recent visits</h2>

@@ -292,3 +292,55 @@ export const getCampaignResultsFn = createServerFn({ method: "GET" })
     if (!viewer) return null;
     return loadCampaignResults(viewer, data.campaignId);
   });
+
+/** Change one guest's SMS consent. */
+export const setSmsConsentFn = createServerFn({ method: "POST" })
+  .validator(z.object({ membershipId: uuidSchema, enabled: z.boolean() }))
+  .handler(async ({ data }) => {
+    const [{ readViewer }, { setSmsConsent }] = await Promise.all([
+      import("./auth-viewer"),
+      import("./live-actions"),
+    ]);
+    const viewer = await readViewer();
+    if (!viewer) return { ok: false as const, message: "Sign in again." };
+    return setSmsConsent(viewer, data.membershipId, data.enabled);
+  });
+
+/** Reveal a guest's phone number, with an audit event. */
+export const revealCustomerPhoneFn = createServerFn({ method: "POST" })
+  .validator(z.object({ customerId: uuidSchema }))
+  .handler(async ({ data }) => {
+    const [{ readViewer }, { revealPhone }] = await Promise.all([
+      import("./auth-viewer"),
+      import("./live-actions"),
+    ]);
+    const viewer = await readViewer();
+    if (!viewer) return { ok: false as const, message: "Sign in again." };
+    return revealPhone(viewer, data.customerId);
+  });
+
+/** Approve a pending campaign without sending it. */
+export const approveCampaignFn = createServerFn({ method: "POST" })
+  .validator(z.object({ campaignId: uuidSchema }))
+  .handler(async ({ data }) => {
+    const [{ readViewer }, { approveCampaign }] = await Promise.all([
+      import("./auth-viewer"),
+      import("./live-actions"),
+    ]);
+    const viewer = await readViewer();
+    if (!viewer) return { ok: false as const, message: "Sign in again." };
+    return approveCampaign(viewer, data.campaignId);
+  });
+
+/** Cancel a scheduled campaign and release its reservation. */
+export const cancelCampaignFn = createServerFn({ method: "POST" })
+  .validator(z.object({ campaignId: uuidSchema }))
+  .handler(async ({ data }) => {
+    const [{ readViewer }, { cancelCampaign }] = await Promise.all([
+      import("./auth-viewer"),
+      import("./live-actions"),
+    ]);
+    const viewer = await readViewer();
+    if (!viewer) return { ok: false as const, message: "Sign in again." };
+    return cancelCampaign(viewer, data.campaignId);
+  });
