@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { api } from "@/api";
-import { DemoControlBar } from "@/components/patron/DemoControlBar";
 import { VerificationStep } from "@/components/patron/VerificationStep";
 import { demoRepo, updateDemo } from "@/data/repo";
 import { getDataModeFn, joinGuestFn } from "@/server/live";
@@ -108,11 +107,7 @@ function JoinPage() {
         setError(res.message);
         return;
       }
-      void navigate({
-        to: "/r/$slug/card",
-        params: { slug },
-        search: { customerId: res.customerId },
-      });
+      void navigate({ to: "/r/$slug/card", params: { slug } });
       return;
     }
     const result = api.member.join({
@@ -297,7 +292,6 @@ function JoinPage() {
           </div>
           <small className="demo-data-note">Demo data · No SMS is sent.</small>
         </section>
-        <DemoControlBar />
       </main>
     </ThemeProvider>
   );

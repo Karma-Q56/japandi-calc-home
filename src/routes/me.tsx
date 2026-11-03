@@ -83,7 +83,7 @@ function LiveMyCardsPage({ data }: { data: LiveCardsData | null }) {
         intro="Every card you have joined, with the stamps and rewards ready for you today."
       />
       {cards.length > 0 && (
-        <StatGrid>
+        <StatGrid dense>
           <StatCard value={cards.length} label={cards.length === 1 ? "card joined" : "cards joined"} />
           <StatCard
             value={rewardsReady}
@@ -102,7 +102,7 @@ function LiveMyCardsPage({ data }: { data: LiveCardsData | null }) {
             <a
               key={card.membershipId}
               className="restaurant-card"
-              href={`/r/${card.restaurantSlug}`}
+              href={`/r/${card.restaurantSlug}/card`}
             >
               <span className="restaurant-thumb" aria-hidden>
                 {card.restaurantName.slice(0, 1)}
@@ -132,13 +132,6 @@ function LiveMyCardsPage({ data }: { data: LiveCardsData | null }) {
           </a>
         </section>
       )}
-      <section className="gx-panel">
-        <h2>Live card</h2>
-        <p className="gx-note">
-          These cards are read from your account. Open a restaurant page to see its menu and
-          specials.
-        </p>
-      </section>
     </GuestShell>
   );
 }
@@ -196,7 +189,7 @@ function DemoMyCards() {
         intro="Every card you have joined, with the stamps and rewards ready for you today."
       />
       {memberships.length > 0 && (
-        <StatGrid>
+        <StatGrid dense>
           <StatCard
             value={memberships.length}
             label={memberships.length === 1 ? "card joined" : "cards joined"}

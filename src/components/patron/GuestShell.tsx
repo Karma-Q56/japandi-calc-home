@@ -28,7 +28,11 @@ export function GuestShell({
         ) : (
           <span />
         )}
-        {title && <span>{title}</span>}
+        {title && (
+          <span className="gx-title" title={title}>
+            {title}
+          </span>
+        )}
       </header>
       <main className="gx-body">{children}</main>
       <nav className="gx-tabs" aria-label="Guest sections">

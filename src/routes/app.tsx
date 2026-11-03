@@ -60,10 +60,11 @@ function OwnerShell() {
       return { ...current, session };
     });
   };
+  const showVenueSwitcher = !isLive && state.restaurants.length > 1;
   const brand = (
     <div className="ox-brand">
       <PatronBrand className="ox-brand-wordmark" />
-      <span>
+      <span className="ox-brand-copy">
         <strong>{restaurantName}</strong>
         <small>Owner view</small>
       </span>
@@ -80,9 +81,9 @@ function OwnerShell() {
         </p>
       </aside>
       <div className="ox-main">
-        <header className="ox-top">
+        <header className={`ox-top${showVenueSwitcher ? " has-venue-select" : ""}`}>
           {brand}
-          {!isLive && state.restaurants.length > 1 && (
+          {showVenueSwitcher && (
             <select
               className="ox-venue-select"
               aria-label="Switch venue"
@@ -123,13 +124,13 @@ function LiveToolsNotice() {
     <main className="demo-hub page-width">
       <PageHeader
         eyebrow="Live mode"
-        title="The overview is live. The other owner tools come next."
-        intro="This phase connects your real stamps, guests, rewards, credit and campaigns to the overview. Campaign builders and settings still open in demo only, so they are switched off while live."
+        title="This owner tool is not live yet."
+        intro="Your overview, guest list, guest profiles, campaign list and results, loyalty card rules and menu are connected to your restaurant. This screen still uses demo data, so it is switched off while live."
       />
       <section className="builder-panel">
-        <h2>What works now</h2>
-        <p>The overview shows counts from your restaurant in Postgres.</p>
-        <p className="demo-data-note">Guests and campaigns are counted from real rows.</p>
+        <h2>What is live today</h2>
+        <p>Use the owner menu for real stamps, guests, rewards, campaigns, card rules and menu items.</p>
+        <p className="demo-data-note">The remaining builders follow in a later phase.</p>
         <div className="page-actions">
           <a className="builder-primary" href="/app">
             Back to the live overview

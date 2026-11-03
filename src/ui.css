@@ -518,6 +518,31 @@ button:focus-visible {
 }
 
 /* ---------- owner shell ---------- */
+@media (min-width: 861px) {
+  .ox-side {
+    gap: 16px;
+    padding: 20px 14px 16px;
+  }
+  .ox-link {
+    min-height: 38px;
+    padding: 0 10px;
+    font-size: 14px;
+  }
+  .ox-link svg {
+    width: 18px;
+    height: 18px;
+  }
+  .ox-nav {
+    gap: 1px;
+    scrollbar-width: thin;
+  }
+  .ox-foot {
+    font-size: 11px;
+  }
+  .ox-side .ox-brand-wordmark > span {
+    display: none;
+  }
+}
 .ox {
   display: grid;
   grid-template-columns: 252px minmax(0, 1fr);
@@ -540,6 +565,18 @@ button:focus-visible {
   align-items: center;
   gap: 12px;
   padding: 0 8px;
+}
+.ox-brand-copy {
+  min-width: 0;
+  flex: 1;
+}
+.ox-brand-copy strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ox-brand-wordmark {
+  flex: none;
 }
 .ox-brand-mark {
   display: grid;
@@ -625,7 +662,18 @@ button:focus-visible {
     border-bottom: 1px solid var(--line);
   }
   .ox-top .ox-brand {
+    min-width: 0;
+    gap: 8px;
     padding: 0;
+  }
+  @media (max-width: 620px) {
+    .ox-top.has-venue-select .ox-brand-copy {
+      display: none;
+    }
+    .ox-venue-select {
+      min-width: 0;
+      flex: 0 1 168px;
+    }
   }
   .ox-top .ox-brand-mark {
     width: 34px;
@@ -702,6 +750,7 @@ button:focus-visible {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   max-width: 520px;
   margin-inline: auto;
   padding: 18px 20px 6px;
@@ -710,6 +759,14 @@ button:focus-visible {
 .gx-top a {
   color: inherit;
   text-decoration: none;
+}
+.gx-title {
+  min-width: 0;
+  max-width: 46%;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .gx-body {
   display: grid;
@@ -2347,6 +2404,11 @@ input[type="range"] {
   font-style: normal;
   font: 700 12px var(--font-sans);
   color: var(--primary);
+}
+@media (min-width: 561px) {
+  .customer-row-main > span:first-child strong + small {
+    margin-left: 8px;
+  }
 }
 .customer-row-meta {
   display: flex;

@@ -13,6 +13,7 @@ import { requireRole } from "@/data/session";
 import { ThemeProvider } from "@/theme";
 import { LoyaltyCard } from "@/components/patron/LoyaltyCard";
 import { GuestShell } from "@/components/patron/GuestShell";
+import { PageHeader } from "@/components/patron/dash";
 import { MemberQr } from "@/components/patron/MemberQr";
 import { SpinWheel } from "@/components/patron/SpinWheel";
 import { ChallengeRow } from "@/components/patron/ChallengeRow";
@@ -21,12 +22,10 @@ import { signInAsDemoAccount } from "@/lib/demo-signin";
 
 export const Route = createFileRoute("/r/$slug/card")({
   validateSearch: (search) => cardSearchSchema.parse(search),
-  loader: async ({ params, location }) => {
+  loader: async ({ params }) => {
     const { mode } = await getDataModeFn();
-    const raw = (location.search ?? {}) as { customerId?: unknown };
-    const customerId = typeof raw.customerId === "string" ? raw.customerId : undefined;
-    if (mode !== "live" || !customerId) return { mode, live: null };
-    const { card } = await getCardFn({ data: { slug: params.slug, customerId } });
+    if (mode !== "live") return { mode, live: null };
+    const { card } = await getCardFn({ data: { slug: params.slug } });
     return { mode, live: card };
   },
   beforeLoad: async () => {
@@ -444,29 +443,41 @@ type LiveCard = NonNullable<Awaited<ReturnType<typeof getCardFn>>["card"]>;
 function LiveGuestCard({ slug, card }: { slug: string; card: LiveCard }) {
   const available = card.rewards.filter((r) => r.status === "available");
   return (
-    <main className="guest-page">
-      <section className="guest-panel">
-        <p className="eyebrow">Loyalty card</p>
-        <h1>{card.restaurant.name}</h1>
-        <p>
-          {card.membership.stampsCurrent} of {card.restaurant.stampsRequired} stamps ·{" "}
-          {card.restaurant.rewardDescription}
-        </p>
+    <GuestShell back={{ to: "/me", label: "My cards" }}>
+      <PageHeader
+        eyebrow="Loyalty card"
+        title={card.restaurant.name}
+        intro={`${card.membership.stampsCurrent} of ${card.restaurant.stampsRequired} stamps · ${card.restaurant.rewardDescription}`}
+      />
+      <section className="gx-panel">
         {available.length > 0 && (
           <p role="status">
-            Reward ready: {available.map((r) => r.description).join(", ")}
+            <strong>Reward ready:</strong> {available.map((r) => r.description).join(", ")}
           </p>
         )}
-        <h2>Recent visits</h2>
-        <ul>
-          {card.stamps.map((stamp) => (
-            <li key={stamp.id}>{new Date(stamp.createdAt).toLocaleDateString("en-ZA")}</li>
-          ))}
-        </ul>
+        <div className="guest-section-heading">
+          <h2>Recent visits</h2>
+          <span>{card.stamps.length}</span>
+        </div>
+        {card.stamps.length === 0 ? (
+          <p className="demo-data-note">No visits yet.</p>
+        ) : (
+          card.stamps.map((stamp) => (
+            <p className="visit-row" key={stamp.id}>
+              <span>
+                {new Intl.DateTimeFormat("en-ZA", {
+                  dateStyle: "medium",
+                  timeZone: "Africa/Johannesburg",
+                }).format(new Date(stamp.createdAt))}
+              </span>
+              <strong>Stamp collected</strong>
+            </p>
+          ))
+        )}
         <a className="builder-primary" href={`/r/${slug}`}>
           View menu &amp; specials
         </a>
       </section>
-    </main>
+    </GuestShell>
   );
 }
