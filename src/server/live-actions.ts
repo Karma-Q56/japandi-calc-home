@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import { getConsentWording } from "@/config/consent";
 import type { Viewer } from "./auth-viewer";
 import { withContext, type DatabaseTransaction } from "./db";
-import { consentChange } from "@/lib/live-actions";
+import { consentWithdrawal } from "@/lib/live-actions";
 
 const databaseUrl = () => {
   const url = process.env["DATABASE_URL"];
@@ -30,33 +30,39 @@ async function audit(
 const canManage = (viewer: Viewer) =>
   (viewer.role === "owner" || viewer.role === "manager") && viewer.restaurantId !== null;
 
-/** Grant or withdraw SMS consent for one guest. */
-export async function setSmsConsent(
+/** Withdraw SMS consent for one guest. Owners cannot grant consent. */
+export async function withdrawSmsConsent(
   viewer: Viewer,
   membershipId: string,
-  enabled: boolean,
-): Promise<{ ok: true; enabled: boolean } | { ok: false; message: string }> {
+): Promise<{ ok: true; enabled: false } | { ok: false; message: string }> {
   if (!canManage(viewer)) return { ok: false, message: "Only this restaurant can change consent." };
   return withContext(
     { databaseUrl: databaseUrl(), restaurantId: viewer.restaurantId, isOperator: false },
     async (transaction) => {
-      const row = await transaction.execute<{ name: string }>(sql`
-        select r.name
+      const row = await transaction.execute<{ name: string; marketing_sms: string }>(sql`
+        select r.name, m.marketing_sms::text as marketing_sms
         from membership m
         join restaurant r on r.id = m.restaurant_id
         where m.id = ${membershipId}
           and m.restaurant_id = ${viewer.restaurantId}
         limit 1
       `);
-      const restaurant = row.rows[0];
-      if (!restaurant) return { ok: false as const, message: "Guest not found." };
+      const guest = row.rows[0];
+      if (!guest) return { ok: false as const, message: "Guest not found." };
 
-      const change = consentChange(enabled);
-      const wording = getConsentWording("marketing_sms", restaurant.name);
+      // A guest who already withdrew stays out. The owner path has no way to
+      // turn consent back on, even if the client sends extra values.
+      if (guest.marketing_sms === "opted_out") {
+        return { ok: true as const, enabled: false };
+      }
+
+      const change = consentWithdrawal();
+      const wording = getConsentWording("marketing_sms", guest.name);
       await transaction.execute(sql`
         update membership
         set marketing_sms = ${change.marketingSms}::marketing_status
         where id = ${membershipId}
+          and restaurant_id = ${viewer.restaurantId}
       `);
       await transaction.execute(sql`
         insert into consent_event
@@ -65,11 +71,11 @@ export async function setSmsConsent(
           (${membershipId}, 'marketing_sms', ${change.action}::consent_action,
            ${wording.version}, ${wording.text}, 'operator')
       `);
-      await audit(transaction, viewer, "consent_changed", "membership", membershipId, {
+      await audit(transaction, viewer, "consent_withdrawn", "membership", membershipId, {
         purpose: "marketing_sms",
         action: change.action,
       });
-      return { ok: true as const, enabled };
+      return { ok: true as const, enabled: false };
     },
   );
 }

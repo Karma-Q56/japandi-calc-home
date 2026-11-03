@@ -115,3 +115,13 @@ server validation and audit events. Changes apply directly. Menu drafts and
 versions, the page builder and the operator console stay for D8 because they
 need more storage and cross-tenant views. The live path is typechecked and
 built, not run against the dev database.
+
+## 3 November 2026, Prompt E
+
+SMS consent is now withdrawal only: owners can take consent away, but cannot
+put it back, and a repeat withdrawal is idempotent. The migration set is
+recorded on the non-production Neon branch, and feedback owners can read their
+own safe columns without reading the private operator note or changing status.
+The guarded live suite covers the current reads, writes, cross-restaurant
+access and feedback privacy. Typecheck, lint, the full test suite and the
+production build pass.

@@ -295,3 +295,23 @@ passed in 19.97s client and 20.73s server; lint 0 errors and 12 warnings.
 
 Not verified: the live menu reads and writes have not run against the Neon dev
 branch.
+
+---
+
+## 3 November 2026: Prompt E safety fixes
+
+Built: withdrawal-only SMS consent, a migration for the app role's newer table
+grants, column-level feedback privacy, and a guarded live database suite. The
+owner API has no grant path, so a guest who opts out stays out until they opt
+back in themselves. Feedback owners can read their own safe columns but not the
+private operator note and cannot change status.
+
+Verified: all migrations through 0009 recorded on the non-production Neon
+branch; live suite 5 passed; typecheck 0 errors; full Vitest run 467 passed and 6 skipped
+across 74 files; production build passed; lint 0 errors and 12 existing
+warnings.
+
+Not verified: no production database was contacted. The older `.dev.vars`
+database URLs failed authentication, so the live run used the configured
+non-production migration branch and the app role password from the local env
+file.

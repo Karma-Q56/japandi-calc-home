@@ -476,9 +476,8 @@ The live customer profile and campaign results now have a small, audited set of
 write actions. Each one takes the restaurant from the signed-in viewer and runs
 inside that restaurant's RLS context.
 
-- SMS consent can be turned on or off. The membership status changes, a consent
-  event stores the current wording version and exact text, and an audit event
-  records the change without the phone number.
+- SMS consent could be turned on or off at the time of D5. Prompt E replaced
+  this with a withdrawal-only owner action; see section 24.
 - Revealing a phone number returns it once and writes a `phone_reveal` audit
   event. The number is never stored in the audit row.
 - An owner can approve a draft or pending campaign. Approval records the user
@@ -540,3 +539,34 @@ branch.
 
 Next in D8: menu drafts and versions, the page builder, then the operator
 surfaces.
+
+---
+
+## 24. Prompt E: consent, migration and feedback safety
+
+SMS consent is now withdrawal only. The owner action no longer accepts an
+enabled value, the server only writes `opted_out`, and an owner repeating the
+action does not add a second consent event when the guest is already out. The
+customer screen shows "Withdraw SMS consent" only while consent is on. When it
+is off, the screen says so and explains that only the guest can opt back in.
+
+`0008_app_role_grants_dev.sql` gives the app role the tables added after
+`0002_app_user.sql`. `0009_feedback_privacy_dev.sql` revokes table-level
+`SELECT` and `UPDATE` on feedback, drops `feedback_owner_update`, and grants
+only the safe columns. Owners can read their own message, contact and status,
+but `note` is not readable or writable and status cannot be changed by the app
+role. Inserts still work for the feedback form, and operators keep their own
+policy.
+
+The guarded live suite runs only when `DATABASE_URL_DEV` is set in the process.
+It refuses to connect when the host equals `PROD_DB_HOST`, then uses app-role
+fixtures to cover every current live read, every current live write, cross
+restaurant reads and changes, consent withdrawal, and feedback column privacy.
+
+Verified against the configured non-production Neon branch: all migrations
+through `0009` are recorded; the live suite passed 5 tests; typecheck passed with 0
+errors; lint passed with 0 errors and 12 existing warnings; the full Vitest run
+passed 467 tests with 6 skipped across 74 files; the production build passed.
+The older `.dev.vars` URLs were rejected by the server, so the run used the
+configured migration branch and the app role password from the local env file.
+No production database was contacted.

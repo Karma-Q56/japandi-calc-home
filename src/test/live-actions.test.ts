@@ -2,13 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   canApproveLiveCampaign,
   canCancelLiveCampaign,
-  consentChange,
+  consentWithdrawal,
 } from "@/lib/live-actions";
 
 describe("live consent and campaign rules", () => {
-  it("maps an SMS switch to a consent action and status", () => {
-    expect(consentChange(true)).toEqual({ action: "granted", marketingSms: "opted_in" });
-    expect(consentChange(false)).toEqual({
+  it("only produces a withdrawal, never a grant", () => {
+    expect(consentWithdrawal()).toEqual({
       action: "withdrawn",
       marketingSms: "opted_out",
     });

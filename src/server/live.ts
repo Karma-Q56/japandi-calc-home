@@ -293,17 +293,17 @@ export const getCampaignResultsFn = createServerFn({ method: "GET" })
     return loadCampaignResults(viewer, data.campaignId);
   });
 
-/** Change one guest's SMS consent. */
-export const setSmsConsentFn = createServerFn({ method: "POST" })
-  .validator(z.object({ membershipId: uuidSchema, enabled: z.boolean() }))
+/** Withdraw one guest's SMS consent. Owners cannot grant it. */
+export const withdrawSmsConsentFn = createServerFn({ method: "POST" })
+  .validator(z.object({ membershipId: uuidSchema }))
   .handler(async ({ data }) => {
-    const [{ readViewer }, { setSmsConsent }] = await Promise.all([
+    const [{ readViewer }, { withdrawSmsConsent }] = await Promise.all([
       import("./auth-viewer"),
       import("./live-actions"),
     ]);
     const viewer = await readViewer();
     if (!viewer) return { ok: false as const, message: "Sign in again." };
-    return setSmsConsent(viewer, data.membershipId, data.enabled);
+    return withdrawSmsConsent(viewer, data.membershipId);
   });
 
 /** Reveal a guest's phone number, with an audit event. */

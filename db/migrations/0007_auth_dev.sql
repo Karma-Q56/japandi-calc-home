@@ -26,7 +26,7 @@ create table if not exists "session" (
   "userAgent"  text,
   "userId"     text not null references "user"(id) on delete cascade
 );
-create index if not exists session_user on "session" ("userId");
+create index if not exists session_user_id_idx on "session" ("userId");
 
 create table if not exists "account" (
   id                      text primary key,
@@ -43,7 +43,7 @@ create table if not exists "account" (
   "createdAt"             timestamptz not null default now(),
   "updatedAt"             timestamptz not null default now()
 );
-create index if not exists account_user on "account" ("userId");
+create index if not exists account_user_id_idx on "account" ("userId");
 
 create table if not exists "verification" (
   id           text primary key,

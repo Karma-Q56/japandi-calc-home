@@ -9,7 +9,7 @@ import {
   getCustomerProfileFn,
   getDataModeFn,
   revealCustomerPhoneFn,
-  setSmsConsentFn,
+  withdrawSmsConsentFn,
 } from "@/server/live";
 import type { LiveCustomerProfile } from "@/server/live-dashboard";
 import { maskLivePhone } from "@/lib/live-customers";
@@ -373,26 +373,32 @@ function LiveCustomerProfile({ data }: { data: LiveCustomerProfile | null }) {
           >
             {phone ? "Phone revealed" : "Reveal phone"}
           </button>
-          <button
-            className="builder-secondary"
-            type="button"
-            disabled={busy}
-            onClick={async () => {
-              setBusy(true);
-              const result = await setSmsConsentFn({
-                data: { membershipId: data.membershipId, enabled: !smsOn },
-              });
-              setBusy(false);
-              if (result.ok) {
-                setSmsOn(result.enabled);
-                setNotice(result.enabled ? "SMS consent turned on." : "SMS consent turned off.");
-              } else {
-                setNotice(result.message);
-              }
-            }}
-          >
-            {smsOn ? "Turn SMS off" : "Turn SMS on"}
-          </button>
+          {smsOn ? (
+            <button
+              className="builder-secondary"
+              type="button"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                const result = await withdrawSmsConsentFn({
+                  data: { membershipId: data.membershipId },
+                });
+                setBusy(false);
+                if (result.ok) {
+                  setSmsOn(false);
+                  setNotice("SMS consent withdrawn. Only the guest can opt in again.");
+                } else {
+                  setNotice(result.message);
+                }
+              }}
+            >
+              Withdraw SMS consent
+            </button>
+          ) : (
+            <button className="builder-secondary" type="button" disabled>
+              SMS consent is off
+            </button>
+          )}
         </div>
         <p className="demo-data-note">
           SMS marketing is {smsOn ? "on" : "off"}. Joined {when(data.joinedAt)}.

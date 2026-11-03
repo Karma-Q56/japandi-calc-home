@@ -1,7 +1,9 @@
-export function consentChange(enabled: boolean) {
+// An owner may only take consent away. Turning SMS back on is a guest action,
+// so there is deliberately no helper that produces a grant.
+export function consentWithdrawal() {
   return {
-    action: enabled ? ("granted" as const) : ("withdrawn" as const),
-    marketingSms: enabled ? ("opted_in" as const) : ("opted_out" as const),
+    action: "withdrawn" as const,
+    marketingSms: "opted_out" as const,
   };
 }
 
