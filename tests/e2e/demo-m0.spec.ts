@@ -7,13 +7,13 @@ test("demo hub deep links land on the right screens", async ({ page }) => {
   page.on("pageerror", (error) => errors.push(String(error)));
   await page.goto("/demo");
   await expect(page.locator("main")).toBeVisible();
-  await page.goto("/demo/as/operator?to=/ops/restaurants");
+  await page.goto("/dev/roles?role=operator&to=/ops/restaurants");
   await expect(page).toHaveURL(/\/ops\/restaurants$/);
   expect(errors).toEqual([]);
 });
 
 test("clock advance changes last-visit text and reset restores", async ({ page, context }) => {
-  await page.goto("/demo/as/guest?customer=customer-1&to=/me");
+  await page.goto("/dev/roles?role=guest&customer=customer-1&to=/me");
   await expect(page).toHaveURL(/\/me$/);
   await expect(page.locator("main")).toContainText(/Last visit/);
   const second = await context.newPage();

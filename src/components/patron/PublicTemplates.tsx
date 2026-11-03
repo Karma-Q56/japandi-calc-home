@@ -299,8 +299,9 @@ export function PublicTemplate({ template, ...props }: VenueTemplateProps & { te
               <span className="pt-kicker">A little about us</span>
               <h2>Made for good days and familiar faces.</h2>
               <p>
-                Find us in {restaurant.suburb}, Johannesburg. Come in for a favourite and stay a
-                while.
+                {restaurant.aboutText?.trim()
+                  ? restaurant.aboutText
+                  : `Find us in ${restaurant.suburb}, Johannesburg. Come in for a favourite and stay a while.`}
               </p>
             </div>
             <div>
@@ -368,8 +369,9 @@ export function PublicTemplate({ template, ...props }: VenueTemplateProps & { te
             <span className="pt-kicker">A little about us</span>
             <h3>Made for good days and familiar faces.</h3>
             <p>
-              Find us in {restaurant.suburb}, Johannesburg. Come in for a favourite and stay for a
-              while.
+              {restaurant.aboutText?.trim()
+                ? restaurant.aboutText
+                : `Find us in ${restaurant.suburb}, Johannesburg. Come in for a favourite and stay for a while.`}
             </p>
           </div>
         </div>

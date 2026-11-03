@@ -10,6 +10,7 @@ import type {
   Message,
 } from "@/data/types";
 import { countSegments, sanitizeForGsm7 } from "@/lib/segments";
+import { guestDisplayName } from "@/lib/wording";
 import { logAudit } from "./audit";
 import { segmentMemberships } from "./audiences";
 import { balanceFor, planEntries, type NewEntry } from "./credit";
@@ -210,7 +211,8 @@ export function saveDraft(input: {
     );
     if (!special) return failure("INVALID", "Choose a special from this restaurant.");
   }
-  const requiresApproval = input.actorRole === "operator";
+  // Done-for-you drafts wait for the owner unless the owner turned auto approve on.
+  const requiresApproval = input.actorRole === "operator" && !restaurant.campaignAutoApprove;
   if (!input.draftId) {
     const now = new Date(state.now).toISOString();
     const campaign: Campaign = {
@@ -822,7 +824,9 @@ export function campaignRecipients(state: DemoState, campaignId: string): Campai
     .filter((message) => message.campaignId === campaignId)
     .map((message) => ({
       messageId: message.id,
-      name: state.customers.find((c) => c.id === message.customerId)?.name ?? "Removed guest",
+      name: guestDisplayName(
+        state.customers.find((c) => c.id === message.customerId)?.name ?? "Removed guest",
+      ),
       channel: message.channel,
       status: message.status,
       segments: message.segments,

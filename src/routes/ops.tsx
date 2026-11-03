@@ -2,14 +2,18 @@ import { markOutletComponent } from "@/lib/nested";
 import { createFileRoute, redirect, Link, Outlet, useChildMatches, useRouterState } from "@tanstack/react-router";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
+import { canOpenArea } from "@/lib/auth-rules";
+import { getDataModeFn, getViewerFn } from "@/server/live";
 import { APP_NAME } from "@/config/app";
 import { DemoPlaceholder } from "@/components/patron/DemoPlaceholder";
 
 const LINKS = [
   { to: "/ops/restaurants", label: "Restaurants" },
+  { to: "/ops/leads", label: "Enquiries" },
   { to: "/ops/campaigns", label: "Campaigns" },
   { to: "/ops/credit", label: "Credit" },
-  { to: "/demo/outbox", label: "SMS outbox" },
+  { to: "/ops/outbox", label: "SMS outbox" },
+  { to: "/ops/feedback", label: "Feedback" },
 ] as const;
 
 function OpsShell() {
@@ -47,7 +51,15 @@ function OpsShell() {
 
 const OpsPage = markOutletComponent(OpsShell);
 export const Route = createFileRoute("/ops")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode === "live") {
+      const viewer = await getViewerFn();
+      if (!viewer || !canOpenArea(viewer.role, "ops")) {
+        throw redirect({ to: "/login" });
+      }
+      return;
+    }
     if (!requireRole("operator")(demoRepo.read().session)) throw redirect({ to: "/login" });
   },
   component: OpsPage,

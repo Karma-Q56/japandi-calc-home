@@ -12,11 +12,24 @@ import { formatRand } from "@/lib/money";
 
 const PublicRestaurantPageWithChildren = withChildren(PublicRestaurantPage);
 export const Route = createFileRoute("/r/$slug")({
-  loader: async ({ params }) => {
+  loader: async ({ params, location }) => {
     const { mode } = await getDataModeFn();
-    if (mode !== "live") return { mode, live: null as PublicPage | null };
-    const { page } = await getPublicPageFn({ data: { slug: params.slug } });
-    return { mode, live: page };
+    if (mode !== "live") return { mode, live: null as PublicPage | null, failed: false };
+    // The card is the guest's own page: it reads their membership, not the venue
+    // page. Skipping the venue read keeps a slow or failing venue query from
+    // delaying (or blocking) a card that does not need it.
+    if (location.pathname === `/r/${params.slug}/card`) {
+      return { mode, live: null as PublicPage | null, failed: false };
+    }
+    try {
+      const { page } = await getPublicPageFn({ data: { slug: params.slug } });
+      return { mode, live: page, failed: false };
+    } catch {
+      // A live read can fail (schema drift, an outage). The card and join pages
+      // under /r/$slug carry their own data, so a failed venue read must not
+      // take them down with it. The child renders through the outlet instead.
+      return { mode, live: null as PublicPage | null, failed: true };
+    }
   },
   component: PublicRestaurantPageWithChildren,
 });
@@ -27,6 +40,21 @@ function PublicRestaurantPage() {
   const { slug } = Route.useParams();
   const loaderData = Route.useLoaderData();
   const state = useDemoState();
+  if (loaderData.failed) {
+    return (
+      <main className="demo-hub page-width">
+        <p className="eyebrow">
+          <span className="eyebrow-line" />
+          Venue page unavailable
+        </p>
+        <h1>We couldn’t load this place.</h1>
+        <p>The venue page is having a moment. Your stamp cards are not affected.</p>
+        <p>
+          <a href="/me">My cards</a> · <a href="/">Back to {APP_NAME}</a>
+        </p>
+      </main>
+    );
+  }
   if (loaderData.live) return <LivePublicPage page={loaderData.live} slug={slug} />;
   const result = api.restaurant.getBySlug(slug);
   const restaurant = result.ok ? result.data : null;

@@ -3,6 +3,8 @@ import { demoRepo, updateDemo } from "@/data/repo";
 import { failure, success } from "./demo";
 import { logAudit } from "./audit";
 import { awardBirthdayIfDue, awardMysteryIfDue, evaluateChallenges } from "./loyalty";
+import { evaluateToolsAfterVisit } from "./tools";
+import { awardReferralForFirstStamp } from "./referrals";
 import { isScanTokenShape } from "@/lib/scan";
 
 export type StampResult =
@@ -126,10 +128,14 @@ export function recordStamp(input: {
     restaurantId: input.restaurantId,
     object: stampId,
   });
-  // Visit-driven extras: challenge bonuses, mystery stamps and birthday rewards.
+  // Visit-driven extras: challenge bonuses, mystery stamps, birthday rewards
+  // and the bring a friend reward on a friend's first stamped visit, plus the
+  // double stamp day and streak bonuses from the loyalty tools.
   evaluateChallenges(input.membershipId);
   awardMysteryIfDue(input.membershipId);
   awardBirthdayIfDue(input.membershipId);
+  awardReferralForFirstStamp(input.membershipId);
+  evaluateToolsAfterVisit(input.membershipId, stampId);
   const after = demoRepo
     .read()
     .memberships.find((item) => item.id === input.membershipId);

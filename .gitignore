@@ -37,3 +37,12 @@ dist-ssr
 .dev.vars*
 !.dev.vars.example
 test-results/
+
+# Local archives, dev server state and handoff files
+*.zip
+.dev-server.pid
+.dev-server.log
+.dev.vars.review-backup
+*.handoff.md
+.shot-report.json
+tsconfig.tsbuildinfo

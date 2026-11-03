@@ -83,7 +83,7 @@ describe("campaign results page data", () => {
     const rows = campaignRecipients(demoRepo.read(), campaignId);
     expect(rows).toHaveLength(sent);
     expect(rows.length).toBeGreaterThanOrEqual(atLeast);
-    expect(rows.some((row) => row.name.startsWith("Results Guest"))).toBe(true);
+    expect(rows.some((row) => row.name.startsWith("Results G."))).toBe(true);
     expect(rows.every((row) => row.channel === "sms")).toBe(true);
     expect(rows.every((row) => row.segments >= 1)).toBe(true);
     expect(new Set(rows.map((row) => row.messageId)).size).toBe(rows.length);

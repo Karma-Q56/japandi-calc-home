@@ -1,1 +1,9 @@
 DATABASE_URL=postgresql://app_user:YOUR_PASSWORD@YOUR_NEON_HOST/YOUR_DATABASE?sslmode=require
+# Better Auth (local development only). Generate the secret locally.
+# BETTER_AUTH_SECRET=generate-with-openssl-rand-base64-32
+# BETTER_AUTH_URL=http://127.0.0.1:5174
+# GOOGLE_CLIENT_ID=
+# GOOGLE_CLIENT_SECRET=
+# AUTH_EMAIL_WEBHOOK_URL=
+# AUTH_EMAIL_WEBHOOK_SECRET=
+# VITE_AUTH_GOOGLE=0

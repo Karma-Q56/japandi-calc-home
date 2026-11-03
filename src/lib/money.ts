@@ -10,6 +10,6 @@ export function formatRand(cents: number): string {
   const whole = Math.floor(abs / 100);
   const rem = abs % 100;
   const wholeText = whole.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  const text = rem > 0 ? `R${whole}.${rem.toString().padStart(2, "0")}` : `R${wholeText}`;
+  const text = rem > 0 ? `R${wholeText}.${rem.toString().padStart(2, "0")}` : `R${wholeText}`;
   return negative ? `-${text}` : text;
 }

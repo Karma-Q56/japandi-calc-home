@@ -1,7 +1,8 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { z } from "zod";
 import { demoRepo, updateDemo } from "@/data/repo";
+import { getDataModeFn } from "@/server/live";
 import { DEMO_ACCOUNTS, signInAsDemoAccount } from "@/lib/demo-signin";
 import type { DemoRole } from "@/data/types";
 
@@ -24,6 +25,10 @@ const defaultDestination: Record<(typeof roles)[number], string> = {
 };
 
 export const Route = createFileRoute("/dev/roles")({
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode === "live") throw redirect({ to: "/login" });
+  },
   validateSearch: (search) => searchSchema.parse(search),
   head: () => ({
     meta: [{ title: "Developer roles | Patron" }, { name: "robots", content: "noindex" }],
@@ -59,6 +64,12 @@ function DeveloperRoles() {
         session.staffId = member.id;
         session.restaurantId = member.restaurantId;
       }
+    }
+    // An owner or manager always works inside one venue, so the deep link
+    // starts at the first one instead of leaving the session unscoped.
+    if ((role === "owner" || role === "manager") && !session.restaurantId) {
+      const first = state.restaurants[0];
+      if (first) session.restaurantId = first.id;
     }
     updateDemo((current) => ({ ...current, session }));
     void navigate({ to: search.to ?? defaultDestination[role], replace: true });

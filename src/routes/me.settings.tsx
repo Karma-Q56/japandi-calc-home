@@ -4,12 +4,18 @@ import { useDemoState } from "@/data/useDemoState";
 import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
+import { getDataModeFn } from "@/server/live";
+import { birthdayOf, MONTH_NAMES } from "@/lib/birthday";
 import { maskPhone } from "@/lib/phone";
 import { Switch } from "@/components/patron/Switch";
+import { GuestShell } from "@/components/patron/GuestShell";
+import { FormField, PageHeader } from "@/components/patron/dash";
 import { enableBrowserPush, disableBrowserPush, showLocalPushTest } from "@/lib/web-push-client";
 
 export const Route = createFileRoute("/me/settings")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode === "live") throw redirect({ to: "/me" });
     if (
       !requireRole("guest")(demoRepo.read().session) ||
       (typeof window !== "undefined" && !demoRepo.read().session.customerId)
@@ -23,14 +29,17 @@ function GuestSettings() {
   const customerId = state.session.customerId!;
   const customer = state.customers.find((item) => item.id === customerId);
   const [name, setName] = useState(customer?.name ?? "");
-  const [birthday, setBirthday] = useState(customer?.birthday ?? "");
+  const [birthdayDay, setBirthdayDay] = useState("");
+  const [birthdayMonth, setBirthdayMonth] = useState("");
   const [notice, setNotice] = useState("");
   const [pushBusy, setPushBusy] = useState<string | null>(null);
   // Fill the form once the demo session/customer is available after hydration.
   useEffect(() => {
     if (!customer) return;
     setName(customer.name);
-    setBirthday(customer.birthday ?? "");
+    const parts = birthdayOf(customer);
+    setBirthdayDay(parts ? String(parts.day) : "");
+    setBirthdayMonth(parts ? String(parts.month) : "");
   }, [customer]);
   if (!customer)
     return (
@@ -48,7 +57,9 @@ function GuestSettings() {
   const save = () => {
     const result = api.member.updateProfile(customerId, {
       name,
-      ...(birthday ? { birthday } : {}),
+      ...(birthdayDay && birthdayMonth
+        ? { birthday: { day: Number(birthdayDay), month: Number(birthdayMonth) } }
+        : {}),
     });
     setNotice(result.ok ? "Profile saved." : result.error.message);
   };
@@ -69,48 +80,69 @@ function GuestSettings() {
   };
   const deletion = state.dataRequests.find((item) => item.customerId === customerId);
   return (
-    <main className="guest-page">
-      <header className="guest-header">
-        <a href="/me">← My cards</a>
-        <span>Settings</span>
-      </header>
-      <section className="guest-card-content">
-        <p className="eyebrow">Your details</p>
-        <h1>Settings.</h1>
-        {customer.deleted ? (
-          <section className="guest-panel">
+    <GuestShell title={customer.name}>
+      <PageHeader
+        eyebrow="Your details"
+        title="Settings."
+        intro="Your name, birthday and the messages each restaurant can send you."
+      />
+      {customer.deleted ? (
+        <section className="builder-panel">
             <h2>Your personal details have been cleared.</h2>
             <p>Membership and visit counts remain in demo history.</p>
             <p>Data request status: {deletion?.status ?? "open"}</p>
           </section>
         ) : (
-          <section className="guest-panel">
-            <label className="builder-field">
-              Name
+          <section className="builder-panel">
+            <FormField label="Name">
               <input
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 maxLength={40}
               />
-            </label>
-            <label className="builder-field">
-              Phone number
+            </FormField>
+            <FormField label="Phone number" hint="Shared by you when you joined.">
               <input value={maskPhone(customer.phoneE164)} readOnly />
-            </label>
-            <label className="builder-field">
-              Birthday · optional
-              <input
-                type="date"
-                value={birthday}
-                onChange={(event) => setBirthday(event.target.value)}
-              />
-            </label>
+            </FormField>
+            <div className="builder-field" role="group" aria-label="Birthday, day and month">
+              <span>Birthday · optional</span>
+              <small className="gx-note" style={{ display: "block" }}>
+                Only the day and month are kept, never the year, so places you joined can spoil you
+                on your birthday.
+              </small>
+              <div className="join-birthday-row">
+                <select
+                  aria-label="Birthday day"
+                  value={birthdayDay}
+                  onChange={(event) => setBirthdayDay(event.target.value)}
+                >
+                  <option value="">Day</option>
+                  {Array.from({ length: 31 }, (_, index) => (
+                    <option key={index + 1} value={index + 1}>
+                      {index + 1}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  aria-label="Birthday month"
+                  value={birthdayMonth}
+                  onChange={(event) => setBirthdayMonth(event.target.value)}
+                >
+                  <option value="">Month</option>
+                  {MONTH_NAMES.map((monthName, index) => (
+                    <option key={monthName} value={index + 1}>
+                      {monthName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
             <button className="builder-primary" onClick={save}>
               Save details
             </button>
           </section>
         )}
-        <section className="guest-section" id="messages">
+        <section className="builder-panel" id="messages">
           <h2>Messages</h2>
           <p className="gx-note">
             Each restaurant you&apos;ve joined has its own SMS and push switches. Your loyalty cards
@@ -191,7 +223,14 @@ function GuestSettings() {
               </p>
             ))}
         </section>
-        <section className="guest-section">
+        <section className="builder-panel">
+          <h2>Help us improve</h2>
+          <p>Found something confusing, or want a feature? The form needs no sign in.</p>
+          <a className="builder-secondary" href="/feedback">
+            Suggest a feature
+          </a>
+        </section>
+        <section className="builder-panel">
           <h2>Your data</h2>
           <div className="settings-actions">
             <button className="builder-secondary" onClick={download}>
@@ -222,7 +261,6 @@ function GuestSettings() {
             {notice}
           </p>
         )}
-      </section>
-    </main>
+    </GuestShell>
   );
 }

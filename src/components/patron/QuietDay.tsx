@@ -1,5 +1,6 @@
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { commercial, rand } from '@/lib/patron';
+import { QUIET_DAYS, setQuietDay, useQuietDay, type QuietDay as QuietDayName } from '@/lib/quiet-day';
 
 const ideas = [
   { day: 'Mon', title: 'Double-stamp Monday', idea: 'A double stamp for anyone who visited last week.', sms: 'Hi Thandi! Double stamps at The Daily Grind today for our regulars. See you soon?' },
@@ -13,9 +14,12 @@ const ideas = [
 const audience = 120;
 
 export function QuietDay() {
-  const [selected, setSelected] = useState(1);
+  const chosen = useQuietDay();
+  const selected = Math.max(0, ideas.findIndex((idea) => chosen.startsWith(idea.day)));
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
-  const pick = (i: number) => { setSelected(i); refs.current[i]?.focus(); };
+  const fullDay = (i: number): QuietDayName =>
+    QUIET_DAYS.find((day) => day.startsWith(ideas[i]!.day)) ?? 'Tuesday';
+  const pick = (i: number) => { setQuietDay(fullDay(i)); refs.current[i]?.focus(); };
   const onKey = (e: React.KeyboardEvent, i: number) => {
     const n = ideas.length;
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); pick((i + 1) % n); }
@@ -29,7 +33,7 @@ export function QuietDay() {
     <div data-reveal><div className="eyebrow"><span className="eyebrow-line" />Slow days, sorted</div>
     <h2 className="section-heading">Which day is your <span className="editorial">quietest?</span></h2></div>
     <div className="day-chips" role="radiogroup" aria-label="Quietest day of the week" data-reveal>
-      {ideas.map((d, i) => <button key={d.day} ref={el => { refs.current[i] = el; }} type="button" role="radio" aria-checked={selected === i} tabIndex={selected === i ? 0 : -1} className="day-chip" onClick={() => setSelected(i)} onKeyDown={e => onKey(e, i)}>{d.day}</button>)}
+      {ideas.map((d, i) => <button key={d.day} ref={el => { refs.current[i] = el; }} type="button" role="radio" aria-checked={selected === i} tabIndex={selected === i ? 0 : -1} className="day-chip" onClick={() => pick(i)} onKeyDown={e => onKey(e, i)}>{d.day}</button>)}
     </div>
     <div className="quiet-result" key={current.day} aria-live="polite">
       <div className="quiet-copy">
@@ -38,6 +42,9 @@ export function QuietDay() {
         <p>{current.idea}</p>
         <p className="quiet-cost">{audience} guests × R{commercial.smsEstimate.toFixed(2)} ≈ {rand(cost)} <span>(illustrative)</span></p>
         <p className="quiet-note">An idea only, not a promised result.</p>
+        <a className="text-link" href={`/contact?kind=owner&quietDay=${fullDay(selected)}#visit`}>
+          Plan a {fullDay(selected)} visit
+        </a>
       </div>
       <div className="sms-phone" aria-label="Example SMS a guest would receive">
         <div className="sms-phone-top">The Daily Grind</div>

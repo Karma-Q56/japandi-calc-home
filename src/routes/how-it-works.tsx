@@ -145,6 +145,9 @@ function HowItWorks() {
           <a className="text-link" href="/pricing">
             See pricing
           </a>
+          <a className="text-link" href="/blog">
+            Notes on loyalty
+          </a>
         </div>
       </section>
     </MarketingShell>

@@ -1,5 +1,6 @@
 import { demoRepo, updateDemo } from "@/data/repo";
 import type { CampaignAudience, Membership, SavedList } from "@/data/types";
+import { birthdayOf, johannesburgMonthDay } from "@/lib/birthday";
 import { failure, success } from "./demo";
 
 const DAY = 86400000;
@@ -10,6 +11,7 @@ export const SEGMENTS = [
   { type: "lapsed30", label: "Lapsed 30+ days" },
   { type: "close_to_reward", label: "Close to a reward" },
   { type: "weekday", label: "Visited on a chosen weekday" },
+  { type: "birthday_month", label: "Birthdays this month" },
   { type: "saved_list", label: "A saved list" },
 ] as const;
 
@@ -27,6 +29,8 @@ export function segmentLabel(audience: CampaignAudience): string {
       return `${audience.remaining} stamp${audience.remaining === 1 ? "" : "s"} from a reward`;
     case "weekday":
       return `Visited on ${["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][audience.weekday] ?? "a weekday"}`;
+    case "birthday_month":
+      return "Birthdays this month";
     case "saved_list": {
       const list = demoRepo.read().savedLists.find((item) => item.id === audience.listId);
       return list ? `Saved list: ${list.name}` : "Saved list";
@@ -89,6 +93,16 @@ export function segmentMemberships(
           .map((stamp) => stamp.membershipId),
       );
       return memberships.filter((membership) => visited.has(membership.id));
+    }
+    case "birthday_month": {
+      const month = (audience.month ?? johannesburgMonthDay(now).month) as number;
+      return memberships.filter((membership) => {
+        const customer = state.customers.find(
+          (item) => item.id === membership.customerId,
+        );
+        const birthday = birthdayOf(customer);
+        return birthday !== null && birthday.month === month;
+      });
     }
     case "saved_list": {
       const list = state.savedLists.find(

@@ -274,6 +274,28 @@ describe("operator approval", () => {
     const confirmed = confirmCampaign({ campaignId: draft.data.id, actor: "owner-1", sendNow: true });
     expect(confirmed.ok).toBe(true);
   });
+
+  it("skips approval only when the owner turned auto approve on", () => {
+    addMembers(1, 6100);
+    topUp(20000);
+    updateDemo((state) => ({
+      ...state,
+      restaurants: state.restaurants.map((item) =>
+        item.id === RESTAURANT ? { ...item, campaignAutoApprove: true } : item,
+      ),
+    }));
+    const draft = saveDraft({
+      restaurantId: RESTAURANT,
+      actor: "operator-1",
+      actorRole: "operator",
+      fields: { name: "Auto approved", body: "Hello {first_name}!", audience: { type: "all_opted_in" } },
+    });
+    expect(draft.ok).toBe(true);
+    if (!draft.ok) return;
+    expect(draft.data.requiresApproval).toBe(false);
+    const confirmed = confirmCampaign({ campaignId: draft.data.id, actor: "owner-1", sendNow: true });
+    expect(confirmed.ok).toBe(true);
+  });
 });
 
 describe("dispatcher restarts", () => {

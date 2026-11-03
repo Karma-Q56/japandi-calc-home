@@ -4,12 +4,16 @@ import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
 import { withChildren } from "@/lib/nested";
 import { GuestShell } from "@/components/patron/GuestShell";
+import { PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
 import { api } from "@/api";
+import { getDataModeFn } from "@/server/live";
 
 const RestaurantsWithChildren = withChildren(RestaurantsPage);
 
 export const Route = createFileRoute("/me/restaurants")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode === "live") throw redirect({ to: "/me" });
     if (
       !requireRole("guest")(demoRepo.read().session) ||
       (typeof window !== "undefined" && !demoRepo.read().session.customerId)
@@ -31,7 +35,7 @@ function RestaurantsPage() {
       <main className="guest-page">
         <section className="guest-panel">
           <h1>No guest session yet.</h1>
-          <p>Pick a guest tunnel from the demo hub first.</p>
+          <p>Choose a guest from the demo hub first.</p>
           <a className="builder-primary" href="/">
             Back to Patron
           </a>
@@ -46,18 +50,21 @@ function RestaurantsPage() {
       !joined.some((membership) => membership.restaurantId === restaurant.id),
   );
 
+  const firstName = customer.name.split(" ")[0];
   return (
     <GuestShell title={customer.name}>
-      <p className="gx-hello">Hi {customer.name.split(" ")[0]} 👋</p>
-      <h1>Restaurants.</h1>
-      <p className="gx-summary">
-        <span>
-          <b>{joined.length}</b> joined
-        </span>
-        <span>
-          <b>{discover.length}</b> to discover
-        </span>
-      </p>
+      <PageHeader
+        eyebrow="Restaurants"
+        title={`Hi ${firstName}`}
+        intro="The places you collect stamps at, and other places in the demo you can join."
+      />
+      <StatGrid>
+        <StatCard value={joined.length} label={joined.length === 1 ? "place joined" : "places joined"} />
+        <StatCard
+          value={discover.length}
+          label={discover.length === 1 ? "place to discover" : "places to discover"}
+        />
+      </StatGrid>
 
       <section className="restaurant-list">
         <h2>Your places</h2>

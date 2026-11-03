@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowUpRight, ChevronDown, Heart, Menu, X } from "lucide-react";
 import { PatronBrand } from "@/lib/patron-brand";
 import { APP_NAME } from "@/config/app";
+import { HelpBubble } from "@/components/patron/HelpBubble";
 
 const businessLinks: Array<{ href: string; label: string }> = [
   { href: "/for-business", label: "Overview" },
@@ -12,6 +13,7 @@ const businessLinks: Array<{ href: string; label: string }> = [
   { href: "/case-studies", label: "Case studies" },
   { href: "/faq", label: "FAQ" },
   { href: "/contact", label: "Book a visit" },
+  { href: "/blog", label: "Notes on loyalty" },
 ];
 
 const businessPaths = businessLinks.map((link) => link.href);
@@ -86,7 +88,12 @@ export function SiteHeader() {
               ))}
             </div>
           </details>
-          <a href="/for-diners#find-a-restaurant">Find a restaurant</a>
+          <a href="/find" aria-current={path === "/find" ? "page" : undefined}>
+            Find a restaurant
+          </a>
+          <a href="/blog" aria-current={path === "/blog" ? "page" : undefined}>
+            Notes
+          </a>
         </nav>
         <Button variant="patron" className="header-book" asChild>
           <a href="/login" aria-current={onLogin ? "page" : undefined}>
@@ -126,8 +133,14 @@ export function SiteHeader() {
               ))}
             </div>
           </details>
-          <a href="/for-diners#find-a-restaurant" onClick={closeNav}>
+          <a href="/find" onClick={closeNav} aria-current={path === "/find" ? "page" : undefined}>
             Find a restaurant
+          </a>
+          <a href="/suggest" onClick={closeNav} aria-current={path === "/suggest" ? "page" : undefined}>
+            Ask for a place
+          </a>
+          <a href="/blog" onClick={closeNav} aria-current={path === "/blog" ? "page" : undefined}>
+            Notes
           </a>
           <Button variant="patron" asChild>
             <a href="/login" onClick={closeNav}>
@@ -157,7 +170,15 @@ export function SiteFooter() {
               <a href="/for-diners" aria-current={path === "/for-diners" ? "page" : undefined}>
                 What you get
               </a>
-              <a href="/for-diners#find-a-restaurant">Find a restaurant</a>
+              <a href="/find" aria-current={path === "/find" ? "page" : undefined}>
+                Find a restaurant
+              </a>
+              <a href="/suggest" aria-current={path === "/suggest" ? "page" : undefined}>
+                Ask for a place
+              </a>
+              <a href="/feedback" aria-current={path === "/feedback" ? "page" : undefined}>
+                Send feedback
+              </a>
               <a href="/login" aria-current={path === "/login" ? "page" : undefined}>
                 Log in
               </a>
@@ -208,6 +229,7 @@ export function MarketingShell({
       <main>{children}</main>
       {afterMain}
       <SiteFooter />
+      <HelpBubble />
     </>
   );
 }

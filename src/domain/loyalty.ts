@@ -1,8 +1,36 @@
 import { demoRepo, updateDemo } from "@/data/repo";
 import type { Challenge, Membership, Restaurant, TierName } from "@/data/types";
+import { birthdayOf, johannesburgMonthDay } from "@/lib/birthday";
 import { grantStampEvents, visitsInWindow, allVisits } from "./grants";
 
 const TIER_ORDER: TierName[] = ["new", "regular", "vip"];
+
+export interface BirthdayRewardPreview {
+  kind: "stamp" | "freeItem";
+  guestLine: string;
+  tillLine: string;
+}
+
+/** What the guest and the till would see for this restaurant's birthday choice. */
+export function birthdayRewardPreview(restaurantId: string): BirthdayRewardPreview | null {
+  const restaurant = demoRepo
+    .read()
+    .restaurants.find((item) => item.id === restaurantId);
+  if (!restaurant?.birthdayReward) return null;
+  const item = restaurant.birthdayRewardItem?.trim() || "the birthday treat";
+  if (restaurant.birthdayRewardKind === "freeItem") {
+    return {
+      kind: "freeItem",
+      guestLine: `Happy birthday week! Visit in your birthday week and your ${item} is on us.`,
+      tillLine: `This guest is in their birthday week. Give them a free ${item}, once this year.`,
+    };
+  }
+  return {
+    kind: "stamp",
+    guestLine: "Happy birthday week! A bonus stamp is waiting on your card this week.",
+    tillLine: "This guest is in their birthday week. Add the birthday bonus stamp, once this year.",
+  };
+}
 
 export interface TierState {
   tier: TierName;
@@ -105,31 +133,49 @@ export function evaluateChallenges(membershipId: string): number {
   return granted;
 }
 
-/** A birthday bonus lands once per calendar year, in the birthday week. */
+/**
+ * A birthday treat lands once per calendar year, in the birthday week. The owner
+ * chooses a bonus stamp or a free item; the till shows which one to hand over.
+ */
 export function awardBirthdayIfDue(membershipId: string): number {
   const state = demoRepo.read();
   const membership = state.memberships.find((item) => item.id === membershipId);
   if (!membership) return 0;
   const restaurant = state.restaurants.find((item) => item.id === membership.restaurantId);
   const customer = state.customers.find((item) => item.id === membership.customerId);
-  if (!restaurant?.birthdayReward || !customer?.birthday) return 0;
-  const birthday = new Date(`${customer.birthday}T00:00:00Z`);
-  if (Number.isNaN(birthday.getTime())) return 0;
+  const parts = birthdayOf(customer);
+  if (!restaurant?.birthdayReward || !parts) return 0;
   const now = new Date(state.now);
   // Compare in Johannesburg time so the reward appears on the guest's day.
-  const parts = new Intl.DateTimeFormat("en-CA", {
+  const today = johannesburgMonthDay(state.now);
+  const year = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Africa/Johannesburg",
-    month: "2-digit",
-    day: "2-digit",
     year: "numeric",
-  }).formatToParts(now);
-  const month = parts.find((part) => part.type === "month")?.value;
-  const day = parts.find((part) => part.type === "day")?.value;
-  const year = parts.find((part) => part.type === "year")?.value;
-  if (Number(month) !== birthday.getUTCMonth() + 1) return 0;
+  }).format(now);
+  if (Number(today.month) !== parts.month) return 0;
   // Allow the whole birthday week (3 days either side).
-  const birthdayDay = birthday.getUTCDate();
-  if (Math.abs(Number(day) - birthdayDay) > 3) return 0;
+  if (Math.abs(Number(today.day) - parts.day) > 3) return 0;
+  if (restaurant.birthdayRewardKind === "freeItem") {
+    const item = restaurant.birthdayRewardItem?.trim() || "the birthday treat";
+    const key = `birthday-item:${year}`;
+    if (state.rewards.some((reward) => reward.membershipId === membershipId && reward.key === key))
+      return 0;
+    updateDemo((current) => ({
+      ...current,
+      rewards: [
+        ...current.rewards,
+        {
+          id: `reward-${crypto.randomUUID()}`,
+          restaurantId: membership.restaurantId,
+          membershipId,
+          description: `Free ${item}`, 
+          earnedAt: new Date(state.now).toISOString(),
+          key,
+        },
+      ],
+    }));
+    return 1;
+  }
   const result = grantStampEvents({
     restaurantId: membership.restaurantId,
     membershipId,
@@ -216,5 +262,5 @@ export function setChallengeActive(id: string, active: boolean) {
 
 export type RestaurantLoyalty = Pick<
   Restaurant,
-  "tiers" | "mysteryEveryVisits" | "birthdayReward"
+  "tiers" | "mysteryEveryVisits" | "birthdayReward" | "birthdayRewardKind" | "birthdayRewardItem"
 >;

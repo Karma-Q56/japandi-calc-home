@@ -48,7 +48,15 @@ export const messageStatus = pgEnum('message_status', ['queued', 'sending', 'sen
 export const ledgerEntryType = pgEnum('ledger_entry_type', ['topup', 'reserve', 'release', 'charge', 'refund', 'adjustment']);
 export const paymentKind = pgEnum('payment_kind', ['setup', 'subscription', 'topup']);
 export const paymentStatus = pgEnum('payment_status', ['pending', 'confirmed', 'rejected']);
-export const leadStatus = pgEnum('lead_status', ['new', 'contacted', 'demo_booked', 'won', 'lost']);
+export const leadStatus = pgEnum('lead_status', [
+  'new',
+  'contacted',
+  'demo_booked',
+  'won',
+  'lost',
+  'replied',
+  'closed',
+]);
 
 // ============================================================================
 // Tables
@@ -388,6 +396,7 @@ export const pushSubscription = pgTable('push_subscription', {
 // Lead
 export const lead = pgTable('lead', {
   id: uuid('id').primaryKey().defaultRandom(),
+  reference: text('reference').notNull(),
   kind: text('kind').notNull(),
   restaurantName: text('restaurant_name').notNull(),
   contactName: text('contact_name').notNull(),
@@ -404,6 +413,12 @@ export const lead = pgTable('lead', {
   calculator: jsonb('calculator'),
   status: leadStatus('status').notNull().default('new'),
   notes: text('notes'),
+  visitWanted: boolean('visit_wanted'),
+  preferredDay: text('preferred_day'),
+  consentAt: timestamp('consent_at', { mode: 'date' }),
+  adminNotes: text('admin_notes'),
+  repliedAt: timestamp('replied_at', { mode: 'date' }),
+  closedAt: timestamp('closed_at', { mode: 'date' }),
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
 });
 

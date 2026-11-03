@@ -1,15 +1,19 @@
-import { brand } from "@/lib/patron";
-
-const WHATSAPP = "https://wa.me/27820000000?text=Hi%20Patron!%20I%20need%20help.";
-const EMAIL = "mailto:hello@patron.demo?subject=Patron%20support";
+import { brand, whatsappLink } from "@/lib/patron";
+import { siteDetails } from "@/config/site-details";
 
 export function SupportCard() {
   return (
     <section className="builder-panel">
       <h2>Need help?</h2>
       <p>
-        Message us on <a href={WHATSAPP}>WhatsApp</a> or email{" "}
-        <a href={EMAIL}>the {brand.name} team</a>.
+        Message us on{" "}
+        <a href={whatsappLink("Hi Patron! I need help.")} target="_blank" rel="noopener noreferrer">
+          WhatsApp
+        </a>{" "}
+        or email <a href={`mailto:${siteDetails.supportEmail}?subject=Patron%20support`}>the {brand.name} team</a>.
+      </p>
+      <p className="demo-data-note">
+        Contact details are placeholders in this preview. {siteDetails.supportHours}.
       </p>
       <details>
         <summary>Staff cheat sheet (one page)</summary>

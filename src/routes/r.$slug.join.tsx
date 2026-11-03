@@ -9,6 +9,7 @@ import { useDemoState } from "@/data/useDemoState";
 import { requireRole, setDemoSession } from "@/data/session";
 import { ThemeProvider } from "@/theme";
 import { isValidSAMobile } from "@/lib/phone";
+import { isValidBirthday, MONTH_NAMES } from "@/lib/birthday";
 import { rewardJoinPitch } from "@/lib/reward-copy";
 
 export const Route = createFileRoute("/r/$slug/join")({
@@ -45,6 +46,8 @@ function JoinPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("+27 ");
   const [agreed, setAgreed] = useState(true);
+  const [birthdayDay, setBirthdayDay] = useState("");
+  const [birthdayMonth, setBirthdayMonth] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
@@ -62,7 +65,7 @@ function JoinPage() {
   const details = () => {
     setError("");
     if (name.trim().length < 1 || name.trim().length > 40) {
-      return setError("Enter your first name (up to 40 characters).");
+      return setError("Enter your first name (up to 40 letters).");
     }
     if (!isValidSAMobile(phone)) {
       return setError("Enter a valid South African mobile number. Landlines cannot receive SMS.");
@@ -72,14 +75,29 @@ function JoinPage() {
       setError(limit.error.message);
       return;
     }
+    if (birthdayDay && !birthdayMonth) {
+      setError("Choose the birthday month too, or leave both out.");
+      return;
+    }
+    if (birthdayMonth && !birthdayDay) {
+      setError("Choose the birthday day too, or leave both out.");
+      return;
+    }
+    if (birthdayDay && birthdayMonth) {
+      const birthday = { day: Number(birthdayDay), month: Number(birthdayMonth) };
+      if (!isValidBirthday(birthday)) {
+        setError("That day does not exist in that month. Check the day and month.");
+        return;
+      }
+    }
     setStep(2);
   };
 
   const finish = async () => {
-    const source =
-      typeof window === "undefined"
-        ? "link"
-        : new URLSearchParams(window.location.search).get("src") || "link";
+    const params =
+      typeof window === "undefined" ? null : new URLSearchParams(window.location.search);
+    const source = params?.get("src") || "link";
+    const referralCode = params?.get("ref") || undefined;
     if (!agreed) {
       setError("Please agree to the terms to join.");
       return;
@@ -104,6 +122,10 @@ function JoinPage() {
       marketingSms: true,
       loyaltyConsent: agreed,
       source,
+      ...(referralCode ? { referralCode } : {}),
+      ...(birthdayDay && birthdayMonth
+        ? { birthday: { day: Number(birthdayDay), month: Number(birthdayMonth) } }
+        : {}),
     });
     if (!result.ok) {
       setError(result.error.message);
@@ -216,6 +238,38 @@ function JoinPage() {
                     placeholder="+27 82 123 4567"
                   />
                 </label>
+                <div className="builder-field" role="group" aria-label="Birthday, day and month">
+                  <span>Birthday · optional</span>
+                  <small className="gx-note" style={{ display: "block" }}>
+                    Day and month only, never the year, so we can spoil you on your birthday.
+                  </small>
+                  <div className="join-birthday-row">
+                    <select
+                      aria-label="Birthday day"
+                      value={birthdayDay}
+                      onChange={(event) => setBirthdayDay(event.target.value)}
+                    >
+                      <option value="">Day</option>
+                      {Array.from({ length: 31 }, (_, index) => (
+                        <option key={index + 1} value={index + 1}>
+                          {index + 1}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      aria-label="Birthday month"
+                      value={birthdayMonth}
+                      onChange={(event) => setBirthdayMonth(event.target.value)}
+                    >
+                      <option value="">Month</option>
+                      {MONTH_NAMES.map((monthName, index) => (
+                        <option key={monthName} value={index + 1}>
+                          {monthName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
                 <div className="join-button-row">
                   <button className="builder-primary" onClick={details}>
                     Continue

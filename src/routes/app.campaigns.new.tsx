@@ -1,4 +1,5 @@
 import { createFileRoute, redirect, useNavigate, useSearch } from "@tanstack/react-router";
+import { countLabel } from "@/lib/count-label";
 import { useState, useSyncExternalStore } from "react";
 import { api } from "@/api";
 import {
@@ -11,7 +12,12 @@ import {
 } from "@/domain/campaigns";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
-import { PreviewBanner } from "@/components/patron/dash";
+import { PreviewOnly, PublishSteps, PushPreview, SmsPreview } from "@/components/patron/preview";
+import {
+  applyFillIns,
+  messageFillFacts,
+  suggestMessages,
+} from "@/domain/suggestions";
 
 import type { CampaignAudience, SegmentType } from "@/data/types";
 import { useDemoState } from "@/data/useDemoState";
@@ -20,7 +26,23 @@ export const Route = createFileRoute("/app/campaigns/new")({
   beforeLoad: () => {
     if (!requireRole("owner", "manager")(demoRepo.read().session)) throw redirect({ to: "/login" });
   },
-  validateSearch: (search: Record<string, unknown>) => ({ listId: typeof search["listId"] === "string" ? search["listId"] : undefined }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    listId: typeof search["listId"] === "string" ? search["listId"] : undefined,
+    segment:
+      typeof search["segment"] === "string" &&
+      ["everyone", "new", "lapsed30", "close_to_reward", "weekday", "birthday_month", "saved_list"].includes(search["segment"])
+        ? (search["segment"] as SegmentType)
+        : undefined,
+    weekday: typeof search["weekday"] === "string" && /^\d$/.test(search["weekday"]) ? Number(search["weekday"]) : undefined,
+    body:
+      typeof search["body"] === "string" && search["body"].trim()
+        ? search["body"].slice(0, 600)
+        : undefined,
+    name:
+      typeof search["name"] === "string" && search["name"].trim()
+        ? search["name"].slice(0, 80)
+        : undefined,
+  }),
   component: ComposerPage,
 });
 
@@ -31,23 +53,36 @@ const SEGMENT_CHOICES: Array<{ type: SegmentType; title: string; hint: string }>
   { type: "lapsed30", title: "Lapsed 30+ days", hint: "No visit in a month. Best for win-backs." },
   { type: "close_to_reward", title: "Close to a reward", hint: "Within 2 stamps of a reward." },
   { type: "weekday", title: "Visited on a weekday", hint: "Pick the day that needs filling." },
+  { type: "birthday_month", title: "Birthdays this month", hint: "Guests whose birthday falls in this month." },
   { type: "saved_list", title: "A saved list", hint: "A named list you built earlier." },
 ];
 
 function ComposerPage() {
   const state = useDemoState();
   const navigate = useNavigate();
-  const { listId: initialListId } = useSearch({ from: "/app/campaigns/new" });
+  const {
+    listId: initialListId,
+    segment: initialSegment,
+    weekday: initialWeekday,
+    body: initialBody,
+    name: initialName,
+  } = useSearch({
+    from: "/app/campaigns/new",
+  });
   const restaurantId = state.session.restaurantId;
   const [step, setStep] = useState(1);
   const [draftId, setDraftId] = useState<string | null>(null);
-  const [name, setName] = useState("");
-  const [segment, setSegment] = useState<SegmentType>(initialListId ? "saved_list" : "everyone");
+  const [name, setName] = useState(initialName ?? "");
+  const [segment, setSegment] = useState<SegmentType>(
+    initialListId ? "saved_list" : (initialSegment ?? "everyone"),
+  );
   const [channel, setChannel] = useState<"sms" | "push" | "push_then_sms">("sms");
-  const [weekday, setWeekday] = useState(3);
+  const [weekday, setWeekday] = useState(initialWeekday ?? 3);
   const [listId, setListId] = useState(initialListId ?? "");
   const [specialId, setSpecialId] = useState("");
-  const [body, setBody] = useState("Hi {first_name}, we miss you! Pop by this week.");
+  const [body, setBody] = useState(
+    initialBody ?? "Hi {first_name}, we miss you! Pop by this week.",
+  );
   const [code, setCode] = useState("");
   const [validFrom, setValidFrom] = useState("");
   const [validTo, setValidTo] = useState("");
@@ -59,13 +94,16 @@ function ComposerPage() {
   const [editingListId, setEditingListId] = useState<string | null>(null);
   const [editingIds, setEditingIds] = useState<string[]>([]);
   const [editingName, setEditingName] = useState("");
+  const [previewChannel, setPreviewChannel] = useState<"sms" | "push">(
+    channel === "push" ? "push" : "sms",
+  );
 
   const restaurant = state.restaurants.find((r) => r.id === restaurantId);
   if (!restaurant) {
     return (
       <main className="demo-hub page-width">
         <h1>New campaign.</h1>
-        <p className="demo-intro">Open this page from a restaurant tunnel.</p>
+        <p className="demo-intro">Choose a venue first, then open this page again.</p>
       </main>
     );
   }
@@ -78,25 +116,29 @@ function ComposerPage() {
       ? { type: "saved_list", listId }
       : segment === "weekday"
         ? { type: "weekday", weekday }
-        : segment === "new"
-          ? { type: "new", days: 14 }
-          : segment === "lapsed30"
-            ? { type: "lapsed30", days: 30 }
-            : segment === "close_to_reward"
-              ? { type: "close_to_reward", remaining: 2 }
-              : { type: "everyone" };
+        : segment === "birthday_month"
+          ? { type: "birthday_month" }
+          : segment === "new"
+            ? { type: "new", days: 14 }
+            : segment === "lapsed30"
+              ? { type: "lapsed30", days: 30 }
+              : segment === "close_to_reward"
+                ? { type: "close_to_reward", remaining: 2 }
+                : { type: "everyone" };
   const pushEligible = channel === "sms" ? [] : eligiblePushMemberships(state, restaurant.id, audience);
   const pushIds = new Set(pushEligible.map((membership) => membership.id));
   const smsEligible = channel === "push" ? [] : eligibleMemberships(state, restaurant.id, audience).filter((membership) => channel !== "push_then_sms" || !pushIds.has(membership.id));
   const eligible = [...pushEligible, ...smsEligible];
   const rawCount = api.audience.count(restaurant.id, audience);
+  const fillFacts = messageFillFacts(restaurant.id);
   const sampleName =
     state.customers.find((c) => c.id === eligible[0]?.customerId)?.name.split(" ")[0] ?? "friend";
-  const segments = messageSegments(body || "Hi", sampleName);
+  const segments = messageSegments(applyFillIns(body || "Hi", fillFacts, sampleName), sampleName);
   const creditResult = api.credit.list(restaurant.id);
   const balance = creditResult.ok ? creditResult.data.balanceCents : 0;
   const warnings = checkCopy(body);
   const selectedSpecial = specials.find((row) => row.special.id === specialId)?.special;
+  const suggestions = suggestMessages({ restaurant, audience, facts: fillFacts });
 
   const save = (nextStep: number) => {
     if (segment === "saved_list" && !listId) {
@@ -158,7 +200,7 @@ function ComposerPage() {
       setNotice(created.error.message);
       return;
     }
-    setNotice(`Saved “${created.data.name}” with ${created.data.membershipIds.length} guests.`);
+    setNotice(`Saved “${created.data.name}” with ${countLabel(created.data.membershipIds.length, "guest")}.`);
     setNewListName("");
     setListId(created.data.id);
     setSegment("saved_list");
@@ -184,9 +226,9 @@ function ComposerPage() {
     if (saved.ok) setEditingListId(null);
   };
 
-  const preview = body.replaceAll("{first_name}", sampleName);
-  const short = balance < costPreviewCents(smsEligible.length, segments);
-  const steps = ["Audience", "Message", "Cost", "Confirm"];
+  const preview = applyFillIns(body, fillFacts, sampleName);
+  const short = balance < costPreviewCents(smsEligible.length, messageSegments(preview, sampleName));
+  const steps = ["Draft", "Preview", "Cost", "Publish"] as const;
   const back =
     step > 1 ? (
       <button className="cmp-back" onClick={() => setStep(step - 1)}>
@@ -201,17 +243,7 @@ function ComposerPage() {
         {restaurant.name} · New campaign
       </p>
       <h1>Bring them back.</h1>
-      <ol className="cmp-steps" aria-label={`Step ${step} of 4`}>
-        {steps.map((label, index) => (
-          <li
-            key={label}
-            className={index + 1 === step ? "is-now" : index + 1 < step ? "is-done" : ""}
-          >
-            <i>{index + 1 < step ? "✓" : index + 1}</i>
-            {label}
-          </li>
-        ))}
-      </ol>
+      <PublishSteps step={step} labels={steps} />
 
       {step === 1 && (
         <section className="cmp-card">
@@ -262,12 +294,14 @@ function ComposerPage() {
                 <span>{choice.hint}</span>
                 <strong>
                   {choice.type === "saved_list" ? (
-                    selectedList ? `${selectedList.membershipIds.length} guest${selectedList.membershipIds.length === 1 ? "" : "s"}` : "Choose a list"
+                    selectedList ? countLabel(selectedList.membershipIds.length, "guest") : "Choose a list"
                   ) : (
-                    <>
-                      {segment === choice.type ? rawCount : api.audience.count(restaurant.id, segmentAudience(choice.type, weekday, listId))}{" "}
-                      guests
-                    </>
+                    countLabel(
+                      segment === choice.type
+                        ? rawCount
+                        : api.audience.count(restaurant.id, segmentAudience(choice.type, weekday, listId)),
+                      "guest",
+                    )
                   )}
                 </strong>
               </button>
@@ -395,11 +429,33 @@ function ComposerPage() {
         <section className="cmp-card">
           {back}
           <h2>What do you want to say?</h2>
+          {suggestions.length > 0 && (
+            <div className="cmp-suggest">
+              <p className="cmp-suggest-head">
+                <strong>Suggested wording</strong>
+                <span>Built from real data. Tap to use, then edit as much as you like.</span>
+              </p>
+              {suggestions.map((suggestion) => (
+                <button
+                  key={suggestion.id}
+                  type="button"
+                  className="cmp-suggest-card"
+                  onClick={() => setBody(suggestion.body)}
+                >
+                  <b>{suggestion.title}</b>
+                  <span>{suggestion.note}</span>
+                  <small>{applyFillIns(suggestion.body, fillFacts, sampleName)}</small>
+                </button>
+              ))}
+            </div>
+          )}
           <label className="builder-field">
             Your message
             <textarea value={body} onChange={(event) => setBody(event.target.value)} rows={4} />
             <small>
-              Use {"{first_name}"} to personalise. The STOP line is added for you.
+              Use {"{first_name}"}, {"{favourite_item}"}, {"{usual_day}"} or {"{reward}"} to personalise. Anything you
+              leave out is filled from the guest's data, or with safe wording. The STOP line is
+              added for you.
             </small>
           </label>
           <div className="cmp-meter">
@@ -416,21 +472,46 @@ function ComposerPage() {
               )}
             </p>
           ))}
-          <div className="cmp-phone" aria-label="Message preview">
-            <small>Preview · {restaurant.name}</small>
-            <p>
-              {preview}
-              <br />
-              <span>Reply STOP to opt out.</span>
-              {selectedSpecial?.kind === "targeted" && (
-                <>
-                  <br />
-                  <span>Your code: {"{unique code}"}</span>
-                </>
-              )}
-            </p>
+          <div className="cmp-options" role="radiogroup" aria-label="Preview channel">
+            <button
+              type="button"
+              role="radio"
+              aria-checked={previewChannel === "sms"}
+              className={`cmp-option${previewChannel === "sms" ? " is-on" : ""}`}
+              onClick={() => setPreviewChannel("sms")}
+            >
+              <b>Show the SMS</b>
+              <span>Exactly the text a guest reads, with its length and cost.</span>
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={previewChannel === "push"}
+              className={`cmp-option${previewChannel === "push" ? " is-on" : ""}`}
+              onClick={() => setPreviewChannel("push")}
+            >
+              <b>Show the push</b>
+              <span>The notification a guest sees on their phone. Free to send.</span>
+            </button>
           </div>
-          <PreviewBanner>Preview only. Nothing was sent. Guests get it after you confirm on the last step.</PreviewBanner>
+          {previewChannel === "sms" ? (
+            <SmsPreview
+              sender={restaurant.senderName}
+              body={body}
+              sampleName={sampleName}
+              recipients={smsEligible.length}
+            />
+          ) : (
+            <PushPreview
+              sender={restaurant.name}
+              title={name || "A treat from us"}
+              body={preview}
+              recipients={pushEligible.length}
+            />
+          )}
+          <PreviewOnly>
+            Preview only, nothing was sent. Guests get this after you press Publish on the last step.
+          </PreviewOnly>
 
           <label className="builder-field">
             Attach a special (optional)
@@ -516,7 +597,7 @@ function ComposerPage() {
       {step === 4 && (
         <section className="cmp-card">
           {back}
-          <h2>Ready to send?</h2>
+          <h2>Publish this campaign?</h2>
           <div className="cmp-options" role="radiogroup" aria-label="When">
             <button
               type="button"
@@ -559,7 +640,7 @@ function ComposerPage() {
             </label>
           )}
           <button className="builder-primary" onClick={confirm}>
-            Confirm and {sendNow ? "send" : "schedule"}
+            Publish and {sendNow ? "send" : "schedule"}
           </button>
         </section>
       )}
@@ -575,6 +656,7 @@ function ComposerPage() {
 function segmentAudience(type: SegmentType, weekday: number, listId: string): CampaignAudience {
   if (type === "saved_list") return { type: "saved_list", listId };
   if (type === "weekday") return { type: "weekday", weekday };
+  if (type === "birthday_month") return { type: "birthday_month" };
   if (type === "new") return { type: "new", days: 14 };
   if (type === "lapsed30") return { type: "lapsed30", days: 30 };
   if (type === "close_to_reward") return { type: "close_to_reward", remaining: 2 };

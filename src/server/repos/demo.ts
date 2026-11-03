@@ -2,6 +2,7 @@ import { demoRepo } from "@/data/repo";
 import { getCard as demoGetCard, joinRestaurant, customerCards } from "@/domain/members";
 import { recordStamp as demoRecordStamp } from "@/domain/stamps";
 import { offersForMembership, redeemSpecial as demoRedeemSpecial } from "@/domain/specials";
+import { submitEnquiry } from "@/domain/leads";
 import type { JoinInput, JsonValue, LeadInput, PatronRepos } from "./contracts";
 
 type StampResultLike =
@@ -75,26 +76,33 @@ export function createDemoRepos(): PatronRepos {
       if (input.ipHash && recent.filter((h) => h.bucket === "lead-ip" && h.key === input.ipHash).length >= 5) {
         throw new Error("Too many requests. Try again later.");
       }
-      const id = `lead-${crypto.randomUUID()}`;
+      const saved = submitEnquiry({
+        kind: input.kind === "diner" || input.kind === "other" ? input.kind : "owner",
+        restaurantName: input.restaurantName,
+        contactName: input.contactName,
+        phone: input.phone,
+        email: input.email,
+        role: input.role,
+        venueType: input.venueType,
+        suburb: input.suburb,
+        quietTime: input.quietTime,
+        weeklyGuests: input.weeklyGuests,
+        planInterest: input.planInterest,
+        message: input.notes,
+        consent: input.consent,
+        consentAt: new Date(s.now).toISOString(),
+        now: s.now,
+      });
+      if (!saved.ok) throw new Error(saved.error.message);
       demoRepo.write({
-        ...s,
-        leads: [
-          ...(s.leads ?? []),
-          {
-            id,
-            restaurantName: input.restaurantName,
-            contactName: input.contactName,
-            phone: input.phone,
-            createdAt: new Date(s.now).toISOString(),
-          } as never,
-        ],
+        ...demoRepo.read(),
         rateLimitHits: [
           ...(s.rateLimitHits ?? []),
           { bucket: "lead", key: input.phone, createdAt: s.now } as never,
           ...(input.ipHash ? [{ bucket: "lead-ip", key: input.ipHash, createdAt: s.now } as never] : []),
         ],
       });
-      return { id };
+      return saved.data;
     },
 
     async joinGuest(input: JoinInput) {

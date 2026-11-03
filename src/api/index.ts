@@ -50,6 +50,12 @@ import {
 } from "@/domain/team";
 import { listAudit } from "@/domain/audit";
 import {
+  recordOrder,
+  quickItems,
+  searchMenu,
+  setOrderTracking,
+} from "@/domain/orders";
+import {
   approveCampaign,
   campaignResults,
   cancelCampaign,
@@ -76,7 +82,37 @@ import {
   requestTopup,
 } from "@/domain/credit";
 import { handleDeliveryWebhook, handleInboundWebhook } from "@/domain/webhooks";
+import {
+  myReferralCode,
+  referralOverview,
+  referralSettings,
+  updateReferralSettings,
+} from "@/domain/referrals";
 import { overview } from "@/domain/dash";
+import { ownerInsights } from "@/domain/insights";
+import { ownerReport, reportCsv } from "@/domain/reports";
+import { leadDetails, listEnquiries, submitEnquiry, updateEnquiry } from "@/domain/leads";
+import { ideaDetails, listIdeas, listIdeasForOwner, submitIdea, updateIdea } from "@/domain/ideas";
+import {
+  applyPageEdit,
+  pageEditFor,
+  pageVersionsFor,
+  publishPageEdit,
+  restorePageDraft,
+  validatePageEdit,
+} from "@/domain/page";
+import {
+  menuVersionsFor,
+  publishRestoredMenu,
+  restoreMenuDraft,
+  snapshotMenu,
+} from "@/domain/menuVersions";
+import {
+  feedbackForOwner,
+  listFeedback,
+  submitFeedback,
+  updateFeedback,
+} from "@/domain/feedback";
 import {
   codesForMembership,
   createPrizeOffer,
@@ -109,6 +145,7 @@ import {
 } from "@/domain/audiences";
 import {
   awardBirthdayIfDue,
+  birthdayRewardPreview,
   challengeProgress,
   evaluateChallenges,
   saveChallenge,
@@ -118,8 +155,21 @@ import {
   tierState,
 } from "@/domain/loyalty";
 import {
+  evaluateToolsAfterVisit,
+  guestToolsView,
+  saveTools,
+  toolBudgetFor,
+} from "@/domain/tools";
+import {
+  giveCustomReward,
+  presetCosts,
+  runMissYou,
+  whatHappensWhen,
+} from "@/domain/presets";
+import {
   customerProfile,
   exportCsv,
+  knowYourGuest,
   listCustomers,
   matchingCustomerMembershipIds,
   manualStamp,
@@ -143,6 +193,10 @@ export const api = {
     hideItem: hideMenuItem,
     reorder: updateMenuOrder,
     saveSpecial,
+    versions: menuVersionsFor,
+    snapshot: snapshotMenu,
+    restoreDraft: restoreMenuDraft,
+    restore: publishRestoredMenu,
   },
   member: {
     cards: customerCards,
@@ -220,11 +274,66 @@ export const api = {
     birthdayIfDue: awardBirthdayIfDue,
     saveChallenge,
     setChallengeActive,
+    birthdayPreview: birthdayRewardPreview,
+    toolsView: guestToolsView,
+    saveTools,
+    toolBudget: toolBudgetFor,
+    runMissYou,
+    presetCosts,
+    whatHappensWhen,
+    giveCustomReward,
+  },
+  orders: {
+    record: recordOrder,
+    quickItems,
+    searchMenu,
+    setTracking: setOrderTracking,
+  },
+  referral: {
+    myCode: myReferralCode,
+    settings: referralSettings,
+    saveSettings: updateReferralSettings,
+    overview: referralOverview,
+  },
+  insights: {
+    owner: ownerInsights,
+  },
+  reports: {
+    owner: ownerReport,
+    csv: reportCsv,
+  },
+  enquiries: {
+    submit: submitEnquiry,
+    list: listEnquiries,
+    update: updateEnquiry,
+    details: leadDetails,
+  },
+  ideas: {
+    submit: submitIdea,
+    board: listIdeasForOwner,
+    list: listIdeas,
+    update: updateIdea,
+    details: ideaDetails,
+  },
+  page: {
+    editFor: pageEditFor,
+    validate: validatePageEdit,
+    apply: applyPageEdit,
+    publish: publishPageEdit,
+    versions: pageVersionsFor,
+    restoreDraft: restorePageDraft,
+  },
+  feedback: {
+    submit: submitFeedback,
+    mine: feedbackForOwner,
+    list: listFeedback,
+    update: updateFeedback,
   },
   customers: {
     list: listCustomers,
     matchingMembershipIds: matchingCustomerMembershipIds,
     profile: customerProfile,
+    know: knowYourGuest,
     reveal: revealPhone,
     export: exportCsv,
     manualStamp,

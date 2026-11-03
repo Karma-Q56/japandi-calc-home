@@ -15,6 +15,7 @@ import { LoyaltyCard } from "@/components/patron/LoyaltyCard";
 import { GuestShell } from "@/components/patron/GuestShell";
 import { MemberQr } from "@/components/patron/MemberQr";
 import { SpinWheel } from "@/components/patron/SpinWheel";
+import { ChallengeRow } from "@/components/patron/ChallengeRow";
 import { rewardEarned, rewardProgress } from "@/lib/reward-copy";
 import { signInAsDemoAccount } from "@/lib/demo-signin";
 
@@ -131,6 +132,7 @@ function GuestCard() {
   const { restaurant, customer, membership, rewards, offers, visits, stampsGained } = result.data;
   const tier = api.loyalty.tierState(state, membership);
   const challenges = api.loyalty.challenges(state, membership);
+  const tools = api.loyalty.toolsView(state, membership);
   const spins = api.spin.state(membership.id);
   const specialResult = api.special.offersFor(membership.id);
   const specialOffers = specialResult.ok ? specialResult.data.offers : [];
@@ -175,28 +177,55 @@ function GuestCard() {
 
         <SpinWheel membershipId={membership.id} />
 
+        {tools.doubleDayLine && (
+          <section className="gx-panel">
+            <h2>Double stamps</h2>
+            <p className="gx-note">{tools.doubleDayLine}</p>
+          </section>
+        )}
+
+        {tools.streak && (
+          <section className="gx-panel">
+            <h2>Visit streak</h2>
+            <p>
+              <strong>
+                {tools.streak.run} {tools.streak.run === 1 ? "week" : "weeks"} in a row
+              </strong>
+            </p>
+            {tools.streak.visitsThisWeek < tools.streak.weeklyVisits ? (
+              <p className="gx-note">
+                {tools.streak.weeklyVisits - tools.streak.visitsThisWeek} more
+                {" "}{tools.streak.weeklyVisits - tools.streak.visitsThisWeek === 1 ? "visit" : "visits"} this week keeps the run alive.
+              </p>
+            ) : (
+              <p className="gx-note">This week already counts. Next week, same again.</p>
+            )}
+            <ChallengeRow
+              title={`${tools.streak.bonusStamps} bonus ${tools.streak.bonusStamps === 1 ? "stamp" : "stamps"} at ${tools.streak.weeks} ${tools.streak.weeks === 1 ? "week" : "weeks"}`}
+              visits={tools.streak.run}
+              needed={tools.streak.weeks}
+              windowDays={7}
+              bonusStamps={tools.streak.bonusStamps}
+              done={tools.streak.run >= tools.streak.weeks}
+              claimed={false}
+            />
+          </section>
+        )}
+
         {challenges.length > 0 && (
           <section className="gx-panel">
             <h2>Visit challenges</h2>
             {challenges.map(({ challenge, visits: progress, done, claimed }) => (
-              <article className="challenge-row" key={challenge.id}>
-                <div>
-                  <strong>{challenge.title}</strong>
-                  <small>
-                    {progress} of {challenge.visits} visits in the last {challenge.windowDays} days
-                  </small>
-                </div>
-                <span className={done ? "challenge-state is-done" : "challenge-state"}>
-                  {claimed ? "Bonus added" : done ? "Earned" : `${challenge.bonusStamps} bonus stamp`}
-                </span>
-                <div className="challenge-track" aria-hidden>
-                  <span
-                    style={{
-                      width: `${Math.min(100, Math.round((progress / challenge.visits) * 100))}%`,
-                    }}
-                  />
-                </div>
-              </article>
+              <ChallengeRow
+                key={challenge.id}
+                title={challenge.title}
+                visits={progress}
+                needed={challenge.visits}
+                windowDays={challenge.windowDays}
+                bonusStamps={challenge.bonusStamps}
+                done={done}
+                claimed={claimed}
+              />
             ))}
           </section>
         )}
@@ -209,6 +238,8 @@ function GuestCard() {
             Staff scan the code or type your member number. The QR refreshes itself.
           </small>
         </section>
+
+        {restaurant.referral?.enabled && <BringAFriend slug={slug} membershipId={membership.id} />}
 
         <section className="gx-panel">
           <div className="guest-section-heading">
@@ -291,9 +322,15 @@ function GuestCard() {
         </section>
 
         <section className="gx-panel guest-shortcuts">
-          <a href={`/r/${slug}`}>Menu &amp; specials</a>
-          <a href="/me/restaurants">All restaurants</a>
-          <a href="/me/settings">Notifications &amp; details</a>
+          <a className="builder-secondary" href={`/r/${slug}`}>
+            Menu &amp; specials
+          </a>
+          <a className="builder-secondary" href="/me/restaurants">
+            All restaurants
+          </a>
+          <a className="builder-secondary" href="/me/settings">
+            Notifications &amp; details
+          </a>
         </section>
 
         <section className="gx-panel">
@@ -351,6 +388,54 @@ function GuestCard() {
 }
 
 const cardSearchSchema = z.object({ customerId: z.string().optional() });
+
+/** The guest side of bring a friend: their own link, or code, to share. */
+function BringAFriend({ slug, membershipId }: { slug: string; membershipId: string }) {
+  const [notice, setNotice] = useState("");
+  // The share code is created on the first view, so it must not write the store
+  // while React is still rendering. Doing it in an effect keeps the console
+  // free of "cannot update a component while rendering" warnings.
+  const [code, setCode] = useState<string | null>(null);
+  useEffect(() => {
+    const result = api.referral.myCode(membershipId);
+    if (result.ok) setCode(result.data.code);
+  }, [membershipId]);
+  if (!code) return null;
+  const link = `${window.location.origin}/r/${slug}/join?ref=${code}&src=friend_referral`;
+  return (
+    <section className="gx-panel">
+      <h2>Bring a friend</h2>
+      <p className="gx-note">
+        Share your link. When your friend gets their first stamped visit here, you both get a
+        little something from the venue.
+      </p>
+      <p className="gx-note">
+        Your friend code: <strong>{code}</strong>
+      </p>
+      <div className="page-actions">
+        <button
+          className="builder-secondary"
+          onClick={() => {
+            void navigator.clipboard?.writeText(link).then(
+              () => setNotice("Link copied. Send it to your friend."),
+              () => setNotice(link),
+            );
+          }}
+        >
+          Copy my link
+        </button>
+        <a className="builder-secondary" href={link}>
+          Open my join link
+        </a>
+      </div>
+      {notice && (
+        <p className="gx-note" role="status">
+          {notice}
+        </p>
+      )}
+    </section>
+  );
+}
 
 type LiveCard = NonNullable<Awaited<ReturnType<typeof getCardFn>>["card"]>;
 

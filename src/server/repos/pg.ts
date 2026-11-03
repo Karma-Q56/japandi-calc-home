@@ -228,13 +228,13 @@ export function createPgRepos(ctx: Ctx): PatronRepos {
         const frags = values.map((v, i) =>
           LEAD_COLUMNS[i] === "calculator" ? sql`${v}::jsonb` : sql`${v}`,
         );
-        const rows = await q<{ id: string }>(
+        const rows = await q<{ id: string; reference: string | null }>(
           tx,
-          sql`insert into lead (${sql.join(LEAD_COLUMNS.map((c) => sql.identifier(c)), sql`, `)}) values (${sql.join(frags, sql`, `)}) returning id`,
+          sql`insert into lead (${sql.join(LEAD_COLUMNS.map((c) => sql.identifier(c)), sql`, `)}) values (${sql.join(frags, sql`, `)}) returning id, reference`,
         );
         const id = rows[0]?.id;
         if (!id) throw new Error("Could not submit.");
-        return { id };
+        return { id, ...(rows[0]?.reference ? { reference: rows[0].reference } : {}) };
       });
     },
 

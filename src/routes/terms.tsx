@@ -47,6 +47,13 @@ function Terms() {
           met. Tiers are calculated from recorded visits and may unlock members-only offers. The
           restaurant may change or end a promotion; already-earned rewards are honoured.
         </p>
+        <h2>Bring a friend</h2>
+        <p>
+          Where a restaurant offers it, each guest gets a personal share code. A friend who joins
+          through it earns a reward for both of you, but only after the friend&apos;s first
+          stamped visit. Rewards are single-use personal offers and the restaurant may limit how
+          many friends you can bring each month. Codes cannot be traded and have no cash value.
+        </p>
         <h2>Demo preview</h2>
         <p>
           This build stores demo data in your browser. It carries no service guarantees and does

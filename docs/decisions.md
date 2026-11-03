@@ -1,182 +1,572 @@
-# Decisions and verified facts
+# Patron decisions log
 
-## 2026-10-16: M0 demo-only product foundation
+Authoritative record of the design decisions for this release. Written for
+busy restaurant owners and diners with no technical background: short
+sentences, plain English, no jargon.
 
-- **User direction and milestone prompt:** build M0/M2/M3 in demo mode, with no real login, SMS provider, or database. Do not call Neon in these milestones; the existing PostgreSQL schema remains untouched.
-- **Implementation:** deterministic demo seed, browser-safe `DemoRepo` with guarded localStorage and in-memory fallback, cross-tab storage listener, persisted demo clock/session, API and domain seams, role-gated demo tunnels, and a fake SMS outbox.
-- **Unverified:** TypeScript, lint, unit tests, route generation/build, and mobile acceptance. Node-based checks did not return during this session; `git diff --check` passed.
-- **Source of truth detail:** the M0/M2/M3 prompt files were supplied by the user; M0 requires this demo seam before later milestone screens.
+---
 
-## 2026-10-15: Cloudflare Workers Vite integration
+## 1. Demo mode is the default - live only on the operator's box
 
-- **Verified:** Cloudflare's current TanStack Start guide uses `@cloudflare/vite-plugin` together with TanStack Start's Vite plugin and React plugin, with a Wrangler config whose main entry is `@tanstack/react-start/server-entry`. The guide says to remove any other deployment adapter such as Nitro. This replaces the Lovable wrapper and prior Nitro adapter while retaining the existing routes and UI.
-- **Verified:** TanStack Start supports a custom `src/server.ts` entry through `createServerEntry`, which delegates to the built-in handler. The project keeps its custom error-page normalization through that supported entry point.
-- **Sources:** [Cloudflare TanStack Start guide](https://developers.cloudflare.com/workers/framework-guides/web-apps/tanstack-start/), [TanStack Start server entry docs](https://tanstack.com/start/latest/docs/framework/react/guide/server-entry-point).
+`.dev.vars` sets `DATA_MODE=demo` until the owner flips it to `live`.
+The app refuses any write that is not scoped to the restaurant the guest
+joined, and it never touches production.
 
-## 2026-10-15: Neon connection approach
+---
 
-- **Verified:** Neon’s serverless driver supports SQL over HTTP and WebSockets; `Pool`/`Client` provide real transactions across multiple statements, while the `neon()` HTTP function is for single-shot queries. This code uses one request-scoped WebSocket `Pool` for transaction-scoped RLS context and closes it after the transaction.
-- **Sources:** [Neon serverless driver GA](https://neon.com/blog/serverless-driver-ga), [Neon driver overview](https://neon.com/docs/serverless/serverless-driver).
-- **Unverified for this project:** no Neon credentials or connected account were available to apply the schema, run tenant-isolation queries, measure Johannesburg-to-Frankfurt latency, or record Cloudflare CPU time.
+## 2. Birthdays: day and month only
 
-## 2026-10-15: Runtime database role
+- The join flow asks for day and month, both optional. No year is ever
+  stored.
+- The reason for asking is one line: "so we can spoil you on your
+  birthday."
+- Guests can edit it in `/me/settings`.
+- The owner's guest profile shows it, and there is a "Birthdays this
+  month" view plus a birthday segment for campaigns and a birthday reward
+  trigger (bonus stamp or free item, owner's choice, with a preview).
+- Only the restaurant the guest joined can see it.
 
-- **Verified:** Neon documents that login roles need a password when created. Secrets are therefore kept out of checked-in SQL: migration 0002 creates the least-privileged `app_user` role without login and grants only runtime privileges; a separate local provisioning script will enable login and set its password from `APP_USER_PASSWORD` after the role is created.
-- **Unverified:** role creation/grant execution against the user's Neon project and free-plan permissions; no project was connected during this work.
-- **Source:** [Neon Postgres roles](https://neon.com/blog/postgres-roles).
-- **Deviation from BUILD_PLAN M0:** app role password provisioning is a separate command, not a password embedded in the migration, to keep credentials out of migrations.
+---
 
-## 2026-10-15: Authentication deferred
+## 3. Visit patterns run in the restaurant's own time
 
-- **User direction:** defer all authentication and OTP work for now. The auth middleware is disabled; routes remain public or demo-only until a later milestone adds the specified auth model. No login flow or Better Auth dependencies were added.
+All stamp timestamps are in Africa/Johannesburg (SAST, UTC+2, no DST).
+A guest's "usual days" and "usual time of day" are computed only from
+their own stamps. The slipping flag compares the gap since their last
+visit with their own average gap, so one long absence does not make a
+good regular look bad.
 
-## 2026-10-15: Append-only consent and private operational rows
+---
 
-- **Schema correction:** the supplied consent policy defaulted to `FOR ALL`, which allowed updates/deletes under RLS despite the requirement that consent evidence be insert-only. The canonical schema now has select/insert-only consent policies and the `app_user` grant revokes update/delete. Tenant-scoped audit and data-request rows are RLS-protected; leads allow public server-side inserts and operator-only reads/updates.
-- **Intentional exception from the supplied schema:** `one_time_code` remains outside RLS because the SQL comments specify it is accessed before a tenant context exists. Callers must still keep access in trusted server functions and avoid returning codes or hashes to clients.
+## 4. Orders at the till: stamp first, ask after
 
-## 2026-10-15: Lint baseline
+- After a successful PIN stamp, the till may (optionally) ask
+  "What did they have?" This step never blocks or delays the stamp. The
+  stamp is saved, and the order is attached afterwards.
+- It shows the restaurant's most ordered menu items as large buttons plus
+  a search over the whole menu, quantity taps, and a Skip button. It
+  takes at most 3 taps.
+- An optional bill amount in rand. The owner can switch "Track what
+  guests order" on or off and choose item mode or simple category mode
+  (breakfast, coffee, lunch, dinner, drinks, dessert).
+- Orders are stored in an `orders` structure with a `source` field:
+  `till` now; `import` and `pos` later. This deliberately postpones POS
+  integration - adding it later does not change the data model.
 
-- The repository's existing sources produced more than 400 Prettier-only errors under the prior `eslint-plugin-prettier/recommended` setup. Reformatting the whole UI would create a large unrelated diff, so ESLint now checks code rules and the existing `format` script remains the explicit Prettier operation. No UI files were reformatted for M0.
+---
 
-## 2026-10-15: Neon access follow-up
+## 5. "Know your guest" is one plain sentence
 
-- The user confirmed Neon is connected and authorized applying migrations. In this session the exposed Neon operations require an explicit project_id; describe_project confirmed the connection is unscoped. The available operations do not include project listing, SQL execution, or migration preparation, and the repository .env contains no DATABASE_URL/DATABASE_URL_MIGRATE entries (only existing Supabase variable names; values were not read).
-- No database changes were made. Need a Neon connection that exposes list/project and migration/SQL operations, or a secure local .env configured with direct owner DATABASE_URL_MIGRATE and pooled runtime DATABASE_URL, before applying and verifying migrations. Do not paste credentials in chat.
-- Per AGENTS.md, M1/M2 remain gated on M0 acceptance; this turn did not start later milestones.
+On the owner's guest profile, one sentence generated from real data, for
+example: "Thandi comes in on Tuesdays around 8am and usually has a flat
+white. She has 5 stamps and her birthday is in March." It also shows the
+favourite items (top 3), the visit pattern, the rewards history, the
+birthday, and the last message together with whether it went through.
 
-## 2026-10-15: Neon CLI setup attempt
+---
 
-- User supplied organization org-sweet-wave-28962628, project super-waterfall-31745320, and branch production, and authorized setup. Neon CLI installation and help attempts using npx neon@latest and npm install --global neon@latest stalled without output and were interrupted. No login launched and no database changes were made.
-- The provided services list included auth and optional AI/object-storage/functions. Auth remains deferred per the user's earlier explicit direction; only Postgres is in scope for M0-M2. The requested production branch is an existing live target; apply schema only after a CLI/connection is usable and the ordered migrations can be reviewed against it.
+## 6. Insights: every block can message
 
-## 2026-10-17 - Review fixes to the M0/M2/M3 snapshot
+The Insights page shows busiest days and times, top items, quiet days,
+regulars who are slipping, birthdays coming up, and new guests this week.
+Every block has a one-tap "Message them" button that opens the campaign
+composer with that group already chosen.
 
-- Added the missing `updateDemo` export, `Repo.update`, and the state fields `pairingCodes`, `otpSendLog`, `pinAttempts`, `pinLockouts` (typed in `src/data/types.ts`, seeded empty). `DemoRepo.reset()` now also persists, otherwise a reload restored the old data.
-- Parent file routes now hand over to child routes through `withChildren()` (`src/lib/nested.tsx`). Wrappers are module-level constants because TanStack's route code-splitter failed on inline `withChildren(...)` expressions.
-- `requireRole` returns true on the server (the demo session only exists in the browser); the `customerId` checks on `/me`, `/me/settings` and `/r/:slug/card` are browser-only too. `/r/:slug/join` switches the demo session to guest instead of redirecting, so a scanned QR opens the join flow. M9 replaces these with real session checks.
-- Verified: member QR decodes (jsQR) to the member URL. Not verified: scanning with a phone camera, iPhone Safari, hydration warnings (React reports server/client text mismatches on pages that read demo state, because the server renders the seed and the browser renders stored state), a React warning about a state update during render on the card page.
-- Known gaps: stamp slots on the card render as small dots, copy bug "7 more for Your next coffee is on us", cron and webhook route files are placeholders that do not export a Route, code style uses very long one-line functions that are hard to review.
+---
 
-## 2026-10-17: M0–M3 fix-up pass (this session)
+## 7. Smart message suggestions, no AI
 
-- Pulled remote `125e838` ("Fix Patron demo routes and session flows") onto `freebuff/b8bfff140b08360ec8ca4786`; stashed the older local M9 harness first.
-- Reward text is a noun phrase with `rewardCopy` templates (`src/lib/reward-copy.ts`); seed migrated to "a free coffee"/"a free main"; storage key bumped to `patron-demo-v4`.
-- `getCard` is pure; `markCardSeen` runs in `useEffect` on the card page. `useDemoState()` (fixed seed server snapshot) added and used on card/join/me/settings/demo/control-bar.
-- Demo hub tunnels are plain deep links (`/demo/as/:role?...&to=...` handled in `beforeLoad`); cron/webhook files export real `Route`s (501 POST); `_demoPlaceholder` moved to components.
-- `FakeSmsProvider` uses `countSegments`; QR capacity covered by `src/lib/qr.test.ts` (20 URLs, version 5-L); privacy covered by `src/test/cross-restaurant.test.ts`.
-- Verified: `npm run typecheck` clean, `npm run lint` 0 errors, `npx vitest run` 28/28, `npm run build` ok. E2E could not run here (Playwright chromium needs `libnspr4.so`, not installable in this VM).
+The campaign composer suggests ready-to-edit wording based on the chosen
+group and the real data. No external AI service. Supported fill-ins:
 
-## 2026-10-18: M6 credit ledger and SMS adapter (demo mode)
+- `{name}`
+- `{favourite_item}`
+- `{usual_day}`
+- `{reward}`
 
-- **Ledger is the source of truth:** balance = sum(credit_ledger) in integer cents, never negative (enforced in `planEntries`, mirroring the SQL CHECK). `restaurant.creditCents` is kept in sync as a cache so the M5 dashboard and operator list keep working unchanged.
-- **Duplicate migration removed:** `db/migrations/0001_initial_schema.sql` (added in cd317e1) defined the identical 23 tables + 15 enums as `0001_patron_schema.sql` (added in 783aea0, already applied), verified column-by-column before deleting, so no live database loses anything. Fresh `pnpm db:migrate` runs failed with 42710 until the file was deleted at the founder's request.
-- **SMS provider comparison (researched 2026-10-18, no choice made):**
-  - SMS South Africa (smssouthafrica.co.za; note smssouthafrica.com does not resolve): ~R0.29 ex VAT per SMS at 500–1,000, down to ~R0.18 at high volume; no setup/monthly fees, credits do not expire, inbound free; documented automatic STOP/DELETE/REMOVE opt-out list; DLR statuses documented for reports but no public API callback spec found; sender-ID options not verifiable from public material. Sources: [pricing](https://www.smssouthafrica.co.za/bulk-sms-pricing/), [FAQ](https://www.smssouthafrica.co.za/frequently-asked-questions/), [API overview](https://www.smssouthafrica.co.za/bulk-sms/).
-  - Sendmode: R0.23 per credit at 1,000 (R230), R0.21 at 5,000; prices exclude VAT; one credit per 160 chars; REST API with access-key auth plus documented delivery-report callbacks; sender names up to 11 chars, registered/approved; STOP via shortcode 88990; replies free. Sources: [pricing](https://www.sendmode.com/pricing), [REST docs](https://developers.sendmode.com/restdocs), [delivery reports](https://developers.sendmode.com/restdocs/deliveryreports), [SA FAQ](https://www.sendmode.co.za/faq).
-  - Neither publishes a separate OTP tariff; use bulk-credit rates for both until sales confirms otherwise.
-  - Open question for the founder: pick smssouthafrica or sendmode (ACTION_ITEMS.md). Stub adapters throw "not configured" until then; `SMS_PROVIDER=console|fake|smssouthafrica|sendmode` (default fake).
-- **Demo SMS facts:** `FakeSmsProvider` implements the SPEC 9.1 interface; webhooks are idempotent by (provider, event_id) in `provider_event`; inbound STOP withdraws marketing for that restaurant's membership only; OTP cost (R0.30, `SMS.otpCostCents`) is logged per new join.
-- **EFT details on /app/credit are placeholders** (Demo Bank, 00-000-0000) pending real banking details.
+Examples: a win-back message for a slipping regular, a birthday message,
+a quiet-day offer. The suggestions are always editable, with SMS and push
+preview, character count and cost. If a fill-in has no data, it falls
+back to safe wording. Consent and STOP are respected - no message is sent
+to a guest who has withdrawn consent or sent STOP.
 
-## 2026-10-18: M7 campaigns (demo mode)
+---
 
-- **Atomic confirm:** one repo update writes the reserve entry plus one message row per eligible membership (unique campaign+membership+channel); credit re-checked inside the same operation.
-- **Dispatcher is pure** (`dispatchBatch(state, now)`): claims queued rows in batches of 25, re-checks consent/erasure/caps/quiet hours per message, retries with backoff to 3 attempts then failed. Killing mid-batch and restarting sends nothing twice (claim = queued → sending in one state transition).
-- **Quiet hours** 20:00–08:00 Africa/Johannesburg (SAST has no DST, so 08:00 SAST is always 06:00 UTC); scheduled sends inside the window move to 08:00.
-- **Settlement:** release reservation + charge actual when nothing is queued/sending; cancel allowed in scheduled/sending; failed-after-charge gets a `refund:<message_id>` entry.
-- **Attribution wording** is fixed by spec: "visits by recipients after sending; not proof the message caused them".
-- **Unverified:** real-browser walkthrough of composer/results at 360/390px; Playwright cannot run in this VM.
+## 8. Bring a friend
 
-## 2026-10-19: SMS provider: BulkSMS.com
+- Each guest gets a personal share link or code.
+- A friend who joins through it and gets their first stamp triggers a
+  reward for both guests.
+- The owner chooses the reward and can switch it off.
+- Rewards are issued as single-use personal offers only after the friend's
+  first stamped visit.
+- Limits: per guest per month. Abuse checks: same phone, self referral.
+- The owner sees a cost estimate and a preview of what both guests see,
+  then steps through Draft, Preview, Publish.
 
-- **Decision:** the founder uses BulkSMS.com. Adapter: `src/server/sms/BulkSmsProvider.ts` (REST v1, `POST https://api.bulksms.com/v1/messages`, Basic auth with an API token id + secret).
-- **Webhooks:** BulkSMS does not sign requests. Per its webhook guide, create two webhooks (`triggerScope` SENT for status reports, RECEIVED for incoming messages), add `?secret=<SMS_WEBHOOK_SECRET>` to the URL, and make the URL return 200 to an empty `[]` POST before registering. Handlers must tolerate duplicate and out-of-order events and answer within 30 seconds. Source IPs are dynamic, so no IP allowlist.
-- **Unverified (needs a live account):** terminal `status.type` values beyond DELIVERED/FAILED/SENT, whether an alphanumeric sender ID is allowed on this account and route, how inbound STOP is delivered (dedicated number vs shared route), and the credit-to-rand price. `costCents` is only set if `randPerCredit` is configured.
-- **Demo build:** `SMS_PROVIDER=bulksms` still resolves to a "not configured" stub in the browser-only demo. Real sending is wired in M9 with the backend.
+---
 
-## 2026-10-19: Design pass (screens that looked broken)
+## 9. Privacy
 
-- `.guest-step` was defined twice with different meanings (join-step panel vs a progress bar in `ui.css`), which collapsed every join step to 5px tall. The old rule is removed; the join flow, header and stepper are restyled.
-- `/app/campaigns` had no outlet for its children, so `/app/campaigns/new` and `/app/campaigns/:id` rendered the list. Fixed with `withChildren`.
-- The three brand fonts are now self-hosted (`@fontsource-variable/*`) so a blocked or slow Google Fonts request cannot change the look. Google Fonts remains only for other venue theme fonts.
-- Overview credit shows rand, not cents. The demo pill moves above the bottom tab bars on phones.
-- Stamp card: empty slots now show a ghost glyph and number, filled stamps get an ink-stamp look.
-- Campaign composer: stepper, option cards, phone-bubble preview, cost tiles, back buttons.
+- The privacy page and the terms of service mention birthdays, visit
+  patterns and orders.
+- Only the restaurant the guest joined can see them.
+- Guests can download and delete their data. The data download and the
+  delete action include birthdays and orders.
 
-## 2026-10-19: Neon status check (read-only) and backend plan
+---
 
-- **Checked via the Neon connection:** project WallStamp (`super-waterfall-31745320`, aws-eu-central-1, Postgres 18, free plan). Branches: `production` (default), `vercel-dev`, and a preview branch for this Freebuff session. The schema is applied (`patron_migrations` has 3 rows; all SPEC tables and the `restaurant_credit_balance` view exist), Neon Auth tables exist, and the `app_user` role exists, so role creation on the free plan works. Row counts: 0 restaurants, 0 customers, 0 memberships, 0 stamps, and 2 leads already captured.
-- **The app itself does not read or write any of it yet.** Every screen runs on the browser-only demo repo.
-- **Plan (not started, needs `DATABASE_URL` for `app_user` in `.dev.vars` and on the Worker):** (1) make the repo contract async and add a Postgres implementation next to the demo one, chosen by an env flag; (2) move slices in this order: public restaurant page, join + card, stamp (`record_stamp`), owner dashboard, credit/campaigns; (3) seed the three demo venues into a dev branch, never production; (4) switch auth on last (Neon Auth or Better Auth, passwords per the founder). Each slice keeps the demo implementation passing the same contract tests.
+## 10. Seed and tests
 
-## 2026-10-19: Neon slices 1–3 (built, not verified against a live DB)
+- The demo seed gives the 60 demo guests realistic birthdays, visit
+  times and orders.
+- Tests are added for every item above, including the till order step
+  not blocking a stamp.
 
-- **Switch:** `DATA_MODE=demo|live` (default demo) via `src/server/db/mode.ts`; `getRepos(env)` in `src/server/repos/index.ts` returns the demo or Postgres implementation. Demo behaviour is unchanged.
-- **Contract:** `src/server/repos/contracts.ts` (`getPublicPage`, `submitLead`, `joinGuest`, `getCard`, `listCards`, `recordStamp`); demo adapter in `src/server/repos/demo.ts`; Postgres adapter in `src/server/repos/pg.ts` (all queries inside the existing `withContext`, one Pool per request, ≤3 round trips per call, cents + timestamptz). Server functions in `src/server/fns/{lead,restaurant,member,stamp}.ts` delegate to the repos.
-- **Seed:** `npm run db:seed:dev` (`scripts/seed-dev.mjs`) writes the three venues + menu/specials to the DEV branch only; refuses production-like targets and requires `DEV_SEED_CONFIRM=yes` + `SEED_BRANCH=vercel-dev` (or preview).
-- **Slice 1:** public page (restaurant/theme/hours/menu/specials) + `lead.submit` (honeypot + 5/hour rate limit via `rate_limit_hit`).
-- **Slice 2:** guest join (shared phone normaliser, `consent_event` rows with wording text/version) + card + My cards. Demo OTP step kept as a marked seam; no real auth.
-- **Slice 3:** staff stamping through the `record_stamp` SQL function (stamped/too_soon/duplicate_retry/reward), `audit_event` row per stamp, till PIN HMAC check (`PIN_PEPPER`, demo-pepper default marked as seam).
-- **Placeholder:** the live join stores `customer.user_id` as `join:<phone>` (and the dev seed as `seed:<phone>`) because `user_id` is NOT NULL but auth does not exist yet. Replace with the real Better Auth/Neon Auth user id when the auth slice lands; the contract test pins that two joins with the same phone return the same customer.
-- **Deviations/notes:** (1) SPEC.md/BUILD_PLAN.md are not in the repo, so SPEC 3.3/8 were followed from the schema comments + existing `withContext`; (2) `customer` has no public INSERT RLS policy, so the server join runs as operator inside the trusted function (never client-callable); (3) `src/domain/demo.ts` result shape is `{ok,data}/{ok,error}` while older domain callers use `.value`/`.reason`, the demo adapter accepts both shapes at runtime (pre-existing inconsistency, not changed); (4) no OTP sending, no visual changes, no production writes, no owner dashboard/credit/campaign slices.
-- **Verified:** vitest 17/17 new tests pass (contract vs demo, record_stamp paths, withContext grep); Postgres contract + RLS-live tests skip without `DATABASE_URL` (dev). **Not verified:** anything against a real database (seed, live queries, RLS on dev, SQL `record_stamp`), typecheck/lint/full suite/build, see Tasks completed.md.
+---
 
-## 2026-10-19: Neon fixes (built, not verified against a live DB)
+## 11. What was deliberately postponed
 
-- **`submitLead` column/value mismatch fixed:** the live INSERT listed 14 columns but bound 13 values (missing `calculator`). Columns now come from exported `LEAD_COLUMNS` with `leadValues()` + `renderLeadInsertSql()` and a count test; `notes` added as a 15th column (the lead form has an "Anything else?" field).
-- **Till PIN hardened:** empty/undefined/non-4-digit PIN throws "PIN required" before any DB work; no demo-pepper fallback (missing `PIN_PEPPER` throws); `timingSafeEqual` compare; 5 wrong PINs in 10 min locks the staff member for 15 min via `rate_limit_hit`, locked attempts return the same "Wrong PIN." and are not recorded so the lock expires. Success path stays at 3 round trips (staff+fails in one query, `record_stamp`, audit).
-- **Seed rewritten:** one tx with `app.is_operator`, real guard (`PROD_DB_HOST` hostname comparison + `DEV_SEED_CONFIRM=yes` + dev `SEED_BRANCH`), full themes/hours/60 guests/memberships/consents/stamps/rewards/staff/ledger topups mirrored from `src/data/seed.ts`. Guard refusals verified (exit 1, no connection opened).
-- **Live UI path:** `src/server/live.ts` (`createServerFn`; `isOperator: false` hard-coded server-side, never from client input; lead IP hashed server-side) wired into `/r/:slug`, join, card (search `customerId` pre-auth seam), till stamp (PIN field = per-stamp till PIN in live mode) and `LeadForm`. Demo default unchanged; staff/card `beforeLoad` demo-session redirects skipped only in live mode.
-- **Verified:** typecheck clean, lint 0 errors, vitest 126/126 runnable pass (5 live-DB tests skip), build ok. **Not verified:** everything against a real dev database.
+- **POS integration**: the order model uses a `source` field so a point
+  of sale or a sales import can be added later without changing the code.
+  See `src/domain/orders.ts` and `docs/decisions.md` for the record.
+- **Real authentication**: the demo session is sufficient for the
+  bakery's own testing. Real sign-in can be added later.
 
-## 2026-10-21: Phase C engagement, messaging, and responsive fixes
+---
 
-- **Timezone:** public venue hours use one supplied instant and `Africa/Johannesburg` for both weekday and open status; campaign weekday segments and daily-spin availability use the venue calendar day.
-- **Public pages and brand:** venue pages support compact/full hours, uploaded cover imagery with a palette-based fallback, restored product/venue wordmarks, and improved mobile layouts.
-- **Messaging and preferences:** added push subscription opt-in/out UI, push-aware campaign channels and demo outbox records, copy/quiet-hour/cost and dispatch handling, plus campaign composition for push and push-with-SMS fallback. No live push provider is configured; delivery remains demo-only.
-- **Customers and audiences:** supports matching customer membership IDs for selection, saved-list membership removal, emptying an existing saved list, and customer-list selection workflows.
-- **Spin modes:** earned visit/milestone spins, reward-decider spins and daily Johannesburg surprise spins are represented in owner configuration and guest UI; daily surprises issue personal codes from active specials. These remain demo-repository backed and are not a persisted live-DB feature.
-- **Verification (local working tree, 2026-10-22):** `pnpm typecheck` passed; `pnpm lint` exited 0 with 11 existing warnings; full `pnpm exec vitest run` passed 161 tests with 5 skipped (live DB tests); `pnpm build` succeeded. The threads worker timed out starting `src/test/route-children.test.tsx` on the first full run; the file passed when run alone. Browser checks at 375px and 1280px measured DOM layout (no screenshots): landing, `/for-diners`, `/login`, `/demo` owner entry, owner overview, `/app/customers` (20 guests), `/app/campaigns/new`, `/app/loyalty` and `/me/settings` have no horizontal page overflow, and the owner sidebar/tab-bar switch at the two widths. `/r/:slug` could not be exercised locally because `.dev.vars` selects `DATA_MODE=live` and its database is unreachable (500); the demo composer logs a hydration mismatch since demo session state is browser-only. External provider, authentication, live database and staging behavior remain unverified.
-- **No external actions:** no provider account was created, no production database was modified, and no deployment was performed.
+## 12. Loyalty tools researched from other programs
 
-## 2026-10-19: Phone verification (OTP) gate on live join
+Two new owner tools ship with this release: a double stamp day and a
+visit streak. Both were chosen after checking what long running coffee
+and restaurant loyalty programs actually do, so the ideas below link to
+where they come from. Every tool can be switched off, and together they
+share one monthly bonus stamp budget so the free give-away stays under
+control.
 
-- **No real phone verification exists yet.** `joinGuestFn` (`src/server/live.ts`) no longer hard-codes `otpVerified: true`.
-- Joins stay disabled unless `DEMO_OTP_BYPASS=true` (default false). When disabled and no OTP check exists, the function returns `{ ok: false, message: "Phone verification is not enabled yet." }` instead of creating a membership.
-- Set `DEMO_OTP_BYPASS=true` only for local demo testing against a dev database. The auth slice replaces this gate with a real OTP check.
+### Stamp card with a visible gap to the reward (the base tool)
 
-## 2026-10-23: Wheel modes, reward floor, and campaign panels
+The card itself leans on the goal gradient effect: people visit faster
+the closer they get to the reward. Kivetz, Urminsky and Zheng tested
+this with a real cafe punch card and found the pace of visits speeds up
+as the card fills (Columbia Business School, 2006:
+https://www.columbia.edu/~rk566/Session4/Goal-Gradient_Illusionary_Goal_Progress.pdf).
+Patron cards always show the stamps earned and the stamps still needed.
 
-- **Welcome vs earned spins:** the welcome spin is a separate mode (`join`) from the visit-earned wheel. The original mode id `welcome` is kept as the legacy name for earned spins and normalised on read and save, so local snapshots written before this change keep their wheel.
-- **Reward decider is server-only:** the house draws uniformly from the owner's prize segments whose `valueCents` is at or above `spin.rewardFloorCents` (the value the owner attaches to the advertised card reward). The draw ignores any segment passed by a caller, never selects a "try again" segment, and leaves the advertised reward untouched (with `keptAdvertisedReward: true`) when no segment qualifies, so the outcome can never be worse than the card promised.
-- **Bonus stamps:** `SpinSegment.bonusStamps` lets a wheel prize pay stamps instead of an offer; stamps go through `grantStampEvents` with a `spin:<spinId>` key, so a retried request cannot pay twice. The spin config stays in the existing JSONB `spin` column, so no migration was needed.
-- **Dashboard campaign split:** a campaign name belongs in body text, not in a stat card's display value, so the overview's campaign stat became a "Campaigns sent" count and the next/last campaign details moved into their own panels with status, date and links.
+### Double stamp day (quiet weekday bonus)
 
-## 2026-10-23: One marketing site, demo hub removal, hardened demo storage
+Starbucks Rewards runs "Double Star Days", limited-time days when stars
+earn at twice the normal rate, about six a year (Starbucks Rewards FAQ:
+https://about.starbucks.com/starbucks-rewards-faq/).
+Loyalty platforms describe the same rule as bonus points on specific
+dates or times (Preferred Patron feature list:
+https://www.preferredpatron.com/mid-market-business-loyalty-programs).
+Patron's version is pinned to the restaurant's own quietest weekday and
+repeats every week, so the busy Saturday crowd is never paid extra and
+the quiet day gets the nudge. A visit that day earns one extra stamp,
+on top of the normal stamp, and two bonus visits in a row earn two
+bonus stamps.
 
-- **Navigation:** one `MarketingShell` owns the header and footer for every marketing page, and the active state comes from the router path, so pages cannot drift apart. "For businesses" is a native `<details>` disclosure, a dropdown on desktop and an accordion inside the mobile menu, so it needs no menu library and keeps working before hydration.
-- **Information architecture:** home is diner-first, with the owner marketing moved to `/for-business`; the two funnels stay separate but cross-link. The diner search filters the seeded venues in the browser because there is no public venue index endpoint; `VenueSearch`/`VenueGrid` take a `venues` prop for when one exists.
-- **Demo surface:** `/demo` survives only as a parent route that redirects to `/` and passes `/demo/status` and `/demo/outbox` through. Role switching moved to the unlinked `/dev/roles`, which shares `signInAsDemoAccount` with `/login` and still accepts the milestone deep links. Product guards redirect to `/login`, not `/demo`.
-- **Demo storage:** snapshots are versioned by key (`patron-demo-v7`) and migrated from `patron-demo-v1…v6`; a snapshot is only accepted when its version, required collections, restaurant identity and membership/session references hold, and it is rewritten under the current key afterwards. Anything unreadable is discarded and reseeded. The card route also has an error boundary, because a stale snapshot previously surfaced as a blank page.
-- **Verified:** typecheck, lint (0 errors, 11 pre-existing warnings), 172 tests / 5 live-DB skips, build, and a demo-mode browser pass (22 viewport audits plus the login → card flow).
-- **Unverified:** real sign-in/OAuth, live venue search, and pilot case-study numbers.
+### Visit streak (reward the habit, not one visit)
 
-## 2026-10-24: Section 1 polish pass, one money format, hydration-safe demo state
+Streak rewards are a proven habit builder: a longitudinal study of
+reward-driven habit formation found rewards work through repeated
+behaviour, which then carries on on its own (Judah et al, 2018,
+PeerJ / PMC: https://pmc.ncbi.nlm.nih.gov/articles/PMC6302524). Apps
+that use streaks keep customers returning because they protect the run
+they already have (a streak gamification case study:
+https://trophy.so/blog/streaks-gamification-case-study).
+Patron's streak works in weeks: the owner picks a target such as 2
+visits a week, and after the run reaches the chosen number of weeks the
+guest earns bonus stamps. A week that misses the target does not reset
+the earned run, it only pauses it, so one missed week in a busy month
+does not destroy a regular's progress.
 
-- **One money formatter:** the browser and the server disagree about the en-ZA thousands separator (space or comma), which made venue pages render two different prices during hydration. `formatRand` in `src/lib/money.ts` formats by hand (R1,250 for whole rand, R12.50 when cents matter) and replaced the three locale-dependent `Intl.NumberFormat` helpers plus the operator credit cell. Covered by `src/lib/money.test.ts`.
-- **Hydration-safe demo state:** fifteen pages read demo state with `useSyncExternalStore(demoRepo.subscribe, demoRepo.read, demoRepo.read)`, whose server snapshot can differ from the browser snapshot and crashed hydration on /app/campaigns, /app/credit and others. They now all use `useDemoState`.
-- **QR pages are browser-only:** /app/qr and /ops/restaurants/:id/qr are `ssr: false` because the QR encodes the browser origin, which the server cannot know. The operator QR page also moved to `useDemoState`.
-- **Operator shell on child pages:** /ops used `withChildren`, which replaces the whole shell on child URLs, so /ops/restaurants/:id and its look and QR pages had no operator nav. /ops now uses `markOutletComponent(OpsShell)`, and the shell hands the URL to its children.
-- **One header per page:** the venue masthead and the loyalty card head were semantic `<header>` elements inside pages that already have a shell header. The card head is now a div; the venue masthead stays the single header on venue pages.
-- **Routes audit test:** `src/test/routes-audit.test.tsx` walks every page route in the generated tree and asserts one header, no console errors and no U+2014. jsdom got a ResizeObserver stub in `src/test/setup.ts` for scroll-linked components. /api, /healthz, /u/$token and the dev/utility pages are skipped or allowlisted.
-- **Verified:** typecheck clean, lint 0 errors (1 pre-existing warning), 220 tests passed / 5 skipped, and a Playwright walk of every route at 375px and 1280px across the four demo roles with zero flagged checks.
+### Monthly bonus stamp budget (the guardrail)
 
-## 2026-10-25: Campaign results page and the start of the shared dashboard kit
+Reward costs need a ceiling. Patron already capped the bring a friend
+reward per guest per month (decision 8); the new tools get the same
+treatment as one number: every bonus stamp the double day and the
+streak pay out, all guests combined, must together stay under the
+restaurant's monthly budget. When the budget is used up for the month,
+no further bonus stamps are granted until it resets on the first of the
+month (Johannesburg time). This is Patron's own rule, written to keep
+the tools affordable for a small cafe.
 
-- **Campaign results page:** /app/campaigns/:id now leads with stat cards (messages sent, delivered, failed, not sent, redemptions, total cost with an estimated or settled note), a per-guest delivery table on the shared table styles, and a redemptions and visits panel that keeps the honest "not proof the message caused them" wording. Cancel asks for confirmation in place before it releases the reservation.
-- **Delivery rows live in the domain:** `campaignRecipients` and `messageStatusLabel` in `src/domain/campaigns.ts` build the per-guest rows so the page stays thin and the wording has one home. Row costs add up to the settled campaign cost; covered in `src/test/campaign-results.test.ts`.
-- **Seed messages belong to the seed campaign:** the five seeded outbox messages now carry `campaignId: "campaign-1"` and the seed campaign's counts (5 recipients, 3 delivered, 1 failed, R3.50 settled) match them, so the results page shows real rows in demo mode.
-- **Shared dashboard kit:** `src/components/patron/dash.tsx` holds PageHeader, StatCard, StatGrid, Badge (with campaignBadge), DataTable, EmptyState, FormField, ConfirmDialog and PreviewBanner, all on the existing global tokens and ui.css styles. PageHeader is a div, not a header element, so the shell keeps the single page header the routes audit counts. First users are the campaign list, campaign results and the composer preview banner.
-- **Preview only wording:** the composer's phone preview now carries the shared "Preview only. Nothing was sent." banner, and the results panel says totals change while the send is running. The draft, approve and confirm gate already blocks sends until an owner confirms; tests for that live in `src/test/campaigns.test.ts`.
-- **Verified:** typecheck clean, lint 0 errors, campaign-results and route tests green, and a browser check of /app/campaigns/campaign-1 at 1280px and 375px with no overflow and no console errors.
+### Birthday reward (already shipped, sources for the choice)
+
+Birthday rewards are the highest converting promotion in the
+restaurant industry (RaftLabs guide:
+https://www.raftlabs.com/blog/loyalty-program-for-restaurants), and
+Experian's email study found birthday messages drive a 481% higher
+transaction rate than ordinary promotions (summarised here:
+https://business.stampix.com/blog/birthday-rewards-when-why-and-how-they-work-or-dont).
+Starbucks, as reference, gives members a birthday reward and 30 days to
+redeem it (Starbucks Rewards FAQ, link above). Patron's version is
+decision 2: day and month only, owner chooses a bonus stamp or a free
+item.
+
+### Bring a friend referral (already shipped, source for the choice)
+
+Referral rewards are standard across restaurant programs. The Raising
+Cane's "Spread the Love" campaign gives both guests a free item when a
+friend joins through the share link (summary of US programs:
+https://blog.simpleloyalty.com/best-restaurant-loyalty-program-usa).
+Patron's version is decision 8, with the monthly cap and the checks
+against self referral and repeated phones.
+
+---
+
+## Before launch
+
+These values and features are placeholders. Replace them before a real
+launch, in the order below.
+
+### Contact details
+
+All public contact details live in `src/config/site-details.ts`. Every value
+there is a placeholder and must be replaced:
+
+- `supportEmail` is `hello@patron.example`, a demo address.
+- `whatsappNumber` is `27000000000`, a demo number that cannot receive
+  messages.
+- `phone` is a demo switchboard number.
+- `supportHours` and `location` are drafts for the real team.
+- `privacyEmail` is `privacy@patron.example`, a demo address.
+
+The help bubble, the footer WhatsApp links and the owner support card read
+from that one file. Update it once and every link changes.
+
+### Other launch blockers
+
+- A lawyer must review the privacy policy and terms of service.
+- The live operator sign-in must exist before the enquiry inbox or the
+  campaign approval screens read a production database. Until then the
+  admin area runs on the demo store only.
+- The notification email in Settings is a placeholder. No email is sent in
+  demo or live until the mail provider is connected.
+- The real WhatsApp business number and a monitored support inbox must be
+  in place before the public help bubble is shown.
+- `db/migrations/0005_ideas_dev.sql` backs the guest ask for a place page
+  (`/suggest`). It is dev branch only: run it on a dev database and test
+  `/suggest` against it before anyone touches production. The ask page
+  deliberately stores no phone number or email.
+- The blog notes in `src/data/blog.ts` are launch copy written for the
+  first sites. Re-read and refresh them, and keep the list in
+  `docs/blog-plan.md` to one note every two weeks after launch. The RSS
+  feed is served at `/blog/rss`.
+
+---
+
+## 13. Previous versions are restored as a draft (page and menu)
+
+- The public page and the menu each keep the last **10** published versions per
+  restaurant. The cap is per venue: one restaurant's history never appears in
+  another's list and is never trimmed by the other venue's publishes.
+- "Restore" never writes to the live page or menu. It loads the old words,
+  hours or menu into the editor as a draft, and the owner still goes through
+  Preview and Publish. Tests pin that the live copy does not change on restore.
+- A version stores who pressed publish and one plain line about what changed
+  (for example "Changed the tagline and Tuesday hours"), so the list is
+  readable without opening each version.
+
+## 14. Feedback is separate from the guest Ideas board
+
+- **Ideas** (`/suggest`, `/app/ideas`, `/ops/ideas`) asks guests which place
+  should join Patron. It stores no contact details.
+- **Feedback** (`/app/feedback`, `/feedback`, `/ops/feedback`) is a bug report
+  or feature request. It has three sources: owner, diner and public page. A
+  note is 10 to 1000 characters, one optional picture (PNG, JPG or WebP, under
+  300 KB), and an optional "You may contact me about this" tick box.
+- Status is one of New, Seen, Planned, Done, Not now. The sender sees the
+  status of their own notes; only a Patron operator can change it or add a
+  private note. Screenshots are visible only to the operator and the sender.
+- Notes are kept for twelve months. Public submissions are rate limited to
+  five an hour per place, with a honeypot that silently drops bots.
+- `db/migrations/0006_feedback_dev.sql` is dev branch only. It keeps row level
+  security: owners read their own restaurant, operators read all, and the
+  public may only insert an unassigned note.
+
+## 15. Blog posts stay marked as drafts until reviewed
+
+- Each post shows "Placeholder draft, not final" until the owner sets
+  `reviewed: true` in `src/data/blog.ts`.
+- Invented statistics, quotes and customer stories were removed. Posts keep
+  only claims that link to a real source, or plain reasoning with no number.
+- `docs/blog-plan.md` holds 15 one-line topics.
+
+---
+
+## 16. Phase D1 auth research (2 November 2026)
+
+Checked against the current Neon Auth documentation before writing code.
+
+### Confirmed
+
+- Email and password, Google and Apple sign-in are supported. Apple needs a
+  paid Apple developer account, so it stays later as the founder said.
+- The session cookie is HttpOnly and Secure and is managed by the SDK. The
+  client reads it with `getSession()`. A JWT is also available for database
+  row level security.
+- Auth is enabled per Neon branch, not per project. Each branch gets its own
+  users, sessions and `neon_auth` schema.
+- Enabling can be done from the Neon console, the Neon CLI, or the API. The
+  client and server keys are returned only when auth is enabled, so they must
+  be captured once and stored as secrets.
+- Email and password and Google are included in all Neon plans, billed by
+  monthly active users. The free plan allows up to 60,000.
+- There is no documented way to add custom user fields. `updateUser()` covers
+  the display name, not a preferred name or phone. Our own `customer` table
+  keyed by the auth user id is the workable place for those fields.
+- MFA is not supported yet.
+
+### Not documented, therefore not assumed
+
+- Cloudflare Workers runtime support for the Neon Auth SDK.
+- A server-side session read outside the Next.js server SDK. The Next.js
+  `getSession()` helper is Next-specific and cannot be used in TanStack Start.
+- Numeric rate limits for the auth service. Only the shared email sender is
+  described as rate limited.
+- Whether a newly created branch inherits auth settings.
+
+The missing Workers server session is the blocker. D1 requires real server
+guards on `/me`, `/app`, `/ops` and `/stamp`, HttpOnly cookies and rate limits
+stored in Postgres. A client-only session check would not meet that and would
+leave the owner and operator areas protected by browser code alone.
+
+### Options put to the founder
+
+1. Self-host Better Auth on the Neon database. Users, sessions and accounts
+   live in our schema, so server functions on Workers can read the session,
+   custom fields are ordinary columns, and rate limits are ours. This keeps
+   the Neon database choice and replaces only the managed auth service.
+2. Use Supabase Auth, which is already connected and has Workers-friendly JWT
+   checks, while keeping data in Neon. This adds a second platform.
+3. Continue with Neon Auth as planned and accept client-only guards, or add a
+   separate Node auth proxy. Neither is recommended for the owner area.
+4. Pause D1 until Neon documents Workers support.
+
+No auth package was installed and no Neon Auth branch was enabled while this
+decision is open.
+
+Sources read: https://neon.com/docs/auth/about,
+https://neon.com/docs/auth/quick-start/tanstack-router,
+https://neon.com/docs/auth/authentication-flow,
+https://neon.com/docs/auth/reference/nextjs-server,
+https://neon.com/docs/auth/guides/manage-auth-api,
+https://neon.com/docs/auth/production-checklist,
+https://neon.com/docs/auth/roadmap
+
+---
+
+## 17. Auth implementation: Better Auth self-hosted on Neon
+
+After the Neon Auth review in section 16, the founder chose self-hosted Better
+Auth on the Neon dev branch. Neon Auth is not enabled and no Neon Auth package
+is installed.
+
+- Users, sessions, accounts, verification tokens and rate limits live in the
+  Neon dev branch (`0007_auth_dev.sql`). Sessions are read in TanStack Start
+  server functions from the HttpOnly cookie, so `/me`, `/app` and `/ops` have
+  real server guards on Workers.
+- `app_user` maps an auth user to one role: guest, owner, manager or operator.
+  Owners, managers and operators are linked by hand; a new sign-up is always a
+  guest. Guests get a `customer` row keyed by the auth user id.
+- Google is configured only when both Google secrets exist. Apple waits for a
+  paid Apple developer account.
+- Password reset uses an email webhook owned by the founder. No email provider
+  secret lives in this repository.
+- Rate limits are database-backed (Better Auth `rateLimit` table), not process
+  memory. Sign-in, sign-up and password reset have their own limits.
+- Audit events are written for sign-in, failed sign-in and password change.
+- Demo mode remains the default. The demo role switcher is hidden and
+  `/dev/roles` redirects to `/login` when `DATA_MODE=live`.
+
+Not verified: the migration has not been run against the dev branch, Google and
+the reset email have not been configured, and no live auth test has run against
+Postgres. Until Phase D2, live-mode screens still read demo content even though
+the guards are real.
+
+Sources for the Better Auth setup: https://better-auth.com/docs/integrations/tanstack,
+https://better-auth.com/docs/adapters/drizzle, https://better-auth.com/docs/installation,
+https://better-auth.com/docs/concepts/rate-limit, https://better-auth.com/docs/concepts/hooks,
+https://better-auth.com/docs/authentication/email-password
+
+---
+
+## 18. Phase D2: the first live screens
+
+The owner overview and the guest's cards now read Postgres through the signed-in
+viewer. No route sends a customer id or restaurant id from the browser for
+these reads.
+
+- `loadOwnerOverview` takes the restaurant from `app_user` and runs inside that
+  restaurant's row level security context. It counts stamps today, returning
+  guests, ready rewards, the credit ledger balance and campaign sends, and
+  builds the same overview shape as demo mode.
+- `loadMyCards` takes the customer from `app_user` and returns only that
+  customer's memberships, with restaurant name and reward count.
+- The pure `buildLiveOverview` helper owns the date maths and is covered by
+  four Vitest cases.
+- In live mode, owner child tools show a clear "comes next" panel instead of
+  demo data. Guest restaurant and settings pages redirect to `/me` until their
+  live versions exist in D3. This is deliberate: no demo rows appear behind a
+  real login.
+
+Not verified: no migration or session test has run against the Neon dev branch.
+The SQL was typechecked and the route tests use demo mode, so the live branch
+still needs a real sign-in and a development database.
+
+Next in D3: owner customers, campaigns, loyalty, menu, page and settings, then
+the guest restaurant and consent screens. The till and operator screens follow
+after that.
+
+---
+
+## 19. Phase D3: live guest and campaign lists
+
+The owner's guest list and campaign history now read Postgres through the
+signed-in viewer. Both queries use the restaurant from `app_user`, never one
+from the browser.
+
+- `/app/customers` shows live memberships with name, masked phone, stamps,
+  rewards waiting, last visit and SMS consent. Filtering, search and sorting run
+  on the returned rows through the pure `filterLiveCustomers` helper.
+- `/app/campaigns` shows live campaigns with status, recipient count and cost.
+- Both screens are read only in this phase. Customer profiles, manual stamps,
+  phone reveal, CSV export, the campaign composer and campaign results still
+  open the "comes next" panel in live mode.
+- The live query returns at most 1,000 guests for one restaurant. Server-side
+  paging arrives when profiles and exports do.
+
+Not verified: neither query has run against the Neon dev branch. Type checking,
+route tests and the production build passed in demo mode.
+
+Next in D4: customer profiles and consent actions, campaign results, then the
+loyalty, menu and page builders.
+
+---
+
+## 20. Phase D4: live customer profile and campaign results
+
+Both detail screens behind the D3 lists now read live rows through the signed-in
+owner's restaurant. They are read only.
+
+- A customer profile shows the card states, recent stamps, rewards and consent
+  history. Phone numbers stay masked. Manual stamps, consent edits, phone reveal
+  and CSV export still wait for D5.
+- Campaign results show the message, status, recipient rows, delivery and failed
+  counts, segments and cost. Approving, sending, settling and cancelling still
+  wait for D5.
+- The live campaign status counts come from the pure `campaignTotals` helper and
+  are covered by Vitest.
+- Both routes still scope by `app_user.restaurant_id` and run inside RLS. A
+  campaign or customer id from another restaurant returns null.
+
+Not verified: neither live query has run against the Neon dev branch.
+
+Next in D5: customer actions and consent, campaign actions, then the loyalty,
+menu and page builders.
+
+---
+
+## 21. Phase D5: live consent and campaign actions
+
+The live customer profile and campaign results now have a small, audited set of
+write actions. Each one takes the restaurant from the signed-in viewer and runs
+inside that restaurant's RLS context.
+
+- SMS consent could be turned on or off at the time of D5. Prompt E replaced
+  this with a withdrawal-only owner action; see section 24.
+- Revealing a phone number returns it once and writes a `phone_reveal` audit
+  event. The number is never stored in the audit row.
+- An owner can approve a draft or pending campaign. Approval records the user
+  and time but does not send anything.
+- A scheduled campaign can be cancelled. Queued messages become skipped, the
+  estimated reservation is released through the credit ledger once, and the
+  change is audited. Sending, settling and editing campaign wording remain off.
+- Manual stamps, consent history export and customer deletion remain off until
+  the stamp policy and deletion workflow are connected.
+
+Not verified: none of these mutations has run against the Neon dev branch.
+
+Next in D6: the loyalty, menu and page builders, and the remaining operator
+surfaces.
+
+---
+
+## 22. Phase D6: live loyalty rules
+
+The loyalty page now has a live branch for the signed-in owner. It reads and
+writes the core restaurant rules that already exist in Postgres.
+
+- Live owners can change stamps needed, the reward wording, the minutes between
+  visits, the welcome stamp and both weekly message caps.
+- Saving validates every range on the server, updates the restaurant row and
+  writes a `loyalty_settings_updated` audit event.
+- Changes apply immediately because this schema has no loyalty draft table. The
+  existing Draft, Preview, Publish flow stays in demo mode only. Adding a live
+  draft and version history needs its own migration and is part of D7.
+- The menu and page builders also stay in demo mode. They need draft storage for
+  sections, items, page words and versions before live editing is safe.
+- The operator console remains on demo data.
+
+Not verified: none of the live loyalty reads or writes has run against the Neon
+dev branch.
+
+Next in D7: loyalty draft versions, menu builder storage, page builder storage
+and the operator surfaces.
+
+---
+
+## 23. Phase D7: live menu builder
+
+The menu page now has a live branch for sections and items that already have
+Postgres tables. The demo editor is unchanged.
+
+- Live owners can add sections, add priced items to a section, and show or hide
+  an item. Every change is scoped to the signed-in restaurant and writes an
+  audit event.
+- Prices are entered in rand and stored as integer cents. Names, descriptions
+  and prices are validated on the server as well as the form.
+- Changes apply immediately. Draft, preview, publish and version history still
+  need their own tables, so they remain in demo mode.
+- The page builder and operator console stay on demo data. Both need storage
+  and cross-tenant views before live editing is safe.
+
+Not verified: none of the live menu reads or writes has run against the Neon dev
+branch.
+
+Next in D8: menu drafts and versions, the page builder, then the operator
+surfaces.
+
+---
+
+## 24. Prompt E: consent, migration and feedback safety
+
+SMS consent is now withdrawal only. The owner action no longer accepts an
+enabled value, the server only writes `opted_out`, and an owner repeating the
+action does not add a second consent event when the guest is already out. The
+customer screen shows "Withdraw SMS consent" only while consent is on. When it
+is off, the screen says so and explains that only the guest can opt back in.
+
+`0008_app_role_grants_dev.sql` gives the app role the tables added after
+`0002_app_user.sql`. `0009_feedback_privacy_dev.sql` revokes table-level
+`SELECT` and `UPDATE` on feedback, drops `feedback_owner_update`, and grants
+only the safe columns. Owners can read their own message, contact and status,
+but `note` is not readable or writable and status cannot be changed by the app
+role. Inserts still work for the feedback form, and operators keep their own
+policy.
+
+The guarded live suite runs only when `DATABASE_URL_DEV` is set in the process.
+It refuses to connect when the host equals `PROD_DB_HOST`, then uses app-role
+fixtures to cover every current live read, every current live write, cross
+restaurant reads and changes, consent withdrawal, and feedback column privacy.
+
+Verified against the configured non-production Neon branch: all migrations
+through `0009` are recorded; the live suite passed 5 tests; typecheck passed with 0
+errors; lint passed with 0 errors and 12 existing warnings; the full Vitest run
+passed 467 tests with 6 skipped across 74 files; the production build passed.
+The older `.dev.vars` URLs were rejected by the server, so the run used the
+configured migration branch and the app role password from the local env file.
+No production database was contacted.

@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowRight, Check } from "lucide-react";
 import { MarketingShell } from "@/components/patron/MarketingShell";
+import { QuietDay } from "@/components/patron/QuietDay";
+import { Planner } from "@/components/patron/Planner";
 import { commercial, plans, rand } from "@/lib/patron";
 
 export const Route = createFileRoute("/pricing")({
@@ -76,8 +78,14 @@ function Pricing() {
           <a className="text-link" href="/how-it-works">
             How it works
           </a>
+          <a className="text-link" href="/blog">
+            Notes on loyalty
+          </a>
         </div>
       </section>
+
+      <QuietDay />
+      <Planner />
     </MarketingShell>
   );
 }

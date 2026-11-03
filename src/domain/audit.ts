@@ -26,7 +26,17 @@ export type AuditAction =
   | "sms_webhook"
   | "special_create"
   | "spin"
-  | "challenge_award";
+  | "challenge_award"
+  | "referral_settings"
+  | "referral_rewarded"
+  | "enquiry_received"
+  | "enquiry_updated"
+  | "idea_received"
+  | "idea_updated"
+  | "feedback_received"
+  | "feedback_updated"
+  | "miss_you_award"
+  | "custom_reward";
 
 /** Never pass PINs or full phone numbers, ids only. */
 export function logAudit(input: {

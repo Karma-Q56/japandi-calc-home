@@ -1,4 +1,5 @@
-import type { DemoState, Restaurant, Special, Theme } from "./types";
+import type { DemoState, Order, Referral, Restaurant, Special, Theme } from "./types";
+import { johannesburgMonthDay } from "@/lib/birthday";
 
 const themes: Theme[] = [
   {
@@ -67,6 +68,7 @@ const baseRestaurants: Restaurant[] = [
   {
     id: "rest-daily-grind",
     slug: "daily-grind",
+    venueType: "cafe",
     name: "The Daily Grind",
     status: "active",
     plan: "custom",
@@ -95,6 +97,8 @@ const baseRestaurants: Restaurant[] = [
     tiers: { regular: 3, vip: 8 },
     mysteryEveryVisits: 7,
     birthdayReward: true,
+    birthdayRewardKind: "stamp",
+    birthdayRewardItem: "",
     spin: {
       enabled: true,
       modes: ["join", "earned", "reward_decider"],
@@ -116,6 +120,7 @@ const baseRestaurants: Restaurant[] = [
   {
     id: "rest-sunrise-bakes",
     slug: "sunrise-bakes",
+    venueType: "bakery",
     name: "Sunrise Bakes",
     status: "active",
     plan: "managed",
@@ -144,6 +149,8 @@ const baseRestaurants: Restaurant[] = [
     tiers: { regular: 2, vip: 6 },
     mysteryEveryVisits: 0,
     birthdayReward: true,
+    birthdayRewardKind: "freeItem",
+    birthdayRewardItem: "birthday cupcake",
     spin: {
       enabled: false,
       segments: [],
@@ -156,6 +163,7 @@ const baseRestaurants: Restaurant[] = [
   {
     id: "rest-oak-table",
     slug: "oak-table",
+    venueType: "restaurant",
     name: "The Oak Table",
     status: "active",
     plan: "partner",
@@ -195,17 +203,49 @@ const baseRestaurants: Restaurant[] = [
   },
 ];
 
+const GUEST_FIRST_NAMES = ["Thandi", "James", "Sipho", "Lerato", "Ayesha", "Ben", "Naledi", "Pieter", "Zanele", "Kabelo", "Megan", "Themba"];
+const GUEST_SURNAME_INITIALS = ["M", "N", "K", "D", "V"];
+
+/** 12 first names x 5 surname initials = 60 unique demo guests, e.g. "Sipho N.". */
+function guestNameAt(i: number): string {
+  const first = GUEST_FIRST_NAMES[i % GUEST_FIRST_NAMES.length]!;
+  const initial = GUEST_SURNAME_INITIALS[Math.floor(i / GUEST_FIRST_NAMES.length) % GUEST_SURNAME_INITIALS.length]!;
+  return `${first} ${initial}.`;
+}
+
 export function createSeed(now = Date.UTC(2026, 9, 1, 8)): DemoState {
   const restaurants = structuredClone(baseRestaurants);
+  // The demo venues show both till order modes: the coffee shop tracks items,
+  // the bakery counts simple categories, and the bistro keeps it off.
+  restaurants[0]!.trackOrders = true;
+  restaurants[0]!.ordersMode = "items";
+  restaurants[1]!.trackOrders = true;
+  restaurants[1]!.ordersMode = "categories";
+  // Bring a friend is on at the coffee shop so the owner dashboard has a story.
+  restaurants[0]!.referral = {
+    enabled: true,
+    rewardKind: "stamp",
+    rewardItem: "",
+    limitPerMemberPerMonth: 2,
+  };
+  // Fictional address. Nothing is emailed in demo; the operator inbox shows it as a placeholder.
+  restaurants[0]!.enquiryNotifyEmail = "hello@thedailygrind.example";
+  const todayParts = johannesburgMonthDay(now);
   const customers = Array.from({ length: 60 }, (_, i) => ({
     id: `customer-${i + 1}`,
-    name:
-      ["Thandi Mokoena", "James Ndlovu", "Sipho Nkosi", "Lerato Dlamini", "Ayesha Khan"][i % 5] +
-      ` ${i + 1}`,
+    name: guestNameAt(i),
     phoneE164: `+278255501${String(i + 1).padStart(2, "0")}`,
     memberCode: safeCode(i + 1),
     qrToken: `demo-token-${String(i + 1).padStart(4, "0")}`,
-    ...(i % 6 === 0 ? { birthday: "1994-06-12" } : {}),
+    // Day and month only; every sixth guest shares a day so the pattern holds.
+    ...(i % 6 !== 5
+      ? {
+          birthday: {
+            day: ((i * 7) % 27) + 1,
+            month: i % 6 === 0 ? todayParts.month : ((i * 5 + todayParts.month) % 12) + 1,
+          },
+        }
+      : {}),
   }));
   const memberships = customers.map((customer, i) => {
     const restaurantIndex = Math.floor(i / 20);
@@ -240,18 +280,99 @@ export function createSeed(now = Date.UTC(2026, 9, 1, 8)): DemoState {
     lastVisitAt: new Date(now - 2 * 86400000).toISOString(),
     lastSeenStamps: 1,
   });
+  // Realistic visit rhythm: each guest keeps a usual time of day, so the
+  // morning regulars, lunch crowd and evening visitors read clearly.
+  const VISIT_HOURS_UTC = [6, 10, 13, 17];
   const stamps = Array.from({ length: 180 }, (_, i) => {
     const membership = memberships[i % memberships.length]!;
+    const hour = VISIT_HOURS_UTC[(i % memberships.length) % VISIT_HOURS_UTC.length]!;
+    const visitAt = new Date(now - ((i * 13) % 90) * 86400000);
+    visitAt.setUTCHours(hour, i % 60, 0, 0);
     return {
       id: `stamp-${i + 1}`,
       restaurantId: membership.restaurantId,
       membershipId: membership.id,
       staffId: null,
       key: null,
-      createdAt: new Date(now - ((i * 13) % 90) * 86400000).toISOString(),
+      createdAt: visitAt.toISOString(),
       status: "valid" as const,
       reason: "visit" as const,
     };
+  });
+  // Demo till orders: the coffee shop's most ordered items feed the quick
+  // buttons and the insights page. Linked to real stamps where one fits.
+  const dailyOrders: Array<{ labels: [string, number][]; at: number }> = [
+    { labels: [["Flat white", 2]], at: now - 1 * 86400000 },
+    { labels: [["Flat white", 1], ["Butter croissant", 1]], at: now - 2 * 86400000 },
+    { labels: [["Flat white", 1]], at: now - 3 * 86400000 },
+    { labels: [["Long black", 1], ["Butter croissant", 2]], at: now - 4 * 86400000 },
+    { labels: [["Flat white", 1]], at: now - 5 * 86400000 },
+    { labels: [["Butter croissant", 1]], at: now - 6 * 86400000 },
+    { labels: [["Flat white", 1], ["Roast chicken bowl", 1]], at: now - 8 * 86400000 },
+    { labels: [["Long black", 1]], at: now - 9 * 86400000 },
+  ];
+  const dailyMembershipIds = memberships
+    .filter((m) => m.restaurantId === restaurants[0]!.id)
+    .map((m) => m.id);
+  let atError = 0;
+  const orders: Order[] = dailyOrders.map((dailyOrder, index) => ({
+    id: `order-daily-${index + 1}`,
+    restaurantId: restaurants[0]!.id,
+    membershipId: dailyMembershipIds[index % dailyMembershipIds.length] as string,
+    source: "till" as const,
+    items: dailyOrder.labels.map(([label, qty]) => ({ label, qty, kind: "item" as const })),
+    ...(index % 3 === 0 ? { billCents: 380 + index } : {}),
+    createdAt: new Date(dailyOrder.at + 3600000 + (atError += 60000)).toISOString(),
+  }));
+  const sunriseOrderCategories: Array<{ label: string; qty: number; at: number }> = [
+    { label: "Breakfast", qty: 2, at: now - 2 * 86400000 },
+    { label: "Coffee", qty: 3, at: now - 3 * 86400000 },
+    { label: "Dessert", qty: 1, at: now - 5 * 86400000 },
+  ];
+  const sunriseMembershipIds = memberships
+    .filter((m) => m.restaurantId === restaurants[1]!.id)
+    .map((m) => m.id);
+  sunriseOrderCategories.forEach((category, index) => {
+    orders.push({
+      id: `order-sunrise-${index + 1}`,
+      restaurantId: restaurants[1]!.id,
+      membershipId: sunriseMembershipIds[index % sunriseMembershipIds.length] as string,
+      source: "till" as const,
+      items: [{ label: category.label, qty: category.qty, kind: "category" }],
+      createdAt: new Date(category.at + 7200000).toISOString(),
+    });
+  });
+  // Bring a friend story: one rewarded pair and one waiting for the first
+  // stamped visit, so the owner's page shows how the reward works.
+  const referrals: Referral[] = [
+    {
+      id: "referral-seed-rewarded",
+      restaurantId: restaurants[0]!.id,
+      referrerMembershipId: dailyMembershipIds[1]!,
+      friendMembershipId: dailyMembershipIds[4]!,
+      referrerCode: "PALTUMEL2",
+      createdAt: new Date(now - 14 * 86400000).toISOString(),
+      status: "rewarded" as const,
+      rewardedAt: new Date(now - 10 * 86400000).toISOString(),
+    },
+    {
+      id: "referral-seed-pending",
+      restaurantId: restaurants[0]!.id,
+      referrerMembershipId: dailyMembershipIds[2]!,
+      friendMembershipId: dailyMembershipIds[5]!,
+      referrerCode: "PALSIZWE4",
+      createdAt: new Date(now - 3 * 86400000).toISOString(),
+      status: "pending" as const,
+    },
+  ];
+  const referrerCodes: Array<[string, string]> = [
+    [dailyMembershipIds[1]!, "PALTUMEL2"],
+    [dailyMembershipIds[2]!, "PALSIZWE4"],
+  ];
+  memberships.forEach((membership) => {
+    const shareable = membership as { referralCode?: string };
+    const match = referrerCodes.find(([id]) => id === membership.id);
+    if (match && !shareable.referralCode) shareable.referralCode = match[1]!;
   });
   const sections = [
     { id: "sec-coffee", restaurantId: restaurants[0]!.id, name: "Coffee & tea", sortOrder: 0 },
@@ -260,12 +381,12 @@ export function createSeed(now = Date.UTC(2026, 9, 1, 8)): DemoState {
     { id: "sec-lunch", restaurantId: restaurants[2]!.id, name: "Lunch favourites", sortOrder: 0 },
   ];
   const items = [
-    ["sec-coffee", "Flat white", "Double espresso, silky milk", 380],
-    ["sec-coffee", "Long black", "A smooth double espresso", 300],
-    ["sec-bakes", "Butter croissant", "Baked fresh each morning", 420],
-    ["sec-pastry", "Almond croissant", "Filled with almond cream", 480],
-    ["sec-pastry", "Sourdough loaf", "Slow-fermented overnight", 650],
-    ["sec-lunch", "Roast chicken bowl", "Seasonal greens and grains", 1250],
+    ["sec-coffee", "Flat white", "Double espresso, silky milk", 38],
+    ["sec-coffee", "Long black", "A smooth double espresso", 24],
+    ["sec-bakes", "Butter croissant", "Baked fresh each morning", 26],
+    ["sec-pastry", "Almond croissant", "Filled with almond cream", 32],
+    ["sec-pastry", "Sourdough loaf", "Slow-fermented overnight", 45],
+    ["sec-lunch", "Roast chicken bowl", "Seasonal greens and grains", 95],
   ].map(([sectionId, name, description, price], i) => ({
     id: `item-${i + 1}`,
     restaurantId: sections.find((s) => s.id === sectionId)!.restaurantId,
@@ -353,19 +474,22 @@ export function createSeed(now = Date.UTC(2026, 9, 1, 8)): DemoState {
       earnedAt: m.lastVisitAt ?? new Date(now).toISOString(),
       ...(i % 3 === 0 ? { redeemedAt: new Date(now - 86400000).toISOString() } : {}),
     }));
-  const messages = customers.slice(0, 5).map((customer, i) => ({
+  const sentAt = new Date(now - 7 * 86400000).toISOString();
+  const messages = customers.slice(0, 12).map((customer, i) => ({
     id: `message-seed-${i + 1}`,
     restaurantId: restaurants[0]!.id,
     customerId: customer.id,
+    membershipId: `membership-1-${i + 1}`,
     campaignId: "campaign-1",
     channel: "sms" as const,
     body: `Hi ${customer.name.split(" ")[0]}, we miss you! Visit this Tuesday for a coffee on us. Reply STOP to opt out.`,
     segments: 2,
     costCents: 70,
-    status: (i === 0 ? "queued" : i === 4 ? "failed" : "delivered") as
-      "queued" | "failed" | "delivered",
-    attempts: i === 0 ? 0 : 1,
-    createdAt: new Date(now - (i + 1) * 3600000).toISOString(),
+    status: (i === 11 ? "failed" : "delivered") as "failed" | "delivered",
+    attempts: 1,
+    ...(i === 11 ? { errorCode: "send_failed" } : {}),
+    createdAt: new Date(Date.parse(sentAt) - (12 - i) * 60000).toISOString(),
+    sentAt,
   }));
   return {
     version: 2,
@@ -404,16 +528,16 @@ export function createSeed(now = Date.UTC(2026, 9, 1, 8)): DemoState {
         status: "sent" as const,
         requiresApproval: false,
         sentAt: new Date(now - 7 * 86400000).toISOString(),
-        recipients: 5,
-        delivered: 3,
+        recipients: 12 + i,
+        delivered: 11 + i,
         failed: 1,
         awardStamp: true,
         createdBy: "owner-seed",
         createdAt: new Date(now - 8 * 86400000).toISOString(),
-        estRecipients: 5,
+        estRecipients: 12 + i,
         estSegments: 2,
-        estCostCents: 350,
-        actualCostCents: 350,
+        estCostCents: (12 + i) * 70,
+        actualCostCents: (11 + i) * 70,
       })),
       {
         id: "campaign-draft-weekend",
@@ -486,14 +610,183 @@ export function createSeed(now = Date.UTC(2026, 9, 1, 8)): DemoState {
     payments: [],
     pushSubscriptions: [],
     audit: [],
-    leads: [],
+    leads: [
+      {
+        id: "lead-demo-1",
+        reference: "ENQ-2026-001",
+        kind: "owner",
+        status: "new",
+        restaurantName: "The Corner Pantry",
+        contactName: "Naledi M.",
+        phone: "+27821234001",
+        email: "naledi@cornerpantry.example",
+        role: "Owner",
+        venueType: "Cafe",
+        suburb: "Greenside",
+        quietTime: "Tuesday morning",
+        weeklyGuests: "280",
+        planInterest: "Growth",
+        visitWanted: true,
+        preferredDay: "Wednesday",
+        message:
+          "We have a paper card now, but we lose track of who comes back. Tuesdays are very quiet.",
+        consent: true,
+        consentAt: new Date(now - 2 * 86400000).toISOString(),
+        createdAt: new Date(now - 2 * 86400000).toISOString(),
+      },
+      {
+        id: "lead-demo-2",
+        reference: "ENQ-2026-002",
+        kind: "diner",
+        status: "new",
+        restaurantName: "Baked on 7th",
+        contactName: "Diner",
+        phone: "",
+        suburb: "Melville",
+        message: "Please add Baked on 7th. I go there every Saturday and would love a card.",
+        consent: true,
+        consentAt: new Date(now - 86400000).toISOString(),
+        createdAt: new Date(now - 86400000).toISOString(),
+      },
+      {
+        id: "lead-demo-3",
+        reference: "ENQ-2026-003",
+        kind: "owner",
+        status: "replied",
+        restaurantName: "The Oak Table",
+        contactName: "Pieter v.",
+        phone: "+27821234003",
+        email: "pieter@oaktable.example",
+        role: "Manager",
+        venueType: "Restaurant",
+        suburb: "Rosebank",
+        quietTime: "Monday lunch",
+        weeklyGuests: "420",
+        planInterest: "Pro",
+        visitWanted: true,
+        preferredDay: "Monday",
+        message: "We would like the done for you campaigns for our quiet lunch trade.",
+        consent: true,
+        consentAt: new Date(now - 4 * 86400000).toISOString(),
+        adminNotes: "Called back. Visit booked for Monday morning.",
+        createdAt: new Date(now - 4 * 86400000).toISOString(),
+      },
+      {
+        id: "lead-demo-4",
+        reference: "ENQ-2026-004",
+        kind: "diner",
+        status: "closed",
+        restaurantName: "Baked on 7th",
+        contactName: "Diner",
+        phone: "",
+        suburb: "Melville",
+        message: "Second ask for Baked on 7th.",
+        consent: true,
+        consentAt: new Date(now - 7 * 86400000).toISOString(),
+        createdAt: new Date(now - 7 * 86400000).toISOString(),
+      },
+      {
+        id: "lead-demo-5",
+        reference: "ENQ-2026-005",
+        kind: "other",
+        status: "closed",
+        restaurantName: "A supplier idea",
+        contactName: "Thabo K.",
+        phone: "+27821234005",
+        email: "thabo@example.com",
+        message: "I supply compostable takeaway cups to cafes in Johannesburg.",
+        consent: true,
+        consentAt: new Date(now - 9 * 86400000).toISOString(),
+        createdAt: new Date(now - 9 * 86400000).toISOString(),
+      },
+    ],
     dataRequests: [],
     rateLimitHits: [],
+    ideas: [
+      {
+        id: "idea-seed-1",
+        place: "Velo Coffee Roasters",
+        suburb: "Parkhurst",
+        asks: 4,
+        note: "Their flat white is the best in the suburb.",
+        status: "new",
+        createdAt: new Date(now - 3 * 86400000).toISOString(),
+      },
+      {
+        id: "idea-seed-2",
+        place: "Rosetta Bakery",
+        suburb: "Parkhurst",
+        asks: 2,
+        status: "exploring",
+        adminNotes: "Called them, waiting on the owner.",
+        createdAt: new Date(now - 12 * 86400000).toISOString(),
+      },
+      {
+        id: "idea-seed-3",
+        place: "Kota King",
+        suburb: "Melville",
+        asks: 1,
+        note: "Asked for at the till.",
+        status: "new",
+        createdAt: new Date(now - 1 * 86400000).toISOString(),
+      },
+    ],
     pairingCodes: [],
     otpSendLog: [],
     providerEvents: [],
     pinAttempts: [],
     pinLockouts: [],
     onboarding: restaurants.map((r) => ({ restaurantId: r.id, done: {} })),
+    pageVersions: [],
+    menuVersions: [],
+    feedback: [
+      {
+        id: "feedback-seed-1",
+        restaurantId: "rest-daily-grind",
+        source: "owner",
+        category: "feature",
+        message: "Please add a way to print the QR poster in A2 as well as A4.",
+        contactOk: true,
+        contact: "owner@thedailygrind.example",
+        status: "planned",
+        note: "Small print change, add with the next poster pass.",
+        createdAt: new Date(now - 2 * 86400000).toISOString(),
+      },
+      {
+        id: "feedback-seed-2",
+        restaurantId: "rest-daily-grind",
+        source: "owner",
+        category: "confusing",
+        message: "The loyalty page is very long on my phone. I lose my place.",
+        contactOk: false,
+        status: "done",
+        note: "Split into tabs.",
+        createdAt: new Date(now - 9 * 86400000).toISOString(),
+      },
+      {
+        id: "feedback-seed-3",
+        restaurantId: "rest-sunrise-bakes",
+        source: "guest",
+        category: "broken",
+        message: "My card would not open at the counter until I refreshed the page.",
+        contactOk: false,
+        status: "new",
+        note: "",
+        createdAt: new Date(now - 1 * 86400000).toISOString(),
+      },
+      {
+        id: "feedback-seed-4",
+        source: "public",
+        category: "feature",
+        message: "It would help to see which places are open right now on the find page.",
+        contactOk: true,
+        contact: "visitor@example.com",
+        status: "seen",
+        note: "Check with the find page work.",
+        createdAt: new Date(now - 4 * 86400000).toISOString(),
+      },
+    ],
+    orders,
+    referrals,
   };
 }

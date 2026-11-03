@@ -16,8 +16,11 @@ import { Route as ConsentWordingRouteImport } from './routes/consent-wording'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as DemoRouteImport } from './routes/demo'
 import { Route as FaqRouteImport } from './routes/faq'
+import { Route as FeedbackRouteImport } from './routes/feedback'
+import { Route as FindRouteImport } from './routes/find'
 import { Route as ForBusinessRouteImport } from './routes/for-business'
 import { Route as ForDinersRouteImport } from './routes/for-diners'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as HealthzRouteImport } from './routes/healthz'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as LinkExpiredRouteImport } from './routes/link-expired'
@@ -28,21 +31,35 @@ import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as OpsRouteImport } from './routes/ops'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SessionExpiredRouteImport } from './routes/session-expired'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as StampRouteImport } from './routes/stamp'
+import { Route as SuggestRouteImport } from './routes/suggest'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AppAuditRouteImport } from './routes/app.audit'
 import { Route as AppCampaignsRouteImport } from './routes/app.campaigns'
+import { Route as AppChallengesRouteImport } from './routes/app.challenges'
 import { Route as AppCreditRouteImport } from './routes/app.credit'
 import { Route as AppCustomersRouteImport } from './routes/app.customers'
+import { Route as AppDesignRouteImport } from './routes/app.design'
+import { Route as AppFeedbackRouteImport } from './routes/app.feedback'
+import { Route as AppIdeasRouteImport } from './routes/app.ideas'
+import { Route as AppInsightsRouteImport } from './routes/app.insights'
 import { Route as AppListsRouteImport } from './routes/app.lists'
 import { Route as AppLoyaltyRouteImport } from './routes/app.loyalty'
 import { Route as AppMenuRouteImport } from './routes/app.menu'
 import { Route as AppOnboardingRouteImport } from './routes/app.onboarding'
+import { Route as AppPageRouteImport } from './routes/app.page'
 import { Route as AppQrRouteImport } from './routes/app.qr'
+import { Route as AppReferralsRouteImport } from './routes/app.referrals'
+import { Route as AppReportsRouteImport } from './routes/app.reports'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppSpecialsRouteImport } from './routes/app.specials'
 import { Route as AppTeamRouteImport } from './routes/app.team'
+import { Route as BlogIndexRouteImport } from './routes/blog/index'
+import { Route as BlogSlugRouteImport } from './routes/blog/$slug'
+import { Route as BlogRssRouteImport } from './routes/blog/rss'
 import { Route as DemoOutboxRouteImport } from './routes/demo.outbox'
 import { Route as DemoStatusRouteImport } from './routes/demo.status'
 import { Route as DevRolesRouteImport } from './routes/dev.roles'
@@ -51,10 +68,15 @@ import { Route as MeRestaurantsRouteImport } from './routes/me.restaurants'
 import { Route as MeSettingsRouteImport } from './routes/me.settings'
 import { Route as OpsCampaignsRouteImport } from './routes/ops.campaigns'
 import { Route as OpsCreditRouteImport } from './routes/ops.credit'
+import { Route as OpsFeedbackRouteImport } from './routes/ops.feedback'
+import { Route as OpsIdeasRouteImport } from './routes/ops.ideas'
+import { Route as OpsLeadsRouteImport } from './routes/ops.leads'
+import { Route as OpsOutboxRouteImport } from './routes/ops.outbox'
 import { Route as OpsRestaurantsRouteImport } from './routes/ops.restaurants'
 import { Route as RSlugRouteImport } from './routes/r.$slug'
 import { Route as STokenRouteImport } from './routes/s/$token'
 import { Route as UTokenRouteImport } from './routes/u/$token'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiCronDispatchRouteImport } from './routes/api/cron/dispatch'
 import { Route as ApiCronNightlyRouteImport } from './routes/api/cron/nightly'
 import { Route as ApiCronSettleRouteImport } from './routes/api/cron/settle'
@@ -105,6 +127,16 @@ const FaqRoute = FaqRouteImport.update({
   path: '/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FeedbackRoute = FeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FindRoute = FindRouteImport.update({
+  id: '/find',
+  path: '/find',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ForBusinessRoute = ForBusinessRouteImport.update({
   id: '/for-business',
   path: '/for-business',
@@ -113,6 +145,11 @@ const ForBusinessRoute = ForBusinessRouteImport.update({
 const ForDinersRoute = ForDinersRouteImport.update({
   id: '/for-diners',
   path: '/for-diners',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HealthzRoute = HealthzRouteImport.update({
@@ -165,14 +202,29 @@ const PrivacyRoute = PrivacyRouteImport.update({
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SessionExpiredRoute = SessionExpiredRouteImport.update({
   id: '/session-expired',
   path: '/session-expired',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StampRoute = StampRouteImport.update({
   id: '/stamp',
   path: '/stamp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SuggestRoute = SuggestRouteImport.update({
+  id: '/suggest',
+  path: '/suggest',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermsRoute = TermsRouteImport.update({
@@ -190,6 +242,11 @@ const AppCampaignsRoute = AppCampaignsRouteImport.update({
   path: '/campaigns',
   getParentRoute: () => AppRoute,
 } as any)
+const AppChallengesRoute = AppChallengesRouteImport.update({
+  id: '/challenges',
+  path: '/challenges',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppCreditRoute = AppCreditRouteImport.update({
   id: '/credit',
   path: '/credit',
@@ -198,6 +255,26 @@ const AppCreditRoute = AppCreditRouteImport.update({
 const AppCustomersRoute = AppCustomersRouteImport.update({
   id: '/customers',
   path: '/customers',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDesignRoute = AppDesignRouteImport.update({
+  id: '/design',
+  path: '/design',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFeedbackRoute = AppFeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppIdeasRoute = AppIdeasRouteImport.update({
+  id: '/ideas',
+  path: '/ideas',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppInsightsRoute = AppInsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
   getParentRoute: () => AppRoute,
 } as any)
 const AppListsRoute = AppListsRouteImport.update({
@@ -220,9 +297,24 @@ const AppOnboardingRoute = AppOnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPageRoute = AppPageRouteImport.update({
+  id: '/page',
+  path: '/page',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppQrRoute = AppQrRouteImport.update({
   id: '/qr',
   path: '/qr',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReferralsRoute = AppReferralsRouteImport.update({
+  id: '/referrals',
+  path: '/referrals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReportsRoute = AppReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
@@ -239,6 +331,21 @@ const AppTeamRoute = AppTeamRouteImport.update({
   id: '/team',
   path: '/team',
   getParentRoute: () => AppRoute,
+} as any)
+const BlogIndexRoute = BlogIndexRouteImport.update({
+  id: '/blog/',
+  path: '/blog/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogSlugRoute = BlogSlugRouteImport.update({
+  id: '/blog/$slug',
+  path: '/blog/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogRssRoute = BlogRssRouteImport.update({
+  id: '/blog/rss',
+  path: '/blog/rss',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const DemoOutboxRoute = DemoOutboxRouteImport.update({
   id: '/outbox',
@@ -280,6 +387,26 @@ const OpsCreditRoute = OpsCreditRouteImport.update({
   path: '/credit',
   getParentRoute: () => OpsRoute,
 } as any)
+const OpsFeedbackRoute = OpsFeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
+  getParentRoute: () => OpsRoute,
+} as any)
+const OpsIdeasRoute = OpsIdeasRouteImport.update({
+  id: '/ideas',
+  path: '/ideas',
+  getParentRoute: () => OpsRoute,
+} as any)
+const OpsLeadsRoute = OpsLeadsRouteImport.update({
+  id: '/leads',
+  path: '/leads',
+  getParentRoute: () => OpsRoute,
+} as any)
+const OpsOutboxRoute = OpsOutboxRouteImport.update({
+  id: '/outbox',
+  path: '/outbox',
+  getParentRoute: () => OpsRoute,
+} as any)
 const OpsRestaurantsRoute = OpsRestaurantsRouteImport.update({
   id: '/restaurants',
   path: '/restaurants',
@@ -298,6 +425,11 @@ const STokenRoute = STokenRouteImport.update({
 const UTokenRoute = UTokenRouteImport.update({
   id: '/u/$token',
   path: '/u/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiCronDispatchRoute = ApiCronDispatchRouteImport.update({
@@ -379,8 +511,11 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/demo': typeof DemoRouteWithChildren
   '/faq': typeof FaqRoute
+  '/feedback': typeof FeedbackRoute
+  '/find': typeof FindRoute
   '/for-business': typeof ForBusinessRoute
   '/for-diners': typeof ForDinersRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/healthz': typeof HealthzRouteWithChildren
   '/how-it-works': typeof HowItWorksRoute
   '/link-expired': typeof LinkExpiredRoute
@@ -391,21 +526,34 @@ export interface FileRoutesByFullPath {
   '/ops': typeof OpsRouteWithChildren
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/session-expired': typeof SessionExpiredRoute
+  '/signup': typeof SignupRoute
   '/stamp': typeof StampRoute
+  '/suggest': typeof SuggestRoute
   '/terms': typeof TermsRoute
   '/app/audit': typeof AppAuditRoute
   '/app/campaigns': typeof AppCampaignsRouteWithChildren
+  '/app/challenges': typeof AppChallengesRoute
   '/app/credit': typeof AppCreditRoute
   '/app/customers': typeof AppCustomersRouteWithChildren
+  '/app/design': typeof AppDesignRoute
+  '/app/feedback': typeof AppFeedbackRoute
+  '/app/ideas': typeof AppIdeasRoute
+  '/app/insights': typeof AppInsightsRoute
   '/app/lists': typeof AppListsRoute
   '/app/loyalty': typeof AppLoyaltyRoute
   '/app/menu': typeof AppMenuRoute
   '/app/onboarding': typeof AppOnboardingRoute
+  '/app/page': typeof AppPageRoute
   '/app/qr': typeof AppQrRoute
+  '/app/referrals': typeof AppReferralsRoute
+  '/app/reports': typeof AppReportsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/specials': typeof AppSpecialsRoute
   '/app/team': typeof AppTeamRoute
+  '/blog/$slug': typeof BlogSlugRoute
+  '/blog/rss': typeof BlogRssRoute
   '/demo/outbox': typeof DemoOutboxRoute
   '/demo/status': typeof DemoStatusRoute
   '/dev/roles': typeof DevRolesRoute
@@ -414,10 +562,16 @@ export interface FileRoutesByFullPath {
   '/me/settings': typeof MeSettingsRoute
   '/ops/campaigns': typeof OpsCampaignsRoute
   '/ops/credit': typeof OpsCreditRoute
+  '/ops/feedback': typeof OpsFeedbackRoute
+  '/ops/ideas': typeof OpsIdeasRoute
+  '/ops/leads': typeof OpsLeadsRoute
+  '/ops/outbox': typeof OpsOutboxRoute
   '/ops/restaurants': typeof OpsRestaurantsRouteWithChildren
   '/r/$slug': typeof RSlugRouteWithChildren
   '/s/$token': typeof STokenRoute
   '/u/$token': typeof UTokenRoute
+  '/blog/': typeof BlogIndexRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/dispatch': typeof ApiCronDispatchRoute
   '/api/cron/nightly': typeof ApiCronNightlyRoute
   '/api/cron/settle': typeof ApiCronSettleRoute
@@ -441,8 +595,11 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/demo': typeof DemoRouteWithChildren
   '/faq': typeof FaqRoute
+  '/feedback': typeof FeedbackRoute
+  '/find': typeof FindRoute
   '/for-business': typeof ForBusinessRoute
   '/for-diners': typeof ForDinersRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/healthz': typeof HealthzRouteWithChildren
   '/how-it-works': typeof HowItWorksRoute
   '/link-expired': typeof LinkExpiredRoute
@@ -453,21 +610,34 @@ export interface FileRoutesByTo {
   '/ops': typeof OpsRouteWithChildren
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/session-expired': typeof SessionExpiredRoute
+  '/signup': typeof SignupRoute
   '/stamp': typeof StampRoute
+  '/suggest': typeof SuggestRoute
   '/terms': typeof TermsRoute
   '/app/audit': typeof AppAuditRoute
   '/app/campaigns': typeof AppCampaignsRouteWithChildren
+  '/app/challenges': typeof AppChallengesRoute
   '/app/credit': typeof AppCreditRoute
   '/app/customers': typeof AppCustomersRouteWithChildren
+  '/app/design': typeof AppDesignRoute
+  '/app/feedback': typeof AppFeedbackRoute
+  '/app/ideas': typeof AppIdeasRoute
+  '/app/insights': typeof AppInsightsRoute
   '/app/lists': typeof AppListsRoute
   '/app/loyalty': typeof AppLoyaltyRoute
   '/app/menu': typeof AppMenuRoute
   '/app/onboarding': typeof AppOnboardingRoute
+  '/app/page': typeof AppPageRoute
   '/app/qr': typeof AppQrRoute
+  '/app/referrals': typeof AppReferralsRoute
+  '/app/reports': typeof AppReportsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/specials': typeof AppSpecialsRoute
   '/app/team': typeof AppTeamRoute
+  '/blog/$slug': typeof BlogSlugRoute
+  '/blog/rss': typeof BlogRssRoute
   '/demo/outbox': typeof DemoOutboxRoute
   '/demo/status': typeof DemoStatusRoute
   '/dev/roles': typeof DevRolesRoute
@@ -476,10 +646,16 @@ export interface FileRoutesByTo {
   '/me/settings': typeof MeSettingsRoute
   '/ops/campaigns': typeof OpsCampaignsRoute
   '/ops/credit': typeof OpsCreditRoute
+  '/ops/feedback': typeof OpsFeedbackRoute
+  '/ops/ideas': typeof OpsIdeasRoute
+  '/ops/leads': typeof OpsLeadsRoute
+  '/ops/outbox': typeof OpsOutboxRoute
   '/ops/restaurants': typeof OpsRestaurantsRouteWithChildren
   '/r/$slug': typeof RSlugRouteWithChildren
   '/s/$token': typeof STokenRoute
   '/u/$token': typeof UTokenRoute
+  '/blog': typeof BlogIndexRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/dispatch': typeof ApiCronDispatchRoute
   '/api/cron/nightly': typeof ApiCronNightlyRoute
   '/api/cron/settle': typeof ApiCronSettleRoute
@@ -504,8 +680,11 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/demo': typeof DemoRouteWithChildren
   '/faq': typeof FaqRoute
+  '/feedback': typeof FeedbackRoute
+  '/find': typeof FindRoute
   '/for-business': typeof ForBusinessRoute
   '/for-diners': typeof ForDinersRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/healthz': typeof HealthzRouteWithChildren
   '/how-it-works': typeof HowItWorksRoute
   '/link-expired': typeof LinkExpiredRoute
@@ -516,21 +695,34 @@ export interface FileRoutesById {
   '/ops': typeof OpsRouteWithChildren
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/session-expired': typeof SessionExpiredRoute
+  '/signup': typeof SignupRoute
   '/stamp': typeof StampRoute
+  '/suggest': typeof SuggestRoute
   '/terms': typeof TermsRoute
   '/app/audit': typeof AppAuditRoute
   '/app/campaigns': typeof AppCampaignsRouteWithChildren
+  '/app/challenges': typeof AppChallengesRoute
   '/app/credit': typeof AppCreditRoute
   '/app/customers': typeof AppCustomersRouteWithChildren
+  '/app/design': typeof AppDesignRoute
+  '/app/feedback': typeof AppFeedbackRoute
+  '/app/ideas': typeof AppIdeasRoute
+  '/app/insights': typeof AppInsightsRoute
   '/app/lists': typeof AppListsRoute
   '/app/loyalty': typeof AppLoyaltyRoute
   '/app/menu': typeof AppMenuRoute
   '/app/onboarding': typeof AppOnboardingRoute
+  '/app/page': typeof AppPageRoute
   '/app/qr': typeof AppQrRoute
+  '/app/referrals': typeof AppReferralsRoute
+  '/app/reports': typeof AppReportsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/specials': typeof AppSpecialsRoute
   '/app/team': typeof AppTeamRoute
+  '/blog/$slug': typeof BlogSlugRoute
+  '/blog/rss': typeof BlogRssRoute
   '/demo/outbox': typeof DemoOutboxRoute
   '/demo/status': typeof DemoStatusRoute
   '/dev/roles': typeof DevRolesRoute
@@ -539,10 +731,16 @@ export interface FileRoutesById {
   '/me/settings': typeof MeSettingsRoute
   '/ops/campaigns': typeof OpsCampaignsRoute
   '/ops/credit': typeof OpsCreditRoute
+  '/ops/feedback': typeof OpsFeedbackRoute
+  '/ops/ideas': typeof OpsIdeasRoute
+  '/ops/leads': typeof OpsLeadsRoute
+  '/ops/outbox': typeof OpsOutboxRoute
   '/ops/restaurants': typeof OpsRestaurantsRouteWithChildren
   '/r/$slug': typeof RSlugRouteWithChildren
   '/s/$token': typeof STokenRoute
   '/u/$token': typeof UTokenRoute
+  '/blog/': typeof BlogIndexRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/dispatch': typeof ApiCronDispatchRoute
   '/api/cron/nightly': typeof ApiCronNightlyRoute
   '/api/cron/settle': typeof ApiCronSettleRoute
@@ -568,8 +766,11 @@ export interface FileRouteTypes {
     | '/contact'
     | '/demo'
     | '/faq'
+    | '/feedback'
+    | '/find'
     | '/for-business'
     | '/for-diners'
+    | '/forgot-password'
     | '/healthz'
     | '/how-it-works'
     | '/link-expired'
@@ -580,21 +781,34 @@ export interface FileRouteTypes {
     | '/ops'
     | '/pricing'
     | '/privacy'
+    | '/reset-password'
     | '/session-expired'
+    | '/signup'
     | '/stamp'
+    | '/suggest'
     | '/terms'
     | '/app/audit'
     | '/app/campaigns'
+    | '/app/challenges'
     | '/app/credit'
     | '/app/customers'
+    | '/app/design'
+    | '/app/feedback'
+    | '/app/ideas'
+    | '/app/insights'
     | '/app/lists'
     | '/app/loyalty'
     | '/app/menu'
     | '/app/onboarding'
+    | '/app/page'
     | '/app/qr'
+    | '/app/referrals'
+    | '/app/reports'
     | '/app/settings'
     | '/app/specials'
     | '/app/team'
+    | '/blog/$slug'
+    | '/blog/rss'
     | '/demo/outbox'
     | '/demo/status'
     | '/dev/roles'
@@ -603,10 +817,16 @@ export interface FileRouteTypes {
     | '/me/settings'
     | '/ops/campaigns'
     | '/ops/credit'
+    | '/ops/feedback'
+    | '/ops/ideas'
+    | '/ops/leads'
+    | '/ops/outbox'
     | '/ops/restaurants'
     | '/r/$slug'
     | '/s/$token'
     | '/u/$token'
+    | '/blog/'
+    | '/api/auth/$'
     | '/api/cron/dispatch'
     | '/api/cron/nightly'
     | '/api/cron/settle'
@@ -630,8 +850,11 @@ export interface FileRouteTypes {
     | '/contact'
     | '/demo'
     | '/faq'
+    | '/feedback'
+    | '/find'
     | '/for-business'
     | '/for-diners'
+    | '/forgot-password'
     | '/healthz'
     | '/how-it-works'
     | '/link-expired'
@@ -642,21 +865,34 @@ export interface FileRouteTypes {
     | '/ops'
     | '/pricing'
     | '/privacy'
+    | '/reset-password'
     | '/session-expired'
+    | '/signup'
     | '/stamp'
+    | '/suggest'
     | '/terms'
     | '/app/audit'
     | '/app/campaigns'
+    | '/app/challenges'
     | '/app/credit'
     | '/app/customers'
+    | '/app/design'
+    | '/app/feedback'
+    | '/app/ideas'
+    | '/app/insights'
     | '/app/lists'
     | '/app/loyalty'
     | '/app/menu'
     | '/app/onboarding'
+    | '/app/page'
     | '/app/qr'
+    | '/app/referrals'
+    | '/app/reports'
     | '/app/settings'
     | '/app/specials'
     | '/app/team'
+    | '/blog/$slug'
+    | '/blog/rss'
     | '/demo/outbox'
     | '/demo/status'
     | '/dev/roles'
@@ -665,10 +901,16 @@ export interface FileRouteTypes {
     | '/me/settings'
     | '/ops/campaigns'
     | '/ops/credit'
+    | '/ops/feedback'
+    | '/ops/ideas'
+    | '/ops/leads'
+    | '/ops/outbox'
     | '/ops/restaurants'
     | '/r/$slug'
     | '/s/$token'
     | '/u/$token'
+    | '/blog'
+    | '/api/auth/$'
     | '/api/cron/dispatch'
     | '/api/cron/nightly'
     | '/api/cron/settle'
@@ -692,8 +934,11 @@ export interface FileRouteTypes {
     | '/contact'
     | '/demo'
     | '/faq'
+    | '/feedback'
+    | '/find'
     | '/for-business'
     | '/for-diners'
+    | '/forgot-password'
     | '/healthz'
     | '/how-it-works'
     | '/link-expired'
@@ -704,21 +949,34 @@ export interface FileRouteTypes {
     | '/ops'
     | '/pricing'
     | '/privacy'
+    | '/reset-password'
     | '/session-expired'
+    | '/signup'
     | '/stamp'
+    | '/suggest'
     | '/terms'
     | '/app/audit'
     | '/app/campaigns'
+    | '/app/challenges'
     | '/app/credit'
     | '/app/customers'
+    | '/app/design'
+    | '/app/feedback'
+    | '/app/ideas'
+    | '/app/insights'
     | '/app/lists'
     | '/app/loyalty'
     | '/app/menu'
     | '/app/onboarding'
+    | '/app/page'
     | '/app/qr'
+    | '/app/referrals'
+    | '/app/reports'
     | '/app/settings'
     | '/app/specials'
     | '/app/team'
+    | '/blog/$slug'
+    | '/blog/rss'
     | '/demo/outbox'
     | '/demo/status'
     | '/dev/roles'
@@ -727,10 +985,16 @@ export interface FileRouteTypes {
     | '/me/settings'
     | '/ops/campaigns'
     | '/ops/credit'
+    | '/ops/feedback'
+    | '/ops/ideas'
+    | '/ops/leads'
+    | '/ops/outbox'
     | '/ops/restaurants'
     | '/r/$slug'
     | '/s/$token'
     | '/u/$token'
+    | '/blog/'
+    | '/api/auth/$'
     | '/api/cron/dispatch'
     | '/api/cron/nightly'
     | '/api/cron/settle'
@@ -755,8 +1019,11 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   DemoRoute: typeof DemoRouteWithChildren
   FaqRoute: typeof FaqRoute
+  FeedbackRoute: typeof FeedbackRoute
+  FindRoute: typeof FindRoute
   ForBusinessRoute: typeof ForBusinessRoute
   ForDinersRoute: typeof ForDinersRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   HealthzRoute: typeof HealthzRouteWithChildren
   HowItWorksRoute: typeof HowItWorksRoute
   LinkExpiredRoute: typeof LinkExpiredRoute
@@ -767,13 +1034,20 @@ export interface RootRouteChildren {
   OpsRoute: typeof OpsRouteWithChildren
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SessionExpiredRoute: typeof SessionExpiredRoute
+  SignupRoute: typeof SignupRoute
   StampRoute: typeof StampRoute
+  SuggestRoute: typeof SuggestRoute
   TermsRoute: typeof TermsRoute
+  BlogSlugRoute: typeof BlogSlugRoute
+  BlogRssRoute: typeof BlogRssRoute
   DevRolesRoute: typeof DevRolesRoute
   RSlugRoute: typeof RSlugRouteWithChildren
   STokenRoute: typeof STokenRoute
   UTokenRoute: typeof UTokenRoute
+  BlogIndexRoute: typeof BlogIndexRoute
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiCronDispatchRoute: typeof ApiCronDispatchRoute
   ApiCronNightlyRoute: typeof ApiCronNightlyRoute
   ApiCronSettleRoute: typeof ApiCronSettleRoute
@@ -831,6 +1105,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FaqRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/feedback': {
+      id: '/feedback'
+      path: '/feedback'
+      fullPath: '/feedback'
+      preLoaderRoute: typeof FeedbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/find': {
+      id: '/find'
+      path: '/find'
+      fullPath: '/find'
+      preLoaderRoute: typeof FindRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/for-business': {
       id: '/for-business'
       path: '/for-business'
@@ -843,6 +1131,13 @@ declare module '@tanstack/react-router' {
       path: '/for-diners'
       fullPath: '/for-diners'
       preLoaderRoute: typeof ForDinersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/healthz': {
@@ -915,6 +1210,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/session-expired': {
       id: '/session-expired'
       path: '/session-expired'
@@ -922,11 +1224,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SessionExpiredRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/stamp': {
       id: '/stamp'
       path: '/stamp'
       fullPath: '/stamp'
       preLoaderRoute: typeof StampRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/suggest': {
+      id: '/suggest'
+      path: '/suggest'
+      fullPath: '/suggest'
+      preLoaderRoute: typeof SuggestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -950,6 +1266,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCampaignsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/challenges': {
+      id: '/app/challenges'
+      path: '/challenges'
+      fullPath: '/app/challenges'
+      preLoaderRoute: typeof AppChallengesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/credit': {
       id: '/app/credit'
       path: '/credit'
@@ -962,6 +1285,34 @@ declare module '@tanstack/react-router' {
       path: '/customers'
       fullPath: '/app/customers'
       preLoaderRoute: typeof AppCustomersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/design': {
+      id: '/app/design'
+      path: '/design'
+      fullPath: '/app/design'
+      preLoaderRoute: typeof AppDesignRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/feedback': {
+      id: '/app/feedback'
+      path: '/feedback'
+      fullPath: '/app/feedback'
+      preLoaderRoute: typeof AppFeedbackRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/ideas': {
+      id: '/app/ideas'
+      path: '/ideas'
+      fullPath: '/app/ideas'
+      preLoaderRoute: typeof AppIdeasRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/insights': {
+      id: '/app/insights'
+      path: '/insights'
+      fullPath: '/app/insights'
+      preLoaderRoute: typeof AppInsightsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/lists': {
@@ -992,11 +1343,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOnboardingRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/page': {
+      id: '/app/page'
+      path: '/page'
+      fullPath: '/app/page'
+      preLoaderRoute: typeof AppPageRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/qr': {
       id: '/app/qr'
       path: '/qr'
       fullPath: '/app/qr'
       preLoaderRoute: typeof AppQrRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/referrals': {
+      id: '/app/referrals'
+      path: '/referrals'
+      fullPath: '/app/referrals'
+      preLoaderRoute: typeof AppReferralsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/reports': {
+      id: '/app/reports'
+      path: '/reports'
+      fullPath: '/app/reports'
+      preLoaderRoute: typeof AppReportsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/settings': {
@@ -1019,6 +1391,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/team'
       preLoaderRoute: typeof AppTeamRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/blog/': {
+      id: '/blog/'
+      path: '/blog'
+      fullPath: '/blog/'
+      preLoaderRoute: typeof BlogIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog/$slug': {
+      id: '/blog/$slug'
+      path: '/blog/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof BlogSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog/rss': {
+      id: '/blog/rss'
+      path: '/blog/rss'
+      fullPath: '/blog/rss'
+      preLoaderRoute: typeof BlogRssRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/demo/outbox': {
       id: '/demo/outbox'
@@ -1076,6 +1469,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OpsCreditRouteImport
       parentRoute: typeof OpsRoute
     }
+    '/ops/feedback': {
+      id: '/ops/feedback'
+      path: '/feedback'
+      fullPath: '/ops/feedback'
+      preLoaderRoute: typeof OpsFeedbackRouteImport
+      parentRoute: typeof OpsRoute
+    }
+    '/ops/ideas': {
+      id: '/ops/ideas'
+      path: '/ideas'
+      fullPath: '/ops/ideas'
+      preLoaderRoute: typeof OpsIdeasRouteImport
+      parentRoute: typeof OpsRoute
+    }
+    '/ops/leads': {
+      id: '/ops/leads'
+      path: '/leads'
+      fullPath: '/ops/leads'
+      preLoaderRoute: typeof OpsLeadsRouteImport
+      parentRoute: typeof OpsRoute
+    }
+    '/ops/outbox': {
+      id: '/ops/outbox'
+      path: '/outbox'
+      fullPath: '/ops/outbox'
+      preLoaderRoute: typeof OpsOutboxRouteImport
+      parentRoute: typeof OpsRoute
+    }
     '/ops/restaurants': {
       id: '/ops/restaurants'
       path: '/restaurants'
@@ -1102,6 +1523,13 @@ declare module '@tanstack/react-router' {
       path: '/u/$token'
       fullPath: '/u/$token'
       preLoaderRoute: typeof UTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/cron/dispatch': {
@@ -1234,13 +1662,21 @@ const AppCustomersRouteWithChildren = AppCustomersRoute._addFileChildren(
 interface AppRouteChildren {
   AppAuditRoute: typeof AppAuditRoute
   AppCampaignsRoute: typeof AppCampaignsRouteWithChildren
+  AppChallengesRoute: typeof AppChallengesRoute
   AppCreditRoute: typeof AppCreditRoute
   AppCustomersRoute: typeof AppCustomersRouteWithChildren
+  AppDesignRoute: typeof AppDesignRoute
+  AppFeedbackRoute: typeof AppFeedbackRoute
+  AppIdeasRoute: typeof AppIdeasRoute
+  AppInsightsRoute: typeof AppInsightsRoute
   AppListsRoute: typeof AppListsRoute
   AppLoyaltyRoute: typeof AppLoyaltyRoute
   AppMenuRoute: typeof AppMenuRoute
   AppOnboardingRoute: typeof AppOnboardingRoute
+  AppPageRoute: typeof AppPageRoute
   AppQrRoute: typeof AppQrRoute
+  AppReferralsRoute: typeof AppReferralsRoute
+  AppReportsRoute: typeof AppReportsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSpecialsRoute: typeof AppSpecialsRoute
   AppTeamRoute: typeof AppTeamRoute
@@ -1249,13 +1685,21 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAuditRoute: AppAuditRoute,
   AppCampaignsRoute: AppCampaignsRouteWithChildren,
+  AppChallengesRoute: AppChallengesRoute,
   AppCreditRoute: AppCreditRoute,
   AppCustomersRoute: AppCustomersRouteWithChildren,
+  AppDesignRoute: AppDesignRoute,
+  AppFeedbackRoute: AppFeedbackRoute,
+  AppIdeasRoute: AppIdeasRoute,
+  AppInsightsRoute: AppInsightsRoute,
   AppListsRoute: AppListsRoute,
   AppLoyaltyRoute: AppLoyaltyRoute,
   AppMenuRoute: AppMenuRoute,
   AppOnboardingRoute: AppOnboardingRoute,
+  AppPageRoute: AppPageRoute,
   AppQrRoute: AppQrRoute,
+  AppReferralsRoute: AppReferralsRoute,
+  AppReportsRoute: AppReportsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSpecialsRoute: AppSpecialsRoute,
   AppTeamRoute: AppTeamRoute,
@@ -1340,12 +1784,20 @@ const OpsRestaurantsRouteWithChildren = OpsRestaurantsRoute._addFileChildren(
 interface OpsRouteChildren {
   OpsCampaignsRoute: typeof OpsCampaignsRoute
   OpsCreditRoute: typeof OpsCreditRoute
+  OpsFeedbackRoute: typeof OpsFeedbackRoute
+  OpsIdeasRoute: typeof OpsIdeasRoute
+  OpsLeadsRoute: typeof OpsLeadsRoute
+  OpsOutboxRoute: typeof OpsOutboxRoute
   OpsRestaurantsRoute: typeof OpsRestaurantsRouteWithChildren
 }
 
 const OpsRouteChildren: OpsRouteChildren = {
   OpsCampaignsRoute: OpsCampaignsRoute,
   OpsCreditRoute: OpsCreditRoute,
+  OpsFeedbackRoute: OpsFeedbackRoute,
+  OpsIdeasRoute: OpsIdeasRoute,
+  OpsLeadsRoute: OpsLeadsRoute,
+  OpsOutboxRoute: OpsOutboxRoute,
   OpsRestaurantsRoute: OpsRestaurantsRouteWithChildren,
 }
 
@@ -1371,8 +1823,11 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   DemoRoute: DemoRouteWithChildren,
   FaqRoute: FaqRoute,
+  FeedbackRoute: FeedbackRoute,
+  FindRoute: FindRoute,
   ForBusinessRoute: ForBusinessRoute,
   ForDinersRoute: ForDinersRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   HealthzRoute: HealthzRouteWithChildren,
   HowItWorksRoute: HowItWorksRoute,
   LinkExpiredRoute: LinkExpiredRoute,
@@ -1383,13 +1838,20 @@ const rootRouteChildren: RootRouteChildren = {
   OpsRoute: OpsRouteWithChildren,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SessionExpiredRoute: SessionExpiredRoute,
+  SignupRoute: SignupRoute,
   StampRoute: StampRoute,
+  SuggestRoute: SuggestRoute,
   TermsRoute: TermsRoute,
+  BlogSlugRoute: BlogSlugRoute,
+  BlogRssRoute: BlogRssRoute,
   DevRolesRoute: DevRolesRoute,
   RSlugRoute: RSlugRouteWithChildren,
   STokenRoute: STokenRoute,
   UTokenRoute: UTokenRoute,
+  BlogIndexRoute: BlogIndexRoute,
+  ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiCronDispatchRoute: ApiCronDispatchRoute,
   ApiCronNightlyRoute: ApiCronNightlyRoute,
   ApiCronSettleRoute: ApiCronSettleRoute,

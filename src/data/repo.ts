@@ -4,10 +4,11 @@ import type { DemoState, Repo } from "./types";
 // Bump the key when the demo seed changes shape. Older keys are migrated into this
 // one (or discarded when their shape no longer fits), so a browser that still holds
 // a snapshot from a previous build never renders stale or half-shaped data.
-const STORAGE_KEY = "patron-demo-v7";
+const STORAGE_KEY = "patron-demo-v8";
 
 /** Keys written by earlier builds, newest first. */
 const LEGACY_STORAGE_KEYS = [
+  "patron-demo-v7",
   "patron-demo-v6",
   "patron-demo-v5",
   "patron-demo-v4",
@@ -36,6 +37,7 @@ const REQUIRED_COLLECTIONS = [
   "payments",
   "audit",
   "leads",
+  "referrals",
   "dataRequests",
 ] as const;
 
@@ -120,6 +122,16 @@ function normalise(raw: unknown): DemoState | null {
       tiers: restaurant.tiers ?? seedRow?.tiers ?? { regular: 3, vip: 8 },
       mysteryEveryVisits: restaurant.mysteryEveryVisits ?? seedRow?.mysteryEveryVisits ?? 0,
       birthdayReward: restaurant.birthdayReward ?? seedRow?.birthdayReward ?? false,
+      birthdayRewardKind: restaurant.birthdayRewardKind ?? seedRow?.birthdayRewardKind ?? "stamp",
+      birthdayRewardItem: restaurant.birthdayRewardItem ?? seedRow?.birthdayRewardItem ?? "",
+      trackOrders: restaurant.trackOrders ?? seedRow?.trackOrders ?? false,
+      ordersMode: restaurant.ordersMode ?? seedRow?.ordersMode ?? "items",
+      referral: restaurant.referral ?? seedRow?.referral ?? {
+        enabled: false,
+        rewardKind: "stamp",
+        rewardItem: "",
+        limitPerMemberPerMonth: 2,
+      },
       spin: restaurant.spin ?? seedRow?.spin ?? {
         enabled: false,
         segments: [],
@@ -136,6 +148,11 @@ function normalise(raw: unknown): DemoState | null {
   const customerIds = new Set(customers.map((customer) => customer.id));
   const staff = parsed.staff ?? [];
   const staffIds = new Set(staff.map((member) => member.id));
+
+  // Orders are optional in stored snapshots: old saves simply start empty.
+  const convertedOrders = (parsed.orders ?? []).filter(
+    (order) => order && restaurantIds.has(order.restaurantId),
+  );
 
   // Memberships that point at a guest or venue that no longer exists cannot render a
   // card. Drop those rows rather than letting a dead link open an empty page.
@@ -181,7 +198,14 @@ function normalise(raw: unknown): DemoState | null {
     pinAttempts: parsed.pinAttempts ?? [],
     pinLockouts: parsed.pinLockouts ?? [],
     onboarding: parsed.onboarding ?? [],
+    pageVersions: parsed.pageVersions ?? [],
+    menuVersions: parsed.menuVersions ?? [],
+    feedback: parsed.feedback ?? [],
     pushSubscriptions: parsed.pushSubscriptions ?? [],
+    orders: convertedOrders,
+    referrals: (parsed.referrals ?? []).filter(
+      (referral) => referral && restaurantIds.has(referral.restaurantId),
+    ),
   };
 }
 

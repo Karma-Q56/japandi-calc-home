@@ -56,8 +56,13 @@ export function StatCard(props: {
   );
 }
 
-export function StatGrid({ children }: { children: ReactNode }) {
-  return <div className="stat-grid">{children}</div>;
+export function StatGrid(props: { children: ReactNode; dense?: boolean }) {
+  return <div className={`stat-grid${props.dense ? " stat-grid--three" : ""}`}>{props.children}</div>;
+}
+
+/** One helper line under a field or heading. The only small-text style on owner screens. */
+export function Helper(props: { children: ReactNode }) {
+  return <span className="builder-hint">{props.children}</span>;
 }
 
 /* ------------------------------------------------------------------- badge */
@@ -124,7 +129,9 @@ export function DataTable<Row>(props: {
           {props.rows.map((row, index) => (
             <tr key={index}>
               {props.columns.map((column) => (
-                <td key={column.key}>{column.cell(row)}</td>
+                <td key={column.key} data-label={column.header}>
+                  {column.cell(row)}
+                </td>
               ))}
             </tr>
           ))}
@@ -154,7 +161,7 @@ export function FormField(props: { label: string; hint?: string; children: React
     <label className="builder-field">
       {props.label}
       {props.children}
-      {props.hint ? <small>{props.hint}</small> : null}
+      {props.hint ? <Helper>{props.hint}</Helper> : null}
     </label>
   );
 }

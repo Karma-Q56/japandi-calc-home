@@ -86,6 +86,7 @@ export const getPublicPageFn = createServerFn({ method: "GET" })
 export const submitLeadFn = createServerFn({ method: "POST" })
   .validator(
     z.object({
+      kind: z.enum(["owner", "diner", "other"]).optional(),
       restaurantName: z.string().trim().min(1, "Restaurant name required.").max(200),
       contactName: z.string().trim().min(1, "Your name required.").max(120),
       phone: e164Schema,
@@ -96,6 +97,8 @@ export const submitLeadFn = createServerFn({ method: "POST" })
       quietTime: shortText(120),
       weeklyGuests: shortText(120),
       planInterest: shortText(120),
+      visitWanted: z.boolean().optional(),
+      preferredDay: shortText(120),
       consent: z.boolean(),
       consentVersion: shortText(32),
       notes: shortText(2000),
@@ -105,8 +108,8 @@ export const submitLeadFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { repos } = getRepos(serverEnv());
     try {
-      const { id } = await repos.submitLead({ ...data, ipHash: requestIpHash() });
-      return { ok: true as const, id };
+      const saved = await repos.submitLead({ ...data, ipHash: requestIpHash() });
+      return { ok: true as const, id: saved.id, reference: saved.reference };
     } catch (error) {
       return { ok: false as const, message: error instanceof Error ? error.message : "Could not submit." };
     }
@@ -201,4 +204,233 @@ export const recordStampFn = createServerFn({ method: "POST" })
         message: error instanceof Error ? error.message : "Could not stamp.",
       };
     }
+  });
+
+/**
+ * Signed-in owner overview. The restaurant comes from the session, never from
+ * the caller, and the query runs inside that restaurant's RLS context.
+ */
+export const getOwnerOverviewFn = createServerFn({ method: "GET" }).handler(async () => {
+  const [{ readViewer }, { loadOwnerOverview }] = await Promise.all([
+    import("./auth-viewer"),
+    import("./live-dashboard"),
+  ]);
+  const viewer = await readViewer();
+  if (!viewer) return null;
+  return loadOwnerOverview(viewer);
+});
+
+/** Signed-in guest cards. The customer id comes from the session. */
+export const getMyCardsFn = createServerFn({ method: "GET" }).handler(async () => {
+  const [{ readViewer }, { loadMyCards }] = await Promise.all([
+    import("./auth-viewer"),
+    import("./live-dashboard"),
+  ]);
+  const viewer = await readViewer();
+  if (!viewer) return null;
+  return loadMyCards(viewer);
+});
+
+/** Session lookup for route guards. The auth module stays off the client graph. */
+export const getViewerFn = createServerFn({ method: "GET" }).handler(async () => {
+  const { readViewer } = await import("./auth-viewer");
+  return readViewer();
+});
+
+/** Finish the phone step for a Google account. */
+export const completePhoneFn = createServerFn({ method: "POST" })
+  .validator((value: unknown) => (typeof value === "string" ? value : ""))
+  .handler(async ({ data }) => {
+    const { completePhone } = await import("./auth-viewer");
+    return completePhone(data);
+  });
+
+/** The signed-in owner's guest list. */
+export const getCustomerListFn = createServerFn({ method: "GET" }).handler(async () => {
+  const [{ readViewer }, { loadCustomerList }] = await Promise.all([
+    import("./auth-viewer"),
+    import("./live-dashboard"),
+  ]);
+  const viewer = await readViewer();
+  if (!viewer) return null;
+  return loadCustomerList(viewer);
+});
+
+/** The signed-in owner's campaign list. */
+export const getCampaignListFn = createServerFn({ method: "GET" }).handler(async () => {
+  const [{ readViewer }, { loadCampaignList }] = await Promise.all([
+    import("./auth-viewer"),
+    import("./live-dashboard"),
+  ]);
+  const viewer = await readViewer();
+  if (!viewer) return null;
+  return loadCampaignList(viewer);
+});
+
+/** One live guest profile for the signed-in owner. */
+export const getCustomerProfileFn = createServerFn({ method: "GET" })
+  .validator(z.object({ customerId: uuidSchema }))
+  .handler(async ({ data }) => {
+    const [{ readViewer }, { loadCustomerProfile }] = await Promise.all([
+      import("./auth-viewer"),
+      import("./live-dashboard"),
+    ]);
+    const viewer = await readViewer();
+    if (!viewer) return null;
+    return loadCustomerProfile(viewer, data.customerId);
+  });
+
+/** One live campaign result for the signed-in owner. */
+export const getCampaignResultsFn = createServerFn({ method: "GET" })
+  .validator(z.object({ campaignId: uuidSchema }))
+  .handler(async ({ data }) => {
+    const [{ readViewer }, { loadCampaignResults }] = await Promise.all([
+      import("./auth-viewer"),
+      import("./live-dashboard"),
+    ]);
+    const viewer = await readViewer();
+    if (!viewer) return null;
+    return loadCampaignResults(viewer, data.campaignId);
+  });
+
+/** Withdraw one guest's SMS consent. Owners cannot grant it. */
+export const withdrawSmsConsentFn = createServerFn({ method: "POST" })
+  .validator(z.object({ membershipId: uuidSchema }))
+  .handler(async ({ data }) => {
+    const [{ readViewer }, { withdrawSmsConsent }] = await Promise.all([
+      import("./auth-viewer"),
+      import("./live-actions"),
+    ]);
+    const viewer = await readViewer();
+    if (!viewer) return { ok: false as const, message: "Sign in again." };
+    return withdrawSmsConsent(viewer, data.membershipId);
+  });
+
+/** Reveal a guest's phone number, with an audit event. */
+export const revealCustomerPhoneFn = createServerFn({ method: "POST" })
+  .validator(z.object({ customerId: uuidSchema }))
+  .handler(async ({ data }) => {
+    const [{ readViewer }, { revealPhone }] = await Promise.all([
+      import("./auth-viewer"),
+      import("./live-actions"),
+    ]);
+    const viewer = await readViewer();
+    if (!viewer) return { ok: false as const, message: "Sign in again." };
+    return revealPhone(viewer, data.customerId);
+  });
+
+/** Approve a pending campaign without sending it. */
+export const approveCampaignFn = createServerFn({ method: "POST" })
+  .validator(z.object({ campaignId: uuidSchema }))
+  .handler(async ({ data }) => {
+    const [{ readViewer }, { approveCampaign }] = await Promise.all([
+      import("./auth-viewer"),
+      import("./live-actions"),
+    ]);
+    const viewer = await readViewer();
+    if (!viewer) return { ok: false as const, message: "Sign in again." };
+    return approveCampaign(viewer, data.campaignId);
+  });
+
+/** Cancel a scheduled campaign and release its reservation. */
+export const cancelCampaignFn = createServerFn({ method: "POST" })
+  .validator(z.object({ campaignId: uuidSchema }))
+  .handler(async ({ data }) => {
+    const [{ readViewer }, { cancelCampaign }] = await Promise.all([
+      import("./auth-viewer"),
+      import("./live-actions"),
+    ]);
+    const viewer = await readViewer();
+    if (!viewer) return { ok: false as const, message: "Sign in again." };
+    return cancelCampaign(viewer, data.campaignId);
+  });
+
+/** Read the live loyalty rules for the signed-in owner's restaurant. */
+export const getLoyaltySettingsFn = createServerFn({ method: "GET" }).handler(async () => {
+  const [{ readViewer }, { loadLoyaltySettings }] = await Promise.all([
+    import("./auth-viewer"),
+    import("./live-loyalty"),
+  ]);
+  const viewer = await readViewer();
+  if (!viewer) return null;
+  return loadLoyaltySettings(viewer);
+});
+
+/** Save the live loyalty rules with validation and an audit event. */
+export const updateLoyaltySettingsFn = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      stampsRequired: z.number().int().min(2).max(30),
+      rewardDescription: z.string().trim().min(1).max(120),
+      visitWindowMinutes: z.number().int().min(0).max(1440),
+      welcomeStamp: z.boolean(),
+      marketingWeeklyCap: z.number().int().min(0).max(14),
+      memberWeeklyCap: z.number().int().min(0).max(14),
+    }),
+  )
+  .handler(async ({ data }) => {
+    const [{ readViewer }, { saveLoyaltySettings }] = await Promise.all([
+      import("./auth-viewer"),
+      import("./live-loyalty"),
+    ]);
+    const viewer = await readViewer();
+    if (!viewer) return { ok: false as const, message: "Sign in again." };
+    return saveLoyaltySettings(viewer, data);
+  });
+
+/** Read the live menu for the signed-in owner. */
+export const getMenuFn = createServerFn({ method: "GET" }).handler(async () => {
+  const [{ readViewer }, { loadMenu }] = await Promise.all([
+    import("./auth-viewer"),
+    import("./live-menu"),
+  ]);
+  const viewer = await readViewer();
+  if (!viewer) return null;
+  return loadMenu(viewer);
+});
+
+/** Add a live menu section. */
+export const createMenuSectionFn = createServerFn({ method: "POST" })
+  .validator(z.object({ name: z.string().trim().min(1).max(80) }))
+  .handler(async ({ data }) => {
+    const [{ readViewer }, { createSection }] = await Promise.all([
+      import("./auth-viewer"),
+      import("./live-menu"),
+    ]);
+    const viewer = await readViewer();
+    if (!viewer) return { ok: false as const, message: "Sign in again." };
+    return createSection(viewer, data.name);
+  });
+
+/** Add a live menu item. */
+export const createMenuItemFn = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      sectionId: z.string().uuid(),
+      name: z.string().trim().min(1).max(120),
+      description: z.string().trim().max(300),
+      priceCents: z.number().int().min(0),
+    }),
+  )
+  .handler(async ({ data }) => {
+    const [{ readViewer }, { createItem }] = await Promise.all([
+      import("./auth-viewer"),
+      import("./live-menu"),
+    ]);
+    const viewer = await readViewer();
+    if (!viewer) return { ok: false as const, message: "Sign in again." };
+    return createItem(viewer, data);
+  });
+
+/** Show or hide a live menu item. */
+export const setMenuItemAvailableFn = createServerFn({ method: "POST" })
+  .validator(z.object({ itemId: z.string().uuid(), available: z.boolean() }))
+  .handler(async ({ data }) => {
+    const [{ readViewer }, { setItemAvailable }] = await Promise.all([
+      import("./auth-viewer"),
+      import("./live-menu"),
+    ]);
+    const viewer = await readViewer();
+    if (!viewer) return { ok: false as const, message: "Sign in again." };
+    return setItemAvailable(viewer, data.itemId, data.available);
   });

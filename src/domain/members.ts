@@ -4,7 +4,9 @@ import { clock } from "@/lib/clock";
 import { isValidSAMobile, normalizePhone } from "@/lib/phone";
 import { demoRepo, updateDemo } from "@/data/repo";
 import type { ConsentEvent, DemoSession, Membership } from "@/data/types";
+import { birthdayOf, isValidBirthday } from "@/lib/birthday";
 import { failure, success } from "./demo";
+import { recordJoinReferral } from "./referrals";
 
 const safeAlphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 function generateMemberCode() {
@@ -95,6 +97,10 @@ export function joinRestaurant(input: {
   marketingSms: boolean;
   source: string;
   loyaltyConsent?: boolean;
+  /** Optional day and month only, so we can spoil the guest on their birthday. */
+  birthday?: { day: number; month: number };
+  /** A friend's share code, when joining through bring a friend. */
+  referralCode?: string;
 }) {
   const state = demoRepo.read();
   const restaurant = state.restaurants.find(
@@ -107,6 +113,10 @@ export function joinRestaurant(input: {
     return failure("INVALID", "Agree to the loyalty card terms to continue.");
   if (name.length < 1 || name.length > 40 || !phoneE164 || !isValidSAMobile(phoneE164))
     return failure("INVALID", "Enter your first name and a valid South African mobile number.");
+  if (input.birthday) {
+    if (!isValidBirthday(input.birthday))
+      return failure("INVALID", "Check the birthday day and month you chose.");
+  }
   const customer = state.customers.find((item) => item.phoneE164 === phoneE164);
   const customerId = customer?.id ?? `customer-${crypto.randomUUID()}`;
   const existing = state.memberships.find(
@@ -124,6 +134,7 @@ export function joinRestaurant(input: {
     phoneE164,
     memberCode: generateMemberCode(),
     qrToken: crypto.randomUUID(),
+    ...(input.birthday ? { birthday: { ...input.birthday } } : {}),
   };
   // Welcome stamps: granted once at join, bounded below the reward threshold.
   const initialStamps = Math.max(
@@ -199,6 +210,13 @@ export function joinRestaurant(input: {
       : current.stamps,
     session: { role: "guest", customerId },
   }));
+  if (input.referralCode) {
+    recordJoinReferral({
+      restaurantId: restaurant.id,
+      referrerCode: input.referralCode,
+      friendMembershipId: membershipId,
+    });
+  }
   return success({ customerId, membershipId, alreadyMember: false });
 }
 
@@ -365,10 +383,15 @@ export async function optOutByToken(token: string) {
   }
 }
 
-export function updateGuestProfile(customerId: string, input: { name: string; birthday?: string }) {
+export function updateGuestProfile(
+  customerId: string,
+  input: { name: string; birthday?: { day: number; month: number } },
+) {
   const name = input.name.trim();
   if (name.length < 1 || name.length > 40)
     return failure("INVALID", "Enter a name between 1 and 40 characters.");
+  if (input.birthday && !isValidBirthday(input.birthday))
+    return failure("INVALID", "Check the birthday day and month you chose.");
   const found = demoRepo.read().customers.some((item) => item.id === customerId);
   if (!found) return failure("NOT_FOUND", "Guest record not found.");
   updateDemo((state) => ({
@@ -399,6 +422,9 @@ export function requestAccountDeletion(customerId: string) {
   const state = demoRepo.read();
   if (!state.customers.some((item) => item.id === customerId))
     return failure("NOT_FOUND", "Guest record not found.");
+  const membershipIds = state.memberships
+    .filter((item) => item.customerId === customerId)
+    .map((item) => item.id);
   const request = {
     id: `request-${crypto.randomUUID()}`,
     customerId,
@@ -408,9 +434,13 @@ export function requestAccountDeletion(customerId: string) {
   };
   updateDemo((current) => ({
     ...current,
-    customers: current.customers.map((item) =>
-      item.id === customerId ? { ...item, name: "", phoneE164: "", deleted: true } : item,
-    ),
+    customers: current.customers.map((item) => {
+      if (item.id !== customerId) return item;
+      const { birthday: _birthday, ...withoutBirthday } = { ...item, name: "", phoneE164: "", deleted: true };
+      return withoutBirthday;
+    }),
+    /** Orders are personal, so they go with the guest. Only counts stay. */
+    orders: current.orders.filter((item) => !membershipIds.includes(item.membershipId)),
     dataRequests: [...current.dataRequests, request],
   }));
   return success(request);
@@ -421,12 +451,19 @@ export function getCustomerData(customerId: string) {
   return customer
     ? success({
         customer,
+        birthday: birthdayOf(customer),
         memberships: state.memberships
           .filter((item) => item.customerId === customerId)
           .map((membership) => ({
             membership,
             restaurant: state.restaurants.find((item) => item.id === membership.restaurantId),
             consents: state.consents.filter((item) => item.membershipId === membership.id),
+            orders: state.orders.filter((item) => item.membershipId === membership.id),
+            referrals: state.referrals.filter(
+              (item) =>
+                item.friendMembershipId === membership.id ||
+                item.referrerMembershipId === membership.id,
+            ),
           })),
       })
     : failure("NOT_FOUND", "Guest record not found.");

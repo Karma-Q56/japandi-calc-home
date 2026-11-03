@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { planRepeatVisits, plannerDefaults, plannerPlans, rand, whatsappLink } from '@/lib/patron';
 import { useCountUp } from './motion';
+import { useQuietDay } from '@/lib/quiet-day';
 
 function Money({ value }: { value: number }) { const v = useCountUp(value); return <>{rand(v)}</>; }
 function Num({ value, digits = 1 }: { value: number; digits?: number }) { const v = useCountUp(value); return <>{v.toFixed(digits)}</>; }
@@ -21,7 +22,9 @@ function Control({ f }: { f: Field }) {
   </div>;
 }
 
-export function Planner() {
+export function Planner({ quietDay: quietDayProp }: { quietDay?: string }) {
+  const storedQuietDay = useQuietDay();
+  const quietDay = quietDayProp ?? storedQuietDay;
   const d = plannerDefaults;
   const [spend, setSpend] = useState<number>(d.spend);
   const [visits, setVisits] = useState<number>(d.visits);
@@ -31,7 +34,7 @@ export function Planner() {
   const fee = plannerPlans.find(p => p.name === plan)?.fee ?? 0;
   const r = planRepeatVisits({ spend, visits, lift, margin, fee });
   const reset = () => { setSpend(d.spend); setVisits(d.visits); setLift(d.lift); setMargin(d.margin); setPlan(d.plan); };
-  const message = `Hi Patron! I'd like to talk through my numbers.\nAverage spend: ${rand(spend)}\nVisits per week: ${visits}\nExtra visits to explore: ${lift}%\nMargin: ${margin}%\nPlan: ${plan} (${rand(fee)}/month)\nRestaurant: `;
+  const message = `Hi Patron! I'd like to talk through my numbers.\nAverage spend: ${rand(spend)}\nVisits per week: ${visits}\nExtra visits to explore: ${lift}%\nMargin: ${margin}%\nPlan: ${plan} (${rand(fee)}/month)\nQuietest day: ${quietDay}\nRestaurant: `;
   const fields: Field[] = [
     { id: 'spend', label: 'Average spend per visit', value: spend, min: 50, max: 800, step: 10, prefix: 'R', set: setSpend },
     { id: 'visits', label: 'Customer visits in a typical week', value: visits, min: 25, max: 5000, step: 25, set: setVisits },
@@ -40,7 +43,7 @@ export function Planner() {
   return <section className="section calculator-section page-width" id="calculator">
     <div data-reveal><div className="eyebrow"><span className="eyebrow-line" />A few more familiar faces</div>
     <h2 className="section-heading">What could a few more <span className="editorial">visits</span><br />be worth?</h2>
-    <p className="section-description">Play with your own numbers. A little more loyalty can make a real difference to your month.</p></div>
+    <p className="section-description">Play with your own numbers. A little more loyalty can make a real difference to your month. Your quietest day is {quietDay}, and we will bring an idea for it to the visit.</p></div>
     <div className="planner">
       <div className="planner-inputs">
         {fields.map(f => <Control key={f.id} f={f} />)}

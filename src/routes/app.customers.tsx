@@ -1,43 +1,63 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
 import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
+import { getCustomerListFn, getDataModeFn } from "@/server/live";
+import type { LiveCustomerList } from "@/server/live-dashboard";
+import { filterLiveCustomers, maskLivePhone } from "@/lib/live-customers";
 import { withChildren } from "@/lib/nested";
 import type { CampaignAudience } from "@/data/types";
 import type { CustomerFilter, CustomerSort } from "@/domain/customers";
 import { countLabel } from "@/lib/count-label";
+import { formatRand } from "@/lib/money";
+import { EmptyState, FormField, PageHeader } from "@/components/patron/dash";
 
 const FILTERS: CustomerFilter[] = [
   "all",
+  "one_stamp_away",
+  "recent30",
+  "reward_ready",
+  "gone_quiet",
   "new14",
   "regulars",
   "lapsed30",
   "lapsed45",
   "lapsed60",
   "sms",
+  "birthdays",
 ];
 
 const SORTS: CustomerSort[] = ["stamps", "fewest_stamps", "visits", "recent", "name"];
 const FILTER_LABELS: Record<CustomerFilter, string> = {
   all: "All guests",
   new14: "New · 14 days",
+  one_stamp_away: "One stamp away",
+  recent30: "Visited in the last 30 days",
+  reward_ready: "Reward ready",
+  gone_quiet: "Gone quiet",
   regulars: "Regulars",
   lapsed30: "Lapsed · 30 days",
   lapsed45: "Lapsed · 45 days",
   lapsed60: "Lapsed · 60 days",
   sms: "SMS opted in",
+  birthdays: "Birthdays this month",
 };
 
 const FILTER_AUDIENCE: Record<CustomerFilter, CampaignAudience> = {
   all: { type: "everyone" },
   new14: { type: "new", days: 14 },
+  one_stamp_away: { type: "close_to_reward", remaining: 1 },
+  recent30: { type: "everyone" },
+  reward_ready: { type: "close_to_reward", remaining: 0 },
+  gone_quiet: { type: "lapsed30", days: 30 },
   regulars: { type: "close_to_reward", remaining: 2 },
   lapsed30: { type: "lapsed30", days: 30 },
   lapsed45: { type: "lapsed30", days: 45 },
   lapsed60: { type: "lapsed30", days: 60 },
   sms: { type: "everyone" },
+  birthdays: { type: "birthday_month" },
 };
 
 const SORT_LABELS: Record<CustomerSort, string> = {
@@ -51,15 +71,28 @@ const SORT_LABELS: Record<CustomerSort, string> = {
 const CustomersWithChildren = withChildren(Customers);
 
 export const Route = createFileRoute("/app/customers")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode === "live") return;
     if (!requireRole("owner", "manager")(demoRepo.read().session)) {
       throw redirect({ to: "/login" });
     }
+  },
+  loader: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode !== "live") return { mode, live: null };
+    return { mode, live: await getCustomerListFn() };
   },
   component: CustomersWithChildren,
 });
 
 function Customers() {
+  const data = Route.useLoaderData();
+  if (data.mode === "live") return <LiveCustomers data={data.live} />;
+  return <DemoCustomers />;
+}
+
+function DemoCustomers() {
   const state = useDemoState();
   const session = state.session;
   const restaurant =
@@ -114,14 +147,18 @@ function Customers() {
 
   return (
     <main className="demo-hub page-width">
-      <p className="eyebrow">
-        <span className="eyebrow-line" />
-        Customers · {restaurant.name}
-      </p>
-      <h1>Your regulars.</h1>
+      <PageHeader
+        eyebrow={`Customers · ${restaurant.name}`}
+        title="Your regulars."
+        intro="Everyone who has joined your card, with their stamps, rewards and last visit. Pick a guest to see their full history."
+        actions={
+          <button className="builder-secondary" type="button" onClick={download}>
+            Export CSV
+          </button>
+        }
+      />
       <div className="builder-fields customer-filters">
-        <label className="builder-field">
-          Search name or phone
+        <FormField label="Search name or phone">
           <input
             value={search}
             onChange={(event) => {
@@ -129,9 +166,8 @@ function Customers() {
               setPage(1);
             }}
           />
-        </label>
-        <label className="builder-field">
-          Filter
+        </FormField>
+        <FormField label="Filter">
           <select
             value={filter}
             onChange={(event) => {
@@ -145,9 +181,8 @@ function Customers() {
               </option>
             ))}
           </select>
-        </label>
-        <label className="builder-field">
-          Sort
+        </FormField>
+        <FormField label="Sort">
           <select value={sort} onChange={(event) => setSort(event.target.value as CustomerSort)}>
             {SORTS.map((s) => (
               <option key={s} value={s}>
@@ -155,7 +190,7 @@ function Customers() {
               </option>
             ))}
           </select>
-        </label>
+        </FormField>
       </div>
       <p className="demo-data-note">
         {countLabel(data.total, "guest")} · page {data.page} of {pages}
@@ -200,13 +235,21 @@ function Customers() {
                     }).format(new Date(row.lastVisitAt))}`
                   : "No visits yet"}
                 {row.smsOptedIn ? " · SMS on" : ""}
+                {row.estimatedSpendCents !== null
+                  ? ` · about ${formatRand(row.estimatedSpendCents)} spent`
+                  : ""}
               </small>
               <b aria-hidden="true">›</b>
             </a>
           </div>
         ))}
       </div>
-      {data.total === 0 && <p className="demo-data-note">No guests match these filters.</p>}
+      {data.total === 0 && (
+        <EmptyState
+          title="No guests match these filters."
+          hint="Try a different filter, or clear the search to see everyone."
+        />
+      )}
       <div className="demo-control-actions">
         <button disabled={page <= 1} onClick={() => setPage(page - 1)}>
           Previous
@@ -214,13 +257,129 @@ function Customers() {
         <button disabled={page >= pages} onClick={() => setPage(page + 1)}>
           Next
         </button>
-        <button onClick={download}>Export CSV</button>
       </div>
       {notice && (
         <p role="status" className="demo-data-note">
           {notice}
         </p>
       )}
+    </main>
+  );
+}
+
+function LiveCustomers({ data }: { data: LiveCustomerList | null }) {
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<CustomerFilter>("all");
+  const [sort, setSort] = useState<CustomerSort>("recent");
+  const [page, setPage] = useState(1);
+  const rows = useMemo(
+    () => (data ? filterLiveCustomers(data.rows, { search, filter, sort }) : []),
+    [data, search, filter, sort],
+  );
+  const pages = Math.max(1, Math.ceil(rows.length / 25));
+  const current = Math.min(page, pages);
+  const shown = rows.slice((current - 1) * 25, current * 25);
+  if (!data) {
+    return (
+      <main className="demo-hub page-width">
+        <PageHeader
+          eyebrow="Live mode"
+          title="This login is not linked to a restaurant."
+          intro="Ask Patron to link your owner account to a restaurant, then sign in again."
+        />
+      </main>
+    );
+  }
+  return (
+    <main className="demo-hub page-width">
+      <PageHeader
+        eyebrow={`Customers · ${data.restaurantName}`}
+        title="Your regulars."
+        intro="Read from your live guest list. Profile, export and list tools come next."
+      />
+      <div className="builder-fields customer-filters">
+        <FormField label="Search name or phone">
+          <input
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setPage(1);
+            }}
+          />
+        </FormField>
+        <FormField label="Filter">
+          <select
+            value={filter}
+            onChange={(event) => {
+              setFilter(event.target.value as CustomerFilter);
+              setPage(1);
+            }}
+          >
+            {FILTERS.map((value) => (
+              <option key={value} value={value}>
+                {FILTER_LABELS[value]}
+              </option>
+            ))}
+          </select>
+        </FormField>
+        <FormField label="Sort">
+          <select value={sort} onChange={(event) => setSort(event.target.value as CustomerSort)}>
+            {SORTS.map((value) => (
+              <option key={value} value={value}>
+                {SORT_LABELS[value]}
+              </option>
+            ))}
+          </select>
+        </FormField>
+      </div>
+      <p className="demo-data-note">
+        {countLabel(rows.length, "guest")} · page {current} of {pages}
+      </p>
+      <div className="customer-table">
+        {shown.map((row) => (
+          <div className="customer-row" key={row.membershipId}>
+            <div className="customer-row-main">
+              <span>
+                <strong>
+                  <a href={`/app/customers/${row.customerId}`}>{row.name}</a>
+                </strong>
+                <small>{maskLivePhone(row.phoneE164)}</small>
+              </span>
+              <span className="customer-row-meta">
+                <span>{countLabel(row.stampsCurrent, "stamp")}</span>
+                {row.rewardsWaiting > 0 && (
+                  <span className="reward-pill">
+                    {countLabel(row.rewardsWaiting, "reward")} ready
+                  </span>
+                )}
+              </span>
+              <small>
+                {row.lastVisitAt
+                  ? `Last visit ${new Intl.DateTimeFormat("en-ZA", {
+                      dateStyle: "medium",
+                      timeZone: "Africa/Johannesburg",
+                    }).format(new Date(row.lastVisitAt))}`
+                  : "No visits yet"}
+                {row.smsOptedIn ? " · SMS on" : ""}
+              </small>
+            </div>
+          </div>
+        ))}
+      </div>
+      {rows.length === 0 && (
+        <EmptyState
+          title="No guests match these filters."
+          hint="Try a different filter, or clear the search to see everyone."
+        />
+      )}
+      <div className="demo-control-actions">
+        <button disabled={current <= 1} onClick={() => setPage(current - 1)}>
+          Previous
+        </button>
+        <button disabled={current >= pages} onClick={() => setPage(current + 1)}>
+          Next
+        </button>
+      </div>
     </main>
   );
 }
