@@ -7,7 +7,7 @@ export const Route = createFileRoute("/terms")({
 
 function Terms() {
   return (
-    <MarketingShell>
+    <MarketingShell back={{ to: "/", label: "Back" }}>
       <section className="marketing-page-hero page-width">
         <p className="eyebrow">
           <span className="eyebrow-line" />

@@ -9,6 +9,7 @@ import { isScanTokenShape, verifyScanToken } from "@/lib/scan";
 import { CardScanner } from "@/components/patron/CardScanner";
 import { Badge, FormField, PageHeader } from "@/components/patron/dash";
 import type { StampResult } from "@/domain/stamps";
+import { signOut } from "@/lib/sign-out";
 
 export const Route = createFileRoute("/stamp")({
   loader: async () => {
@@ -159,7 +160,13 @@ function Till() {
       // HMAC + lockout on the server); staff identity is still the demo
       // session until the auth slice binds real staff sessions.
       const res = await recordStampFn({
-        data: { restaurantId: restaurant.id, membershipId: lookup.membershipId, staffId: session.staffId, key, pin },
+        data: {
+          restaurantId: restaurant.id,
+          membershipId: lookup.membershipId,
+          staffId: session.staffId,
+          key,
+          pin,
+        },
       });
       if (!res.ok) {
         say("error", res.message);
@@ -356,6 +363,22 @@ function Till() {
     setPin("");
   };
 
+  const unpair = () => {
+    updateDemo((current) => {
+      const session = { ...current.session };
+      delete session.tillPairedRestaurantId;
+      delete session.staffExpiresAt;
+      delete session.staffId;
+      return { ...current, session };
+    });
+    setLookup(null);
+    setPin("");
+    setPinName("");
+    setFeedback(null);
+  };
+
+  const leave = () => void signOut(mode);
+
   if (!paired) {
     return (
       <main className="guest-page">
@@ -390,6 +413,7 @@ function Till() {
             </p>
           )}
         </section>
+        <TillAccountActions paired={paired} onUnpair={unpair} onLogOut={leave} />
       </main>
     );
   }
@@ -453,6 +477,7 @@ function Till() {
             </p>
           )}
         </section>
+        <TillAccountActions paired={paired} onUnpair={unpair} onLogOut={leave} />
       </main>
     );
   }
@@ -494,18 +519,12 @@ function Till() {
           <button className="builder-primary" type="submit">
             Look up
           </button>
-          <button
-            className="builder-secondary"
-            type="button"
-            onClick={() => setScanning(true)}
-          >
+          <button className="builder-secondary" type="button" onClick={() => setScanning(true)}>
             Scan card
           </button>
         </form>
         {!("mediaDevices" in navigator) && (
-          <p className="demo-data-note">
-            This device has no camera. Type the member code instead.
-          </p>
+          <p className="demo-data-note">This device has no camera. Type the member code instead.</p>
         )}
       </section>
       {scanning && (
@@ -608,7 +627,31 @@ function Till() {
           </p>
         ))}
       </section>
+      <TillAccountActions paired={paired} onUnpair={unpair} onLogOut={leave} />
     </main>
+  );
+}
+
+function TillAccountActions({
+  paired,
+  onUnpair,
+  onLogOut,
+}: {
+  paired: boolean;
+  onUnpair: () => void;
+  onLogOut: () => void;
+}) {
+  return (
+    <div className="till-account-actions">
+      {paired && (
+        <button type="button" className="guest-back" data-testid="unpair-till" onClick={onUnpair}>
+          Unpair this till
+        </button>
+      )}
+      <button type="button" className="guest-back" data-testid="staff-logout" onClick={onLogOut}>
+        Log out
+      </button>
+    </div>
   );
 }
 
@@ -693,11 +736,7 @@ function OrderSheet({
           inputMode="numeric"
         />
       </FormField>
-      <button
-        className="builder-primary"
-        disabled={pickCount === 0}
-        onClick={onSave}
-      >
+      <button className="builder-primary" disabled={pickCount === 0} onClick={onSave}>
         Save order{pickCount > 0 ? ` (${pickCount})` : ""}
       </button>
       <button className="guest-back" onClick={onSkip}>

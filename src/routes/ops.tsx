@@ -1,11 +1,19 @@
 import { markOutletComponent } from "@/lib/nested";
-import { createFileRoute, redirect, Link, Outlet, useChildMatches, useRouterState } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  redirect,
+  Link,
+  Outlet,
+  useChildMatches,
+  useRouterState,
+} from "@tanstack/react-router";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
 import { canOpenArea } from "@/lib/auth-rules";
 import { getDataModeFn, getViewerFn } from "@/server/live";
 import { APP_NAME } from "@/config/app";
 import { DemoPlaceholder } from "@/components/patron/DemoPlaceholder";
+import { signOut } from "@/lib/sign-out";
 
 const LINKS = [
   { to: "/ops/restaurants", label: "Restaurants" },
@@ -17,13 +25,15 @@ const LINKS = [
 ] as const;
 
 function OpsShell() {
+  const { mode } = Route.useLoaderData();
   const children = useChildMatches();
   const path = useRouterState({ select: (state) => state.location.pathname });
   return (
     <div className="opsx">
       <header className="opsx-bar">
         <Link to="/ops/restaurants" className="opsx-brand">
-          {APP_NAME.toLowerCase()}<span>.</span> <small>operator</small>
+          {APP_NAME.toLowerCase()}
+          <span>.</span> <small>operator</small>
         </Link>
         <nav aria-label="Operator sections">
           {LINKS.map((link) => (
@@ -36,6 +46,14 @@ function OpsShell() {
             </Link>
           ))}
         </nav>
+        <button
+          type="button"
+          className="opsx-logout"
+          data-testid="operator-logout"
+          onClick={() => void signOut(mode)}
+        >
+          Log out
+        </button>
       </header>
       {children.length > 0 ? (
         <Outlet />
@@ -62,5 +80,6 @@ export const Route = createFileRoute("/ops")({
     }
     if (!requireRole("operator")(demoRepo.read().session)) throw redirect({ to: "/login" });
   },
+  loader: async () => getDataModeFn(),
   component: OpsPage,
 });

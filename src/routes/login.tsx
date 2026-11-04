@@ -73,7 +73,7 @@ function LoginPage() {
   };
 
   return (
-    <MarketingShell>
+    <MarketingShell back={{ to: "/", label: "Back" }}>
       <section className="login-page page-width">
         <div className="login-card">
           <span className="eyebrow">
@@ -126,12 +126,6 @@ function LoginPage() {
                   {busy ? "Signing in..." : "Sign in"} <ArrowRight size={16} />
                 </button>
               </form>
-              <p className="login-new">
-                <a href="/forgot-password">Forgot your password?</a>
-              </p>
-              <p className="login-new">
-                New here? <a href="/signup">Create your account</a>
-              </p>
             </>
           ) : (
             <>
@@ -176,7 +170,10 @@ function LoginPage() {
                       key={account.id}
                       type="button"
                       onClick={() =>
-                        enter(account.id, `Opening the demo ${account.label.toLowerCase()} account...`)
+                        enter(
+                          account.id,
+                          `Opening the demo ${account.label.toLowerCase()} account...`,
+                        )
                       }
                     >
                       <strong>{account.label}</strong>
@@ -192,6 +189,12 @@ function LoginPage() {
             </>
           )}
 
+          <p className="login-new">
+            <a href="/forgot-password">Forgot password?</a>
+          </p>
+          <p className="login-new">
+            New here? <a href="/signup">Create account</a>
+          </p>
           <p className="login-note" role="note">
             Restaurant owners and staff sign in here too. We take you to the right place.
           </p>

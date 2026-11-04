@@ -7,7 +7,7 @@ export const Route = createFileRoute("/privacy")({
 
 function Privacy() {
   return (
-    <MarketingShell>
+    <MarketingShell back={{ to: "/", label: "Back" }}>
       <section className="marketing-page-hero page-width">
         <p className="eyebrow">
           <span className="eyebrow-line" />
@@ -71,7 +71,7 @@ function Privacy() {
         </p>
         <h2>Third parties</h2>
         <p>
-          The live build sends SMS through a provider, which receives the destination number and
+          The live build sends SMS through a messaging service, which receives the destination number and
           message body. Patron never sells guest lists. Restaurants only see their own guests.
         </p>
       </section>

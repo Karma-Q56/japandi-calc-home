@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/theme";
 import { withChildren } from "@/lib/nested";
 import { PublicTemplate, type VenueSection } from "@/components/patron/PublicTemplates";
 import { formatRand } from "@/lib/money";
+import { BackLink } from "@/components/patron/BackLink";
 
 const PublicRestaurantPageWithChildren = withChildren(PublicRestaurantPage);
 export const Route = createFileRoute("/r/$slug")({
@@ -33,8 +34,6 @@ export const Route = createFileRoute("/r/$slug")({
   },
   component: PublicRestaurantPageWithChildren,
 });
-
-
 
 function PublicRestaurantPage() {
   const { slug } = Route.useParams();
@@ -75,12 +74,10 @@ function PublicRestaurantPage() {
   // during hydration. Later browser state updates carry the persisted demo clock.
   const now = state.now;
   const publicSpecials = api.special.publicFor(restaurant.id);
-  const special =
-    publicSpecials.find((item) => item.title && item.active) ?? null;
+  const special = publicSpecials.find((item) => item.title && item.active) ?? null;
   const sections: VenueSection[] = restaurant.menuSectionIds.map((sectionId) => ({
     id: sectionId,
-    name:
-      state.sections.find((item) => item.id === sectionId)?.name ?? "Menu",
+    name: state.sections.find((item) => item.id === sectionId)?.name ?? "Menu",
     items: state.items
       .filter((item) => item.sectionId === sectionId && item.available)
       .sort((a, b) => a.sortOrder - b.sortOrder),
@@ -88,8 +85,7 @@ function PublicRestaurantPage() {
   const membership = state.session.customerId
     ? state.memberships.find(
         (item) =>
-          item.customerId === state.session.customerId &&
-          item.restaurantId === restaurant.id,
+          item.customerId === state.session.customerId && item.restaurantId === restaurant.id,
       )
     : undefined;
   const offers = membership ? api.special.offersFor(membership.id) : null;
@@ -134,6 +130,9 @@ function LivePublicPage({ page, slug }: { page: PublicPage; slug: string }) {
   }
   return (
     <main className="venue-page">
+      <div className="venue-live-back">
+        <BackLink to="/find" label="Find a restaurant" />
+      </div>
       <header className="venue-header">
         <a href="/">{page.name}</a>
         {page.suburb && <span>{page.suburb} · Johannesburg</span>}
@@ -163,7 +162,9 @@ function LivePublicPage({ page, slug }: { page: PublicPage; slug: string }) {
             {group.items.map((item) => (
               <li key={item.id}>
                 {item.name}
-                {item.priceCents != null && item.priceCents > 0 ? ` · ${formatRand(item.priceCents)}` : ""}
+                {item.priceCents != null && item.priceCents > 0
+                  ? ` · ${formatRand(item.priceCents)}`
+                  : ""}
               </li>
             ))}
           </ul>

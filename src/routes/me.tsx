@@ -13,6 +13,7 @@ import { LoyaltyCard } from "@/components/patron/LoyaltyCard";
 import { PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
 import { clock } from "@/lib/clock";
 import { signInAsDemoAccount } from "@/lib/demo-signin";
+import { signOut } from "@/lib/sign-out";
 
 const MyCardsPage = withChildren(MyCards);
 export const Route = createFileRoute("/me")({
@@ -68,6 +69,7 @@ function LiveMyCardsPage({ data }: { data: LiveCardsData | null }) {
             Finish my details
           </a>
         </section>
+        <GuestAccount mode="live" />
       </main>
     );
   }
@@ -84,7 +86,10 @@ function LiveMyCardsPage({ data }: { data: LiveCardsData | null }) {
       />
       {cards.length > 0 && (
         <StatGrid dense>
-          <StatCard value={cards.length} label={cards.length === 1 ? "card joined" : "cards joined"} />
+          <StatCard
+            value={cards.length}
+            label={cards.length === 1 ? "card joined" : "cards joined"}
+          />
           <StatCard
             value={rewardsReady}
             label={rewardsReady === 1 ? "reward ready" : "rewards ready"}
@@ -114,7 +119,9 @@ function LiveMyCardsPage({ data }: { data: LiveCardsData | null }) {
                 </small>
                 {card.rewardsReady > 0 && (
                   <span className="gx-badge">
-                    {card.rewardsReady === 1 ? "1 reward ready" : `${card.rewardsReady} rewards ready`}
+                    {card.rewardsReady === 1
+                      ? "1 reward ready"
+                      : `${card.rewardsReady} rewards ready`}
                   </span>
                 )}
                 <small>{lastVisitLabel(card.lastVisitAt)}</small>
@@ -132,6 +139,7 @@ function LiveMyCardsPage({ data }: { data: LiveCardsData | null }) {
           </a>
         </section>
       )}
+      <GuestAccount mode="live" />
     </GuestShell>
   );
 }
@@ -216,7 +224,12 @@ function DemoMyCards() {
                 )
               : null;
             return (
-              <Link key={item.id} to="/r/$slug/card" params={{ slug: item.restaurant.slug }} search={{}}>
+              <Link
+                key={item.id}
+                to="/r/$slug/card"
+                params={{ slug: item.restaurant.slug }}
+                search={{}}
+              >
                 <LoyaltyCard
                   compact
                   theme={item.restaurant.theme}
@@ -270,6 +283,30 @@ function DemoMyCards() {
           </p>
         )}
       </section>
+      <GuestAccount mode="demo" />
     </GuestShell>
+  );
+}
+
+function GuestAccount({ mode }: { mode: "demo" | "live" }) {
+  return (
+    <section className="gx-panel">
+      <div className="guest-section-heading">
+        <h2>Account</h2>
+      </div>
+      <p className="gx-note">
+        {mode === "demo"
+          ? "Log out of this demo guest account. The demo venue data stays on this device."
+          : "Log out of this account on this device."}
+      </p>
+      <button
+        type="button"
+        className="builder-secondary"
+        data-testid="guest-logout"
+        onClick={() => void signOut(mode)}
+      >
+        Log out
+      </button>
+    </section>
   );
 }

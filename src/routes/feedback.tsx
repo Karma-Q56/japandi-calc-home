@@ -57,7 +57,7 @@ function PublicFeedback() {
 
   if (status === "done") {
     return (
-      <MarketingShell>
+      <MarketingShell back={{ to: "/", label: "Back" }}>
         <main className="marketing-page-hero page-width" aria-live="polite">
           <span className="eyebrow">
             <span className="eyebrow-line" /> Note received
@@ -81,7 +81,7 @@ function PublicFeedback() {
   }
 
   return (
-    <MarketingShell>
+    <MarketingShell back={{ to: "/", label: "Back" }}>
       <section className="marketing-page-hero page-width">
         <span className="eyebrow">
           <span className="eyebrow-line" /> Feedback

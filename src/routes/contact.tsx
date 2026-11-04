@@ -42,7 +42,7 @@ export const Route = createFileRoute("/contact")({
 function Contact() {
   const { kind, quietDay } = Route.useSearch();
   return (
-    <MarketingShell>
+    <MarketingShell back={{ to: "/", label: "Back" }}>
       <section className="marketing-page-hero page-width">
         <span className="eyebrow">
           <span className="eyebrow-line" /> Contact

@@ -10,6 +10,7 @@ import { ThemeProvider } from "@/theme";
 import { isValidSAMobile } from "@/lib/phone";
 import { isValidBirthday, MONTH_NAMES } from "@/lib/birthday";
 import { rewardJoinPitch } from "@/lib/reward-copy";
+import { BackLink } from "@/components/patron/BackLink";
 
 export const Route = createFileRoute("/r/$slug/join")({
   loader: async () => {
@@ -168,6 +169,18 @@ function JoinPage() {
           <a href="/">Patron home</a>
         </header>
         <section className="guest-flow">
+          <div className="join-back">
+            {step === 0 ? (
+              <BackLink to={`/r/${slug}`} label="Restaurant" />
+            ) : (
+              <BackLink
+                onClick={() => {
+                  setError("");
+                  setStep(step - 1);
+                }}
+              />
+            )}
+          </div>
           <div className="guest-progress" aria-label={`Step ${step + 1} of 3`}>
             {["Welcome", "Details", "Verification"].map((label, index) => (
               <span className={index === step ? "active" : ""} key={label}>
@@ -186,7 +199,8 @@ function JoinPage() {
                     <strong>
                       You start with {welcome} stamp{welcome === 1 ? "" : "s"}.
                     </strong>{" "}
-                    That leaves {restaurant.stampsRequired - welcome} to {restaurant.rewardDescription}.
+                    That leaves {restaurant.stampsRequired - welcome} to{" "}
+                    {restaurant.rewardDescription}.
                   </p>
                 )}
                 {customer && (
@@ -277,17 +291,6 @@ function JoinPage() {
               <p className="field-error" role="alert">
                 {error}
               </p>
-            )}
-            {step > 0 && (
-              <button
-                className="guest-back"
-                onClick={() => {
-                  setError("");
-                  setStep(step - 1);
-                }}
-              >
-                Back
-              </button>
             )}
           </div>
           <small className="demo-data-note">Demo data · No SMS is sent.</small>

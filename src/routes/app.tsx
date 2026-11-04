@@ -10,8 +10,21 @@ import { canOpenArea } from "@/lib/auth-rules";
 import { getDataModeFn, getOwnerOverviewFn, getViewerFn } from "@/server/live";
 import { OwnerSideNav, OwnerTabs } from "@/components/patron/OwnerNav";
 import { PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
+import { BackLink } from "@/components/patron/BackLink";
 import { markOutletComponent } from "@/lib/nested";
+import { signOut } from "@/lib/sign-out";
 import { PatronBrand } from "@/lib/patron-brand";
+import { ChevronDown, LogOut } from "lucide-react";
+
+const OWNER_TABS = new Set(["/app", "/app/insights", "/app/reports", "/app/customers"]);
+
+/** Non-tab owner screens get one parent destination from the route they are on. */
+function ownerBackFor(pathname: string) {
+  const clean = pathname.replace(/\/$/, "") || "/app";
+  if (!clean.startsWith("/app/") || OWNER_TABS.has(clean)) return null;
+  const parent = clean.slice(0, clean.lastIndexOf("/"));
+  return { to: OWNER_TABS.has(parent) ? parent : "/app", label: "Back" };
+}
 
 export const Route = createFileRoute("/app")({
   beforeLoad: async () => {
@@ -61,6 +74,11 @@ function OwnerShell() {
     });
   };
   const showVenueSwitcher = !isLive && state.restaurants.length > 1;
+  const back = ownerBackFor(location.pathname);
+  const signedInName = state.session.staffId
+    ? state.staff.find((item) => item.id === state.session.staffId)?.displayName
+    : undefined;
+  const viewerName = signedInName ?? (state.session.role === "manager" ? "Manager" : "Owner");
   const brand = (
     <div className="ox-brand">
       <PatronBrand className="ox-brand-wordmark" />
@@ -77,10 +95,18 @@ function OwnerShell() {
         <OwnerSideNav />
         <p className="ox-foot">
           Powered by {APP_NAME}.<br />
-          {isLive ? "Live data from this restaurant." : "Demo data. Nothing is sent to real guests."}
+          {isLive
+            ? "Live data from this restaurant."
+            : "Demo data. Nothing is sent to real guests."}
         </p>
       </aside>
       <div className="ox-main">
+        <OwnerAccount displayName={viewerName} venueName={restaurantName} mode={data.mode} />
+        {back && (
+          <div className="ox-back">
+            <BackLink to={back.to} label={back.label} />
+          </div>
+        )}
         <header className={`ox-top${showVenueSwitcher ? " has-venue-select" : ""}`}>
           {brand}
           {showVenueSwitcher && (
@@ -119,6 +145,44 @@ function OwnerShell() {
   );
 }
 
+function OwnerAccount({
+  displayName,
+  venueName,
+  mode,
+}: {
+  displayName: string;
+  venueName: string;
+  mode: "demo" | "live";
+}) {
+  return (
+    <div className="ox-accountbar">
+      <details className="ox-account">
+        <summary data-testid="owner-account">
+          <span className="ox-avatar" aria-hidden="true">
+            {displayName.slice(0, 1).toUpperCase()}
+          </span>
+          <span className="ox-account-name">{displayName}</span>
+          <ChevronDown size={15} aria-hidden="true" />
+        </summary>
+        <div className="ox-account-menu">
+          <p>
+            <strong>{displayName}</strong>
+            <small>{venueName}</small>
+          </p>
+          <button
+            type="button"
+            className="builder-secondary"
+            data-testid="owner-logout"
+            onClick={() => void signOut(mode)}
+          >
+            <LogOut size={15} aria-hidden="true" /> Log out
+          </button>
+        </div>
+      </details>
+    </div>
+  );
+}
+
 function LiveToolsNotice() {
   return (
     <main className="demo-hub page-width">
@@ -129,7 +193,9 @@ function LiveToolsNotice() {
       />
       <section className="builder-panel">
         <h2>What is live today</h2>
-        <p>Use the owner menu for real stamps, guests, rewards, campaigns, card rules and menu items.</p>
+        <p>
+          Use the owner menu for real stamps, guests, rewards, campaigns, card rules and menu items.
+        </p>
         <p className="demo-data-note">The remaining builders follow in a later phase.</p>
         <div className="page-actions">
           <a className="builder-primary" href="/app">

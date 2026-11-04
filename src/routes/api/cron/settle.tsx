@@ -26,7 +26,7 @@ function CronSettlePlaceholder() {
   return (
     <main className="demo-hub page-width">
       <h1>Not implemented yet.</h1>
-      <p>SMS cost settlement runs from the campaign results page until M9.</p>
+      <p>SMS cost settlement runs from the campaign results page.</p>
       <a href="/">Back to Patron</a>
     </main>
   );

@@ -5,6 +5,7 @@ import { ArrowUpRight, ChevronDown, Heart, Menu, X } from "lucide-react";
 import { PatronBrand } from "@/lib/patron-brand";
 import { APP_NAME } from "@/config/app";
 import { HelpBubble } from "@/components/patron/HelpBubble";
+import { BackLink } from "@/components/patron/BackLink";
 
 const businessLinks: Array<{ href: string; label: string }> = [
   { href: "/for-business", label: "Overview" },
@@ -136,7 +137,11 @@ export function SiteHeader() {
           <a href="/find" onClick={closeNav} aria-current={path === "/find" ? "page" : undefined}>
             Find a restaurant
           </a>
-          <a href="/suggest" onClick={closeNav} aria-current={path === "/suggest" ? "page" : undefined}>
+          <a
+            href="/suggest"
+            onClick={closeNav}
+            aria-current={path === "/suggest" ? "page" : undefined}
+          >
             Ask for a place
           </a>
           <a href="/blog" onClick={closeNav} aria-current={path === "/blog" ? "page" : undefined}>
@@ -219,14 +224,23 @@ export function SiteFooter() {
 export function MarketingShell({
   children,
   afterMain,
+  back,
 }: {
   children: ReactNode;
   afterMain?: ReactNode;
+  back?: { to: string; label?: string };
 }) {
   return (
     <>
       <SiteHeader />
-      <main>{children}</main>
+      <main>
+        {back && (
+          <div className="marketing-back page-width">
+            <BackLink to={back.to} {...(back.label ? { label: back.label } : {})} />
+          </div>
+        )}
+        {children}
+      </main>
       {afterMain}
       <SiteFooter />
       <HelpBubble />

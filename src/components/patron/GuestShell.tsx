@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { CreditCard, MapPin, UserRound, ChevronLeft } from "lucide-react";
+import { CreditCard, MapPin, UserRound } from "lucide-react";
 import { PatronBrand } from "@/lib/patron-brand";
+import { BackLink } from "@/components/patron/BackLink";
 
 export function GuestShell({
   children,
@@ -20,14 +21,7 @@ export function GuestShell({
     <div className="gx">
       <header className="gx-top">
         <PatronBrand className="gx-brand-wordmark" />
-        {back ? (
-          <Link to={back.to} className="gx-back">
-            <ChevronLeft size={18} style={{ verticalAlign: "-4px" }} />
-            {back.label}
-          </Link>
-        ) : (
-          <span />
-        )}
+        {back ? <BackLink to={back.to} label={back.label} className="gx-back" /> : <span />}
         {title && (
           <span className="gx-title" title={title}>
             {title}
