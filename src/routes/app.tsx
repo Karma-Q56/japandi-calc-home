@@ -8,12 +8,12 @@ import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
 import { canOpenArea } from "@/lib/auth-rules";
 import { getDataModeFn, getOwnerOverviewFn, getViewerFn } from "@/server/live";
-import { OwnerSideNav, OwnerTabs } from "@/components/patron/OwnerNav";
+import { OwnerSideNav, OwnerMobileNav } from "@/components/patron/OwnerNav";
 import { PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
 import { BackLink } from "@/components/patron/BackLink";
 import { markOutletComponent } from "@/lib/nested";
 import { signOut } from "@/lib/sign-out";
-import { PatronBrand } from "@/lib/patron-brand";
+import { Avatar, VenueMark } from "@/components/patron/kit";
 import { ChevronDown, LogOut } from "lucide-react";
 
 const OWNER_TABS = new Set(["/app", "/app/insights", "/app/reports", "/app/customers"]);
@@ -81,17 +81,37 @@ function OwnerShell() {
   const viewerName = signedInName ?? (state.session.role === "manager" ? "Manager" : "Owner");
   const brand = (
     <div className="ox-brand">
-      <PatronBrand className="ox-brand-wordmark" />
+      <VenueMark name={restaurantName} theme={restaurant.theme} size="sm" />
       <span className="ox-brand-copy">
         <strong>{restaurantName}</strong>
-        <small>Owner view</small>
+        <span className="ox-owner-tag">OWNER</span>
       </span>
     </div>
   );
+  const venuePicker = showVenueSwitcher ? (
+    <select
+      className="ox-venue-select"
+      aria-label="Switch venue"
+      value={restaurant.id}
+      onChange={(event) => switchVenue(event.target.value)}
+    >
+      {state.restaurants.map((item) => (
+        <option key={item.id} value={item.id}>
+          {item.name}
+        </option>
+      ))}
+    </select>
+  ) : null;
   return (
     <div className="ox">
       <aside className="ox-side">
         {brand}
+        {showVenueSwitcher && (
+          <label className="ox-venue-picker">
+            Venue
+            {venuePicker}
+          </label>
+        )}
         <OwnerSideNav />
         <p className="ox-foot">
           Powered by {APP_NAME}.<br />
@@ -107,23 +127,10 @@ function OwnerShell() {
             <BackLink to={back.to} label={back.label} />
           </div>
         )}
-        <header className={`ox-top${showVenueSwitcher ? " has-venue-select" : ""}`}>
+        <header className="ox-top">
           {brand}
-          {showVenueSwitcher && (
-            <select
-              className="ox-venue-select"
-              aria-label="Switch venue"
-              value={restaurant.id}
-              onChange={(event) => switchVenue(event.target.value)}
-            >
-              {state.restaurants.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-          )}
         </header>
+        <OwnerMobileNav venueSwitcher={venuePicker} />
         {children.length > 0 ? (
           isLive ? (
             liveChild ? (
@@ -140,7 +147,6 @@ function OwnerShell() {
           <Overview restaurantId={restaurant.id} live={live?.overview ?? null} />
         )}
       </div>
-      <OwnerTabs />
     </div>
   );
 }
@@ -158,9 +164,7 @@ function OwnerAccount({
     <div className="ox-accountbar">
       <details className="ox-account">
         <summary data-testid="owner-account">
-          <span className="ox-avatar" aria-hidden="true">
-            {displayName.slice(0, 1).toUpperCase()}
-          </span>
+          <Avatar name={displayName} />
           <span className="ox-account-name">{displayName}</span>
           <ChevronDown size={15} aria-hidden="true" />
         </summary>

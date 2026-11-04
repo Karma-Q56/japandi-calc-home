@@ -365,7 +365,7 @@
   font-size: 10px;
   letter-spacing: 2px;
   font-weight: 600;
-  text-transform: uppercase;
+  text-transform: none;
 }
 .eyebrow-line {
   width: 24px;
@@ -577,7 +577,7 @@
 }
 .demo-subtitle {
   font-size: 8px;
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 1.5px;
   color: var(--muted-foreground);
   margin-top: 4px;
@@ -685,7 +685,7 @@
 .demo-label {
   font-size: 8px;
   letter-spacing: 1px;
-  text-transform: uppercase;
+  text-transform: none;
   color: var(--muted-foreground);
 }
 .results-demo strong {
@@ -754,9 +754,9 @@
 }
 .calculator-control label {
   font-size: 10px;
-  font-family: monospace;
+  font-family: var(--font-sans);
   letter-spacing: 1.7px;
-  text-transform: uppercase;
+  text-transform: none;
   line-height: 1.7;
 }
 .calculator-control output {
@@ -848,7 +848,7 @@
   color: var(--primary-foreground);
   font-size: 9px;
   font-weight: 600;
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 1px;
   padding: 6px 12px;
   border-radius: 20px;
@@ -1651,9 +1651,9 @@ body {
 .planner-legend {
   display: block;
   font-size: 10px;
-  font-family: monospace;
+  font-family: var(--font-sans);
   letter-spacing: 1.7px;
-  text-transform: uppercase;
+  text-transform: none;
   margin-bottom: 12px;
 }
 .plan-toggle {
@@ -1826,7 +1826,7 @@ body {
   padding: 10px 16px;
   font-size: 10px;
   letter-spacing: 1.5px;
-  text-transform: uppercase;
+  text-transform: none;
   border-bottom: 1px solid var(--border);
   color: var(--muted-foreground);
 }
@@ -2208,7 +2208,7 @@ body {
   padding: 6px 10px;
   font-size: 10px;
   letter-spacing: 0.7px;
-  text-transform: uppercase;
+  text-transform: none;
   background: var(--sage);
   color: var(--sage-foreground);
 }
@@ -2445,7 +2445,7 @@ body {
   font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.8px;
-  text-transform: uppercase;
+  text-transform: none;
 }
 .demo-table td {
   padding: 12px;
@@ -3189,7 +3189,7 @@ body {
   color: var(--venue-accent);
   font-size: 9px;
   letter-spacing: 1px;
-  text-transform: uppercase;
+  text-transform: none;
 }
 .theme-preview-stamps {
   display: grid;

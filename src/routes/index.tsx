@@ -226,7 +226,7 @@ function HomePage() {
               </li>
             </ul>
             <div className="run-actions">
-              <a className="builder-primary" href="/for-business">
+              <a className="builder-secondary" href="/for-business">
                 See what owners get <ArrowRight size={16} />
               </a>
               <a className="text-link" href="/pricing">
@@ -282,7 +282,7 @@ function HomePage() {
           <h2>Ready when you are.</h2>
           <p>Find a place near you and start collecting.</p>
         </div>
-        <a className="builder-primary" href="/for-diners#find-a-restaurant">
+        <a className="builder-secondary" href="/for-diners#find-a-restaurant">
           Find a restaurant <ArrowRight size={16} />
         </a>
       </section>

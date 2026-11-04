@@ -3,7 +3,7 @@
 import { chromium, expect } from "@playwright/test";
 
 const BASE = (process.env.AUDIT_BASE ?? "http://127.0.0.1:5173").replace(/\/$/, "");
-const STORAGE_KEY = "patron-demo-v8";
+const STORAGE_KEY = "patron-demo-v9";
 const results = [];
 
 async function runFlow(name, body) {
@@ -106,7 +106,7 @@ await runFlow("stamp and redeem at the till", async ({ page, check }) => {
   });
 
   const picks = await page.evaluate(() => {
-    const state = JSON.parse(localStorage.getItem("patron-demo-v8") ?? "{}");
+    const state = JSON.parse(localStorage.getItem("patron-demo-v9") ?? "{}");
     const customers = new Map(state.customers.map((customer) => [customer.id, customer]));
     const memberships = state.memberships.filter(
       (membership) => membership.restaurantId === "rest-daily-grind",

@@ -1,4 +1,4 @@
-import { useState, type ComponentType } from "react";
+import { type ComponentType, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard,
@@ -15,7 +15,6 @@ import {
   QrCode,
   ScrollText,
   Settings,
-  Ellipsis,
   UsersRound,
   Palette,
   Target,
@@ -47,9 +46,6 @@ export const OWNER_NAV: Item[] = [
   { to: "/app/lists", label: "Lists", icon: List },
 ];
 
-const PRIMARY = OWNER_NAV.slice(0, 4);
-const MORE = OWNER_NAV.slice(4);
-
 function useActive() {
   const path = useRouterState({ select: (state) => state.location.pathname });
   return (item: Item) => (item.end ? path === item.to : path.startsWith(item.to));
@@ -73,51 +69,24 @@ export function OwnerSideNav() {
     </nav>
   );
 }
-
-export function OwnerTabs() {
+export function OwnerMobileNav({ venueSwitcher }: { venueSwitcher?: ReactNode } = {}) {
   const active = useActive();
-  const [open, setOpen] = useState(false);
-  const moreActive = MORE.some(active);
   return (
-    <>
-      <nav className="ox-tabs" aria-label="Owner sections">
-        {PRIMARY.map((item) => (
+    <div className="ox-mobile-wrap">
+      <nav className="ox-mobile-nav" aria-label="Owner sections">
+        {OWNER_NAV.map((item) => (
           <Link
             key={item.to}
             to={item.to}
-            className={`ox-tab${active(item) ? " is-active" : ""}`}
+            className={`ox-mobile-link${active(item) ? " is-active" : ""}`}
             aria-current={active(item) ? "page" : undefined}
           >
             <item.icon />
             {item.label}
           </Link>
         ))}
-        <button
-          className={`ox-tab${moreActive ? " is-active" : ""}`}
-          onClick={() => setOpen(true)}
-          aria-haspopup="dialog"
-        >
-          <Ellipsis />
-          More
-        </button>
       </nav>
-      {open && (
-        <div className="ox-more" role="dialog" aria-label="More sections" onClick={() => setOpen(false)}>
-          <div className="ox-more-sheet" onClick={(event) => event.stopPropagation()}>
-            {MORE.map((item) => (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={`ox-link${active(item) ? " is-active" : ""}`}
-                onClick={() => setOpen(false)}
-              >
-                <item.icon />
-                {item.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-    </>
+      {venueSwitcher ? <div className="ox-mobile-venue">{venueSwitcher}</div> : null}
+    </div>
   );
 }

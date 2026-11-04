@@ -10,7 +10,7 @@ async function expectBack(page: import("@playwright/test").Page) {
 async function expectHomeAndClearSession(page: import("@playwright/test").Page) {
   await page.waitForURL((url) => url.pathname === "/");
   const session = await page.evaluate(
-    () => JSON.parse(window.localStorage.getItem("patron-demo-v8") ?? "{}").session,
+    () => JSON.parse(window.localStorage.getItem("patron-demo-v9") ?? "{}").session,
   );
   expect(session).toEqual({ role: "guest" });
 }

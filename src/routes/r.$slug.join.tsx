@@ -11,6 +11,8 @@ import { isValidSAMobile } from "@/lib/phone";
 import { isValidBirthday, MONTH_NAMES } from "@/lib/birthday";
 import { rewardJoinPitch } from "@/lib/reward-copy";
 import { BackLink } from "@/components/patron/BackLink";
+import { VenueMark } from "@/components/patron/kit";
+import { venueName } from "@/lib/venue-name";
 
 export const Route = createFileRoute("/r/$slug/join")({
   loader: async () => {
@@ -164,8 +166,11 @@ function JoinPage() {
   return (
     <ThemeProvider theme={restaurant.theme}>
       <main className="guest-page">
-        <header className="guest-header">
-          <a href={`/r/${slug}`}>{restaurant.name}</a>
+        <header className="guest-header guest-header-venue">
+          <a href={`/r/${slug}`} className="guest-venue-link">
+            <VenueMark name={venueName(restaurant.name)} theme={restaurant.theme} size="sm" />
+            <span>{venueName(restaurant.name)}</span>
+          </a>
           <a href="/">Patron home</a>
         </header>
         <section className="guest-flow">
@@ -192,7 +197,7 @@ function JoinPage() {
             {step === 0 && (
               <section className="guest-step">
                 <span className="eyebrow">Good food · familiar faces</span>
-                <h1>Join the regulars at {restaurant.name}.</h1>
+                <h1>Join the regulars at {venueName(restaurant.name)}.</h1>
                 <p>{rewardJoinPitch(restaurant.rewardDescription)}.</p>
                 {welcome > 0 && (
                   <p className="welcome-stamp-note" role="status">
@@ -213,7 +218,7 @@ function JoinPage() {
                 )}
                 <div className="join-button-row">
                   <button className="builder-primary" onClick={continueAsGuest}>
-                    {customer ? `Continue as ${customer.name}` : `Join ${restaurant.name}`}
+                    {customer ? `Continue as ${customer.name}` : `Join ${venueName(restaurant.name)}`}
                   </button>
                   {consentLineNode}
                 </div>

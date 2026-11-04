@@ -145,7 +145,7 @@ function FindPage() {
                   <a className="builder-secondary" href={`/r/${venue.slug}`}>
                     See the card
                   </a>
-                  <a className="builder-primary" href={`/r/${venue.slug}/join?src=find`}>
+                  <a className="builder-secondary" href={`/r/${venue.slug}/join?src=find`}>
                     Join this place
                   </a>
                 </div>

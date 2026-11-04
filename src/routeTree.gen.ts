@@ -62,6 +62,7 @@ import { Route as BlogSlugRouteImport } from './routes/blog/$slug'
 import { Route as BlogRssRouteImport } from './routes/blog/rss'
 import { Route as DemoOutboxRouteImport } from './routes/demo.outbox'
 import { Route as DemoStatusRouteImport } from './routes/demo.status'
+import { Route as DevKitRouteImport } from './routes/dev.kit'
 import { Route as DevRolesRouteImport } from './routes/dev.roles'
 import { Route as HealthzDbRouteImport } from './routes/healthz.db'
 import { Route as MeRestaurantsRouteImport } from './routes/me.restaurants'
@@ -357,6 +358,11 @@ const DemoStatusRoute = DemoStatusRouteImport.update({
   path: '/status',
   getParentRoute: () => DemoRoute,
 } as any)
+const DevKitRoute = DevKitRouteImport.update({
+  id: '/dev/kit',
+  path: '/dev/kit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DevRolesRoute = DevRolesRouteImport.update({
   id: '/dev/roles',
   path: '/dev/roles',
@@ -556,6 +562,7 @@ export interface FileRoutesByFullPath {
   '/blog/rss': typeof BlogRssRoute
   '/demo/outbox': typeof DemoOutboxRoute
   '/demo/status': typeof DemoStatusRoute
+  '/dev/kit': typeof DevKitRoute
   '/dev/roles': typeof DevRolesRoute
   '/healthz/db': typeof HealthzDbRoute
   '/me/restaurants': typeof MeRestaurantsRouteWithChildren
@@ -640,6 +647,7 @@ export interface FileRoutesByTo {
   '/blog/rss': typeof BlogRssRoute
   '/demo/outbox': typeof DemoOutboxRoute
   '/demo/status': typeof DemoStatusRoute
+  '/dev/kit': typeof DevKitRoute
   '/dev/roles': typeof DevRolesRoute
   '/healthz/db': typeof HealthzDbRoute
   '/me/restaurants': typeof MeRestaurantsRouteWithChildren
@@ -725,6 +733,7 @@ export interface FileRoutesById {
   '/blog/rss': typeof BlogRssRoute
   '/demo/outbox': typeof DemoOutboxRoute
   '/demo/status': typeof DemoStatusRoute
+  '/dev/kit': typeof DevKitRoute
   '/dev/roles': typeof DevRolesRoute
   '/healthz/db': typeof HealthzDbRoute
   '/me/restaurants': typeof MeRestaurantsRouteWithChildren
@@ -811,6 +820,7 @@ export interface FileRouteTypes {
     | '/blog/rss'
     | '/demo/outbox'
     | '/demo/status'
+    | '/dev/kit'
     | '/dev/roles'
     | '/healthz/db'
     | '/me/restaurants'
@@ -895,6 +905,7 @@ export interface FileRouteTypes {
     | '/blog/rss'
     | '/demo/outbox'
     | '/demo/status'
+    | '/dev/kit'
     | '/dev/roles'
     | '/healthz/db'
     | '/me/restaurants'
@@ -979,6 +990,7 @@ export interface FileRouteTypes {
     | '/blog/rss'
     | '/demo/outbox'
     | '/demo/status'
+    | '/dev/kit'
     | '/dev/roles'
     | '/healthz/db'
     | '/me/restaurants'
@@ -1042,6 +1054,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   BlogSlugRoute: typeof BlogSlugRoute
   BlogRssRoute: typeof BlogRssRoute
+  DevKitRoute: typeof DevKitRoute
   DevRolesRoute: typeof DevRolesRoute
   RSlugRoute: typeof RSlugRouteWithChildren
   STokenRoute: typeof STokenRoute
@@ -1426,6 +1439,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/demo/status'
       preLoaderRoute: typeof DemoStatusRouteImport
       parentRoute: typeof DemoRoute
+    }
+    '/dev/kit': {
+      id: '/dev/kit'
+      path: '/dev/kit'
+      fullPath: '/dev/kit'
+      preLoaderRoute: typeof DevKitRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/dev/roles': {
       id: '/dev/roles'
@@ -1846,6 +1866,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   BlogSlugRoute: BlogSlugRoute,
   BlogRssRoute: BlogRssRoute,
+  DevKitRoute: DevKitRoute,
   DevRolesRoute: DevRolesRoute,
   RSlugRoute: RSlugRouteWithChildren,
   STokenRoute: STokenRoute,

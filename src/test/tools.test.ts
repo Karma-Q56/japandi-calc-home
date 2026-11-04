@@ -5,6 +5,7 @@ import { recordStamp } from "@/domain/stamps";
 import {
   evaluateToolsAfterVisit,
   guestToolsView,
+  johannesburgDateParts,
   johannesburgWeekday,
   saveTools,
   streakRun,
@@ -19,6 +20,17 @@ beforeEach(() => {
 
 const RESTAURANT = "rest-daily-grind";
 const OWNER = { role: "owner", restaurantId: RESTAURANT };
+const DAY = 24 * 60 * 60 * 1000;
+
+function nextJohannesburgWeekday(weekday: number) {
+  const state = demoRepo.read();
+  const at = new Date(state.now);
+  at.setUTCHours(6, 0, 0, 0);
+  while (johannesburgWeekday(at.getTime()) !== weekday || at.getTime() <= state.now) {
+    at.setUTCDate(at.getUTCDate() + 1);
+  }
+  return at.getTime();
+}
 
 function membershipFor(restaurantId: string) {
   const state = demoRepo.read();
@@ -53,8 +65,8 @@ function stampVisit(membershipId: string, key: string) {
 describe("double stamp day", () => {
   it("earns one extra stamp on the chosen weekday, and again on the next visit that day", () => {
     const membership = membershipFor(RESTAURANT);
-    ensureTools({ doubleStamp: true, weekday: 4 });
-    // Seed time is Thursday 1 October 2026, Johannesburg time.
+    const weekday = johannesburgWeekday(clock.now() + 5 * 60 * 60 * 1000);
+    ensureTools({ doubleStamp: true, weekday });
     stampVisit(membership.id, "v1");
     clock.advance(10 * 60 * 1000 + 1);
     stampVisit(membership.id, "v2");
@@ -65,8 +77,8 @@ describe("double stamp day", () => {
 
   it("gives nothing on other weekdays", () => {
     const membership = membershipFor(RESTAURANT);
-    ensureTools({ doubleStamp: true, weekday: 4 });
-    clock.advance(24 * 60 * 60 * 1000); // Friday
+    const visitWeekday = johannesburgWeekday(clock.now() + 5 * 60 * 60 * 1000);
+    ensureTools({ doubleStamp: true, weekday: (visitWeekday + 1) % 7 });
     stampVisit(membership.id, "v3");
     expect(bonusStamps(membership.id)).toHaveLength(0);
   });
@@ -93,13 +105,13 @@ describe("visit streak", () => {
     // Two Johannesburg weeks back to back: a Tuesday then Wednesday in each.
     // The timeline starts after the seed data's latest visit so no stamp is
     // blocked by the too soon window.
-    demoRepo.update((current) => ({ ...current, now: Date.UTC(2026, 9, 6, 6) }));
+    demoRepo.update((current) => ({ ...current, now: nextJohannesburgWeekday(2) }));
     stampVisit(membership.id, "s1"); // Johannesburg Tuesday, week 1, visit 1
-    clock.advance(24 * 60 * 60 * 1000);
+    clock.advance(DAY);
     stampVisit(membership.id, "s2"); // Wednesday, week 1 now meets the bar, run is 1
-    clock.advance(6 * 24 * 60 * 60 * 1000);
+    clock.advance(6 * DAY);
     stampVisit(membership.id, "s3"); // Johannesburg Tuesday of week 2, run stays 1
-    clock.advance(24 * 60 * 60 * 1000);
+    clock.advance(DAY);
     stampVisit(membership.id, "s4"); // Wednesday, week 2 completes the run, pays out
     expect(streakRun(demoRepo.read(), membership.id, { enabled: true, weeks: 2, weeklyVisits: 2, bonusStamps: 1 })).toBe(2);
     expect(bonusStamps(membership.id).filter((stamp) => stamp.key?.startsWith("streak:"))).toHaveLength(1);
@@ -118,9 +130,11 @@ describe("monthly tool budget", () => {
     expect(toolBudgetFor(RESTAURANT)).toEqual({ cap: 1, used: 1 });
     clock.advance(10 * 60 * 1000 + 1);
     stampVisit(membership.id, "b2"); // would double stamp and reach a streak milestone, blocked
-    // Seed two earlier weeks so the current visit completes a 2 week run with
+    // Seed one earlier week so the current visits complete a 2 week run with
     // one visit a week. The streak milestone would pay out, but only the
     // budget is left at zero, so nothing new may be granted.
+    const priorVisit = new Date(demoRepo.read().now - 7 * DAY);
+    priorVisit.setUTCHours(6, 0, 0, 0);
     demoRepo.update((current) => ({
       ...current,
       stamps: [
@@ -131,17 +145,7 @@ describe("monthly tool budget", () => {
           membershipId: membership.id,
           staffId: null,
           key: "seed-week-1",
-          createdAt: "2026-09-22T06:00:00.000Z",
-          status: "valid" as const,
-          reason: "visit" as const,
-        },
-        {
-          id: "stamp-seed-week2",
-          restaurantId: RESTAURANT,
-          membershipId: membership.id,
-          staffId: null,
-          key: "seed-week-2",
-          createdAt: "2026-09-29T06:00:00.000Z",
+          createdAt: priorVisit.toISOString(),
           status: "valid" as const,
           reason: "visit" as const,
         },
@@ -159,7 +163,11 @@ describe("monthly tool budget", () => {
     ensureTools({ doubleStamp: true, weekday: 4, budget: 1 });
     stampVisit(membership.id, "m1");
     expect(toolBudgetFor(RESTAURANT).used).toBe(1);
-    demoRepo.update((current) => ({ ...current, now: Date.UTC(2026, 10, 2, 8) }));
+    const today = johannesburgDateParts(demoRepo.read().now);
+    demoRepo.update((current) => ({
+      ...current,
+      now: Date.UTC(today.year, today.month, 1, 8),
+    }));
     expect(toolBudgetFor(RESTAURANT).used).toBe(0);
   });
 });

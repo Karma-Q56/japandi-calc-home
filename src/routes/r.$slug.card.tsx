@@ -141,7 +141,7 @@ function GuestCard() {
   const waiting = rewards.filter((item) => !item.redeemedAt);
   return (
     <ThemeProvider theme={restaurant.theme}>
-      <GuestShell back={{ to: "/me", label: "My cards" }}>
+      <GuestShell back={{ to: "/me", label: "My cards" }} venue={restaurant}>
         <LoyaltyCard
           theme={restaurant.theme}
           name={restaurant.name}

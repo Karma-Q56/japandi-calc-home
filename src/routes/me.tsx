@@ -12,6 +12,7 @@ import { GuestShell } from "@/components/patron/GuestShell";
 import { LoyaltyCard } from "@/components/patron/LoyaltyCard";
 import { PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
 import { clock } from "@/lib/clock";
+import { timeAgo } from "@/lib/time-ago";
 import { signInAsDemoAccount } from "@/lib/demo-signin";
 import { signOut } from "@/lib/sign-out";
 
@@ -217,12 +218,9 @@ function DemoMyCards() {
         <div className="gx-cards">
           {memberships.map((item) => {
             const reward = item.rewards.some((value) => !value.redeemedAt);
-            const days = item.lastVisitAt
-              ? Math.max(
-                  0,
-                  Math.floor((clock.now() - new Date(item.lastVisitAt).getTime()) / 86400000),
-                )
-              : null;
+            const lastVisit = item.lastVisitAt
+              ? `Last visit ${timeAgo(item.lastVisitAt, clock.now()).toLowerCase()}`
+              : "No visits yet";
             return (
               <Link
                 key={item.id}
@@ -239,11 +237,7 @@ function DemoMyCards() {
                 />
                 {reward && <span className="gx-badge">Reward ready</span>}
                 <p className="gx-note" style={{ textAlign: "left", marginTop: 8 }}>
-                  {days === null
-                    ? "No visits yet"
-                    : days === 0
-                      ? "Last visit today"
-                      : `Last visit ${days} ${days === 1 ? "day" : "days"} ago`}
+                  {lastVisit}
                 </p>
               </Link>
             );

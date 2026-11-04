@@ -20,10 +20,10 @@ export function DemoControlBar() {
         className="demo-control-toggle"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
-        aria-label={open ? "Close demo controls" : "Open demo controls"}
+        aria-label={open ? "Close demo data" : "Open demo data"}
       >
         <span className="demo-control-dot" aria-hidden="true" />
-        Demo
+        Demo with sample data
       </button>
       {open && (
         <div className="demo-control-panel">
@@ -105,7 +105,14 @@ export function DemoControlBar() {
             <button onClick={() => clock.reset()}>Reset clock</button>
           </div>
           <div className="demo-control-actions">
-            <button onClick={() => demoRepo.reset()}>Reset demo data</button>
+            <button
+              onClick={() => {
+                demoRepo.reset();
+                window.location.assign("/");
+              }}
+            >
+              Reset demo data
+            </button>
             <Link to="/demo/outbox">Open outbox</Link>
             <Link to="/dev/roles">Demo roles</Link>
           </div>

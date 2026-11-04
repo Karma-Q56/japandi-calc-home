@@ -13,6 +13,7 @@ import { DemoControlBar } from "../components/patron/DemoControlBar";
 
 import appCss from "../styles.css?url";
 import uiCss from "../ui.css?url";
+import kitCss from "../components/patron/kit/kit.css?url";
 
 function NotFoundComponent() {
   return (
@@ -89,6 +90,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "stylesheet", href: uiCss },
+      { rel: "stylesheet", href: kitCss },
       { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },

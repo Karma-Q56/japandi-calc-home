@@ -215,7 +215,7 @@ function ForDiners() {
           <h2>Ready when you are.</h2>
           <p>Join a venue below, or scan the code at any Patron restaurant.</p>
         </div>
-        <a className="builder-primary" href="#find-a-restaurant">
+        <a className="builder-secondary" href="#find-a-restaurant">
           Find a restaurant <ArrowRight size={16} />
         </a>
       </section>

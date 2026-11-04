@@ -213,7 +213,7 @@ function guestNameAt(i: number): string {
   return `${first} ${initial}.`;
 }
 
-export function createSeed(now = Date.UTC(2026, 9, 1, 8)): DemoState {
+export function createSeed(now = Date.now()): DemoState {
   const restaurants = structuredClone(baseRestaurants);
   // The demo venues show both till order modes: the coffee shop tracks items,
   // the bakery counts simple categories, and the bistro keeps it off.

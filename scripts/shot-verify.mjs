@@ -227,6 +227,7 @@ const groups = [
   { path: "/blog/why-the-card-still-works", stages: [{ name: "site-blog-post" }] },
   { path: "/suggest", stages: [{ name: "site-suggest" }] },
   { path: "/feedback", stages: [{ name: "site-feedback" }] },
+  { path: "/dev/kit", stages: [{ name: "dev-kit" }] },
 ];
 
 const report = [];
@@ -247,6 +248,7 @@ for (const width of widths) {
     const context = await browser.newContext({
       viewport: { width, height: width === 375 ? 812 : 900 },
       deviceScaleFactor: 1,
+      reducedMotion: "reduce",
     });
     for (const stage of active) {
       stageCount += 1;
@@ -279,7 +281,11 @@ for (const width of widths) {
       for (const act of stage.acts ?? []) {
         try {
           if ("click" in act) {
-            await page.getByText(act.click, { exact: true }).first().click({ timeout: 6000 });
+            const button = page.getByRole("button", { name: act.click, exact: true });
+            const link = page.getByRole("link", { name: act.click, exact: true });
+            if (await button.count()) await button.first().click({ timeout: 6000 });
+            else if (await link.count()) await link.first().click({ timeout: 6000 });
+            else await page.getByText(act.click, { exact: true }).first().click({ timeout: 6000 });
           } else if ("fill" in act) {
             await page.locator(act.fill[0]).first().fill(act.fill[1]);
           } else if ("select" in act) {
@@ -297,6 +303,18 @@ for (const width of widths) {
       // the page, otherwise addStyleTag throws and the whole run stops.
       await page.waitForLoadState("load", { timeout: 10000 }).catch(() => {});
       await page.waitForTimeout(300);
+      // Walk the page so IntersectionObserver reveal sections become visible
+      // before the full-page capture, then return to the top.
+      await page.evaluate(async () => {
+        const step = Math.max(240, Math.floor(window.innerHeight * 0.7));
+        const height = document.documentElement.scrollHeight;
+        for (let y = 0; y < height; y += step) {
+          window.scrollTo(0, y);
+          await new Promise((resolve) => setTimeout(resolve, 90));
+        }
+        window.scrollTo(0, 0);
+        await new Promise((resolve) => setTimeout(resolve, 450));
+      });
       // Hide the demo pill and every fixed bar that would float over the page.
       await page
         .addStyleTag({

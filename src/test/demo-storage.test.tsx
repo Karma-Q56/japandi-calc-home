@@ -15,9 +15,9 @@ vi.mock("@/server/live", () => ({
 }));
 
 /** The key the build before this one wrote under. */
-const LEGACY_KEY = "patron-demo-v7";
+const LEGACY_KEY = "patron-demo-v8";
 /** The key this build writes under. */
-const CURRENT_KEY = "patron-demo-v8";
+const CURRENT_KEY = "patron-demo-v9";
 
 /**
  * A realistic snapshot from the previous build: same version number, but written

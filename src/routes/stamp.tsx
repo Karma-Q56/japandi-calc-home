@@ -7,6 +7,7 @@ import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
 import { isScanTokenShape, verifyScanToken } from "@/lib/scan";
 import { CardScanner } from "@/components/patron/CardScanner";
+import { StaffShell } from "@/components/patron/StaffShell";
 import { Badge, FormField, PageHeader } from "@/components/patron/dash";
 import type { StampResult } from "@/domain/stamps";
 import { signOut } from "@/lib/sign-out";
@@ -381,7 +382,7 @@ function Till() {
 
   if (!paired) {
     return (
-      <main className="guest-page">
+      <StaffShell restaurant={restaurant}>
         <PageHeader
           eyebrow="Till"
           title="Pair this till."
@@ -414,14 +415,14 @@ function Till() {
           )}
         </section>
         <TillAccountActions paired={paired} onUnpair={unpair} onLogOut={leave} />
-      </main>
+      </StaffShell>
     );
   }
 
   if (!sessionOk) {
     const crew = state.staff.filter((s) => s.restaurantId === restaurant.id && s.active);
     return (
-      <main className="guest-page">
+      <StaffShell restaurant={restaurant}>
         <PageHeader
           eyebrow={`Till · ${restaurant.name}`}
           title="Who’s stamping?"
@@ -478,7 +479,7 @@ function Till() {
           )}
         </section>
         <TillAccountActions paired={paired} onUnpair={unpair} onLogOut={leave} />
-      </main>
+      </StaffShell>
     );
   }
 
@@ -488,7 +489,7 @@ function Till() {
     .slice(0, 8);
 
   return (
-    <main className="guest-page">
+    <StaffShell restaurant={restaurant}>
       <PageHeader
         eyebrow={`Till · ${signedInStaff?.displayName ?? "Staff"}`}
         title={restaurant.name}
@@ -628,7 +629,7 @@ function Till() {
         ))}
       </section>
       <TillAccountActions paired={paired} onUnpair={unpair} onLogOut={leave} />
-    </main>
+    </StaffShell>
   );
 }
 

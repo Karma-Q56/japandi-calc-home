@@ -5,7 +5,8 @@ import { joinRestaurant, updateGuestProfile } from "@/domain/members";
 import { awardBirthdayIfDue } from "@/domain/loyalty";
 import { segmentMemberships, segmentLabel } from "@/domain/audiences";
 import { listCustomers } from "@/domain/customers";
-import { birthdayLabel, birthdayOf, isValidBirthday } from "@/lib/birthday";
+import { birthdayLabel, birthdayOf, isValidBirthday, johannesburgMonthDay } from "@/lib/birthday";
+import { johannesburgDateParts } from "@/domain/tools";
 
 beforeEach(() => {
   demoRepo.reset();
@@ -18,6 +19,15 @@ const OWNER = { role: "owner", restaurantId: RESTAURANT };
 function membershipFor(restaurantId: string) {
   const state = demoRepo.read();
   return state.memberships.find((item) => item.restaurantId === restaurantId)!;
+}
+
+function birthdayThisWeek() {
+  return johannesburgMonthDay(demoRepo.read().now);
+}
+
+function birthdayNextMonth() {
+  const today = birthdayThisWeek();
+  return { day: 15, month: (today.month + 1) % 12 + 1 };
 }
 
 describe("day and month only", () => {
@@ -120,15 +130,13 @@ describe("guest settings", () => {
 describe("birthday reward trigger", () => {
   it("gives one bonus stamp in the birthday week, once a year", () => {
     const membership = membershipFor(RESTAURANT);
-    const state = demoRepo.read();
     const customerId = membership.customerId;
     updateDemo((current) => ({
       ...current,
       customers: current.customers.map((item) =>
-        item.id === customerId ? { ...item, birthday: { day: 2, month: 10 } } : item,
+        item.id === customerId ? { ...item, birthday: birthdayThisWeek() } : item,
       ),
     }));
-    // Seed time is 1 October 2026, Johannesburg time, so the birthday week is open.
     expect(awardBirthdayIfDue(membership.id)).toBe(1);
     expect(awardBirthdayIfDue(membership.id)).toBe(0);
     const stamps = demoRepo
@@ -142,7 +150,7 @@ describe("birthday reward trigger", () => {
     updateDemo((current) => ({
       ...current,
       customers: current.customers.map((item) =>
-        item.id === membership.customerId ? { ...item, birthday: { day: 20, month: 10 } } : item,
+        item.id === membership.customerId ? { ...item, birthday: birthdayNextMonth() } : item,
       ),
     }));
     expect(awardBirthdayIfDue(membership.id)).toBe(0);
@@ -157,7 +165,7 @@ describe("birthday reward trigger", () => {
         item.id === sunrise ? { ...item, birthdayRewardItem: "birthday cupcake", birthdayRewardKind: "freeItem" } : item,
       ),
       customers: current.customers.map((item) =>
-        item.id === membership.customerId ? { ...item, birthday: { day: 2, month: 10 } } : item,
+        item.id === membership.customerId ? { ...item, birthday: birthdayThisWeek() } : item,
       ),
     }));
     expect(awardBirthdayIfDue(membership.id)).toBe(1);
@@ -167,7 +175,7 @@ describe("birthday reward trigger", () => {
       .rewards.filter((reward) => reward.membershipId === membership.id);
     expect(rewards).toHaveLength(1);
     expect(rewards[0]!.description).toBe("Free birthday cupcake");
-    expect(rewards[0]!.key).toBe("birthday-item:2026");
+    expect(rewards[0]!.key).toBe(`birthday-item:${johannesburgDateParts(demoRepo.read().now).year}`);
   });
 });
 
@@ -179,7 +187,7 @@ describe("birthdays this month", () => {
     for (const membership of members) {
       const customer = state.customers.find((item) => item.id === membership.customerId);
       expect(customer?.birthday).toBeTruthy();
-      expect(birthdayOf(customer)!.month).toBe(10);
+      expect(birthdayOf(customer)!.month).toBe(birthdayThisWeek().month);
     }
     expect(segmentLabel(audience)).toBe("Birthdays this month");
   });
@@ -193,7 +201,7 @@ describe("birthdays this month", () => {
     for (const row of result.data.rows) {
       const membership = state.memberships.find((item) => item.id === row.membershipId)!;
       const customer = state.customers.find((item) => item.id === membership.customerId);
-      expect(birthdayOf(customer)!.month).toBe(10);
+      expect(birthdayOf(customer)!.month).toBe(birthdayThisWeek().month);
     }
   });
 });
