@@ -76,6 +76,10 @@ export interface Restaurant {
   /** Shown on the find page and used for filtering. */
   venueType?: "cafe" | "bakery" | "restaurant" | "takeaway";
   address?: string;
+  /** Public phone number with country code, used for calls and WhatsApp. */
+  phoneE164?: string;
+  /** Demo distance from the chosen location, used for the Nearest sort. */
+  distanceKm?: number;
   hours: Record<string, { open: string; close: string } | null>;
   stampsRequired: number;
   rewardDescription: string;

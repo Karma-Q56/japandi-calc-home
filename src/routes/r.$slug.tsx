@@ -7,7 +7,8 @@ import { APP_NAME } from "@/config/app";
 import { johannesburgTime, venueIsOpenNow } from "@/lib/johannesburg-time";
 import { ThemeProvider } from "@/theme";
 import { withChildren } from "@/lib/nested";
-import { PublicTemplate, type VenueSection } from "@/components/patron/PublicTemplates";
+import type { VenueSection } from "@/components/patron/PublicTemplates";
+import { VenuePage } from "@/components/patron/VenuePage";
 import { formatRand } from "@/lib/money";
 import { BackLink } from "@/components/patron/BackLink";
 
@@ -88,29 +89,16 @@ function PublicRestaurantPage() {
           item.customerId === state.session.customerId && item.restaurantId === restaurant.id,
       )
     : undefined;
-  const offers = membership ? api.special.offersFor(membership.id) : null;
-  const memberOffers = offers?.ok
-    ? offers.data.offers
-        .filter(({ special: item }) => item.kind !== "public")
-        .map(({ special: item, code }) => ({
-          title: item.title,
-          body: item.body,
-          kind: item.kind,
-          code: code?.code ?? null,
-        }))
-    : [];
-
   return (
     <ThemeProvider theme={restaurant.theme}>
-      <PublicTemplate
-        template={restaurant.pageTemplate ?? "classic"}
+      <VenuePage
         restaurant={restaurant}
         sections={sections}
         special={special}
         open={venueIsOpenNow(restaurant.hours, now)}
         now={now}
+        {...(membership ? { membership } : {})}
         joinHref={`/r/${slug}/join?src=link`}
-        memberOffers={memberOffers}
       />
     </ThemeProvider>
   );

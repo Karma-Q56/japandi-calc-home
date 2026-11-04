@@ -386,10 +386,12 @@ export function StampCircles({
   total,
   filled,
   label,
+  tick = false,
 }: {
   total: number;
   filled: number;
   label?: string;
+  tick?: boolean;
 }) {
   return (
     <div className="pk-stamps" role="img" aria-label={label ?? `${filled} of ${total} stamps`}>
@@ -402,7 +404,11 @@ export function StampCircles({
             className={cx("pk-stamp", on && "is-filled", reward && "is-reward")}
             aria-hidden="true"
           >
-            {on ? <Stamp size={16} /> : reward ? <Gift size={15} /> : null}
+            {on ? (
+              tick ? <Check size={15} aria-hidden="true" /> : <Stamp size={16} />
+            ) : reward ? (
+              <Gift size={15} />
+            ) : null}
           </span>
         );
       })}

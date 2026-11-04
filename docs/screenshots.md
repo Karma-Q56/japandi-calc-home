@@ -1,7 +1,31 @@
-# Screenshot pass
+# Screenshot passes
 
 Every route was captured at 375px and 1280px on 4 November 2026 with
 `scripts/shot-verify.mjs`, signed in through `/dev/roles?role=...`.
+
+## 03 diner pass
+
+The diner pass ran against the fresh 03 build with
+`SHOT_ONLY=site-find,site-venue,me-home,me-settings`: 4 stages, 8 shots at
+375px and 1280px, 0 failed stages, 0 console or page errors, 0 pages scrolling
+sideways and 0 element-overflow flags. I opened every full shot and crop.
+
+| Screen | 375px | 1280px | What I saw |
+| --- | --- | --- | --- |
+| Find a restaurant | 2816 / 2 | 1601 / 2 | Location line, two-line title with italic accent, search, neighbourhood, Find action, filter pills and Nearest sort. Three illustrated cards with category, suburb, distance, name, tagline, reward line and full width View restaurant button. The sample-photo label sits above the cards. |
+| Public venue | 2065 / 2 | 1731 / 2 | Fitted hero, overlapping logo tile, name, tagline, open status, contact links and Get directions. The loyalty card sits below the hero on the phone and sticks in the right column at 1280. How it works, Today's special, menu prices and the Claim this page footer are visible without joining. |
+| My cards | 847 / 0 | 900 / 0 | Two dotted cards with initials badges, suburb and category, ticked stamp circles and a gift at the end, Regular tier pills, offer and spin pills, relative last visit and View card. One filled Scan a QR to join a place action. |
+| Me | 2094 / 2 | 1873 / 2 | Details, per restaurant SMS and push switches, Suggest a feature, Log out and the existing data controls. The two restaurant message rows now align consistently at both widths. |
+
+The public restaurant stage (`site-venue`) is now part of the walk, so a full
+pass has 68 stages and 136 shots. The 03 pass reran only the four screens that
+changed. Demo venue art is generated in CSS; a restaurant's uploaded
+`theme.coverPhoto` replaces it when present.
+
+## 02 baseline
+
+Every route in the 02 pass was captured at 375px and 1280px on 4 November 2026
+with `scripts/shot-verify.mjs`, signed in through `/dev/roles?role=...`.
 
 The walk hides the demo pill and every fixed or sticky bottom bar before the
 full-page shot, uses reduced motion so revealed sections are never captured
@@ -10,8 +34,8 @@ blank, waits for click navigation to finish, and writes
 bands of at most 1500px under `screenshots/pieces/`, so every part can be
 opened.
 
-Final walk: **67 stages x 2 widths = 134 shots**, 0 failed stages, 0 console or
-page errors, 0 interaction failures, and 0 pages whose document scrolls
+02 full walk: **67 stages x 2 widths = 134 shots**, 0 failed stages, 0 console
+or page errors, 0 interaction failures, and 0 pages whose document scrolls
 sideways. 72 shots were taller than 1500px and produced **176 crops**.
 
 The walker reports 42 shots with an element past the viewport. 32 are the
@@ -68,6 +92,11 @@ ok 2 owner navigation scrolls under the header at 375px without page overflow
 ok 3 each covered page has at most one primary action
 3 passed (1.2m)
 ```
+
+On the final 03 build, the design-kit and navigation/sign-out specs passed
+**10 of 10** tests. The extra seven cover the public venue and `/me/settings`,
+the login links, every non-tab back control and the guest, owner, staff and
+operator sign-out paths.
 
 ## Not done by screenshot
 

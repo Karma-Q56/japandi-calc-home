@@ -11,6 +11,7 @@ import { Switch } from "@/components/patron/Switch";
 import { GuestShell } from "@/components/patron/GuestShell";
 import { FormField, PageHeader } from "@/components/patron/dash";
 import { enableBrowserPush, disableBrowserPush, showLocalPushTest } from "@/lib/web-push-client";
+import { signOut } from "@/lib/sign-out";
 
 export const Route = createFileRoute("/me/settings")({
   beforeLoad: async () => {
@@ -54,6 +55,7 @@ function GuestSettings() {
       </main>
     );
   const memberships = state.memberships.filter((item) => item.customerId === customerId);
+  const firstName = customer.name.split(" ")[0];
   const save = () => {
     const result = api.member.updateProfile(customerId, {
       name,
@@ -82,9 +84,9 @@ function GuestSettings() {
   return (
     <GuestShell title={customer.name}>
       <PageHeader
-        eyebrow="Your details"
-        title="Settings."
-        intro="Your name, birthday and the messages each restaurant can send you."
+        eyebrow="Me"
+        title={`Hi ${firstName}`}
+        intro="Your details, the messages each restaurant can send you, and your account."
       />
       {customer.deleted ? (
         <section className="builder-panel">
@@ -229,6 +231,18 @@ function GuestSettings() {
           <a className="builder-secondary" href="/feedback">
             Suggest a feature
           </a>
+        </section>
+        <section className="builder-panel">
+          <h2>Account</h2>
+          <p>Log out of this demo guest account on this device. Your saved demo venues stay here.</p>
+          <button
+            type="button"
+            className="builder-secondary"
+            data-testid="guest-logout"
+            onClick={() => void signOut("demo")}
+          >
+            Log out
+          </button>
         </section>
         <section className="builder-panel">
           <h2>Your data</h2>

@@ -52,6 +52,35 @@ async function session(page) {
 
 const browser = await chromium.launch();
 
+await runFlow("find a place", async ({ page, check }) => {
+  await page.goto(`${BASE}/find`);
+  await page.waitForTimeout(800);
+  await check("search by name", async () => {
+    await page.getByPlaceholder("The Daily Grind or Parkhurst").fill("Sunrise");
+    await expect(page.locator(".fd-card")).toHaveCount(1);
+    await expect(page.locator(".fd-card")).toContainText("Sunrise Bakes");
+  });
+  await check("filter by category and neighbourhood", async () => {
+    await page.getByPlaceholder("The Daily Grind or Parkhurst").fill("");
+    await page.getByRole("button", { name: "Cafes", exact: true }).click();
+    await expect(page.locator(".fd-card")).toHaveCount(1);
+    await expect(page.locator(".fd-card")).toContainText("The Daily Grind");
+    await page.getByLabel("Neighbourhood").selectOption("Parkhurst");
+    await expect(page.locator(".fd-card")).toHaveCount(1);
+  });
+  await check("show member offers and clear the filters", async () => {
+    await page.getByLabel("Neighbourhood").selectOption("All neighbourhoods");
+    await page.getByRole("button", { name: "Member offers", exact: true }).click();
+    await expect(page.locator(".fd-card")).toHaveCount(2);
+    await page.getByRole("button", { name: "All places", exact: true }).click();
+    await expect(page.locator(".fd-card")).toHaveCount(3);
+  });
+  await check("Find keeps the result list in view", async () => {
+    await page.getByRole("button", { name: "Find", exact: true }).click();
+    await expect(page.getByRole("heading", { name: /Around the neighbourhood/ })).toBeVisible();
+  });
+});
+
 await runFlow("join a card", async ({ page, check }) => {
   await page.goto(`${BASE}/r/daily-grind/join?src=audit`);
   await check("open the venue join page", async () => {
@@ -69,7 +98,9 @@ await runFlow("join a card", async ({ page, check }) => {
   });
   await check("show the plain quick check", async () => {
     await expect(
-      page.getByText("Quick check. In the full app we text you a code. Not needed for this demo."),
+      page.getByText(
+        "In the full app, we send a code by text to confirm your mobile number. This demo skips that step.",
+      ),
     ).toBeVisible();
     await expect(page.getByText("M9")).toHaveCount(0);
   });
@@ -79,7 +110,7 @@ await runFlow("join a card", async ({ page, check }) => {
     await expect(page.getByText("The Daily Grind").first()).toBeVisible();
   });
   await check("sign the guest out from Me", async () => {
-    await page.goto(`${BASE}/me`);
+    await page.goto(`${BASE}/me/settings`);
     await page.waitForTimeout(800);
     await page.getByTestId("guest-logout").click();
     await page.waitForURL((url) => url.pathname === "/");

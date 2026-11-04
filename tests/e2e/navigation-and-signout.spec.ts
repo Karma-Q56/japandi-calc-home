@@ -105,8 +105,8 @@ test("the demo pill starts small at the bottom left and stays out of the page fl
 });
 
 test("guest signs out from Me", async ({ page }) => {
-  await page.goto(roleUrl({ role: "guest", customer: "customer-1", to: "/me" }));
-  await page.waitForURL("**/me");
+  await page.goto(roleUrl({ role: "guest", customer: "customer-1", to: "/me/settings" }));
+  await page.waitForURL("**/me/settings");
   await page.waitForTimeout(800);
   await page.getByTestId("guest-logout").click();
   await expectHomeAndClearSession(page);

@@ -220,6 +220,7 @@ const groups = [
   { path: "/for-business", stages: [{ name: "site-for-business" }] },
   { path: "/for-diners", stages: [{ name: "site-for-diners" }] },
   { path: "/find", stages: [{ name: "site-find" }] },
+  { path: "/r/daily-grind", stages: [{ name: "site-venue" }] },
   { path: "/privacy", stages: [{ name: "site-privacy" }] },
   { path: "/terms", stages: [{ name: "site-terms" }] },
   { path: "/login", stages: [{ name: "site-login" }] },
@@ -236,15 +237,20 @@ const widths = (process.env.SHOT_WIDTHS ?? "375,1280")
   .split(",")
   .map((value) => Number(value.trim()))
   .filter((value) => value > 0);
-const only = process.env.SHOT_ONLY ?? "";
+const only = (process.env.SHOT_ONLY ?? "")
+  .split(",")
+  .map((value) => value.trim())
+  .filter(Boolean);
 const browser = await chromium.launch();
 for (const width of widths) {
   for (const group of groups.filter((group) =>
-    only
-      ? group.stages.some((stage) => stage.name.startsWith(only))
+    only.length
+      ? group.stages.some((stage) => only.some((prefix) => stage.name.startsWith(prefix)))
       : true,
   )) {
-    const active = only ? group.stages.filter((stage) => stage.name.startsWith(only)) : group.stages;
+    const active = only.length
+      ? group.stages.filter((stage) => only.some((prefix) => stage.name.startsWith(prefix)))
+      : group.stages;
     const context = await browser.newContext({
       viewport: { width, height: width === 375 ? 812 : 900 },
       deviceScaleFactor: 1,
@@ -324,6 +330,7 @@ for (const width of widths) {
         .catch(() => {});
       await page.evaluate(() => {
         for (const el of document.querySelectorAll("body *")) {
+          if (el.closest("[data-shot-keep]")) continue;
           const style = getComputedStyle(el);
           if (style.position !== "fixed" && style.position !== "sticky") continue;
           const rect = el.getBoundingClientRect();

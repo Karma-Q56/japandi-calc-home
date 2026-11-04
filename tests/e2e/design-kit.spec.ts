@@ -81,6 +81,7 @@ test("each covered page has at most one primary action", async ({ page }) => {
     "/how-it-works",
     "/faq",
     "/find",
+    "/r/daily-grind",
     "/contact",
     "/suggest",
     "/feedback",
@@ -128,6 +129,7 @@ test("each covered page has at most one primary action", async ({ page }) => {
 
   const rolePages = [
     { role: "guest", customer: "customer-1", path: "/me" },
+    { role: "guest", customer: "customer-1", path: "/me/settings" },
     { role: "guest", customer: "customer-1", path: "/r/daily-grind/card" },
     { role: "staff", path: "/stamp" },
     { role: "operator", path: "/ops/restaurants" },
