@@ -56,13 +56,13 @@ const groups = [
     role: "owner",
     venue: "rest-daily-grind",
     path: "/app/loyalty",
-    stages: [{ name: "owner-loyalty-tools", acts: [{ click: "Loyalty tools" }] }],
+    stages: [{ name: "owner-loyalty-tools", acts: [{ click: "Rewards" }] }],
   },
   {
     role: "owner",
     venue: "rest-daily-grind",
     path: "/app/loyalty",
-    stages: [{ name: "owner-loyalty-wheel", acts: [{ click: "Spin wheel" }] }],
+    stages: [{ name: "owner-loyalty-wheel", acts: [{ click: "Spin" }] }],
   },
   {
     role: "owner",
