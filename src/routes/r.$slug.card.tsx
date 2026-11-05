@@ -12,6 +12,7 @@ import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
 import { ThemeProvider } from "@/theme";
 import { LoyaltyCard } from "@/components/patron/LoyaltyCard";
+import { BackLink } from "@/components/patron/BackLink";
 import { GuestShell } from "@/components/patron/GuestShell";
 import { PageHeader } from "@/components/patron/dash";
 import { MemberQr } from "@/components/patron/MemberQr";
@@ -103,6 +104,7 @@ function GuestCard() {
     return (
       <main className="guest-page">
         <section className="guest-panel">
+          <BackLink to={`/r/${slug}`} label="Restaurant" />
           <h1>No guest session yet.</h1>
           <p>Log in as a diner to see this card.</p>
           <a className="builder-primary" href="/login">
