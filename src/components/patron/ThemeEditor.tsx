@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createSeed } from "@/data/seed";
 import type { PageTemplate, Theme } from "@/data/types";
 import { LOGO_STAMP_GRIDS, buildLogoStamp, validateLogoFile } from "@/lib/logo-stamp";
+import { CARD_PALETTES, cardTextIsReadable } from "@/lib/card-palettes";
 import { ThemeProvider, themeHasAccessibleContrast } from "@/theme";
 import cafePhoto from "@/assets/cafe-hero.jpg";
 import { LoyaltyCard } from "./LoyaltyCard";
@@ -33,6 +34,13 @@ const SHAPES: { id: Theme["stampShape"]; label: string }[] = [
   { id: "pixel-star", label: "Star" },
   { id: "coffee-cup", label: "Cup" },
   { id: "croissant", label: "Bake" },
+  { id: "heart", label: "Heart" },
+  { id: "leaf", label: "Leaf" },
+  { id: "moon", label: "Moon" },
+  { id: "sun", label: "Sun" },
+  { id: "bean", label: "Bean" },
+  { id: "flame", label: "Flame" },
+  { id: "diamond", label: "Diamond" },
 ];
 const BACKGROUNDS: { id: Theme["cardBackground"]; label: string }[] = [
   { id: "flat", label: "Plain" },
@@ -124,6 +132,7 @@ export function ThemeEditor({
   const [pendingLogo, setPendingLogo] = useState<File | null>(null);
   const [coverError, setCoverError] = useState("");
   const [coverBusy, setCoverBusy] = useState(false);
+  const [colourRefusal, setColourRefusal] = useState("");
   const set = <K extends keyof Theme>(key: K, value: Theme[K]) => onChange({ ...theme, [key]: value });
   const color = (label: string, key: keyof Theme) => (
     <label className="builder-field theme-color-field">
@@ -131,7 +140,19 @@ export function ThemeEditor({
       <input
         type="color"
         value={theme[key] as string}
-        onChange={(event) => set(key, event.target.value as never)}
+        onChange={(event) => {
+          const next = event.target.value;
+          // Keep the pick so the owner sees it, but flag an unreadable pair.
+          // The Design page refuses to preview or publish while it is unreadable.
+          const ink = key === "ink" ? next : theme.ink;
+          const paper = key === "paper" ? next : theme.paper;
+          setColourRefusal(
+            (key === "ink" || key === "paper") && !cardTextIsReadable(ink, paper)
+              ? "Text and background are too close to read comfortably. Darken the text or lighten the background."
+              : "",
+          );
+          set(key, next as never);
+        }}
       />
     </label>
   );
@@ -244,6 +265,20 @@ export function ThemeEditor({
 
         <section className="te-group">
           <h3>Colours</h3>
+          <div className="te-presets">
+            {CARD_PALETTES.map((palette) => (
+              <button
+                key={palette.id}
+                type="button"
+                onClick={() =>
+                  onChange({ ...theme, ink: palette.ink, paper: palette.paper, accent: palette.accent })
+                }
+              >
+                <i style={{ background: palette.accent }} />
+                {palette.name}
+              </button>
+            ))}
+          </div>
           <div className="te-swatches">
             {color("Text", "ink")}
             {color("Background", "paper")}
@@ -252,6 +287,11 @@ export function ThemeEditor({
             {color("Stamp", "stampFilled")}
             {color("Empty stamp", "stampEmpty")}
           </div>
+          {colourRefusal && (
+            <p className="theme-warning" role="alert">
+              {colourRefusal}
+            </p>
+          )}
           {!themeHasAccessibleContrast(theme) && (
             <p className="theme-warning" role="alert">
               Text and background are too close to read comfortably. Make the text darker or the

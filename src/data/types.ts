@@ -22,6 +22,24 @@ export interface LogoStamp {
   empty: string;
 }
 
+export const STAMP_SHAPES = [
+  "circle",
+  "square",
+  "pixel-star",
+  "coffee-cup",
+  "croissant",
+  "heart",
+  "leaf",
+  "moon",
+  "sun",
+  "bean",
+  "flame",
+  "diamond",
+  "custom-svg",
+] as const;
+
+export type StampShape = (typeof STAMP_SHAPES)[number];
+
 export interface Theme {
   ink: string;
   paper: string;
@@ -32,7 +50,7 @@ export interface Theme {
   headingFont: string;
   bodyFont: string;
   radius: number;
-  stampShape: "circle" | "square" | "pixel-star" | "coffee-cup" | "croissant" | "custom-svg";
+  stampShape: StampShape;
   cardBackground: "flat" | "paper" | "gradient" | "photo";
   logo?: string;
   coverPhoto?: string;

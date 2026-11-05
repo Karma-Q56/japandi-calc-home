@@ -37,6 +37,52 @@ export function StampGlyph({ shape, size = 22 }: { shape: Shape; size?: number }
           <path d="M12 2.800 14.700 8.800l6.500.7-4.900 4.400 1.400 6.400L12 17l-5.700 3.300 1.400-6.400L2.800 9.500l6.500-.7L12 2.800Z" />
         </svg>
       );
+    case "heart":
+      return (
+        <svg {...common}>
+          <path d="M12 20s-7.5-4.6-7.5-10A4.2 4.2 0 0 1 12 7.6 4.2 4.2 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10Z" />
+        </svg>
+      );
+    case "leaf":
+      return (
+        <svg {...common}>
+          <path d="M5 19C5 10 10 5 20 4c0 10-5 15-14 15Z" />
+          <path d="M5 19 13 11" />
+        </svg>
+      );
+    case "moon":
+      return (
+        <svg {...common}>
+          <path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10Z" />
+        </svg>
+      );
+    case "sun":
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8" />
+        </svg>
+      );
+    case "bean":
+      return (
+        <svg {...common}>
+          <ellipse cx="12" cy="12" rx="6.500" ry="8.500" transform="rotate(-25 12 12)" />
+          <path d="M8.500 15.500c2.200-2.200 4.800-4.800 7-7" />
+        </svg>
+      );
+    case "flame":
+      return (
+        <svg {...common}>
+          <path d="M12 21c-3.600 0-6-2.400-6-5.800 0-3.400 2.600-5.200 3.600-8.200.6 2 1.600 3 2.800 3.600C12.300 8.300 12.500 5.800 11.500 3c3.800 2.200 6.500 5.800 6.500 10.200 0 3.600-2.400 7.800-6 7.800Z" />
+        </svg>
+      );
+    case "diamond":
+      return (
+        <svg {...common}>
+          <path d="M6 4h12l4 6-10 11L2 10l4-6Z" />
+          <path d="M2 10h20M9 4l3 17 3-17" />
+        </svg>
+      );
     case "square":
       return (
         <svg {...common} strokeWidth={2.4}>
