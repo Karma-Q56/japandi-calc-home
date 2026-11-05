@@ -82,6 +82,25 @@ export function createSpecial(input: SpecialInput) {
   updateDemo((current) => ({
     ...current,
     specials: [...current.specials, special],
+    offers: [
+      ...current.offers,
+      {
+        id: `offer-${special.id}`,
+        restaurantId: special.restaurantId,
+        title: special.title,
+        body: special.body,
+        kind: special.kind,
+        ...(special.code ? { code: special.code } : {}),
+        minTier: special.minTier ?? null,
+        startsAt: special.startsAt,
+        endsAt: special.endsAt,
+        active: special.active,
+        placements: { page: true, till: false, push: false, sms: false },
+        status: "live",
+        legacySpecialId: special.id,
+        ...(special.createdAt ? { createdAt: special.createdAt } : {}),
+      },
+    ],
     restaurants: current.restaurants.map((item) =>
       item.id === input.restaurantId
         ? { ...item, specialIds: [...new Set([...item.specialIds, special.id])] }

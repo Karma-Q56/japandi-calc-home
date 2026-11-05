@@ -738,6 +738,28 @@ export interface DemoSession {
   tillPairedRestaurantId?: string;
   staffExpiresAt?: number;
 }
+/**
+ * One offer replaces Specials and Campaigns in the owner UI. Old specials and
+ * campaigns stay in the state as read-only history, linked by legacyId.
+ */
+export interface Offer {
+  id: string;
+  restaurantId: string;
+  title: string;
+  body: string;
+  kind: SpecialKind;
+  code?: string;
+  minTier?: TierName | null;
+  startsAt?: string;
+  endsAt?: string;
+  active: boolean;
+  placements: { page: boolean; till: boolean; push: boolean; sms: boolean };
+  status: "live" | "scheduled" | "sent" | "cancelled";
+  legacySpecialId?: string;
+  legacyCampaignId?: string;
+  createdAt?: string;
+}
+
 export interface DemoState {
   version: 2;
   now: number;
@@ -747,6 +769,7 @@ export interface DemoState {
   sections: MenuSection[];
   items: MenuItem[];
   specials: Special[];
+  offers: Offer[];
   customers: Customer[];
   memberships: Membership[];
   consents: ConsentEvent[];

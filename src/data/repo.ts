@@ -1,5 +1,5 @@
 import { createSeed } from "./seed";
-import type { DemoState, Repo } from "./types";
+import type { Campaign, DemoState, Offer, Repo } from "./types";
 
 // Bump the key when the demo seed changes shape. Older keys are migrated into this
 // one (or discarded when their shape no longer fits), so a browser that still holds
@@ -84,6 +84,60 @@ function readSnapshot(): { state: DemoState; key: string } | null {
     }
   }
   return null;
+}
+
+/**
+ * Offers are the one list the owner works from. Stored offers are kept as they
+ * are; any legacy special or campaign without an offer gets one here, so old
+ * data shows up once and is never duplicated.
+ */
+export function mergeOffers(parsed: Partial<DemoState>): Offer[] {
+  const offers: Offer[] = [...(parsed.offers ?? [])];
+  const linkedSpecials = new Set(offers.map((item) => item.legacySpecialId).filter(Boolean));
+  const linkedCampaigns = new Set(offers.map((item) => item.legacyCampaignId).filter(Boolean));
+  for (const special of parsed.specials ?? []) {
+    if (linkedSpecials.has(special.id)) continue;
+    offers.push({
+      id: `offer-${special.id}`,
+      restaurantId: special.restaurantId,
+      title: special.title,
+      body: special.body,
+      kind: special.kind ?? "public",
+      ...(special.code ? { code: special.code } : {}),
+      minTier: special.minTier ?? null,
+      startsAt: special.startsAt,
+      endsAt: special.endsAt,
+      active: special.active,
+      placements: { page: true, till: false, push: false, sms: false },
+      status: special.active ? "live" : "cancelled",
+      legacySpecialId: special.id,
+      ...(special.createdAt ? { createdAt: special.createdAt } : {}),
+    });
+  }
+  for (const campaign of (parsed.campaigns ?? []) as Campaign[]) {
+    if (linkedCampaigns.has(campaign.id)) continue;
+    offers.push({
+      id: `offer-${campaign.id}`,
+      restaurantId: campaign.restaurantId,
+      title: campaign.name,
+      body: campaign.body,
+      kind: "public",
+      code: campaign.code,
+      ...(campaign.validFrom ? { startsAt: campaign.validFrom } : {}),
+      ...(campaign.validTo ? { endsAt: campaign.validTo } : {}),
+      active: campaign.status !== "cancelled" && campaign.status !== "failed",
+      placements: {
+        page: false,
+        till: false,
+        push: campaign.channel === "push" || campaign.channel === "push_then_sms",
+        sms: campaign.channel === "sms" || campaign.channel === "push_then_sms",
+      },
+      status: campaign.status === "sent" ? "sent" : campaign.status === "scheduled" ? "scheduled" : campaign.status === "cancelled" || campaign.status === "failed" ? "cancelled" : "live",
+      legacyCampaignId: campaign.id,
+      createdAt: campaign.createdAt,
+    });
+  }
+  return offers;
 }
 
 /** Turn whatever a previous build stored into the current shape, or reject it. */
@@ -188,6 +242,7 @@ function normalise(raw: unknown): DemoState | null {
       kind: special.kind ?? "public",
     })),
     specialCodes: parsed.specialCodes ?? [],
+    offers: mergeOffers(parsed),
     spins: parsed.spins ?? [],
     challenges: parsed.challenges ?? [],
     savedLists: parsed.savedLists ?? [],

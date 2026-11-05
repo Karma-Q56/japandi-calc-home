@@ -568,6 +568,7 @@ export function createSeed(now = Date.now()): DemoState {
     messages,
     redemptions: [],
     specialCodes,
+    offers: [],
     spins: [],
     challenges: [
       {
