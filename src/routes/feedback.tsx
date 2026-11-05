@@ -94,7 +94,7 @@ function PublicFeedback() {
           We keep your note for twelve months and read every one.
         </p>
       </section>
-      <form onSubmit={submit} className="page-width form-inner lead-form" noValidate>
+      <form onSubmit={submit} className="page-width form-inner lead-form feedback-form" noValidate>
         <label>
           What is it about?
           <select
@@ -128,7 +128,9 @@ function PublicFeedback() {
         </label>
         {contactOk && (
           <label>
-            How should we reach you? <small className="demo-data-note">Optional</small>
+            <span>
+              How should we reach you? <small className="demo-data-note">Optional</small>
+            </span>
             <input
               value={contact}
               maxLength={120}

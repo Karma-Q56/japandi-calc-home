@@ -8,7 +8,12 @@ import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
 import { canOpenArea } from "@/lib/auth-rules";
 import { getDataModeFn, getOwnerOverviewFn, getViewerFn } from "@/server/live";
-import { OwnerSideNav, OwnerMobileNav } from "@/components/patron/OwnerNav";
+import {
+  OwnerSideNav,
+  OwnerMobileNav,
+  OwnerTabs,
+  OwnerSectionTabs,
+} from "@/components/patron/OwnerNav";
 import { PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
 import { DemoHome } from "@/components/patron/DemoHome";
 import { BackLink } from "@/components/patron/BackLink";
@@ -128,10 +133,9 @@ function OwnerShell() {
             <BackLink to={back.to} label={back.label} />
           </div>
         )}
-        <header className="ox-top">
-          {brand}
-        </header>
+        <header className="ox-top">{brand}</header>
         <OwnerMobileNav venueSwitcher={venuePicker} />
+        <OwnerSectionTabs />
         {children.length > 0 ? (
           isLive ? (
             liveChild ? (
@@ -148,6 +152,7 @@ function OwnerShell() {
           <Overview restaurantId={restaurant.id} live={live?.overview ?? null} />
         )}
       </div>
+      <OwnerTabs />
     </div>
   );
 }

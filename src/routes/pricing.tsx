@@ -43,7 +43,7 @@ function Pricing() {
               <h2>{plan.name}</h2>
               <p className="price-description">{plan.description}</p>
               <div className="price-amount">
-                {rand(plan.min)}–{rand(plan.max)}
+                {rand(plan.min)} to {rand(plan.max)}
               </div>
               <span className="price-period">per month · proposed pricing</span>
               <ul>
@@ -101,8 +101,8 @@ function Pricing() {
         </div>
         <div className="pricing-notes">
           <p>
-            Once-off setup: {rand(commercial.setupMin)}–{rand(commercial.setupMax)}. Includes your
-            page, QR cards, staff training and your first campaign.
+            Once-off setup: {rand(commercial.setupMin)} to {rand(commercial.setupMax)}. Includes
+            your page, QR cards, staff training and your first campaign.
           </p>
           <p>
             SMS credits are prepaid and separate, estimated at R{commercial.smsEstimate.toFixed(2)}{" "}

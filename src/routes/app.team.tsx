@@ -67,8 +67,15 @@ function Team() {
         intro="A 4-digit PIN is a convenience, not a lock. The real protections are till pairing, lockout after 5 wrong tries, restaurant scope, and the audit trail."
       />
       <StatGrid>
-        <StatCard value={staff.filter((member) => member.active).length} label="Active on the till" />
-        <StatCard value={staff.length} label="People on your team" hint="Add someone below, then set their PIN" />
+        <StatCard
+          value={staff.filter((member) => member.active).length}
+          label="Active on the till"
+        />
+        <StatCard
+          value={staff.length}
+          label="People on your team"
+          hint="Add someone below, then set their PIN"
+        />
       </StatGrid>
       {staff.length === 0 && (
         <EmptyState
@@ -90,13 +97,13 @@ function Team() {
                 : "never"}
             </small>
           </span>
-          <span className="status-open">
+          <span className="row-actions">
             <button
               className="builder-secondary"
               onClick={() => void issue(member.id, member.displayName)}
             >
               {member.pinHash ? "Reset PIN" : "Set PIN"}
-            </button>{" "}
+            </button>
             <button
               className="builder-secondary"
               onClick={() => {

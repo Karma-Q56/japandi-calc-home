@@ -1,3 +1,4 @@
+import { TrendChart } from "@/components/patron/TrendChart";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
@@ -88,7 +89,12 @@ function InsightsPage() {
       />
       <div role="group" aria-label="Date range" className="home-pills">
         {RANGE_OPTIONS.map((days) => (
-          <button key={days} type="button" aria-pressed={range === days} onClick={() => setRange(days)}>
+          <button
+            key={days}
+            type="button"
+            aria-pressed={range === days}
+            onClick={() => setRange(days)}
+          >
             Last {days} days
           </button>
         ))}
@@ -201,10 +207,11 @@ function InsightsCharts({ restaurantId, range }: { restaurantId: string; range: 
   const state = useDemoState();
   const now = state.now;
   const cutoff = now - range * DAY_MS;
-  const stamps = state.stamps.filter((s) => s.restaurantId === restaurantId && s.status === "valid");
+  const stamps = state.stamps.filter(
+    (s) => s.restaurantId === restaurantId && s.status === "valid",
+  );
   const memberships = state.memberships.filter((m) => m.restaurantId === restaurantId);
   const series = dailySeries(stamps, memberships, now, range);
-  const maxVisits = Math.max(1, ...series.map((p) => p.visits));
   const totalVisits = series.reduce((sum, p) => sum + p.visits, 0);
 
   // Visits per guest in the window: one visit is new, two or more is returning.
@@ -244,26 +251,40 @@ function InsightsCharts({ restaurantId, range }: { restaurantId: string; range: 
           {totalVisits} visits in the last {range} days, one bar per day.
         </p>
         {totalVisits === 0 ? (
-          <EmptyState title="No visits in this range" hint="Try a longer range, or wait for the next stamp." />
+          <EmptyState
+            title="No visits in this range"
+            hint="Try a longer range, or wait for the next stamp."
+          />
         ) : (
-          <div className="week-chart" role="img" aria-label="Visits per day">
-            {series.map((p) => (
-              <span key={p.day} title={`${p.visits} visits`}>
-                <i style={{ height: `${Math.round((p.visits / maxVisits) * 100)}%` }} />
-              </span>
-            ))}
-          </div>
+          <TrendChart
+            label="Visits per day"
+            points={series.map((p) => ({
+              label: new Intl.DateTimeFormat("en-ZA", {
+                day: "numeric",
+                month: "short",
+                timeZone: "Africa/Johannesburg",
+              }).format(new Date(p.day)),
+              value: p.visits,
+            }))}
+          />
         )}
       </section>
       <section className="builder-panel">
         <h2>New vs returning</h2>
         {guestTotal === 0 ? (
-          <EmptyState title="No guests in this range" hint="New and returning guests appear once they stamp." />
+          <EmptyState
+            title="No guests in this range"
+            hint="New and returning guests appear once they stamp."
+          />
         ) : (
           <>
             <p className="demo-data-note">
               {returningShare}% of guests came back at least once in this range.
             </p>
+            <div className="split-bar" aria-hidden="true">
+              <i style={{ width: `${100 - (returningShare ?? 0)}%` }} />
+              <i className="is-returning" style={{ width: `${returningShare ?? 0}%` }} />
+            </div>
             <ul className="insights-list">
               <li>
                 <span>New guests (one visit)</span>
@@ -284,16 +305,24 @@ function InsightsCharts({ restaurantId, range }: { restaurantId: string; range: 
         ) : (
           <>
             <p className="demo-data-note">How far guests get, from joining to claiming a reward.</p>
-            <ul className="insights-list">
-              {funnel.map((step) => (
-                <li key={step.label}>
-                  <span>{step.label}</span>
-                  <b>
-                    {step.value} ({Math.round((step.value / joined) * 100)}%)
-                  </b>
-                </li>
-              ))}
-            </ul>
+            <ol className="funnel-list">
+              {funnel.map((step) => {
+                const pct = Math.round((step.value / joined) * 100);
+                return (
+                  <li key={step.label}>
+                    <div className="funnel-row">
+                      <span>{step.label}</span>
+                      <b>
+                        {step.value} ({pct}%)
+                      </b>
+                    </div>
+                    <div className="funnel-track" aria-hidden="true">
+                      <i style={{ width: `${Math.max(pct, step.value > 0 ? 3 : 0)}%` }} />
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
           </>
         )}
       </section>

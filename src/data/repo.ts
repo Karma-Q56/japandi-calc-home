@@ -91,6 +91,12 @@ function readSnapshot(): { state: DemoState; key: string } | null {
  * are; any legacy special or campaign without an offer gets one here, so old
  * data shows up once and is never duplicated.
  */
+/** A fresh demo state with its sample specials and campaigns already shown as offers. */
+function seedWithOffers(now?: number): DemoState {
+  const seed = createSeed(now);
+  return { ...seed, offers: mergeOffers(seed) };
+}
+
 export function mergeOffers(parsed: Partial<DemoState>): Offer[] {
   const offers: Offer[] = [...(parsed.offers ?? [])];
   const linkedSpecials = new Set(offers.map((item) => item.legacySpecialId).filter(Boolean));
@@ -132,7 +138,14 @@ export function mergeOffers(parsed: Partial<DemoState>): Offer[] {
         push: campaign.channel === "push" || campaign.channel === "push_then_sms",
         sms: campaign.channel === "sms" || campaign.channel === "push_then_sms",
       },
-      status: campaign.status === "sent" ? "sent" : campaign.status === "scheduled" ? "scheduled" : campaign.status === "cancelled" || campaign.status === "failed" ? "cancelled" : "live",
+      status:
+        campaign.status === "sent"
+          ? "sent"
+          : campaign.status === "scheduled"
+            ? "scheduled"
+            : campaign.status === "cancelled" || campaign.status === "failed"
+              ? "cancelled"
+              : "live",
       legacyCampaignId: campaign.id,
       createdAt: campaign.createdAt,
     });
@@ -181,20 +194,22 @@ function normalise(raw: unknown): DemoState | null {
       birthdayRewardItem: restaurant.birthdayRewardItem ?? seedRow?.birthdayRewardItem ?? "",
       trackOrders: restaurant.trackOrders ?? seedRow?.trackOrders ?? false,
       ordersMode: restaurant.ordersMode ?? seedRow?.ordersMode ?? "items",
-      referral: restaurant.referral ?? seedRow?.referral ?? {
-        enabled: false,
-        rewardKind: "stamp",
-        rewardItem: "",
-        limitPerMemberPerMonth: 2,
-      },
-      spin: restaurant.spin ?? seedRow?.spin ?? {
-        enabled: false,
-        segments: [],
-        weeklyBudgetCents: 0,
-        earnEveryVisits: 5,
-        earnAtMilestone: false,
-        rules: "",
-      },
+      referral: restaurant.referral ??
+        seedRow?.referral ?? {
+          enabled: false,
+          rewardKind: "stamp",
+          rewardItem: "",
+          limitPerMemberPerMonth: 2,
+        },
+      spin: restaurant.spin ??
+        seedRow?.spin ?? {
+          enabled: false,
+          segments: [],
+          weeklyBudgetCents: 0,
+          earnEveryVisits: 5,
+          earnAtMilestone: false,
+          rules: "",
+        },
     };
   });
 
@@ -214,7 +229,9 @@ function normalise(raw: unknown): DemoState | null {
   const memberships = (parsed.memberships ?? [])
     .filter(
       (membership) =>
-        membership && restaurantIds.has(membership.restaurantId) && customerIds.has(membership.customerId),
+        membership &&
+        restaurantIds.has(membership.restaurantId) &&
+        customerIds.has(membership.customerId),
     )
     .map((membership) => ({
       ...membership,
@@ -268,13 +285,13 @@ function normalise(raw: unknown): DemoState | null {
 }
 
 function load(): DemoState {
-  if (typeof window === "undefined") return createSeed();
+  if (typeof window === "undefined") return seedWithOffers();
   const stored = readSnapshot();
   if (!stored) {
     // Nothing usable was stored: drop the old keys and start from the current seed,
     // so the browser never keeps a snapshot this build cannot read.
     clearStored();
-    const fresh = createSeed();
+    const fresh = seedWithOffers();
     persist(fresh);
     return fresh;
   }
@@ -315,7 +332,7 @@ export const demoRepo: Repo = {
   },
   reset: () => {
     clearStored();
-    current = createSeed();
+    current = seedWithOffers();
     persist(current);
     notify();
     return current;

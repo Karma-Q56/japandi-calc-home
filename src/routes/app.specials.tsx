@@ -28,9 +28,10 @@ type Tab = "offers" | "messages" | "credit";
 const zar = (cents: number) => `R${(cents / 100).toFixed(2)}`;
 const day = (iso: string | undefined) =>
   iso
-    ? new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium", timeZone: "Africa/Johannesburg" }).format(
-        new Date(iso),
-      )
+    ? new Intl.DateTimeFormat("en-ZA", {
+        dateStyle: "medium",
+        timeZone: "Africa/Johannesburg",
+      }).format(new Date(iso))
     : "Always on";
 
 const PLACEMENTS: Array<{ key: keyof Offer["placements"]; label: string }> = [
@@ -88,21 +89,21 @@ function OffersPage() {
   return (
     <main className="demo-hub page-width">
       <PageHeader
-        eyebrow={`Offers · ${restaurant.name}`}
-        title="One offer, one place"
-        intro="Write the offer, choose who hears about it, then send. Push is free, SMS comes out of your credit."
+        eyebrow={`Campaigns · ${restaurant.name}`}
+        title="Your campaigns"
+        intro="Write the campaign, choose who hears about it, then send. Push is free, SMS comes out of your credit."
         actions={
           <a className="builder-primary" href="/app/campaigns/new">
-            New offer
+            New campaign
           </a>
         }
       />
       <Tabs
-        label="Offers sections"
+        label="Campaign sections"
         value={tab}
         onChange={setTab}
         options={[
-          { value: "offers", label: `Offers (${offers.length})` },
+          { value: "offers", label: `Campaigns (${offers.length})` },
           { value: "messages", label: `Messages sent (${sent.length})` },
           { value: "credit", label: "Credit" },
         ]}
@@ -111,22 +112,22 @@ function OffersPage() {
       {tab === "offers" &&
         (offers.length === 0 ? (
           <EmptyState
-            title="No offers yet"
-            hint="An offer is one message with one code. Write the first one and pick who should hear about it."
+            title="No campaigns yet"
+            hint="A campaign is an offer plus a message. Write the first one and pick who should hear about it."
             action={
               <a className="builder-primary" href="/app/campaigns/new">
-                Write an offer
+                Write a campaign
               </a>
             }
           />
         ) : (
           <DataTable
-            caption={`Offers for ${restaurant.name}`}
+            caption={`Campaigns for ${restaurant.name}`}
             rows={offers}
             columns={[
               {
                 key: "offer",
-                header: "Offer",
+                header: "Campaign",
                 cell: ({ offer, history }) => (
                   <>
                     <strong>{offer.title}</strong>
@@ -150,7 +151,9 @@ function OffersPage() {
                 header: "Status",
                 cell: ({ offer, campaign }) => {
                   const status = offerStatus(offer, campaign);
-                  return <Badge {...(status.tone ? { tone: status.tone } : {})}>{status.label}</Badge>;
+                  return (
+                    <Badge {...(status.tone ? { tone: status.tone } : {})}>{status.label}</Badge>
+                  );
                 },
               },
               {
@@ -185,12 +188,17 @@ function OffersPage() {
             columns={[
               {
                 key: "campaign",
-                header: "Offer",
+                header: "Campaign",
                 cell: (campaign) => (
                   <>
                     <strong>{campaign.name}</strong>
                     <small>
-                      {campaign.code} · {campaign.channel === "sms" ? "SMS" : campaign.channel === "push" ? "Push" : "Push then SMS"}
+                      {campaign.code} ·{" "}
+                      {campaign.channel === "sms"
+                        ? "SMS"
+                        : campaign.channel === "push"
+                          ? "Push"
+                          : "Push then SMS"}
                     </small>
                   </>
                 ),
@@ -200,7 +208,9 @@ function OffersPage() {
                 header: "Status",
                 cell: (campaign) => {
                   const status = campaignBadge(campaign.status);
-                  return <Badge {...(status.tone ? { tone: status.tone } : {})}>{status.label}</Badge>;
+                  return (
+                    <Badge {...(status.tone ? { tone: status.tone } : {})}>{status.label}</Badge>
+                  );
                 },
               },
               {
@@ -216,7 +226,8 @@ function OffersPage() {
               {
                 key: "sent",
                 header: "When",
-                cell: (campaign) => day(campaign.sentAt ?? campaign.scheduledAt ?? campaign.createdAt),
+                cell: (campaign) =>
+                  day(campaign.sentAt ?? campaign.scheduledAt ?? campaign.createdAt),
               },
               {
                 key: "open",
@@ -236,14 +247,15 @@ function OffersPage() {
         <>
           <StatGrid dense>
             <StatCard value={zar(ledger?.balanceCents ?? 0)} label="Credit available" />
-            <StatCard value={sent.length} label="Offers sent" />
+            <StatCard value={sent.length} label="Campaigns sent" />
             <StatCard
               value={zar(sent.reduce((sum, c) => sum + (c.actualCostCents || 0), 0))}
               label="Spent so far"
             />
           </StatGrid>
           <p className="cmp-note">
-            One SMS segment costs R0.35. Push is free. Top up and see every charge on the credit page.
+            One SMS segment costs R0.35. Push is free. Top up and see every charge on the credit
+            page.
           </p>
           <a className="builder-secondary" href="/app/credit">
             Open credit

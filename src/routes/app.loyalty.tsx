@@ -411,14 +411,14 @@ function DemoLoyalty() {
                 <Helper>Keep it short. For example: a free coffee.</Helper>
               </label>
               <label className="builder-field">
-                Minutes allowed between stamps
+                Wait between stamps (minutes)
                 <input
                   type="number"
                   min={30}
                   value={windowMinutes}
                   onChange={(event) => setWindowMinutes(Number(event.target.value))}
                 />
-                <Helper>Stamps on the same visit count only inside this window.</Helper>
+                <Helper>240 minutes is 4 hours. Two stamps inside this wait count as one visit.</Helper>
               </label>
             </div>
             <div className="live-preview">
