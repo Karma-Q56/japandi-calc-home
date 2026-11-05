@@ -12,7 +12,8 @@ import {
   PublishSteps,
   WheelPreview,
 } from "@/components/patron/preview";
-import { SPIN_MODES } from "@/domain/spins";
+import { MAX_SPIN_PRIZES, SPIN_MODES } from "@/domain/spins";
+import { oddsInWords, weightWarning } from "@/lib/wheel";
 import { MISS_YOU_COOLDOWN_DAYS, MISS_YOU_MAX_AFTER_DAYS, MISS_YOU_MIN_AFTER_DAYS } from "@/domain/presets";
 import { WEEKDAYS } from "@/domain/tools";
 import type { SpinConfig, SpinMode, SpinSegment } from "@/data/types";
@@ -954,6 +955,7 @@ function DemoLoyalty() {
                       setSegment(segment.id, { weight: Number(event.target.value) })
                     }
                   />
+                  <small className="spin-odds">{oddsInWords(segment.weight, spin.segments)}</small>
                 </label>
                 <label>
                   Value R
@@ -1017,10 +1019,19 @@ function DemoLoyalty() {
             <button
               type="button"
               className="builder-secondary"
+              disabled={spin.segments.length >= MAX_SPIN_PRIZES}
               onClick={() => setSpin({ ...spin, segments: [...spin.segments, blankSegment()] })}
             >
               Add a prize
             </button>
+            {spin.segments.length >= MAX_SPIN_PRIZES && (
+              <Helper>The wheel holds up to {MAX_SPIN_PRIZES} prizes. Remove one to add another.</Helper>
+            )}
+            {weightWarning(spin.segments) && (
+              <p className="field-error" role="status">
+                {weightWarning(spin.segments)}
+              </p>
+            )}
           </div>
           <label className="builder-field">
             Rules shown to guests

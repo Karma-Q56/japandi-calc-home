@@ -7,6 +7,8 @@ import { createPrizeOffer } from "./specials";
 
 const DAY = 86400000;
 const ALL_MODES: SpinMode[] = ["join", "earned", "reward_decider", "daily_surprise"];
+/** The wheel is drawn clearly only up to this many prizes. */
+export const MAX_SPIN_PRIZES = 8;
 
 /** Mode copy shared by the owner page, the guest card and the published rules. */
 export const SPIN_MODES: Array<{ mode: SpinMode; title: string; description: string }> = [
@@ -496,6 +498,9 @@ export function saveSpinConfig(input: {
     if (pool.length === 0) {
       return failure("INVALID", "Choose at least one active special for the daily surprise pool.");
     }
+  }
+  if (config.segments.length > MAX_SPIN_PRIZES) {
+    return failure("INVALID", `Keep the wheel to ${MAX_SPIN_PRIZES} prizes or fewer.`);
   }
   if (((config.modes ?? []) as SpinMode[]).some((mode) => mode === "earned" || mode === "join") && config.segments.length === 0) {
     return failure("INVALID", "Add at least one prize segment for the wheel.");
