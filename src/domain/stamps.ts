@@ -5,6 +5,7 @@ import { logAudit } from "./audit";
 import { awardBirthdayIfDue, awardMysteryIfDue, evaluateChallenges } from "./loyalty";
 import { evaluateToolsAfterVisit } from "./tools";
 import { awardReferralForFirstStamp } from "./referrals";
+import { johannesburgWeekday } from "./tools";
 import { isScanTokenShape } from "@/lib/scan";
 
 export type StampResult =
@@ -180,30 +181,46 @@ export function lookupMember(input: {
   const campaigns = state.campaigns.filter(
     (c) => c.restaurantId === input.restaurantId && c.status === "sent",
   );
+  const nameParts = customer.name.trim().split(/\s+/).filter(Boolean);
+  const firstName = nameParts[0] ?? customer.name;
+  const lastInitial = nameParts.length > 1 ? (nameParts[nameParts.length - 1]?.[0] ?? "") : "";
+  const restaurant = state.restaurants.find((item) => item.id === input.restaurantId);
+  const doubleStampToday =
+    !!restaurant?.doubleStamp?.enabled &&
+    johannesburgWeekday(state.now) === Math.floor(restaurant.doubleStamp.weekday);
+  // Only what the guest can use right now: unspent rewards and live personal
+  // codes. Staff never decide this, the till just shows what the state allows.
+  const offers = state.specials
+    .filter((special) => special.restaurantId === input.restaurantId && special.active)
+    .filter(
+      (special) =>
+        !special.startsAt || new Date(special.startsAt).getTime() <= state.now,
+    )
+    .filter((special) => !special.endsAt || new Date(special.endsAt).getTime() >= state.now)
+    .map((special) => {
+      const personal =
+        special.kind === "targeted"
+          ? state.specialCodes.find(
+              (item) =>
+                item.specialId === special.id &&
+                item.membershipId === membership.id &&
+                !item.redeemedAt,
+            )
+          : undefined;
+      return { special, code: special.kind === "targeted" ? personal?.code : special.code };
+    })
+    .filter((entry): entry is { special: (typeof state.specials)[number]; code: string } =>
+      !!entry.code,
+    )
+    .map((entry) => ({ id: entry.special.id, title: entry.special.title, code: entry.code }));
   return success({
-    firstName: customer.name.split(" ")[0] ?? customer.name,
+    firstName,
+    lastInitial: lastInitial.toUpperCase(),
     membership,
     rewards,
     campaigns,
-    offers: state.specials
-      .filter((special) => special.restaurantId === input.restaurantId)
-      .filter((special) => {
-        const code = state.specialCodes.find(
-          (item) => item.specialId === special.id && item.membershipId === membership.id,
-        );
-        return special.kind !== "targeted" || !!code;
-      })
-      .map((special) => ({
-        id: special.id,
-        title: special.title,
-        kind: special.kind,
-        code:
-          special.kind === "targeted"
-            ? (state.specialCodes.find(
-                (item) => item.specialId === special.id && item.membershipId === membership.id,
-              )?.code ?? null)
-            : (special.code ?? null),
-      })),
+    offers,
+    doubleStampToday,
   });
 }
 
@@ -321,7 +338,20 @@ export function redeemCampaignCode(input: {
   }
   const membership = state.memberships.find((m) => m.id === input.membershipId);
   if (!membership || membership.restaurantId !== campaign.restaurantId) {
-    return failure("NOT_FOUND", "That guest was not a recipient.");
+    return failure("NOT_FOUND", "That guest was not a recipient of this offer.");
+  }
+  const campaignMessages = state.messages.filter((message) => message.campaignId === campaign.id);
+  if (
+    campaignMessages.length > 0 &&
+    !campaignMessages.some((message) => message.membershipId === membership.id)
+  ) {
+    return failure("FORBIDDEN", "That guest was not a recipient of this offer.");
+  }
+  if (campaign.validFrom && state.now < new Date(campaign.validFrom).getTime()) {
+    return failure("INVALID", "That offer is not valid yet.");
+  }
+  if (campaign.validTo && state.now > new Date(campaign.validTo).getTime()) {
+    return failure("INVALID", "That offer has expired.");
   }
   if (state.now - new Date(campaign.sentAt).getTime() > 30 * 86400000) {
     return failure("INVALID", "That offer has expired.");
@@ -329,7 +359,11 @@ export function redeemCampaignCode(input: {
   const already = state.redemptions.some(
     (r) => r.kind === "campaign" && r.rewardId === campaign.id && r.membershipId === membership.id,
   );
-  if (already) return failure("INVALID", "That offer was already redeemed.");
+  if (already) return failure("INVALID", "That guest has already used this offer.");
+  const recipients = campaign.recipients > 0 ? campaign.recipients : campaignMessages.length;
+  const usedBefore = state.redemptions.filter(
+    (r) => r.kind === "campaign" && r.rewardId === campaign.id,
+  ).length;
   const now = new Date(state.now).toISOString();
   updateDemo((current) => ({
     ...current,
@@ -364,5 +398,5 @@ export function redeemCampaignCode(input: {
     });
     stampAward = awarded.ok ? awarded.data : null;
   }
-  return success({ redeemed: true, stampAward });
+  return success({ redeemed: true, stampAward, used: usedBefore + 1, total: recipients });
 }

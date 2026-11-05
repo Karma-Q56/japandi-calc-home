@@ -33,11 +33,13 @@ type Lookup =
   | {
       ok: true;
       firstName: string;
+      lastInitial: string;
       membershipId: string;
       stampsCurrent: number;
       stampsRequired: number;
-      rewards: Array<{ id: string; description: string }>;
-      campaigns: Array<{ id: string; code: string; name: string }>;
+      rewards: Array<{ id: string; description: string; key?: string }>;
+      offers: Array<{ id: string; title: string; code: string }>;
+      doubleStampToday: boolean;
     };
 
 function Till() {
@@ -114,11 +116,17 @@ function Till() {
     setLookup({
       ok: true,
       firstName: result.data.firstName,
+      lastInitial: result.data.lastInitial,
       membershipId: result.data.membership.id,
       stampsCurrent: membership.stampsCurrent,
       stampsRequired: restaurant.stampsRequired,
-      rewards: result.data.rewards,
-      campaigns: result.data.campaigns,
+      rewards: result.data.rewards.map((reward) => ({
+        id: reward.id,
+        description: reward.description,
+        ...(reward.key ? { key: reward.key } : {}),
+      })),
+      offers: result.data.offers,
+      doubleStampToday: result.data.doubleStampToday,
     });
     setLastStampId(null);
   };
@@ -230,9 +238,20 @@ function Till() {
   };
 
   const doLookupRefresh = (membershipId: string) => {
-    const membership = demoRepo.read().memberships.find((m) => m.id === membershipId);
+    const fresh = demoRepo.read();
+    const membership = fresh.memberships.find((m) => m.id === membershipId);
     if (membership && lookup?.ok) {
-      setLookup({ ...lookup, stampsCurrent: membership.stampsCurrent });
+      setLookup({
+        ...lookup,
+        stampsCurrent: membership.stampsCurrent,
+        rewards: fresh.rewards
+          .filter((reward) => reward.membershipId === membershipId && !reward.redeemedAt)
+          .map((reward) => ({
+            id: reward.id,
+            description: reward.description,
+            ...(reward.key ? { key: reward.key } : {}),
+          })),
+      });
     }
   };
 
@@ -260,6 +279,24 @@ function Till() {
       session: { role: session.role, restaurantId: session.restaurantId },
     });
     say(result.ok ? "ok" : "error", result.ok ? "Reward redeemed." : result.error.message);
+    if (result.ok && lookup?.ok) doLookupRefresh(lookup.membershipId);
+  };
+
+  const redeemItem = (title: string, itemCode: string) => {
+    if (!lookup?.ok || !session.staffId) return;
+    const result = api.special.redeem({
+      restaurantId: restaurant.id,
+      code: itemCode,
+      membershipId: lookup.membershipId,
+      actorId: session.staffId,
+      session: { role: session.role, restaurantId: session.restaurantId },
+    });
+    if (!result.ok) {
+      say("error", result.error.message);
+      return;
+    }
+    say("ok", `${title} redeemed.`);
+    setLookup({ ...lookup, offers: lookup.offers.filter((offer) => offer.id !== result.special.id) });
   };
 
   const redeemOffer = () => {
@@ -284,7 +321,12 @@ function Till() {
       session: { role: session.role, restaurantId: session.restaurantId },
     });
     if (result.ok) {
-      say("ok", "Offer redeemed.");
+      const used = result.data.used;
+      const total = result.data.total;
+      say(
+        "ok",
+        "Offer redeemed." + (total > 0 ? ` ${used} of ${total} used.` : ""),
+      );
       setRedeemCode("");
       return;
     }
@@ -542,7 +584,10 @@ function Till() {
       {lookup?.ok && (
         <section className="guest-panel">
           <div className="till-member">
-            <h2>{lookup.firstName}</h2>
+            <h2>
+              {lookup.firstName}
+              {lookup.lastInitial ? ` ${lookup.lastInitial}.` : ""}
+            </h2>
             <strong>
               {lookup.stampsCurrent}
               <i> / {lookup.stampsRequired}</i>
@@ -555,6 +600,9 @@ function Till() {
               }}
             />
           </div>
+          {lookup.doubleStampToday && (
+            <p className="demo-data-note">Double stamp day: this visit earns one extra stamp.</p>
+          )}
           {lookup.rewards.length > 0 && (
             <p>
               <Badge tone="active">
@@ -568,12 +616,22 @@ function Till() {
           </button>
           {lookup.rewards.map((reward) => (
             <button key={reward.id} className="builder-secondary" onClick={() => redeem(reward.id)}>
-              Redeem: {reward.description}
+              Redeem: {reward.key?.startsWith("birthday-item:") ? "Birthday treat, " : ""}
+              {reward.description}
+            </button>
+          ))}
+          {lookup.offers.map((offer) => (
+            <button
+              key={offer.id}
+              className="builder-secondary"
+              onClick={() => redeemItem(offer.title, offer.code)}
+            >
+              Redeem: {offer.title} ({offer.code})
             </button>
           ))}
           {lastStampId && (
             <button className="builder-secondary" onClick={undo}>
-              Undo last stamp
+              Undo last stamp (10 minutes)
             </button>
           )}
           <FormField label="Offer code" hint="Campaign codes and specials use this one field.">

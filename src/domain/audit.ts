@@ -45,9 +45,12 @@ export function logAudit(input: {
   restaurantId?: string;
   object?: string;
 }) {
+  // Log the staff member by name so the owner sees who did what at the till.
+  const staff = demoRepo.read().staff.find((member) => member.id === input.actor);
   const event: AuditEvent = {
     id: `audit-${crypto.randomUUID()}`,
     ...input,
+    actor: staff?.displayName ?? input.actor,
     createdAt: new Date(clock.now()).toISOString(),
   };
   updateDemo((current) => ({ ...current, audit: [event, ...current.audit] }));
