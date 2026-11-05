@@ -305,6 +305,45 @@ export function createSeed(now = Date.now()): DemoState {
       reason: "visit" as const,
     };
   });
+  // The Daily Grind is the venue the demo opens on, so it needs a fuller month
+  // of visits. These rows are appended and leave every existing stamp alone:
+  // a busy Tuesday and Friday, a quiet Sunday, and five regulars kept quiet so
+  // the slipping list and the win back suggestions have names.
+  const DAILY_GRIND_KEPT_QUIET = [5, 6, 12, 13, 19];
+  const DAILY_GRIND_VISITS_BY_WEEKDAY = [4, 6, 11, 8, 7, 12, 9]; // Sun to Sat
+  const dailyGrindMemberships = memberships
+    .filter((membership) => membership.restaurantId === restaurants[0]!.id)
+    .filter((_, index) => !DAILY_GRIND_KEPT_QUIET.includes(index));
+  let dailyGrindVisit = 0;
+  for (let dayOffset = 29; dayOffset >= 0; dayOffset -= 1) {
+    const day = new Date(now - dayOffset * 86400000);
+    const weekday = day.getUTCDay();
+    const visits = DAILY_GRIND_VISITS_BY_WEEKDAY[weekday]!;
+    for (let slot = 0; slot < visits; slot += 1) {
+      const membership =
+        dailyGrindMemberships[(dayOffset * 3 + slot * 7) % dailyGrindMemberships.length]!;
+      const visitAt = new Date(day);
+      visitAt.setUTCHours(
+        VISIT_HOURS_UTC[(slot + dayOffset) % VISIT_HOURS_UTC.length]!,
+        (slot * 11 + dayOffset) % 60,
+        0,
+        0,
+      );
+      // Never stamp in the last five hours, so the till can still stamp anyone.
+      if (now - visitAt.getTime() < 5 * 3600000) continue;
+      dailyGrindVisit += 1;
+      stamps.push({
+        id: `stamp-daily-${dailyGrindVisit}`,
+        restaurantId: restaurants[0]!.id,
+        membershipId: membership.id,
+        staffId: null,
+        key: null,
+        createdAt: visitAt.toISOString(),
+        status: "valid" as const,
+        reason: "visit" as const,
+      });
+    }
+  }
   // Demo till orders: the coffee shop's most ordered items feed the quick
   // buttons and the insights page. Linked to real stamps where one fits.
   const dailyOrders: Array<{ labels: [string, number][]; at: number }> = [

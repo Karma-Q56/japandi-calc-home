@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { WheelPreview } from "@/components/patron/preview";
 import { demoRepo } from "@/data/repo";
-import { arcShare, oddsInWords, shortWheelLabel, wheelArcs, weightWarning } from "@/lib/wheel";
+import { arcShare, oddsInWords, shortWheelLabel, wheelArcs, wheelLabelLines, weightWarning } from "@/lib/wheel";
 import type { SpinSegment } from "@/data/types";
 
 const segments: SpinSegment[] = [
@@ -81,5 +81,20 @@ describe("wheel odds and warnings", () => {
   it("shortens long prize names without cutting words in the middle", () => {
     expect(shortWheelLabel("Free coffee")).toBe("Free coffee");
     expect(shortWheelLabel("Free coffee and a slice of cake")).toBe("Free coffee…");
+  });
+
+  it("keeps a short wheel name on one line", () => {
+    expect(wheelLabelLines("Free coffee", 4)).toEqual(["Free coffee"]);
+  });
+
+  it("splits a longer wheel name at a space near the middle", () => {
+    expect(wheelLabelLines("Free filter coffee", 4)).toEqual(["Free filter", "coffee"]);
+  });
+
+  it("cuts a wheel name that still does not fit in two lines", () => {
+    const lines = wheelLabelLines("Complimentary signature breakfast platter for two", 8);
+    expect(lines).toHaveLength(2);
+    expect(lines.every((line) => line.length <= 14)).toBe(true);
+    expect(lines[1]!.endsWith("...")).toBe(true);
   });
 });
