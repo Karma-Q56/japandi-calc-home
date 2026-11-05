@@ -313,7 +313,8 @@ export function createSeed(now = Date.now()): DemoState {
   const DAILY_GRIND_VISITS_BY_WEEKDAY = [4, 6, 11, 8, 7, 12, 9]; // Sun to Sat
   const dailyGrindMemberships = memberships
     .filter((membership) => membership.restaurantId === restaurants[0]!.id)
-    .filter((_, index) => !DAILY_GRIND_KEPT_QUIET.includes(index));
+    // Index 0 is the demo diner's own card and the tests' starting guest, so it keeps its history.
+    .filter((_, index) => index !== 0 && !DAILY_GRIND_KEPT_QUIET.includes(index));
   let dailyGrindVisit = 0;
   for (let dayOffset = 29; dayOffset >= 0; dayOffset -= 1) {
     const day = new Date(now - dayOffset * 86400000);
