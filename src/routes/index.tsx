@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   Check,
@@ -93,6 +94,47 @@ const ownerSteps = [
   ["Stamp at the till", "Staff confirm a stamp in a few seconds, one-handed."],
   ["Fill the quiet days", "Send a thoughtful SMS special to the regulars you miss."],
 ];
+
+/** The example card on the diners section. The stamps land one by one when it scrolls into view. */
+function DinersStampCard() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [seen, setSeen] = useState(false);
+  useEffect(() => {
+    const node = ref.current;
+    if (!node || typeof IntersectionObserver === "undefined") {
+      setSeen(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setSeen(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.4 },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+  return (
+    <div ref={ref} className={`diners-stamp-card${seen ? " is-seen" : ""}`}>
+      <span className="diners-card-label">the daily grind.</span>
+      <div className="diners-stamps">
+        {Array.from({ length: 8 }, (_, index) => (
+          <span
+            key={index}
+            className={index < 6 ? "is-filled" : ""}
+            style={{ "--i": index } as React.CSSProperties}
+          >
+            {index < 6 ? <Stamp size={18} /> : null}
+          </span>
+        ))}
+      </div>
+      <span className="diners-card-note">6 of 8 · 2 more for a free coffee</span>
+    </div>
+  );
+}
 
 function HomePage() {
   useRevealAll();
@@ -262,17 +304,7 @@ function HomePage() {
             </div>
           </div>
           <aside className="run-card" aria-label="Example loyalty card">
-            <div className="diners-stamp-card">
-              <span className="diners-card-label">the daily grind.</span>
-              <div className="diners-stamps">
-                {Array.from({ length: 8 }, (_, index) => (
-                  <span key={index} className={index < 6 ? "is-filled" : ""}>
-                    {index < 6 ? <Stamp size={18} /> : null}
-                  </span>
-                ))}
-              </div>
-              <span className="diners-card-note">6 of 8 · 2 more for a free coffee</span>
-            </div>
+            <DinersStampCard />
             <div className="diners-pill">
               <Coffee size={16} /> 8th coffee on us
             </div>

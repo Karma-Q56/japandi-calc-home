@@ -68,6 +68,9 @@ function stampVisit(membershipId: string, key: string) {
 describe("double stamp day", () => {
   it("earns one extra stamp on the chosen weekday, and again on the next visit that day", () => {
     const membership = membershipFor(RESTAURANT);
+    // Start on a Johannesburg morning so both visits, five hours apart each, land on the same day
+    // whatever time the tests run.
+    demoRepo.update((current) => ({ ...current, now: nextJohannesburgWeekday(2) }));
     const weekday = johannesburgWeekday(clock.now() + 5 * 60 * 60 * 1000);
     ensureTools({ doubleStamp: true, weekday });
     stampVisit(membership.id, "v1");

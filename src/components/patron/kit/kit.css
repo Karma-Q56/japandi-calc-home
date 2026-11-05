@@ -2382,8 +2382,9 @@
   }
 
   .demo-control-toggle {
-    width: 2.75rem;
-    height: 2.75rem;
+    width: 2.25rem;
+    height: 2.25rem;
+    opacity: 0.85;
     min-height: 0;
     padding: 0;
     justify-content: center;
@@ -2440,4 +2441,284 @@
 
 .restaurant-list .fd-card-media {
   aspect-ratio: 16 / 8;
+}
+
+
+/* ---- Polish pass: shared fixes ---- */
+
+/* The demo pill stays bottom right so it never sits on the Help bubble. */
+.demo-control {
+  left: auto;
+  right: 14px;
+}
+
+/* Legal pages: real headings and a readable line length. */
+.legal-page h2 {
+  margin-top: var(--pk-space-7);
+  margin-bottom: var(--pk-space-2);
+  font: 700 clamp(1.25rem, 2.5vw, 1.5rem) / 1.25 var(--pk-font-heading);
+  color: var(--pk-ink);
+}
+
+.legal-page p {
+  max-width: 68ch;
+  color: var(--pk-ink);
+  line-height: 1.65;
+}
+
+.legal-page .legal-toc h2 {
+  margin-top: 0;
+  font: 700 0.75rem / 1.3 var(--pk-font-body);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pk-ink-soft);
+}
+
+.legal-more {
+  max-width: 1200px;
+  margin: var(--pk-space-6) auto var(--pk-space-8);
+  padding-inline: 48px;
+}
+
+@media (max-width: 1100px) {
+  .legal-more {
+    padding-inline: 32px;
+  }
+}
+
+@media (max-width: 860px) {
+  .legal-more {
+    padding-inline: 24px;
+  }
+}
+
+/* Loyalty page text and tabs. */
+.what-happens-when ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  gap: 0.25rem;
+}
+
+.what-happens-when h3 {
+  font: 700 0.9375rem / 1.3 var(--pk-font-heading);
+  margin: 0 0 var(--pk-space-1);
+}
+
+.loyalty-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.625rem;
+  min-height: 0;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* Insights layout and small visuals. */
+.insights-grid > section:first-child {
+  grid-column: 1 / -1;
+}
+
+.split-bar {
+  display: flex;
+  height: 0.75rem;
+  margin: var(--pk-space-3) 0;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--pk-cream-deep);
+}
+
+.split-bar i {
+  display: block;
+  background: var(--pk-ink-soft);
+}
+
+.split-bar i.is-returning {
+  background: var(--pk-accent);
+}
+
+.funnel-list {
+  display: grid;
+  gap: var(--pk-space-3);
+  margin: var(--pk-space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.funnel-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--pk-space-3);
+  font: 600 0.875rem / 1.3 var(--pk-font-body);
+}
+
+.funnel-track {
+  height: 0.625rem;
+  margin-top: 0.35rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--pk-cream-deep);
+}
+
+.funnel-track i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--pk-accent);
+}
+
+/* Owner list rows (team and similar) look like the Guests rows. */
+.ox-main .guest-list-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pk-space-3);
+  margin-top: var(--pk-space-2);
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--pk-border);
+  border-radius: var(--pk-radius-md, 0.875rem);
+  background: var(--pk-card);
+}
+
+.ox-main .guest-list-item small {
+  display: block;
+  color: var(--pk-ink-soft);
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pk-space-2);
+}
+
+/* Wide tables scroll inside their own box, never the whole page. */
+.pricing-table-wrap {
+  position: relative;
+  overflow-x: auto;
+}
+
+/* Operator bar wraps instead of spilling off the screen. */
+.opsx-bar {
+  flex-wrap: wrap;
+}
+
+.opsx-bar nav {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+/* Comfortable tap targets on touch screens. */
+@media (max-width: 860px) {
+  main button,
+  main .builder-primary,
+  main .builder-secondary,
+  .nav-links a,
+  .customer-list-actions button,
+  .pagination a,
+  .pagination button {
+    min-height: 2.5rem;
+  }
+
+  .nav-links a,
+  .site-footer a,
+  footer a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.5rem;
+  }
+}
+
+@media (min-width: 861px) {
+  .nav-links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.5rem;
+  }
+}
+
+/* Phones: keep Help clear of the bottom tab bar, and keep rows of inputs inside the screen. */
+@media (max-width: 860px) {
+  body:has(.ox-tabs) .help-bubble {
+    bottom: calc(4.75rem + env(safe-area-inset-bottom));
+  }
+
+  .hours-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: 0.5rem;
+  }
+
+  .hours-row .menu-row-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .hours-row .menu-row-actions > button {
+    grid-column: 1 / -1;
+    min-height: 2.5rem;
+    font-size: 0.8125rem;
+  }
+
+  .hours-row input[type="time"] {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* Feedback form: one readable column, checkbox next to its words. */
+.feedback-form {
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--pk-space-4);
+}
+
+.feedback-form > * {
+  max-width: 40rem;
+}
+
+.lead-form .builder-check {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-height: 2.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.lead-form .builder-check input[type="checkbox"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: none;
+  accent-color: var(--pk-accent);
+}
+
+/* Home: the example card fills its stamps one at a time once it is on screen. */
+@media (prefers-reduced-motion: no-preference) {
+  .diners-stamps span.is-filled {
+    transition:
+      background-color 0.35s ease,
+      border-color 0.35s ease,
+      transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition-delay: calc(var(--i, 0) * 140ms);
+  }
+
+  .diners-stamp-card:not(.is-seen) .diners-stamps span.is-filled {
+    background: transparent;
+    border: 2px dashed oklch(0.8 0.03 70);
+    transform: scale(0.82);
+  }
+
+  .diners-stamp-card:not(.is-seen) .diners-stamps span.is-filled svg {
+    opacity: 0;
+  }
+
+  .diners-stamps span.is-filled svg {
+    transition: opacity 0.2s ease;
+    transition-delay: calc(var(--i, 0) * 140ms + 200ms);
+  }
 }
