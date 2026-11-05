@@ -3,6 +3,7 @@ import { useDemoState } from "@/data/useDemoState";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
 import { withChildren } from "@/lib/nested";
+import { VenueCard } from "@/components/patron/VenueCard";
 import { GuestShell } from "@/components/patron/GuestShell";
 import { PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
 import { api } from "@/api";
@@ -27,9 +28,7 @@ export const Route = createFileRoute("/me/restaurants")({
 function RestaurantsPage() {
   const state = useDemoState();
   const customerId = state.session.customerId;
-  const customer = customerId
-    ? state.customers.find((item) => item.id === customerId)
-    : undefined;
+  const customer = customerId ? state.customers.find((item) => item.id === customerId) : undefined;
   if (!customer) {
     return (
       <main className="guest-page">
@@ -59,7 +58,10 @@ function RestaurantsPage() {
         intro="The places you collect stamps at, and other places in the demo you can join."
       />
       <StatGrid>
-        <StatCard value={joined.length} label={joined.length === 1 ? "place joined" : "places joined"} />
+        <StatCard
+          value={joined.length}
+          label={joined.length === 1 ? "place joined" : "places joined"}
+        />
         <StatCard
           value={discover.length}
           label={discover.length === 1 ? "place to discover" : "places to discover"}
@@ -71,38 +73,29 @@ function RestaurantsPage() {
         {joined.length === 0 && (
           <p className="demo-data-note">Join a restaurant and it will appear here.</p>
         )}
-        {joined.map((membership) => {
-          const restaurant = state.restaurants.find(
-            (item) => item.id === membership.restaurantId,
-          )!;
-          const tier = api.loyalty.tierState(state, membership);
-          const challenges = api.loyalty.challenges(state, membership);
-          const done = challenges.filter((item) => item.done && !item.claimed).length;
-          const spins = api.spin.state(membership.id);
-          const rewardsReady = state.rewards.filter(
-            (item) => item.membershipId === membership.id && !item.redeemedAt,
-          ).length;
-          return (
-            <Link
-              key={membership.id}
-              to="/me/restaurants/$slug"
-              params={{ slug: restaurant.slug }}
-              className="restaurant-card"
-            >
-              <span className="restaurant-thumb" aria-hidden>
-                {restaurant.theme.logo ? (
-                  <img src={restaurant.theme.logo} alt="" />
-                ) : (
-                  restaurant.name.slice(0, 1)
-                )}
-              </span>
-              <span className="restaurant-card-body">
-                <strong>{restaurant.name}</strong>
-                <small>
-                  {restaurant.suburb} · {membership.stampsCurrent} of {restaurant.stampsRequired}{" "}
-                  stamps
-                </small>
+        <div className="fd-grid">
+          {joined.map((membership) => {
+            const restaurant = state.restaurants.find(
+              (item) => item.id === membership.restaurantId,
+            )!;
+            const tier = api.loyalty.tierState(state, membership);
+            const challenges = api.loyalty.challenges(state, membership);
+            const done = challenges.filter((item) => item.done && !item.claimed).length;
+            const spins = api.spin.state(membership.id);
+            const rewardsReady = state.rewards.filter(
+              (item) => item.membershipId === membership.id && !item.redeemedAt,
+            ).length;
+            return (
+              <VenueCard
+                key={membership.id}
+                venue={restaurant}
+                href={`/me/restaurants/${restaurant.slug}`}
+                buttonLabel="Open"
+              >
                 <span className="restaurant-tags">
+                  <span className="restaurant-tag-text">
+                    {membership.stampsCurrent} of {restaurant.stampsRequired} stamps
+                  </span>
                   <span className={`tier-pill tier-${tier.tier}`}>
                     {api.loyalty.tierLabel(tier.tier)}
                   </span>
@@ -116,41 +109,23 @@ function RestaurantsPage() {
                     </span>
                   )}
                 </span>
-              </span>
-              <b aria-hidden>›</b>
-            </Link>
-          );
-        })}
+              </VenueCard>
+            );
+          })}
+        </div>
       </section>
 
       <section className="restaurant-list">
         <h2>Discover in demo</h2>
-        {discover.map((restaurant) => (
-          <Link
-            key={restaurant.id}
-            to="/me/restaurants/$slug"
-            params={{ slug: restaurant.slug }}
-            className="restaurant-card"
-          >
-            <span className="restaurant-thumb" aria-hidden>
-              {restaurant.theme.logo ? (
-                <img src={restaurant.theme.logo} alt="" />
-              ) : (
-                restaurant.name.slice(0, 1)
-              )}
-            </span>
-            <span className="restaurant-card-body">
-              <strong>{restaurant.name}</strong>
-              <small>
-                {restaurant.theme.tagline} · {restaurant.suburb}
-              </small>
-              <small>
-                {restaurant.stampsRequired} stamps to {restaurant.rewardDescription}
-              </small>
-            </span>
-            <b aria-hidden>›</b>
-          </Link>
-        ))}
+        <div className="fd-grid">
+          {discover.map((restaurant) => (
+            <VenueCard
+              key={restaurant.id}
+              venue={restaurant}
+              href={`/me/restaurants/${restaurant.slug}`}
+            />
+          ))}
+        </div>
       </section>
     </GuestShell>
   );

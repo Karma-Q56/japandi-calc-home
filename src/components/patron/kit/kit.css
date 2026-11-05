@@ -394,8 +394,9 @@
 
 .pk-stat {
   display: grid;
-  gap: 0.3rem;
-  padding: 1.1rem;
+  gap: 0.2rem;
+  align-content: start;
+  padding: 0.85rem 1rem;
   border: 1px solid var(--pk-border);
   border-radius: var(--pk-radius-lg);
   background: var(--pk-card);
@@ -406,7 +407,7 @@
 
 .pk-stat-value {
   color: var(--pk-accent);
-  font: 700 clamp(1.9rem, 4vw, 2.4rem) / 1 var(--pk-font-heading);
+  font: 700 clamp(1.5rem, 3vw, 1.75rem) / 1.1 var(--pk-font-heading);
   letter-spacing: -0.03em;
 }
 
@@ -912,7 +913,7 @@
 
 @media (max-width: 860px) {
   .ox {
-    padding-bottom: 0;
+    padding-bottom: calc(76px + env(safe-area-inset-bottom));
   }
 
   .ox-top {
@@ -2248,4 +2249,195 @@
     padding-inline: 0.5rem;
     font-size: 0.65rem;
   }
+}
+
+/* Tabs for pages that belong to one owner section (Your page, Settings, Insights, Loyalty). */
+.ox-subtabs {
+  display: flex;
+  gap: var(--pk-space-2);
+  max-width: 1200px;
+  margin: 0 auto var(--pk-space-3);
+  padding: var(--pk-space-3) 48px var(--pk-space-1);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.ox-subtabs::-webkit-scrollbar {
+  display: none;
+}
+
+.ox-subtab {
+  flex: none;
+  min-height: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--pk-space-4);
+  border: 1px solid var(--pk-border);
+  border-radius: 999px;
+  background: var(--pk-card);
+  color: var(--pk-ink);
+  font: 600 0.875rem var(--pk-font-body);
+  text-decoration: none;
+}
+
+.ox-subtab.is-active {
+  background: var(--pk-ink);
+  border-color: var(--pk-ink);
+  color: var(--pk-accent-ink);
+}
+
+@media (max-width: 1100px) {
+  .ox-subtabs {
+    padding-inline: 32px;
+  }
+}
+
+@media (max-width: 860px) {
+  .ox-subtabs {
+    padding-inline: 0.9rem;
+  }
+}
+
+/* Restaurant cards inside the narrow diner column stack to fit. */
+.restaurant-list .fd-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+}
+
+/* Guests list: left aligned, compact rows. */
+.customer-table {
+  gap: var(--pk-space-2);
+}
+
+.customer-row {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: var(--pk-space-2);
+  padding: 0.7rem 1rem;
+  border-radius: var(--pk-radius-md, 0.875rem);
+  background: var(--pk-card);
+}
+
+.customer-row:has(.customer-select) {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.customer-row-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.15rem 0.75rem;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.customer-row-main > span:first-child {
+  grid-column: 1;
+  grid-row: 1;
+  display: grid;
+  gap: 0.1rem;
+}
+
+.customer-row-main > span:first-child small {
+  margin-left: 0;
+  color: var(--pk-ink-soft);
+}
+
+.customer-row-main > .customer-row-meta {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.customer-row-main > small {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  color: var(--pk-ink-soft);
+}
+
+@media (min-width: 561px) {
+  .customer-row-main > span:first-child strong + small {
+    margin-left: 0;
+  }
+}
+
+.customer-row-main > b {
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: end;
+  align-self: center;
+  color: var(--pk-ink-soft);
+}
+
+/* The demo pill must never sit on top of content. On phones it shrinks to a dot above the tab bar. */
+@media (max-width: 860px) {
+  .demo-control {
+    left: auto;
+    right: 0.75rem;
+    bottom: calc(5.25rem + env(safe-area-inset-bottom));
+  }
+
+  .demo-control-toggle {
+    width: 2.75rem;
+    height: 2.75rem;
+    min-height: 0;
+    padding: 0;
+    justify-content: center;
+    overflow: hidden;
+    font-size: 0;
+    gap: 0;
+  }
+}
+
+/* Trend chart (owner Home) */
+.trend-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: var(--pk-space-3);
+}
+
+.trend-grid {
+  stroke: var(--pk-border);
+  stroke-width: 1;
+}
+
+.trend-axis {
+  fill: var(--pk-ink-soft);
+  font: 500 11px var(--pk-font-body);
+}
+
+.trend-line {
+  stroke: var(--pk-accent);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.trend-dot {
+  fill: var(--pk-card);
+  stroke: var(--pk-accent);
+  stroke-width: 2;
+}
+
+/* Hour labels under the busiest hours bars */
+.hour-labels {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.hour-labels span {
+  flex: 1;
+  text-align: center;
+  color: var(--pk-ink-soft);
+  font: 500 0.6875rem var(--pk-font-body);
+}
+
+.restaurant-list .fd-card-media {
+  aspect-ratio: 16 / 8;
 }

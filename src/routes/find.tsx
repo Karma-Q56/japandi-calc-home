@@ -6,7 +6,7 @@ import { useDemoState } from "@/data/useDemoState";
 import type { Restaurant } from "@/data/types";
 import { venueIsOpenNow } from "@/lib/johannesburg-time";
 import { venueDistance, venueTypeLabel } from "@/lib/venue-details";
-import { VenueMedia } from "@/components/patron/VenueMedia";
+import { VenueCard } from "@/components/patron/VenueCard";
 import {
   Badge,
   Button,
@@ -83,9 +83,7 @@ function FindPage() {
           filter === "offers" &&
           !state.specials.some(
             (special) =>
-              special.restaurantId === venue.id &&
-              special.active &&
-              special.kind !== "public",
+              special.restaurantId === venue.id && special.active && special.kind !== "public",
           )
         ) {
           return false;
@@ -129,8 +127,8 @@ function FindPage() {
             Find a restaurant. <span className="pk-accent">Become a regular.</span>
           </h1>
           <p className="fd-intro">
-            Search by name or neighbourhood, then open a place to see its menu, specials and
-            loyalty card. Joining takes your name and number, with no app to download.
+            Search by name or neighbourhood, then open a place to see its menu, specials and loyalty
+            card. Joining takes your name and number, with no app to download.
           </p>
         </div>
 
@@ -220,34 +218,13 @@ function FindPage() {
                 const open = venueIsOpenNow(venue.hours, state.now);
                 const distance = venueDistance(venue);
                 return (
-                  <article className="fd-card" key={venue.id}>
-                    <div className="fd-card-media">
-                      <VenueMedia restaurant={venue} />
-                      <Badge className="fd-card-category">{venueTypeLabel(venue)}</Badge>
-                      {open && <span className="fd-card-open">Open now</span>}
-                    </div>
-                    <div className="fd-card-body">
-                      <p className="fd-card-meta">
-                        <MapPin size={13} aria-hidden="true" />
-                        {venue.suburb} · {distance.toFixed(1)} km
-                      </p>
-                      <strong className="fd-card-name">{venue.name}</strong>
-                      <p className="fd-card-tagline">{venue.theme.tagline}</p>
-                      <p className="fd-reward">
-                        <Stamp size={15} aria-hidden="true" />
-                        {venue.stampsRequired} stamps.{" "}
-                        {sentenceCase(venue.rewardDescription)}.
-                      </p>
-                      <Button
-                        variant="secondary"
-                        href={`/r/${venue.slug}`}
-                        className="fd-card-button"
-                      >
-                        View restaurant
-                        <ArrowRight size={16} aria-hidden="true" />
-                      </Button>
-                    </div>
-                  </article>
+                  <VenueCard
+                    key={venue.id}
+                    venue={venue}
+                    href={`/r/${venue.slug}`}
+                    open={open}
+                    distanceKm={distance}
+                  />
                 );
               })}
             </div>
@@ -255,8 +232,7 @@ function FindPage() {
         </div>
 
         <p className="fd-ask">
-          Don&apos;t see your favourite place?{" "}
-          <a href="/suggest">Ask for a place</a>
+          Don&apos;t see your favourite place? <a href="/suggest">Ask for a place</a>
         </p>
       </div>
     </MarketingShell>
