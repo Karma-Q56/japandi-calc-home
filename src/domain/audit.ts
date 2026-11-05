@@ -36,7 +36,16 @@ export type AuditAction =
   | "feedback_received"
   | "feedback_updated"
   | "miss_you_award"
-  | "custom_reward";
+  | "custom_reward"
+  | "help_enabled"
+  | "help_disabled"
+  | "help_start"
+  | "help_stop"
+  | "help_draft"
+  | "help_draft_used"
+  | "help_draft_discarded"
+  | "help_request"
+  | "help_reply";
 
 /** Never pass PINs or full phone numbers, ids only. */
 export function logAudit(input: {

@@ -157,6 +157,47 @@ export interface Restaurant {
   customReward?: CustomRewardConfig;
   /** The short story on the public page. Empty keeps the calm default wording. */
   aboutText?: string;
+  /** The owner's switch that lets the Patron team help inside this restaurant. Off by default. */
+  patronHelp?: PatronHelp;
+}
+
+/** Help from Patron, limited in time. Off until the owner turns it on. */
+export interface PatronHelp {
+  enabled: boolean;
+  /** When help stops, as an ISO time. Null when help is off. */
+  expiresAt: string | null;
+  grantedAt?: string;
+  /** Always the owner, never the operator who is helping. */
+  grantedBy?: string;
+}
+
+/** Page words the Patron team prepared. Never live until the owner uses them. */
+export interface HelpDraft {
+  id: string;
+  restaurantId: string;
+  tagline: string;
+  about: string;
+  summary: string;
+  /** Fixed wording so the owner always knows who wrote the draft. */
+  label: "Patron prepared this";
+  preparedBy: string;
+  status: "draft" | "used" | "discarded";
+  /** Set when the draft answers a request from the owner. */
+  requestId?: string;
+  createdAt: string;
+}
+
+/** A job the owner asked Patron to do, with pictures. */
+export interface HelpRequest {
+  id: string;
+  restaurantId: string;
+  ask: string;
+  photos: FeedbackScreenshot[];
+  status: "open" | "answered" | "closed";
+  /** Patron's short answer, shown next to the draft. */
+  reply?: string;
+  draftId?: string;
+  createdAt: string;
 }
 
 /** "We miss you" rule. Off by default, and once per guest per 60 days. */
@@ -737,6 +778,8 @@ export interface DemoSession {
   staffId?: string;
   tillPairedRestaurantId?: string;
   staffExpiresAt?: number;
+  /** Set while a Patron operator is helping in a restaurant. */
+  helpMode?: { restaurantId: string; operator: string; until: string };
 }
 /**
  * One offer replaces Specials and Campaigns in the owner UI. Old specials and
@@ -802,6 +845,8 @@ export interface DemoState {
   pageVersions: PageVersion[];
   menuVersions: MenuVersion[];
   feedback: Feedback[];
+  helpDrafts: HelpDraft[];
+  helpRequests: HelpRequest[];
 }
 
 export interface Repo {

@@ -3639,6 +3639,62 @@ body {
 .menu-owner-row.is-hidden {
   opacity: 0.5;
 }
+/* Help from Patron: one clear banner, drafts the owner can read at a glance. */
+.help-banner {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding: 16px 18px;
+  border: 1px solid var(--primary);
+  border-left-width: 4px;
+  border-radius: 6px;
+  background: var(--accent);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.help-banner strong {
+  font-size: 13px;
+}
+.help-banner p {
+  margin: 0;
+  color: var(--muted-foreground);
+}
+.help-banner button {
+  justify-self: start;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--background);
+}
+.help-draft {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+}
+.help-draft p {
+  margin: 0;
+}
+.help-photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+.help-photos figure {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+.help-photos img {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
 .special-owner-row p {
   margin: 5px 0 0;
   color: var(--muted-foreground);

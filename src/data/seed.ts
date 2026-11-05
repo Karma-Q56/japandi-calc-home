@@ -746,6 +746,17 @@ export function createSeed(now = Date.now()): DemoState {
     onboarding: restaurants.map((r) => ({ restaurantId: r.id, done: {} })),
     pageVersions: [],
     menuVersions: [],
+    helpDrafts: [],
+    helpRequests: [
+      {
+        id: "help-request-seed-1",
+        restaurantId: "rest-daily-grind",
+        ask: "Our page says we close at 15:00 on Fridays, but it is 16:00 now. Can you write it so it sounds like us?",
+        photos: [],
+        status: "open",
+        createdAt: new Date(now - 3 * 86400000).toISOString(),
+      },
+    ],
     feedback: [
       {
         id: "feedback-seed-1",

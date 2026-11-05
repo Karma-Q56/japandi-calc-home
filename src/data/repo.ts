@@ -257,6 +257,8 @@ function normalise(raw: unknown): DemoState | null {
     pageVersions: parsed.pageVersions ?? [],
     menuVersions: parsed.menuVersions ?? [],
     feedback: parsed.feedback ?? [],
+    helpDrafts: parsed.helpDrafts ?? [],
+    helpRequests: parsed.helpRequests ?? [],
     pushSubscriptions: parsed.pushSubscriptions ?? [],
     orders: convertedOrders,
     referrals: (parsed.referrals ?? []).filter(

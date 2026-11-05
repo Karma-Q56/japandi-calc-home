@@ -7,6 +7,7 @@ import { dayName, TIME_OF_DAY_LABEL, visitPattern } from "@/lib/visits";
 import type { TimeOfDay, VisitPattern } from "@/lib/visits";
 import { failure, success, type ApiResult } from "./demo";
 import { logAudit, requireScope } from "./audit";
+import { operatorPhoneLock } from "./help";
 
 export type CustomerFilter =
   | "all"
@@ -227,6 +228,9 @@ export function revealPhone(input: {
 }) {
   const scoped = requireScope(input.session.role, input.session.restaurantId, input.restaurantId);
   if (!scoped.ok) return scoped;
+  if (input.session.role === "operator" || operatorPhoneLock(input.restaurantId)) {
+    return failure("FORBIDDEN", "Guest phone numbers stay masked while Patron is helping.");
+  }
   const customer = demoRepo.read().customers.find((c) => c.id === input.customerId);
   if (!customer) return failure("NOT_FOUND", "Guest not found.");
   logAudit({
@@ -248,6 +252,9 @@ export function exportCsv(input: {
   }
   const scoped = requireScope(input.session.role, input.session.restaurantId, input.restaurantId);
   if (!scoped.ok) return scoped;
+  if (input.session.role === "operator" || operatorPhoneLock(input.restaurantId)) {
+    return failure("FORBIDDEN", "The guest list cannot be exported while Patron is helping.");
+  }
   const state = demoRepo.read();
   const lines = ["name,phone,joined,last_visit,stamps,sms_opted_in,visits"];
   for (const m of state.memberships.filter((x) => x.restaurantId === input.restaurantId)) {

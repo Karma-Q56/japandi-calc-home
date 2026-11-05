@@ -575,3 +575,6 @@ No production database was contacted.
 Starter, Growth and Pro, with placeholder monthly bands and a once-off setup band,
 live only in `src/lib/patron.ts` so names and prices change in one place.
 The feature table and planner read the same arrays; everything stays marked proposed.
+
+## Help from Patron
+Help mode is a time boxed session, not a role change. The demo keeps drafts and requests in browser storage; `0011_help_mode_dev.sql` adds the live tables and blocks operator writes once the window closes. Drafts carry a fixed label, and operators never see full guest numbers. The privacy wording for this feature needs a lawyer before it goes live.
