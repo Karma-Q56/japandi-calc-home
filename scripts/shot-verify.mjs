@@ -68,7 +68,7 @@ const groups = [
     role: "owner",
     venue: "rest-daily-grind",
     path: "/app/loyalty",
-    stages: [{ name: "owner-loyalty-tiers", acts: [{ click: "Tiers and challenges" }] }],
+    stages: [{ name: "owner-loyalty-tiers", acts: [{ click: "Tiers" }] }],
   },
   { role: "owner", venue: "rest-daily-grind", path: "/app/design", stages: [{ name: "owner-design" }] },
   {
