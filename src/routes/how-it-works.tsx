@@ -140,7 +140,7 @@ function HowItWorks() {
         </div>
         <div className="page-cta-row">
           <a className="builder-primary" href="/contact">
-            Book a 15-minute visit <ArrowRight size={16} />
+            Talk to us <ArrowRight size={16} />
           </a>
           <a className="text-link" href="/pricing">
             See pricing

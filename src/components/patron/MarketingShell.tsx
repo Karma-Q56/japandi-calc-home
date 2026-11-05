@@ -1,23 +1,21 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useRouterState } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { ArrowUpRight, ChevronDown, Heart, Menu, X } from "lucide-react";
+import { ArrowUpRight, Heart, Menu, X } from "lucide-react";
 import { PatronBrand } from "@/lib/patron-brand";
 import { APP_NAME } from "@/config/app";
 import { HelpBubble } from "@/components/patron/HelpBubble";
 import { BackLink } from "@/components/patron/BackLink";
 
+/** Business pages. How it works and Case studies are tabs on the business page, not nav items. */
 const businessLinks: Array<{ href: string; label: string }> = [
   { href: "/for-business", label: "Overview" },
   { href: "/how-it-works", label: "How it works" },
-  { href: "/pricing", label: "Pricing" },
   { href: "/case-studies", label: "Case studies" },
   { href: "/faq", label: "FAQ" },
-  { href: "/contact", label: "Book a visit" },
-  { href: "/blog", label: "Notes on loyalty" },
 ];
 
-const businessPaths = businessLinks.map((link) => link.href);
+const businessPaths = ["/for-business", "/how-it-works", "/case-studies", "/faq", "/pricing", "/contact"];
 
 function useCurrentPath() {
   return useRouterState({
@@ -29,76 +27,45 @@ function useCurrentPath() {
 export function SiteHeader() {
   const path = useCurrentPath();
   const [menuOpen, setMenuOpen] = useState(false);
-  const headerRef = useRef<HTMLElement | null>(null);
+
   const onBusiness = businessPaths.includes(path);
   const onDiners = path === "/for-diners";
   const onLogin = path === "/login";
 
   useEffect(() => {
-    const closeDetails = () => {
-      headerRef.current?.querySelectorAll("details[open]").forEach((item) => {
-        item.removeAttribute("open");
-      });
-    };
     const onKey = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      setMenuOpen(false);
-      closeDetails();
-    };
-    const onPointer = (event: PointerEvent) => {
-      const target = event.target as Node | null;
-      headerRef.current?.querySelectorAll("details[open]").forEach((item) => {
-        if (target && !item.contains(target)) item.removeAttribute("open");
-      });
+      if (event.key === "Escape") setMenuOpen(false);
     };
     document.addEventListener("keydown", onKey);
-    document.addEventListener("pointerdown", onPointer);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.removeEventListener("pointerdown", onPointer);
-    };
+    return () => document.removeEventListener("keydown", onKey);
   }, []);
 
-  const closeNav = (event: React.MouseEvent<HTMLAnchorElement>) => {
-    setMenuOpen(false);
-    event.currentTarget.closest("details")?.removeAttribute("open");
-  };
+  const closeNav = () => setMenuOpen(false);
 
   return (
-    <header className="site-header" ref={headerRef}>
+    <header className="site-header">
       <div className="page-width header-inner">
         <PatronBrand />
         <nav className="nav-links" aria-label="Main navigation">
           <a href="/for-diners" aria-current={onDiners ? "page" : undefined}>
             For diners
           </a>
-          <details className="nav-dropdown">
-            <summary aria-current={onBusiness ? "page" : undefined}>
-              For businesses <ChevronDown aria-hidden="true" size={14} />
-            </summary>
-            <div className="nav-dropdown-panel">
-              {businessLinks.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  onClick={closeNav}
-                  aria-current={path === link.href ? "page" : undefined}
-                >
-                  {link.label}
-                </a>
-              ))}
-            </div>
-          </details>
+          <a href="/for-business" aria-current={onBusiness ? "page" : undefined}>
+            For businesses
+          </a>
+          <a href="/pricing" aria-current={path === "/pricing" ? "page" : undefined}>
+            Pricing
+          </a>
           <a href="/find" aria-current={path === "/find" ? "page" : undefined}>
             Find a restaurant
           </a>
-          <a href="/blog" aria-current={path === "/blog" ? "page" : undefined}>
-            Notes
+          <a href="/login" aria-current={onLogin ? "page" : undefined}>
+            Log in
           </a>
         </nav>
         <Button variant="patron" className="header-book" asChild>
-          <a href="/login" aria-current={onLogin ? "page" : undefined}>
-            Log in <ArrowUpRight />
+          <a href="/contact" aria-current={path === "/contact" ? "page" : undefined}>
+            Talk to us <ArrowUpRight />
           </a>
         </Button>
         <Button
@@ -117,39 +84,21 @@ export function SiteHeader() {
           <a href="/for-diners" onClick={closeNav} aria-current={onDiners ? "page" : undefined}>
             For diners
           </a>
-          <details className="mobile-accordion">
-            <summary aria-current={onBusiness ? "page" : undefined}>
-              For businesses <ChevronDown aria-hidden="true" size={16} />
-            </summary>
-            <div className="nav-dropdown-panel">
-              {businessLinks.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  onClick={closeNav}
-                  aria-current={path === link.href ? "page" : undefined}
-                >
-                  {link.label}
-                </a>
-              ))}
-            </div>
-          </details>
+          <a href="/for-business" onClick={closeNav} aria-current={onBusiness ? "page" : undefined}>
+            For businesses
+          </a>
+          <a href="/pricing" onClick={closeNav} aria-current={path === "/pricing" ? "page" : undefined}>
+            Pricing
+          </a>
           <a href="/find" onClick={closeNav} aria-current={path === "/find" ? "page" : undefined}>
             Find a restaurant
           </a>
-          <a
-            href="/suggest"
-            onClick={closeNav}
-            aria-current={path === "/suggest" ? "page" : undefined}
-          >
-            Ask for a place
-          </a>
-          <a href="/blog" onClick={closeNav} aria-current={path === "/blog" ? "page" : undefined}>
-            Notes
+          <a href="/login" onClick={closeNav} aria-current={onLogin ? "page" : undefined}>
+            Log in
           </a>
           <Button variant="patron" asChild>
-            <a href="/login" onClick={closeNav}>
-              Log in <ArrowUpRight />
+            <a href="/contact" onClick={closeNav}>
+              Talk to us <ArrowUpRight />
             </a>
           </Button>
         </nav>
@@ -199,14 +148,27 @@ export function SiteFooter() {
                   {link.label}
                 </a>
               ))}
+              <a href="/blog" aria-current={path === "/blog" ? "page" : undefined}>
+                Notes
+              </a>
             </nav>
           </div>
         </div>
         <div className="footer-bottom">
           <span>© 2026 {APP_NAME}. For the places that make a neighbourhood.</span>
           <span className="footer-legal">
-            <a href="/privacy">Privacy</a>
-            <a href="/terms">Terms</a>
+            <a href="/privacy" aria-current={path === "/privacy" ? "page" : undefined}>
+              Privacy
+            </a>
+            <a href="/terms" aria-current={path === "/terms" ? "page" : undefined}>
+              Terms
+            </a>
+            <a href="/feedback" aria-current={path === "/feedback" ? "page" : undefined}>
+              Send feedback
+            </a>
+            <a href="/find" aria-current={path === "/find" ? "page" : undefined}>
+              Find a restaurant
+            </a>
           </span>
           <span>
             Made with a little <Heart /> in South Africa.

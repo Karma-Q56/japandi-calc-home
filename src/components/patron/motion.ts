@@ -16,7 +16,7 @@ export function observeOnce(el: Element, cb: Callback) {
         observer?.unobserve(entry.target);
         fn?.();
       }
-    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+    }, { threshold: 0.01, rootMargin: '0px 0px -40px 0px' });
   }
   callbacks.set(el, cb);
   observer.observe(el);
@@ -32,7 +32,15 @@ export function useRevealAll() {
   useEffect(() => {
     document.documentElement.classList.add('js');
     const cleanups = Array.from(document.querySelectorAll('[data-reveal]')).map(el => observeOnce(el, () => el.classList.add('is-visible')));
-    return () => cleanups.forEach(c => c());
+    // A section taller than the viewport can sit on screen without ever reaching the
+    // observer threshold. Reveal anything already on screen so no band stays blank.
+    const fallback = window.setTimeout(() => {
+      document.querySelectorAll('[data-reveal]:not(.is-visible)').forEach(el => {
+        const rect = el.getBoundingClientRect();
+        if (rect.top < window.innerHeight && rect.bottom > 0) el.classList.add('is-visible');
+      });
+    }, 1200);
+    return () => { cleanups.forEach(c => c()); window.clearTimeout(fallback); };
   }, []);
 }
 

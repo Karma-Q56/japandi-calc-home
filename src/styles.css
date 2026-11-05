@@ -4296,3 +4296,139 @@ input:focus-visible {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* Home hero: a real card, floating beside the headline on wide screens. */
+.hero-card {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  z-index: 2;
+  width: 320px;
+  transform: translateY(-50%) rotate(-2deg);
+  filter: drop-shadow(0 24px 45px rgba(20, 24, 18, 0.28));
+}
+@media (max-width: 1080px) {
+  .hero-card {
+    position: static;
+    width: min(100%, 340px);
+    margin-top: 28px;
+    transform: none;
+  }
+}
+
+/* Feature table on pricing. */
+.pricing-table-wrap {
+  margin-top: 42px;
+  overflow-x: auto;
+}
+.pricing-table-heading {
+  font-size: 20px;
+  margin-bottom: 14px;
+}
+.pricing-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 560px;
+  font-size: 14px;
+}
+.pricing-table th,
+.pricing-table td {
+  border-bottom: 1px solid var(--border);
+  padding: 13px 14px;
+  text-align: left;
+  vertical-align: top;
+}
+.pricing-table thead th {
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  border-bottom-color: var(--foreground);
+}
+.pricing-table tbody th {
+  font-weight: 500;
+}
+.pricing-table td svg {
+  width: 15px;
+  height: 15px;
+  color: var(--primary);
+}
+
+/* Talk to us: five short steps. */
+.lead-step-bar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.lead-step-name {
+  font-weight: 600;
+}
+.lead-step-track {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+.lead-step-track span {
+  height: 3px;
+  flex: 1;
+  background: var(--border);
+}
+.lead-step-track span.is-done {
+  background: var(--primary);
+}
+.lead-stepper {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.lead-review {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.lead-review div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+  font-size: 14px;
+}
+.lead-review dt {
+  color: var(--muted-foreground);
+}
+.lead-review dd {
+  text-align: right;
+  font-weight: 500;
+}
+
+/* Legal pages: a short contents list before the wording. */
+.legal-toc {
+  border: 1px solid var(--border);
+  padding: 18px 20px;
+  margin-bottom: 34px;
+  font-size: 14px;
+}
+.legal-toc h2 {
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.legal-toc ol {
+  display: grid;
+  gap: 6px;
+  padding-left: 18px;
+  list-style: decimal;
+}
+.legal-toc a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

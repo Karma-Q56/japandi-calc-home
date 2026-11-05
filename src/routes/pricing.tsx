@@ -57,6 +57,48 @@ function Pricing() {
             </article>
           ))}
         </div>
+        <div className="pricing-table-wrap">
+          <h2 className="pricing-table-heading">What each plan includes</h2>
+          <table className="pricing-table">
+            <thead>
+              <tr>
+                <th scope="col">Feature</th>
+                {plans.map((plan) => (
+                  <th scope="col" key={plan.name}>
+                    {plan.name}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                ["Digital stamp card, QR and page", true, true, true],
+                ["Guest list and results", true, true, true],
+                ["SMS offers you send yourself", true, true, true],
+                ["Campaigns done for you", "Not included", "4 a month", "Weekly"],
+                ["Birthday offers", "Not included", "Not included", true],
+                ["Monthly results report", "Not included", true, true],
+                ["Support", "Email", "Email and WhatsApp", "Priority, hands-on"],
+                ["Staff training", true, true, true],
+              ].map(([label, ...values]) => (
+                <tr key={String(label)}>
+                  <th scope="row">{label}</th>
+                  {values.map((value, index) => (
+                    <td key={`${String(label)}-${index}`}>
+                      {value === true ? (
+                        <>
+                          <Check aria-hidden="true" /> <span className="sr-only">Included</span>
+                        </>
+                      ) : (
+                        String(value)
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         <div className="pricing-notes">
           <p>
             Once-off setup: {rand(commercial.setupMin)}–{rand(commercial.setupMax)}. Includes your
@@ -73,7 +115,7 @@ function Pricing() {
         </div>
         <div className="page-cta-row">
           <a className="builder-primary" href="/contact">
-            Book a 15-minute visit <ArrowRight size={16} />
+            Talk to us <ArrowRight size={16} />
           </a>
           <a className="text-link" href="/how-it-works">
             How it works

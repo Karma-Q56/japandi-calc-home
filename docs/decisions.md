@@ -570,3 +570,8 @@ passed 467 tests with 6 skipped across 74 files; the production build passed.
 The older `.dev.vars` URLs were rejected by the server, so the run used the
 configured migration branch and the app role password from the local env file.
 No production database was contacted.
+
+## Pricing placeholders
+Starter, Growth and Pro, with placeholder monthly bands and a once-off setup band,
+live only in `src/lib/patron.ts` so names and prices change in one place.
+The feature table and planner read the same arrays; everything stays marked proposed.

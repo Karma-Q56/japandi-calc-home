@@ -28,11 +28,11 @@ export const Route = createFileRoute("/contact")({
   }),
   head: () => ({
     meta: [
-      { title: "Book a visit | Patron" },
+      { title: "Talk to us | Patron" },
       {
         name: "description",
         content:
-          "Book a 15-minute visit at your restaurant to talk about your regulars, your slow days and how Patron could help.",
+          "Talk to us about your restaurant, your regulars and your quiet days. Five short steps, then a real person replies within one working day.",
       },
     ],
   }),
@@ -48,11 +48,11 @@ function Contact() {
           <span className="eyebrow-line" /> Contact
         </span>
         <h1>
-          Book a <span className="editorial">15-minute visit.</span>
+          Talk to <span className="editorial">us.</span>
         </h1>
         <p>
-          Fifteen minutes at your counter, we bring the QR pack and answer the awkward questions.
-          No slides, no pressure, and no obligation to sign anything on the day.
+          Five short steps about your place, your regulars and your quiet days. A real person
+          replies within one working day, and nothing is signed on the day.
         </p>
       </section>
       <LeadForm initialKind={kind ?? "owner"} initialQuietDay={quietDay} />

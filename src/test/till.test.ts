@@ -58,6 +58,7 @@ function sentCampaign(overrides: Partial<Campaign> = {}): Campaign {
     recipients: 20,
     delivered: 20,
     failed: 0,
+    actualCostCents: 0,
     createdBy: "owner-1",
     createdAt: new Date(state.now).toISOString(),
     ...overrides,

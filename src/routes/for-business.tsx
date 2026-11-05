@@ -71,7 +71,7 @@ function ForBusiness() {
           <div className="hero-actions">
             <Button variant="patron" className="primary-cta" asChild>
               <a href="#visit">
-                Book a 15-minute visit <ArrowUpRight />
+                Talk to us <ArrowUpRight />
               </a>
             </Button>
             <a href="#pricing" className="text-link">
@@ -377,7 +377,7 @@ function ForBusiness() {
           <div className="founding-cta">
             <Button variant="patron" className="primary-cta" asChild>
               <a href="#visit">
-                Book a 15-minute visit <ArrowUpRight />
+                Talk to us <ArrowUpRight />
               </a>
             </Button>
             <p>Independent cafes, bakeries &amp; restaurants welcome.</p>
