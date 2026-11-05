@@ -241,7 +241,11 @@ const only = (process.env.SHOT_ONLY ?? "")
   .split(",")
   .map((value) => value.trim())
   .filter(Boolean);
-const browser = await chromium.launch();
+const browser = await chromium.launch({
+  // Sandboxes without apt cannot install the newest browser build's system
+  // libraries, so a known-good chromium binary can be passed with SHOT_EXECUTABLE.
+  ...(process.env.SHOT_EXECUTABLE ? { executablePath: process.env.SHOT_EXECUTABLE } : {}),
+});
 for (const width of widths) {
   for (const group of groups.filter((group) =>
     only.length
