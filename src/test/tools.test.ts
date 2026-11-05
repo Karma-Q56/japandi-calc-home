@@ -16,6 +16,9 @@ import {
 beforeEach(() => {
   demoRepo.reset();
   clock.reset();
+  // Seeded visits are spread around the reset time, so start the clock after the latest one.
+  const latest = Math.max(...demoRepo.read().stamps.map((s) => Date.parse(s.createdAt)));
+  if (latest >= clock.now()) clock.advance(latest - clock.now() + 24 * 60 * 60 * 1000);
 });
 
 const RESTAURANT = "rest-daily-grind";
@@ -125,7 +128,8 @@ describe("visit streak", () => {
 describe("monthly tool budget", () => {
   it("stops granting once the cap is reached, and blocks the other tool too", () => {
     const membership = membershipFor(RESTAURANT);
-    ensureTools({ doubleStamp: true, weekday: 4, streak: true, weeklyVisits: 1, budget: 1 });
+    const visitWeekday = johannesburgWeekday(clock.now() + 5 * 60 * 60 * 1000);
+    ensureTools({ doubleStamp: true, weekday: visitWeekday, streak: true, weeklyVisits: 1, budget: 1 });
     stampVisit(membership.id, "b1"); // double stamp, budget spent
     expect(toolBudgetFor(RESTAURANT)).toEqual({ cap: 1, used: 1 });
     clock.advance(10 * 60 * 1000 + 1);
@@ -160,7 +164,8 @@ describe("monthly tool budget", () => {
 
   it("resets in the next Johannesburg month", () => {
     const membership = membershipFor(RESTAURANT);
-    ensureTools({ doubleStamp: true, weekday: 4, budget: 1 });
+    const visitWeekday = johannesburgWeekday(clock.now() + 5 * 60 * 60 * 1000);
+    ensureTools({ doubleStamp: true, weekday: visitWeekday, budget: 1 });
     stampVisit(membership.id, "m1");
     expect(toolBudgetFor(RESTAURANT).used).toBe(1);
     const today = johannesburgDateParts(demoRepo.read().now);

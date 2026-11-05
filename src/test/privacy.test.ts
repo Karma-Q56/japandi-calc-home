@@ -8,6 +8,9 @@ import { recordOrder, setOrderTracking } from "@/domain/orders";
 beforeEach(() => {
   demoRepo.reset();
   clock.reset();
+  // Seeded visits are spread around the reset time, so start the clock after the latest one.
+  const latest = Math.max(...demoRepo.read().stamps.map((s) => Date.parse(s.createdAt)));
+  if (latest >= clock.now()) clock.advance(latest - clock.now() + 24 * 60 * 60 * 1000);
 });
 
 /**
