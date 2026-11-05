@@ -8,6 +8,7 @@ import type {
   LedgerEntry,
   Membership,
   Message,
+  Offer,
 } from "@/data/types";
 import { countSegments, sanitizeForGsm7 } from "@/lib/segments";
 import { guestDisplayName } from "@/lib/wording";
@@ -172,6 +173,56 @@ export function costPreview(input: {
 
 /* ------------------------------------------------------------------ drafts */
 
+/** The offer row that mirrors a campaign, so the owner works from one list. */
+export function offerForCampaign(
+  campaign: Campaign,
+  placements?: Offer["placements"],
+): Offer {
+  const placed = placements ?? {
+    page: false,
+    till: false,
+    push: campaign.channel === "push" || campaign.channel === "push_then_sms",
+    sms: campaign.channel === "sms" || campaign.channel === "push_then_sms",
+  };
+  return {
+    id: `offer-${campaign.id}`,
+    restaurantId: campaign.restaurantId,
+    title: campaign.name,
+    body: campaign.body,
+    kind: "public",
+    code: campaign.code,
+    ...(campaign.validFrom ? { startsAt: campaign.validFrom } : {}),
+    ...(campaign.validTo ? { endsAt: campaign.validTo } : {}),
+    active: campaign.status !== "cancelled" && campaign.status !== "failed",
+    placements: placed,
+    status:
+      campaign.status === "sent"
+        ? "sent"
+        : campaign.status === "scheduled"
+          ? "scheduled"
+          : campaign.status === "cancelled" || campaign.status === "failed"
+            ? "cancelled"
+            : "live",
+    legacyCampaignId: campaign.id,
+    createdAt: campaign.createdAt,
+  };
+}
+
+/** Keep the offer in step with its campaign, without touching legacy history. */
+export function syncOffer(
+  offers: Offer[],
+  campaign: Campaign,
+  placements?: Offer["placements"],
+): Offer[] {
+  const index = offers.findIndex(
+    (offer) => offer.legacyCampaignId === campaign.id || offer.id === `offer-${campaign.id}`,
+  );
+  if (index === -1) return [...offers, offerForCampaign(campaign, placements)];
+  const current = offers[index]!;
+  const next = offerForCampaign(campaign, placements ?? current.placements);
+  return offers.map((offer, at) => (at === index ? { ...next, id: current.id } : offer));
+}
+
 export function saveDraft(input: {
   restaurantId: string;
   actor: string;
@@ -186,6 +237,7 @@ export function saveDraft(input: {
     validTo?: string;
     specialId?: string;
     channel?: Campaign["channel"];
+    placements?: Offer["placements"];
   };
 }) {
   const state = demoRepo.read();
@@ -236,7 +288,11 @@ export function saveDraft(input: {
       createdAt: now,
       actualCostCents: 0,
     };
-    updateDemo((current) => ({ ...current, campaigns: [...current.campaigns, campaign] }));
+    updateDemo((current) => ({
+      ...current,
+      campaigns: [...current.campaigns, campaign],
+      offers: syncOffer(current.offers, campaign, input.fields.placements),
+    }));
     return success(campaign);
   }
   const existing = state.campaigns.find((c) => c.id === input.draftId);
@@ -257,6 +313,7 @@ export function saveDraft(input: {
   updateDemo((current) => ({
     ...current,
     campaigns: current.campaigns.map((c) => (c.id === updated.id ? updated : c)),
+    offers: syncOffer(current.offers, updated, input.fields.placements),
   }));
   return success(updated);
 }
@@ -414,6 +471,16 @@ export function confirmCampaign(input: {
       createdAt: now,
     });
   }
+  const confirmedCampaign: Campaign = {
+    ...campaign,
+    status,
+    ...(scheduledAt ? { scheduledAt } : {}),
+    ...(status === "sending" ? { sentAt: now } : {}),
+    recipients: created.length,
+    estRecipients: eligible.length,
+    estSegments: segments,
+    estCostCents: estCost,
+  };
   updateDemo((current) => {
     const ledger = [...current.ledger, ...planned.entries];
     const balanceAfter = ledger
@@ -424,19 +491,9 @@ export function confirmCampaign(input: {
       ledger,
       messages: [...current.messages, ...created],
       campaigns: current.campaigns.map((c) =>
-        c.id === campaign.id
-          ? {
-              ...c,
-              status,
-              ...(scheduledAt ? { scheduledAt } : {}),
-              ...(status === "sending" ? { sentAt: now } : {}),
-              recipients: created.length,
-              estRecipients: eligible.length,
-              estSegments: segments,
-              estCostCents: estCost,
-            }
-          : c,
+        c.id === campaign.id ? confirmedCampaign : c,
       ),
+      offers: syncOffer(current.offers, confirmedCampaign),
       restaurants: current.restaurants.map((restaurant) =>
         restaurant.id === campaign.restaurantId
           ? { ...restaurant, creditCents: balanceAfter }
@@ -694,6 +751,7 @@ export function cancelCampaign(input: { campaignId: string; actor: string }) {
       campaigns: current.campaigns.map((c) =>
         c.id === campaign.id ? { ...c, status: "cancelled" as CampaignStatus } : c,
       ),
+      offers: syncOffer(current.offers, { ...campaign, status: "cancelled" }),
       restaurants: current.restaurants.map((restaurant) =>
         restaurant.id === campaign.restaurantId
           ? { ...restaurant, creditCents: balanceAfter }

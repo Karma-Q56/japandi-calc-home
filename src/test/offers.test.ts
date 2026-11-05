@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { mergeOffers } from "@/data/repo";
+import { demoRepo, mergeOffers } from "@/data/repo";
+import { confirmCampaign, saveDraft } from "@/domain/campaigns";
 import type { DemoState } from "@/data/types";
 
 function stateWith(parts: Partial<DemoState>): Partial<DemoState> {
@@ -80,5 +81,57 @@ describe("offers merge", () => {
     const once = mergeOffers(stateWith({ specials: [special] }));
     const twice = mergeOffers(stateWith({ specials: [special], offers: once }));
     expect(twice).toHaveLength(1);
+  });
+});
+
+describe("offers from the composer", () => {
+  it("keeps one offer per draft and marks it live when the messages go out", () => {
+    demoRepo.reset();
+    const now = new Date(demoRepo.read().now);
+    demoRepo.update((state) => ({
+      ...state,
+      now: Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 8),
+    }));
+    const placements = { page: true, till: true, push: true, sms: false };
+    const draft = saveDraft({
+      restaurantId: "rest-daily-grind",
+      actor: "owner-1",
+      actorRole: "owner",
+      fields: {
+        name: "Friday push",
+        body: "Hi {first_name}, come by Friday.",
+        audience: { type: "all_opted_in" },
+        placements,
+      },
+    });
+    if (!draft.ok) throw new Error(draft.error.message);
+    expect(demoRepo.read().offers).toHaveLength(1);
+    expect(demoRepo.read().offers[0]).toMatchObject({
+      id: `offer-${draft.data.id}`,
+      title: "Friday push",
+      placements,
+      status: "live",
+    });
+
+    const edited = saveDraft({
+      restaurantId: "rest-daily-grind",
+      actor: "owner-1",
+      actorRole: "owner",
+      draftId: draft.data.id,
+      fields: {
+        name: "Friday push, edited",
+        body: "Hi {first_name}, see you Friday.",
+        audience: { type: "all_opted_in" },
+        placements,
+      },
+    });
+    expect(edited.ok).toBe(true);
+    expect(demoRepo.read().offers).toHaveLength(1);
+    expect(demoRepo.read().offers[0]?.title).toBe("Friday push, edited");
+
+    const confirmed = confirmCampaign({ campaignId: draft.data.id, actor: "owner-1", sendNow: true });
+    expect(confirmed.ok).toBe(true);
+    expect(demoRepo.read().offers).toHaveLength(1);
+    expect(demoRepo.read().offers[0]?.status).toBe("live");
   });
 });
