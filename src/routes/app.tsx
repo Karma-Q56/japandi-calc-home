@@ -10,6 +10,7 @@ import { canOpenArea } from "@/lib/auth-rules";
 import { getDataModeFn, getOwnerOverviewFn, getViewerFn } from "@/server/live";
 import { OwnerSideNav, OwnerMobileNav } from "@/components/patron/OwnerNav";
 import { PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
+import { DemoHome } from "@/components/patron/DemoHome";
 import { BackLink } from "@/components/patron/BackLink";
 import { markOutletComponent } from "@/lib/nested";
 import { signOut } from "@/lib/sign-out";
@@ -232,23 +233,8 @@ function LiveUnavailable() {
 }
 
 function Overview({ restaurantId, live }: { restaurantId: string; live: Overview | null }) {
-  const state = useDemoState();
-  const session = state.session;
   if (live) return <OverviewBody data={live} />;
-  const result = api.dash.overview(restaurantId, {
-    role: session.role,
-    restaurantId: session.restaurantId,
-  });
-  if (!result.ok) {
-    return (
-      <main className="demo-hub page-width">
-        <h1>We couldn’t load the overview.</h1>
-        <p>{result.error.message}</p>
-        <a href="/">Back to Patron</a>
-      </main>
-    );
-  }
-  return <OverviewBody data={result.data} />;
+  return <DemoHome restaurantId={restaurantId} />;
 }
 
 function OverviewBody({ data }: { data: Overview }) {

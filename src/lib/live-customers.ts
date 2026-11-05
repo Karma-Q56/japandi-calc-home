@@ -57,6 +57,8 @@ export function filterLiveCustomers(
         return since === null || since >= 60;
       case "sms":
         return row.smsOptedIn;
+      case "no_sms":
+        return !row.smsOptedIn;
       case "birthdays":
         return row.birthdayMonth === month;
       default:

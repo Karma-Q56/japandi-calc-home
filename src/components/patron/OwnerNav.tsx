@@ -3,52 +3,58 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   Users,
-  List,
-  ChartNoAxesColumn,
-  TrendingUp,
   Gift,
-  Megaphone,
   Tag,
-  Wallet,
-  UserCog,
-  UtensilsCrossed,
-  QrCode,
-  ScrollText,
-  Settings,
-  UsersRound,
-  Palette,
-  Target,
   Globe,
-  MessageSquareText,
+  ChartNoAxesColumn,
+  Settings,
 } from "lucide-react";
 
 type Item = { to: string; label: string; icon: ComponentType; end?: boolean };
 
+/** The seven owner sections. Older tools keep their URLs and light up their section here. */
 export const OWNER_NAV: Item[] = [
-  { to: "/app", label: "Overview", icon: LayoutDashboard, end: true },
+  { to: "/app", label: "Home", icon: LayoutDashboard, end: true },
+  { to: "/app/customers", label: "Guests", icon: Users },
+  { to: "/app/loyalty", label: "Loyalty", icon: Gift },
+  { to: "/app/specials", label: "Offers", icon: Tag },
+  { to: "/app/page", label: "Your page", icon: Globe },
   { to: "/app/insights", label: "Insights", icon: ChartNoAxesColumn },
-  { to: "/app/reports", label: "Reports", icon: TrendingUp },
-  { to: "/app/customers", label: "Customers", icon: Users },
-  { to: "/app/referrals", label: "Bring a friend", icon: UsersRound },
-  { to: "/app/campaigns", label: "Campaigns", icon: Megaphone },
-  { to: "/app/specials", label: "Specials", icon: Tag },
-  { to: "/app/credit", label: "Credit", icon: Wallet },
-  { to: "/app/loyalty", label: "Loyalty card", icon: Gift },
-  { to: "/app/challenges", label: "Challenges", icon: Target },
-  { to: "/app/design", label: "Card design", icon: Palette },
-  { to: "/app/page", label: "Public page", icon: Globe },
-  { to: "/app/menu", label: "Menu", icon: UtensilsCrossed },
-  { to: "/app/qr", label: "QR codes", icon: QrCode },
-  { to: "/app/team", label: "Team", icon: UserCog },
-  { to: "/app/feedback", label: "Feedback", icon: MessageSquareText },
-  { to: "/app/audit", label: "Activity log", icon: ScrollText },
   { to: "/app/settings", label: "Settings", icon: Settings },
-  { to: "/app/lists", label: "Lists", icon: List },
 ];
+
+/** Tool URL prefix -> the section it belongs to. Longest prefix wins. */
+const SECTION_OF: Array<[prefix: string, to: string]> = [
+  ["/app/lists", "/app/customers"],
+  ["/app/challenges", "/app/loyalty"],
+  ["/app/referrals", "/app/loyalty"],
+  ["/app/design", "/app/page"],
+  ["/app/menu", "/app/page"],
+  ["/app/qr", "/app/page"],
+  ["/app/campaigns", "/app/specials"],
+  ["/app/credit", "/app/specials"],
+  ["/app/reports", "/app/insights"],
+  ["/app/team", "/app/settings"],
+  ["/app/feedback", "/app/settings"],
+  ["/app/audit", "/app/settings"],
+];
+
+function sectionFor(path: string): string | null {
+  const clean = path.replace(/\/$/, "") || "/app";
+  if (clean === "/app") return "/app";
+  for (const [prefix, to] of SECTION_OF) {
+    if (clean === prefix || clean.startsWith(`${prefix}/`)) return to;
+  }
+  for (const item of OWNER_NAV) {
+    if (!item.end && (clean === item.to || clean.startsWith(`${item.to}/`))) return item.to;
+  }
+  return null;
+}
 
 function useActive() {
   const path = useRouterState({ select: (state) => state.location.pathname });
-  return (item: Item) => (item.end ? path === item.to : path.startsWith(item.to));
+  const section = sectionFor(path);
+  return (item: Item) => section === item.to;
 }
 
 export function OwnerSideNav() {

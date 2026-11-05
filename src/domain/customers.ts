@@ -16,6 +16,7 @@ export type CustomerFilter =
   | "lapsed45"
   | "lapsed60"
   | "sms"
+  | "no_sms"
   | "birthdays"
   | "one_stamp_away"
   | "recent30"
@@ -141,6 +142,8 @@ export function listCustomers(input: {
     rows = rows.filter((r) => daysSince(r.lastVisitAt) >= 60);
   } else if (filter === "sms") {
     rows = rows.filter((r) => r.smsOptedIn);
+  } else if (filter === "no_sms") {
+    rows = rows.filter((r) => !r.smsOptedIn);
   } else if (filter === "birthdays") {
     const month = johannesburgMonthDay(now).month;
     rows = rows.filter((r) => {
@@ -200,6 +203,7 @@ export function matchingCustomerMembershipIds(input: {
     if (filter === "lapsed45" && daysSince(row.lastVisitAt) < 45) return false;
     if (filter === "lapsed60" && daysSince(row.lastVisitAt) < 60) return false;
     if (filter === "sms" && !row.smsOptedIn) return false;
+    if (filter === "no_sms" && row.smsOptedIn) return false;
     const required = state.restaurants.find((item) => item.id === input.restaurantId)?.stampsRequired ?? 8;
     if (filter === "one_stamp_away" && required - row.stampsCurrent !== 1) return false;
     if (filter === "recent30" && (row.lastVisitAt === null || daysSince(row.lastVisitAt) > 30)) return false;
