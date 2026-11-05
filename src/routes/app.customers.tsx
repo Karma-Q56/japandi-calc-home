@@ -12,7 +12,7 @@ import type { CampaignAudience } from "@/data/types";
 import type { CustomerFilter, CustomerSort } from "@/domain/customers";
 import { countLabel } from "@/lib/count-label";
 import { formatRand } from "@/lib/money";
-import { EmptyState, FormField, PageHeader } from "@/components/patron/dash";
+import { EmptyState, FormField, PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
 
 const FILTERS: CustomerFilter[] = [
   "all",
@@ -26,8 +26,22 @@ const FILTERS: CustomerFilter[] = [
   "lapsed45",
   "lapsed60",
   "sms",
+  "no_sms",
   "birthdays",
 ];
+
+/** Chips shown above the list, in the brief's order. */
+const CHIP_FILTERS: CustomerFilter[] = [
+  "regulars",
+  "reward_ready",
+  "one_stamp_away",
+  "gone_quiet",
+  "new14",
+  "no_sms",
+];
+
+const GUEST_TABS = ["All guests", "Lists", "Birthdays"] as const;
+type GuestTab = (typeof GUEST_TABS)[number];
 
 const SORTS: CustomerSort[] = ["stamps", "fewest_stamps", "visits", "recent", "name"];
 const FILTER_LABELS: Record<CustomerFilter, string> = {
@@ -42,6 +56,7 @@ const FILTER_LABELS: Record<CustomerFilter, string> = {
   lapsed45: "Lapsed · 45 days",
   lapsed60: "Lapsed · 60 days",
   sms: "SMS opted in",
+  no_sms: "No SMS consent",
   birthdays: "Birthdays this month",
 };
 
@@ -57,6 +72,7 @@ const FILTER_AUDIENCE: Record<CustomerFilter, CampaignAudience> = {
   lapsed45: { type: "lapsed30", days: 45 },
   lapsed60: { type: "lapsed30", days: 60 },
   sms: { type: "everyone" },
+  no_sms: { type: "everyone" },
   birthdays: { type: "birthday_month" },
 };
 
@@ -106,6 +122,22 @@ function DemoCustomers() {
   const [newListName, setNewListName] = useState("");
   const [newCampaignListName, setNewCampaignListName] = useState("Selected campaign guests");
   const [notice, setNotice] = useState("");
+  const [tab, setTab] = useState<GuestTab>("All guests");
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [revealed, setRevealed] = useState<string | null>(null);
+  const [revealedPhone, setRevealedPhone] = useState<string | null>(null);
+  const sessionScope = { role: session.role, restaurantId: session.restaurantId };
+  const countFor = (value: CustomerFilter) => {
+    const counted = api.customers.matchingMembershipIds({
+      restaurantId: restaurant.id,
+      search,
+      filter: value,
+      sort,
+      session: sessionScope,
+    });
+    return counted.ok ? counted.data.length : 0;
+  };
+  const totalGuests = countFor("all");
   const result = api.customers.list({
     restaurantId: restaurant.id,
     search,
@@ -157,6 +189,30 @@ function DemoCustomers() {
           </button>
         }
       />
+      <div className="guest-tabs" role="tablist" aria-label="Guest views">
+        {GUEST_TABS.map((item) => (
+          <button
+            key={item}
+            type="button"
+            role="tab"
+            aria-selected={tab === item}
+            className={tab === item ? "is-active" : undefined}
+            onClick={() => {
+              setTab(item);
+              setFilter(item === "Birthdays" ? "birthdays" : "all");
+              setPage(1);
+            }}
+          >
+            {item}
+          </button>
+        ))}
+      </div>
+      <StatGrid>
+        <StatCard value={totalGuests} label="Guests" />
+        <StatCard value={countFor("regulars")} label="Regulars" />
+        <StatCard value={countFor("reward_ready")} label="Reward ready" />
+        <StatCard value={countFor("no_sms")} label="No SMS consent" />
+      </StatGrid>
       <div className="builder-fields customer-filters">
         <FormField label="Search name or phone">
           <input
@@ -167,21 +223,6 @@ function DemoCustomers() {
             }}
           />
         </FormField>
-        <FormField label="Filter">
-          <select
-            value={filter}
-            onChange={(event) => {
-              setFilter(event.target.value as CustomerFilter);
-              setPage(1);
-            }}
-          >
-            {FILTERS.map((f) => (
-              <option key={f} value={f}>
-                {FILTER_LABELS[f]}
-              </option>
-            ))}
-          </select>
-        </FormField>
         <FormField label="Sort">
           <select value={sort} onChange={(event) => setSort(event.target.value as CustomerSort)}>
             {SORTS.map((s) => (
@@ -191,6 +232,22 @@ function DemoCustomers() {
             ))}
           </select>
         </FormField>
+      </div>
+      <div className="guest-chips" role="group" aria-label="Filter guests">
+        {CHIP_FILTERS.map((value) => (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={filter === value}
+            className={filter === value ? "is-active" : undefined}
+            onClick={() => {
+              setFilter(filter === value ? "all" : value);
+              setPage(1);
+            }}
+          >
+            {FILTER_LABELS[value]} <span>{countFor(value)}</span>
+          </button>
+        ))}
       </div>
       <p className="demo-data-note">
         {countLabel(data.total, "guest")} · page {data.page} of {pages}
@@ -208,14 +265,37 @@ function DemoCustomers() {
       </div>
       {selectMode && <div className="customer-list-actions"><label className="builder-field">New list name<input value={newListName} onChange={(event) => setNewListName(event.target.value)} placeholder="e.g. Saturday regulars" /></label><button className="builder-primary" type="button" disabled={selectedMembershipIds.length === 0 || !newListName.trim()} onClick={() => { const saved = api.audience.saveList({ restaurantId: restaurant.id, name: newListName, membershipIds: selectedMembershipIds }); setNotice(saved.ok ? `Saved ${saved.data.name}.` : saved.error.message); if (saved.ok) { setNewListName(""); setSelectedMembershipIds([]); } }}>Add to list</button><label className="builder-field">Add to existing list<select value="" onChange={(event) => { if (!event.target.value) return; const list = api.audience.lists(restaurant.id).find((item) => item.id === event.target.value); if (!list) return; const saved = api.audience.saveList({ id: list.id, restaurantId: restaurant.id, name: list.name, membershipIds: [...list.membershipIds, ...selectedMembershipIds] }); setNotice(saved.ok ? `Added selected guests to ${saved.data.name}.` : saved.error.message); }}><option value="">Choose a list…</option>{api.audience.lists(restaurant.id).map((list) => <option key={list.id} value={list.id}>{list.name}</option>)}</select></label></div>}
       <div className="customer-table">
-        {data.rows.map((row) => (
+        {tab === "Lists" ? (
+          <div className="customer-table">
+            {api.audience.lists(restaurant.id).map((list) => (
+              <div className="customer-row" key={list.id}>
+                <span>
+                  <strong>{list.name}</strong>
+                  <small>{countLabel(list.membershipIds.length, "guest")}</small>
+                </span>
+              </div>
+            ))}
+            {api.audience.lists(restaurant.id).length === 0 && (
+              <EmptyState title="No lists yet." hint="Select guests on the All guests tab and save them as a list." />
+            )}
+          </div>
+        ) : null}
+        {tab !== "Lists" && data.rows.map((row) => (
           <div
             className="customer-row"
             key={row.membershipId}
             role={selectMode ? "group" : undefined}
           >
             {selectMode && <label className="customer-select"><input type="checkbox" checked={selectedMembershipIds.includes(row.membershipId)} onChange={(event) => setSelectedMembershipIds((current) => event.target.checked ? [...current, row.membershipId] : current.filter((id) => id !== row.membershipId))} aria-label={`Select ${row.name}`} /></label>}
-            <a className="customer-row-main" href={`/app/customers/${row.customerId}`}>
+            <button
+              type="button"
+              className="customer-row-main"
+              onClick={() => {
+                setOpenId(row.customerId);
+                setRevealed(null);
+                setRevealedPhone(null);
+              }}
+            >
               <span>
                 <strong>{row.name}</strong>
                 <small>{row.maskedPhone}</small>
@@ -240,7 +320,7 @@ function DemoCustomers() {
                   : ""}
               </small>
               <b aria-hidden="true">›</b>
-            </a>
+            </button>
           </div>
         ))}
       </div>
@@ -263,8 +343,72 @@ function DemoCustomers() {
           {notice}
         </p>
       )}
+      {openId && (() => {
+        const guest = data.rows.find((row) => row.customerId === openId);
+        if (!guest) return null;
+        return (
+          <aside className="guest-drawer" role="dialog" aria-modal="false" aria-label={`${guest.name} details`}>
+            <div className="guest-drawer-head">
+              <div>
+                <strong>{guest.name}</strong>
+                <small>Member since {new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium" }).format(new Date(guest.joinedAt))}</small>
+              </div>
+              <button type="button" onClick={() => { setOpenId(null); setRevealed(null); }}>Close</button>
+            </div>
+            <dl className="guest-drawer-facts">
+              <div><dt>Phone</dt><dd>{revealed === guest.customerId ? revealedPhone : guest.maskedPhone}</dd></div>
+              <div><dt>Stamps</dt><dd>{countLabel(guest.stampsCurrent, "stamp")}</dd></div>
+              <div><dt>Rewards ready</dt><dd>{guest.rewardsWaiting}</dd></div>
+              <div><dt>Last visit</dt><dd>{guest.lastVisitAt ? new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium" }).format(new Date(guest.lastVisitAt)) : "No visits yet"}</dd></div>
+              <div><dt>SMS</dt><dd>{guest.smsOptedIn ? "Opted in" : "No consent"}</dd></div>
+            </dl>
+            <div className="guest-drawer-actions">
+              {revealed !== guest.customerId ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const phone = revealPhoneFor(guest.customerId);
+                    setRevealedPhone(phone);
+                    setRevealed(guest.customerId);
+                  }}
+                >
+                  Show phone
+                </button>
+              ) : (
+                <button type="button" onClick={() => setRevealed(null)}>Hide phone</button>
+              )}
+              <a href={`/app/customers/${guest.customerId}`}>Open full profile</a>
+              {guest.smsOptedIn && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const withdrawn = api.customers.remove({
+                      membershipId: guest.membershipId,
+                      actorId: session.staffId ?? session.role,
+                      session: sessionScope,
+                    });
+                    setNotice(withdrawn.ok ? `SMS consent withdrawn for ${guest.name}.` : withdrawn.error.message);
+                  }}
+                >
+                  Withdraw consent
+                </button>
+              )}
+            </div>
+          </aside>
+        );
+      })()}
     </main>
   );
+
+  function revealPhoneFor(customerId: string): string {
+    const shown = api.customers.reveal({
+      customerId,
+      restaurantId: restaurant.id,
+      actorId: session.staffId ?? session.role,
+      session: sessionScope,
+    });
+    return shown.ok ? shown.data.phone : "Not available";
+  }
 }
 
 function LiveCustomers({ data }: { data: LiveCustomerList | null }) {

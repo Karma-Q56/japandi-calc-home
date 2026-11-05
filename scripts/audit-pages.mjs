@@ -41,6 +41,7 @@ const TARGETS = [
       "/blog",
       "/blog/why-the-card-still-works",
       "/find",
+      "/r/daily-grind",
       "/suggest",
       "/feedback",
       "/privacy",

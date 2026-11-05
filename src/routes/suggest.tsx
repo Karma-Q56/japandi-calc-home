@@ -47,7 +47,7 @@ function Suggest() {
 
   if (status === "done") {
     return (
-      <MarketingShell>
+      <MarketingShell back={{ to: "/", label: "Back" }}>
         <main className="marketing-page-hero page-width" aria-live="polite">
           <span className="eyebrow">
             <span className="eyebrow-line" /> Ask received
@@ -76,7 +76,7 @@ function Suggest() {
   }
 
   return (
-    <MarketingShell>
+    <MarketingShell back={{ to: "/", label: "Back" }}>
       <section className="marketing-page-hero page-width">
         <span className="eyebrow">
           <span className="eyebrow-line" /> Ask for a place

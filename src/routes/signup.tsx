@@ -80,7 +80,7 @@ function SignUpPage() {
 
   if (mode !== "live") {
     return (
-      <MarketingShell>
+      <MarketingShell back={{ to: "/login", label: "Back to log in" }}>
         <section className="login-page page-width">
           <div className="login-card">
             <h1>Demo mode.</h1>
@@ -96,7 +96,7 @@ function SignUpPage() {
 
   if (needsPhone) {
     return (
-      <MarketingShell>
+      <MarketingShell back={{ to: "/login", label: "Back to log in" }}>
         <section className="login-page page-width">
           <div className="login-card">
             <h1>One last detail.</h1>
@@ -125,7 +125,7 @@ function SignUpPage() {
   }
 
   return (
-    <MarketingShell>
+    <MarketingShell back={{ to: "/login", label: "Back to log in" }}>
       <section className="login-page page-width">
         <div className="login-card">
           <span className="eyebrow">

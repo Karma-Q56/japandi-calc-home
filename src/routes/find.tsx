@@ -1,9 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { MapPin, Search, Stamp } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { ArrowRight, MapPin, Search, Stamp } from "lucide-react";
 import { MarketingShell } from "@/components/patron/MarketingShell";
-import { createSeed } from "@/data/seed";
+import { useDemoState } from "@/data/useDemoState";
 import type { Restaurant } from "@/data/types";
+import { venueIsOpenNow } from "@/lib/johannesburg-time";
+import { venueDistance, venueTypeLabel } from "@/lib/venue-details";
+import { VenueMedia } from "@/components/patron/VenueMedia";
+import {
+  Badge,
+  Button,
+  EmptyState,
+  Field,
+  FilterPills,
+  Input,
+  Select,
+} from "@/components/patron/kit";
 
 export const Route = createFileRoute("/find")({
   head: () => ({
@@ -19,152 +31,234 @@ export const Route = createFileRoute("/find")({
   component: FindPage,
 });
 
-const TYPE_LABELS: Record<NonNullable<Restaurant["venueType"]>, string> = {
-  cafe: "Cafe",
-  bakery: "Bakery",
-  restaurant: "Restaurant",
-  takeaway: "Takeaway",
-};
+type VenueFilter = "all" | NonNullable<Restaurant["venueType"]> | "open" | "offers";
+type Sort = "nearest" | "name";
 
-const VENUES = createSeed().restaurants.filter((venue) => venue.status === "active");
+const FILTERS: Array<{ value: VenueFilter; label: string }> = [
+  { value: "all", label: "All places" },
+  { value: "cafe", label: "Cafes" },
+  { value: "bakery", label: "Bakeries" },
+  { value: "restaurant", label: "Restaurants" },
+  { value: "takeaway", label: "Takeaways" },
+  { value: "open", label: "Open now" },
+  { value: "offers", label: "Member offers" },
+];
 
-type Sort = "name" | "suburb";
+function sentenceCase(value: string) {
+  return value ? `${value.charAt(0).toUpperCase()}${value.slice(1)}` : value;
+}
 
 function FindPage() {
+  const state = useDemoState();
   const [query, setQuery] = useState("");
-  const [type, setType] = useState<Restaurant["venueType"] | "all">("all");
-  const [sort, setSort] = useState<Sort>("name");
+  const [suburb, setSuburb] = useState("all");
+  const [filter, setFilter] = useState<VenueFilter>("all");
+  const [sort, setSort] = useState<Sort>("nearest");
+  const resultsRef = useRef<HTMLDivElement>(null);
+
+  const venues = useMemo(
+    () => state.restaurants.filter((venue) => venue.status === "active"),
+    [state.restaurants],
+  );
+  const neighbourhoods = useMemo(
+    () => [...new Set(venues.map((venue) => venue.suburb))].sort((a, b) => a.localeCompare(b)),
+    [venues],
+  );
 
   const matches = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return VENUES.filter((venue) => (type === "all" ? true : venue.venueType === type))
-      .filter((venue) =>
-        needle
-          ? venue.name.toLowerCase().includes(needle) || venue.suburb.toLowerCase().includes(needle)
-          : true,
-      )
+    return venues
+      .filter((venue) => {
+        if (suburb !== "all" && venue.suburb !== suburb) return false;
+        if (
+          filter !== "all" &&
+          filter !== "open" &&
+          filter !== "offers" &&
+          venue.venueType !== filter
+        ) {
+          return false;
+        }
+        if (filter === "open" && !venueIsOpenNow(venue.hours, state.now)) return false;
+        if (
+          filter === "offers" &&
+          !state.specials.some(
+            (special) =>
+              special.restaurantId === venue.id &&
+              special.active &&
+              special.kind !== "public",
+          )
+        ) {
+          return false;
+        }
+        if (!needle) return true;
+        return [
+          venue.name,
+          venue.suburb,
+          venue.theme.tagline,
+          venue.rewardDescription,
+          venueTypeLabel(venue),
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(needle);
+      })
       .slice()
       .sort((a, b) =>
-        sort === "suburb"
-          ? a.suburb.localeCompare(b.suburb) || a.name.localeCompare(b.name)
+        sort === "nearest"
+          ? venueDistance(a) - venueDistance(b) || a.name.localeCompare(b.name)
           : a.name.localeCompare(b.name),
       );
-  }, [query, type, sort]);
+  }, [filter, query, sort, state.now, state.specials, suburb, venues]);
+
+  const clearFilters = () => {
+    setQuery("");
+    setSuburb("all");
+    setFilter("all");
+    setSort("nearest");
+  };
 
   return (
     <MarketingShell>
-      <section className="marketing-page-hero page-width find-hero">
-        <span className="eyebrow">
-          <span className="eyebrow-line" /> Find a restaurant
-        </span>
-        <h1>
-          Your favourites, <span className="editorial">all in one place.</span>
-        </h1>
-        <p>
-          Search by name or suburb, filter by the kind of place, and open its card. Joining takes
-          your name and number, with no app to download.
-        </p>
-      </section>
+      <div className="page-width fd-page">
+        <div className="fd-head">
+          <p className="fd-location">
+            <MapPin size={15} aria-hidden="true" />
+            Johannesburg, Gauteng
+          </p>
+          <h1 className="fd-title">
+            Find a restaurant. <span className="pk-accent">Become a regular.</span>
+          </h1>
+          <p className="fd-intro">
+            Search by name or neighbourhood, then open a place to see its menu, specials and
+            loyalty card. Joining takes your name and number, with no app to download.
+          </p>
+        </div>
 
-      <section className="page-width find-body" aria-label="Restaurants on Patron">
-        <div className="find-controls">
-          <label className="find-search">
-            <span>Search by name or suburb</span>
-            <span className="find-search-field">
-              <Search size={17} aria-hidden />
-              <input
+        <form
+          className="fd-controls"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const node = resultsRef.current;
+            node?.focus({ preventScroll: true });
+            node?.scrollIntoView({
+              behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                ? "auto"
+                : "smooth",
+              block: "start",
+            });
+          }}
+        >
+          <Field label="Search" className="fd-search-field">
+            <span className="fd-search-box">
+              <Search size={17} aria-hidden="true" />
+              <Input
                 type="search"
                 value={query}
-                placeholder="The Daily Grind or Melville"
+                placeholder="The Daily Grind or Parkhurst"
                 onChange={(event) => setQuery(event.target.value)}
               />
             </span>
-          </label>
-          <label>
-            Type of place
+          </Field>
+          <Field label="Neighbourhood">
+            <Select value={suburb} onChange={(event) => setSuburb(event.target.value)}>
+              <option value="all">All neighbourhoods</option>
+              {neighbourhoods.map((name) => (
+                <option value={name} key={name}>
+                  {name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Button type="submit" className="fd-find">
+            <Search size={16} aria-hidden="true" />
+            Find
+          </Button>
+        </form>
+
+        <div className="fd-filter-row">
+          <div className="fd-filters">
+            <FilterPills
+              options={FILTERS}
+              value={filter}
+              onChange={setFilter}
+              label="Filter places"
+            />
+          </div>
+          <label className="fd-sort">
+            <span>Sort</span>
             <select
-              value={type ?? "all"}
-              onChange={(event) =>
-                setType(
-                  event.target.value === "all"
-                    ? "all"
-                    : (event.target.value as NonNullable<Restaurant["venueType"]>),
-                )
-              }
+              value={sort}
+              onChange={(event) => setSort(event.target.value === "name" ? "name" : "nearest")}
             >
-              <option value="all">Every kind of place</option>
-              <option value="cafe">Cafes</option>
-              <option value="bakery">Bakeries</option>
-              <option value="restaurant">Restaurants</option>
-              <option value="takeaway">Takeaways</option>
-            </select>
-          </label>
-          <label>
-            Sort by
-            <select value={sort} onChange={(event) => setSort(event.target.value === "suburb" ? "suburb" : "name")}>
+              <option value="nearest">Nearest</option>
               <option value="name">Name, A to Z</option>
-              <option value="suburb">Suburb, A to Z</option>
             </select>
           </label>
         </div>
 
-        <p className="find-count" role="status">
-          {matches.length} place{matches.length === 1 ? "" : "s"} found
-          {query.trim() ? ` for “${query.trim()}”` : ""}. Demo venues only in this preview.
+        <div className="fd-results" ref={resultsRef} tabIndex={-1}>
+          <div className="fd-results-head">
+            <h2>
+              Around the neighbourhood <span>({matches.length})</span>
+            </h2>
+            <p>Sample venues, illustrative photos</p>
+          </div>
+
+          {matches.length === 0 ? (
+            <EmptyState
+              title="No places match those filters."
+              hint="Try a different neighbourhood, a shorter name, or clear the filters."
+              action={
+                <Button variant="secondary" onClick={clearFilters}>
+                  Clear filters
+                </Button>
+              }
+            />
+          ) : (
+            <div className="fd-grid">
+              {matches.map((venue) => {
+                const open = venueIsOpenNow(venue.hours, state.now);
+                const distance = venueDistance(venue);
+                return (
+                  <article className="fd-card" key={venue.id}>
+                    <div className="fd-card-media">
+                      <VenueMedia restaurant={venue} />
+                      <Badge className="fd-card-category">{venueTypeLabel(venue)}</Badge>
+                      {open && <span className="fd-card-open">Open now</span>}
+                    </div>
+                    <div className="fd-card-body">
+                      <p className="fd-card-meta">
+                        <MapPin size={13} aria-hidden="true" />
+                        {venue.suburb} · {distance.toFixed(1)} km
+                      </p>
+                      <strong className="fd-card-name">{venue.name}</strong>
+                      <p className="fd-card-tagline">{venue.theme.tagline}</p>
+                      <p className="fd-reward">
+                        <Stamp size={15} aria-hidden="true" />
+                        {venue.stampsRequired} stamps.{" "}
+                        {sentenceCase(venue.rewardDescription)}.
+                      </p>
+                      <Button
+                        variant="secondary"
+                        href={`/r/${venue.slug}`}
+                        className="fd-card-button"
+                      >
+                        View restaurant
+                        <ArrowRight size={16} aria-hidden="true" />
+                      </Button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <p className="fd-ask">
+          Don&apos;t see your favourite place?{" "}
+          <a href="/suggest">Ask for a place</a>
         </p>
-
-        {matches.length === 0 ? (
-          <div className="find-empty">
-            <h2>Nothing matches that yet.</h2>
-            <p>Try a shorter name or the suburb. Or ask us to add your favourite place below.</p>
-            <button className="builder-secondary" onClick={() => { setQuery(""); setType("all"); }}>
-              Clear the filters
-            </button>
-          </div>
-        ) : (
-          <div className="find-grid">
-            {matches.map((venue) => (
-              <article className="find-card" key={venue.id}>
-                <div className="find-card-head">
-                  <span className="find-mark" aria-hidden>
-                    {venue.name.slice(0, 1)}
-                  </span>
-                  <div>
-                    <h2>{venue.name}</h2>
-                    <p>
-                      {venue.venueType ? TYPE_LABELS[venue.venueType] : "Place"} ·{" "}
-                      <MapPin size={13} aria-hidden /> {venue.suburb}
-                    </p>
-                  </div>
-                </div>
-                <p className="find-reward">
-                  <Stamp size={14} aria-hidden /> {venue.stampsRequired} stamps for{" "}
-                  {venue.rewardDescription}
-                </p>
-                <div className="find-actions">
-                  <a className="builder-secondary" href={`/r/${venue.slug}`}>
-                    See the card
-                  </a>
-                  <a className="builder-primary" href={`/r/${venue.slug}/join?src=find`}>
-                    Join this place
-                  </a>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-
-        <aside className="find-ask">
-          <h2>Don’t see your favourite place?</h2>
-          <p>
-            Tell us which cafe, bakery or restaurant deserves a loyalty card. We count every ask and
-            talk to the places guests mention most.
-          </p>
-          <a className="builder-primary" href="/suggest">
-            Ask for a place
-          </a>
-        </aside>
-      </section>
+      </div>
     </MarketingShell>
   );
 }

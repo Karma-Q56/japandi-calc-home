@@ -12,7 +12,8 @@ import {
   PublishSteps,
   WheelPreview,
 } from "@/components/patron/preview";
-import { SPIN_MODES } from "@/domain/spins";
+import { MAX_SPIN_PRIZES, SPIN_MODES } from "@/domain/spins";
+import { oddsInWords, weightWarning } from "@/lib/wheel";
 import { MISS_YOU_COOLDOWN_DAYS, MISS_YOU_MAX_AFTER_DAYS, MISS_YOU_MIN_AFTER_DAYS } from "@/domain/presets";
 import { WEEKDAYS } from "@/domain/tools";
 import type { SpinConfig, SpinMode, SpinSegment } from "@/data/types";
@@ -40,14 +41,16 @@ export const Route = createFileRoute("/app/loyalty")({
   component: Loyalty,
 });
 
-const TABS = [
-  { id: "rewards", label: "Rewards" },
-  { id: "tools", label: "Loyalty tools" },
-  { id: "wheel", label: "Spin wheel" },
-  { id: "tiers", label: "Tiers and challenges" },
-] as const;
+const TABS: ReadonlyArray<{ id: string; label: string; href?: string }> = [
+  { id: "rewards", label: "Stamp card" },
+  { id: "tools", label: "Rewards" },
+  { id: "challenges", label: "Challenges", href: "/app/challenges" },
+  { id: "referrals", label: "Referrals", href: "/app/referrals" },
+  { id: "tiers", label: "Tiers" },
+  { id: "wheel", label: "Spin" },
+];
 
-type Tab = (typeof TABS)[number]["id"];
+type Tab = "rewards" | "tools" | "tiers" | "wheel";
 
 function blankSegment(): SpinSegment {
   return {
@@ -347,15 +350,21 @@ function DemoLoyalty() {
       />
       <nav className="loyalty-tabs" aria-label="Loyalty sections">
         {TABS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            className={`loyalty-tab${tab === item.id ? " is-active" : ""}`}
-            aria-current={tab === item.id ? "page" : undefined}
-            onClick={() => setTab(item.id)}
-          >
-            {item.label}
-          </button>
+          "href" in item ? (
+            <a key={item.id} className="loyalty-tab" href={item.href}>
+              {item.label}
+            </a>
+          ) : (
+            <button
+              key={item.id}
+              type="button"
+              className={`loyalty-tab${tab === item.id ? " is-active" : ""}`}
+              aria-current={tab === item.id ? "page" : undefined}
+              onClick={() => setTab(item.id as Tab)}
+            >
+              {item.label}
+            </button>
+          )
         ))}
       </nav>
       <PublishSteps step={step} labels={["Draft", "Preview", "Publish"]} />
@@ -946,6 +955,7 @@ function DemoLoyalty() {
                       setSegment(segment.id, { weight: Number(event.target.value) })
                     }
                   />
+                  <small className="spin-odds">{oddsInWords(segment.weight, spin.segments)}</small>
                 </label>
                 <label>
                   Value R
@@ -1009,10 +1019,19 @@ function DemoLoyalty() {
             <button
               type="button"
               className="builder-secondary"
+              disabled={spin.segments.length >= MAX_SPIN_PRIZES}
               onClick={() => setSpin({ ...spin, segments: [...spin.segments, blankSegment()] })}
             >
               Add a prize
             </button>
+            {spin.segments.length >= MAX_SPIN_PRIZES && (
+              <Helper>The wheel holds up to {MAX_SPIN_PRIZES} prizes. Remove one to add another.</Helper>
+            )}
+            {weightWarning(spin.segments) && (
+              <p className="field-error" role="status">
+                {weightWarning(spin.segments)}
+              </p>
+            )}
           </div>
           <label className="builder-field">
             Rules shown to guests
@@ -1065,8 +1084,9 @@ function DemoLoyalty() {
       )}
 
       {tab === "tiers" && (
-        <section className="builder-panel" aria-label="Tiers and challenges">
-          <h2>Tiers and challenges</h2>
+        <section className="builder-panel" aria-label="Tiers">
+          <h2>Guest tiers</h2>
+          <Helper>Tiers are earned by how often a guest visits in 90 days.</Helper>
           <div className="builder-fields">
             <label className="builder-field">
               Regular from how many visits in 90 days?
@@ -1090,10 +1110,6 @@ function DemoLoyalty() {
           <Helper>
             Tiers unlock members-only and targeted specials. VIP guests can be the only ones who see
             a particular offer.
-          </Helper>
-          <Helper>
-            Visit challenges have their own screen.{" "}
-            <a href="/app/challenges">Write and publish a challenge</a>.
           </Helper>
 
           {step >= 2 && (

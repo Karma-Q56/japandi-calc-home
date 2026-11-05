@@ -169,19 +169,25 @@ export const verifyScanFn = createServerFn({ method: "POST" })
     return { ok: true as const, memberCode: check.memberCode };
   });
 
+// The guest in the session owns the card. A customer id from the browser is
+// never trusted here: it could otherwise be changed to read another card.
 export const getCardFn = createServerFn({ method: "GET" })
-  .validator(z.object({ slug: slugSchema, customerId: uuidSchema }))
+  .validator(z.object({ slug: slugSchema }))
   .handler(async ({ data }) => {
+    const { readViewer } = await import("./auth-viewer");
+    const viewer = await readViewer();
+    if (!viewer || viewer.role !== "guest" || !viewer.customerId) return { card: null };
     const { repos } = getRepos(serverEnv());
-    return { card: await repos.getCard(data.slug, data.customerId) };
+    return { card: await repos.getCard(data.slug, viewer.customerId) };
   });
 
-export const listCardsFn = createServerFn({ method: "GET" })
-  .validator(z.object({ customerId: uuidSchema }))
-  .handler(async ({ data }) => {
-    const { repos } = getRepos(serverEnv());
-    return { cards: await repos.listCards(data.customerId) };
-  });
+export const listCardsFn = createServerFn({ method: "GET" }).handler(async () => {
+  const { readViewer } = await import("./auth-viewer");
+  const viewer = await readViewer();
+  if (!viewer || viewer.role !== "guest" || !viewer.customerId) return { cards: [] };
+  const { repos } = getRepos(serverEnv());
+  return { cards: await repos.listCards(viewer.customerId) };
+});
 
 export const recordStampFn = createServerFn({ method: "POST" })
   .validator(

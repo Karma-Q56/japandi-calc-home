@@ -16,6 +16,11 @@ import type { MessageStatus } from "@/data/types";
 beforeEach(() => {
   demoRepo.reset();
   clock.reset();
+  const now = new Date(demoRepo.read().now);
+  demoRepo.update((state) => ({
+    ...state,
+    now: Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 8),
+  }));
 });
 
 const RESTAURANT = "rest-daily-grind";

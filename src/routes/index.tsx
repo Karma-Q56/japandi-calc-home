@@ -13,7 +13,24 @@ import {
 import { MarketingShell } from "@/components/patron/MarketingShell";
 import { VenueGrid, VenueSearch } from "@/components/patron/Venues";
 import { useRevealAll } from "@/components/patron/motion";
+import { LoyaltyCard } from "@/components/patron/LoyaltyCard";
+import type { Theme } from "@/data/types";
 import cafeHero from "@/assets/cafe-hero.jpg";
+
+const heroCardTheme: Theme = {
+  ink: "#26332a",
+  paper: "#faf7ef",
+  accent: "#b6633f",
+  accentSoft: "#ecd6c8",
+  stampFilled: "#b6633f",
+  stampEmpty: "#ddd7ca",
+  headingFont: "Bricolage Grotesque",
+  bodyFont: "DM Sans",
+  radius: 16,
+  stampShape: "circle",
+  cardBackground: "flat",
+  tagline: "A little perk, made for you",
+};
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -117,6 +134,16 @@ function HomePage() {
             <MapPin />
             Independent spots in Johannesburg. Joining is free.
           </p>
+          <div className="hero-card">
+            <LoyaltyCard
+              theme={heroCardTheme}
+              name="The Daily Grind"
+              filled={6}
+              total={8}
+              footnote="2 more for a free coffee"
+              animate
+            />
+          </div>
         </div>
       </section>
 
@@ -226,7 +253,7 @@ function HomePage() {
               </li>
             </ul>
             <div className="run-actions">
-              <a className="builder-primary" href="/for-business">
+              <a className="builder-secondary" href="/for-business">
                 See what owners get <ArrowRight size={16} />
               </a>
               <a className="text-link" href="/pricing">
@@ -282,7 +309,7 @@ function HomePage() {
           <h2>Ready when you are.</h2>
           <p>Find a place near you and start collecting.</p>
         </div>
-        <a className="builder-primary" href="/for-diners#find-a-restaurant">
+        <a className="builder-secondary" href="/for-diners#find-a-restaurant">
           Find a restaurant <ArrowRight size={16} />
         </a>
       </section>

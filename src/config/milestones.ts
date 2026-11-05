@@ -250,7 +250,7 @@ export const MILESTONE_STATUS: MilestoneStatus[] = [
   },
   {
     id: "M9",
-    title: "M9: Real backend",
+    title: "Real backend",
     state: "Planned",
     summary: "Real database, login, SMS, deploy.",
     screens: [],

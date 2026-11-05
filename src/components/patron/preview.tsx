@@ -12,6 +12,7 @@ import { PREVIEW_ONLY } from "@/domain/publish";
 import { pickSegment } from "@/domain/spins";
 import type { SpinSegment } from "@/data/types";
 import { formatRand } from "@/lib/money";
+import { SpinWheelSvg } from "@/components/patron/SpinWheelSvg";
 import { arcShare, wheelArcs, type WheelArc } from "@/lib/wheel";
 
 /* --------------------------------------------------------------- phone frame */
@@ -110,24 +111,23 @@ export function PreviewOnly(props: { children?: ReactNode }) {
  */
 export function WheelPreview(props: { segments: ReadonlyArray<SpinSegment> }) {
   const arcs = wheelArcs(props.segments);
-  const [rotation, setRotation] = useState(0);
   const [picked, setPicked] = useState<WheelArc | null>(null);
+  const [spinId, setSpinId] = useState(0);
+  const [winnerId, setWinnerId] = useState<string | null>(null);
   const [tests, setTests] = useState(0);
+  const [spinning, setSpinning] = useState(false);
 
   const spin = () => {
+    if (spinning) return;
     const segment = pickSegment(
       arcs.map((arc) => arc.segment),
       Math.random,
     );
     if (!segment) return;
-    const arc = arcs.find((item) => item.segment.id === segment.id);
-    if (!arc) return;
-    const center = (arc.start + arc.end) / 2;
-    const target = (360 - (center % 360)) % 360;
-    const current = ((rotation % 360) + 360) % 360;
-    const turn = (((target - current) % 360) + 360) % 360;
-    setRotation(rotation + 1080 + turn);
-    setPicked(arc);
+    setPicked(null);
+    setSpinning(true);
+    setWinnerId(segment.id);
+    setSpinId((count) => count + 1);
     setTests((count) => count + 1);
   };
 
@@ -141,20 +141,16 @@ export function WheelPreview(props: { segments: ReadonlyArray<SpinSegment> }) {
 
   return (
     <div className="pv-wheel">
-      <div className="pv-wheel-stage">
-        <span className="pv-wheel-pointer" aria-hidden="true" />
-        <div
-          className="pv-wheel-disc"
-          aria-hidden="true"
-          style={{
-            background: `conic-gradient(${arcs
-              .map((arc) => `${arc.color} ${arc.start}deg ${arc.end}deg`)
-              .join(", ")})`,
-            transform: `rotate(${rotation}deg)`,
-          }}
-        />
-      </div>
-      <button type="button" className="builder-primary pv-wheel-button" onClick={spin}>
+      <SpinWheelSvg
+        segments={props.segments}
+        winnerId={winnerId}
+        spinId={spinId}
+        onSettled={() => {
+          setPicked(arcs.find((item) => item.segment.id === winnerId) ?? null);
+          setSpinning(false);
+        }}
+      />
+      <button type="button" className="builder-primary pv-wheel-button" onClick={spin} disabled={spinning}>
         {tests === 0 ? "Test spin" : "Test spin again"}
       </button>
       <p className="pv-meta" role="status">

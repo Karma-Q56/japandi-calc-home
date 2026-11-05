@@ -7,6 +7,12 @@ import ts from "typescript";
 // reach a screen: not in visible text, not in a label, hint or button.
 const BANNED = [
   "noun phrase",
+  "seam",
+  "m9",
+  "stub",
+  "todo",
+  "provider",
+  "component",
   "tunnel",
   "snapshot",
   "payload",

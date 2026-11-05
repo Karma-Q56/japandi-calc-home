@@ -140,10 +140,11 @@ function DemoCampaignsPage() {
     <main className="demo-hub page-width">
       <PageHeader
         eyebrow={restaurant.name}
-        title="Message your regulars."
+        title="Past campaigns"
+        intro="History only. Offers are written and sent from one place now, so nothing is entered twice."
         actions={
-          <a className="builder-primary" href="/app/campaigns/new">
-            New campaign
+          <a className="builder-primary" href="/app/specials">
+            Go to Offers
           </a>
         }
       />
@@ -167,11 +168,11 @@ function DemoCampaignsPage() {
         <h2>All campaigns</h2>
         {campaigns.length === 0 ? (
           <EmptyState
-            title="No campaigns yet."
-            hint="Write your first message to bring guests back. You pick who gets it and see the cost before anything sends."
+            title="No past campaigns."
+            hint="Everything you send from Offers will be listed here afterwards."
             action={
-              <a className="builder-primary" href="/app/campaigns/new">
-                New campaign
+              <a className="builder-primary" href="/app/specials">
+                Go to Offers
               </a>
             }
           />

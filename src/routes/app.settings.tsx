@@ -6,6 +6,12 @@ import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
 import { Switch } from "@/components/patron/Switch";
 import { FormField, PageHeader } from "@/components/patron/dash";
+import {
+  helpDate,
+  HELP_DAY_CHOICES,
+  HELP_DEFAULT_DAYS,
+  HELP_DRAFT_LABEL,
+} from "@/domain/help";
 
 export const Route = createFileRoute("/app/settings")({
   beforeLoad: () => {
@@ -43,6 +49,9 @@ function Settings() {
   const [ordersMode, setOrdersMode] = useState<"items" | "categories">(
     restaurant.ordersMode ?? "items",
   );
+  const help = api.help.state(restaurant.id);
+  const [helpOn, setHelpOn] = useState(restaurant.patronHelp?.enabled ?? false);
+  const [helpDays, setHelpDays] = useState(HELP_DEFAULT_DAYS);
 
   const save = () => {
     if (!/^[A-Za-z0-9 ]{1,11}$/.test(sender)) {
@@ -75,6 +84,23 @@ function Settings() {
         : { role: state.session.role },
     });
     setNotice(ordersResult.ok ? "Settings saved." : ordersResult.error.message);
+  };
+
+  const saveHelp = (enabled = helpOn) => {
+    const result = api.help.enable({
+      restaurantId: restaurant.id,
+      enabled,
+      days: helpDays,
+      session: state.session,
+    });
+    setHelpOn(enabled);
+    setNotice(
+      result.ok
+        ? enabled
+          ? `Patron can help until ${helpDate(result.data.expiresAt ?? "")}.`
+          : "Help from Patron is off."
+        : result.error.message,
+    );
   };
 
   return (
@@ -212,6 +238,52 @@ function Settings() {
         <p className="demo-data-note">
           Even with auto approve on, a campaign only sends after its cost and audience are confirmed.
         </p>
+      </section>
+      <section className="builder-panel">
+        <h2>Help from Patron</h2>
+        <p className="demo-data-note">
+          When this is on, a Patron operator can work inside {restaurant.name} for a set time.
+          Everything they change is saved as a draft labelled "{HELP_DRAFT_LABEL}". They cannot
+          publish, send messages or spend your credit. Guest phone numbers stay masked.
+        </p>
+        <Switch
+          label="Let Patron help"
+          hint="Off by default. Help stops on its own when the time runs out."
+          checked={helpOn}
+          onChange={setHelpOn}
+        />
+        <div className="builder-fields">
+          <FormField label="Help stops after" hint="Pick a short window. You can stop it sooner.">
+            <select
+              value={helpDays}
+              disabled={!helpOn}
+              onChange={(event) => setHelpDays(Number(event.target.value))}
+            >
+              {HELP_DAY_CHOICES.map((days) => (
+                <option key={days} value={days}>
+                  {days === 1 ? "1 day" : `${days} days`}
+                </option>
+              ))}
+            </select>
+          </FormField>
+        </div>
+        <p className="demo-data-note">
+          {help.active && help.expiresAt
+            ? `On now. Help stops on ${helpDate(help.expiresAt)} (${help.daysLeft} ${
+                help.daysLeft === 1 ? "day" : "days"
+              } left).`
+            : help.enabled && help.expiresAt
+              ? `Help ended on ${helpDate(help.expiresAt)}. Turn it on again if you want more help.`
+              : "Off. Patron cannot open this restaurant in help mode."}
+        </p>
+        <div className="page-actions">
+          <button className="builder-primary" onClick={() => saveHelp(helpOn)}>
+            Save help setting
+          </button>
+          {help.enabled ? (
+            <button onClick={() => saveHelp(false)}>Stop help now</button>
+          ) : null}
+        </div>
       </section>
       <section className="builder-panel">
         <h2>Orders at the till</h2>

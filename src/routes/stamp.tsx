@@ -7,8 +7,10 @@ import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
 import { isScanTokenShape, verifyScanToken } from "@/lib/scan";
 import { CardScanner } from "@/components/patron/CardScanner";
+import { StaffShell } from "@/components/patron/StaffShell";
 import { Badge, FormField, PageHeader } from "@/components/patron/dash";
 import type { StampResult } from "@/domain/stamps";
+import { signOut } from "@/lib/sign-out";
 
 export const Route = createFileRoute("/stamp")({
   loader: async () => {
@@ -31,11 +33,13 @@ type Lookup =
   | {
       ok: true;
       firstName: string;
+      lastInitial: string;
       membershipId: string;
       stampsCurrent: number;
       stampsRequired: number;
-      rewards: Array<{ id: string; description: string }>;
-      campaigns: Array<{ id: string; code: string; name: string }>;
+      rewards: Array<{ id: string; description: string; key?: string }>;
+      offers: Array<{ id: string; title: string; code: string }>;
+      doubleStampToday: boolean;
     };
 
 function Till() {
@@ -112,11 +116,17 @@ function Till() {
     setLookup({
       ok: true,
       firstName: result.data.firstName,
+      lastInitial: result.data.lastInitial,
       membershipId: result.data.membership.id,
       stampsCurrent: membership.stampsCurrent,
       stampsRequired: restaurant.stampsRequired,
-      rewards: result.data.rewards,
-      campaigns: result.data.campaigns,
+      rewards: result.data.rewards.map((reward) => ({
+        id: reward.id,
+        description: reward.description,
+        ...(reward.key ? { key: reward.key } : {}),
+      })),
+      offers: result.data.offers,
+      doubleStampToday: result.data.doubleStampToday,
     });
     setLastStampId(null);
   };
@@ -159,7 +169,13 @@ function Till() {
       // HMAC + lockout on the server); staff identity is still the demo
       // session until the auth slice binds real staff sessions.
       const res = await recordStampFn({
-        data: { restaurantId: restaurant.id, membershipId: lookup.membershipId, staffId: session.staffId, key, pin },
+        data: {
+          restaurantId: restaurant.id,
+          membershipId: lookup.membershipId,
+          staffId: session.staffId,
+          key,
+          pin,
+        },
       });
       if (!res.ok) {
         say("error", res.message);
@@ -222,9 +238,20 @@ function Till() {
   };
 
   const doLookupRefresh = (membershipId: string) => {
-    const membership = demoRepo.read().memberships.find((m) => m.id === membershipId);
+    const fresh = demoRepo.read();
+    const membership = fresh.memberships.find((m) => m.id === membershipId);
     if (membership && lookup?.ok) {
-      setLookup({ ...lookup, stampsCurrent: membership.stampsCurrent });
+      setLookup({
+        ...lookup,
+        stampsCurrent: membership.stampsCurrent,
+        rewards: fresh.rewards
+          .filter((reward) => reward.membershipId === membershipId && !reward.redeemedAt)
+          .map((reward) => ({
+            id: reward.id,
+            description: reward.description,
+            ...(reward.key ? { key: reward.key } : {}),
+          })),
+      });
     }
   };
 
@@ -252,6 +279,24 @@ function Till() {
       session: { role: session.role, restaurantId: session.restaurantId },
     });
     say(result.ok ? "ok" : "error", result.ok ? "Reward redeemed." : result.error.message);
+    if (result.ok && lookup?.ok) doLookupRefresh(lookup.membershipId);
+  };
+
+  const redeemItem = (title: string, itemCode: string) => {
+    if (!lookup?.ok || !session.staffId) return;
+    const result = api.special.redeem({
+      restaurantId: restaurant.id,
+      code: itemCode,
+      membershipId: lookup.membershipId,
+      actorId: session.staffId,
+      session: { role: session.role, restaurantId: session.restaurantId },
+    });
+    if (!result.ok) {
+      say("error", result.error.message);
+      return;
+    }
+    say("ok", `${title} redeemed.`);
+    setLookup({ ...lookup, offers: lookup.offers.filter((offer) => offer.id !== result.special.id) });
   };
 
   const redeemOffer = () => {
@@ -276,7 +321,12 @@ function Till() {
       session: { role: session.role, restaurantId: session.restaurantId },
     });
     if (result.ok) {
-      say("ok", "Offer redeemed.");
+      const used = result.data.used;
+      const total = result.data.total;
+      say(
+        "ok",
+        "Offer redeemed." + (total > 0 ? ` ${used} of ${total} used.` : ""),
+      );
       setRedeemCode("");
       return;
     }
@@ -356,9 +406,25 @@ function Till() {
     setPin("");
   };
 
+  const unpair = () => {
+    updateDemo((current) => {
+      const session = { ...current.session };
+      delete session.tillPairedRestaurantId;
+      delete session.staffExpiresAt;
+      delete session.staffId;
+      return { ...current, session };
+    });
+    setLookup(null);
+    setPin("");
+    setPinName("");
+    setFeedback(null);
+  };
+
+  const leave = () => void signOut(mode);
+
   if (!paired) {
     return (
-      <main className="guest-page">
+      <StaffShell restaurant={restaurant}>
         <PageHeader
           eyebrow="Till"
           title="Pair this till."
@@ -390,14 +456,15 @@ function Till() {
             </p>
           )}
         </section>
-      </main>
+        <TillAccountActions paired={paired} onUnpair={unpair} onLogOut={leave} />
+      </StaffShell>
     );
   }
 
   if (!sessionOk) {
     const crew = state.staff.filter((s) => s.restaurantId === restaurant.id && s.active);
     return (
-      <main className="guest-page">
+      <StaffShell restaurant={restaurant}>
         <PageHeader
           eyebrow={`Till · ${restaurant.name}`}
           title="Who’s stamping?"
@@ -453,7 +520,8 @@ function Till() {
             </p>
           )}
         </section>
-      </main>
+        <TillAccountActions paired={paired} onUnpair={unpair} onLogOut={leave} />
+      </StaffShell>
     );
   }
 
@@ -463,7 +531,7 @@ function Till() {
     .slice(0, 8);
 
   return (
-    <main className="guest-page">
+    <StaffShell restaurant={restaurant}>
       <PageHeader
         eyebrow={`Till · ${signedInStaff?.displayName ?? "Staff"}`}
         title={restaurant.name}
@@ -494,18 +562,12 @@ function Till() {
           <button className="builder-primary" type="submit">
             Look up
           </button>
-          <button
-            className="builder-secondary"
-            type="button"
-            onClick={() => setScanning(true)}
-          >
+          <button className="builder-secondary" type="button" onClick={() => setScanning(true)}>
             Scan card
           </button>
         </form>
         {!("mediaDevices" in navigator) && (
-          <p className="demo-data-note">
-            This device has no camera. Type the member code instead.
-          </p>
+          <p className="demo-data-note">This device has no camera. Type the member code instead.</p>
         )}
       </section>
       {scanning && (
@@ -522,7 +584,10 @@ function Till() {
       {lookup?.ok && (
         <section className="guest-panel">
           <div className="till-member">
-            <h2>{lookup.firstName}</h2>
+            <h2>
+              {lookup.firstName}
+              {lookup.lastInitial ? ` ${lookup.lastInitial}.` : ""}
+            </h2>
             <strong>
               {lookup.stampsCurrent}
               <i> / {lookup.stampsRequired}</i>
@@ -535,6 +600,9 @@ function Till() {
               }}
             />
           </div>
+          {lookup.doubleStampToday && (
+            <p className="demo-data-note">Double stamp day: this visit earns one extra stamp.</p>
+          )}
           {lookup.rewards.length > 0 && (
             <p>
               <Badge tone="active">
@@ -548,12 +616,22 @@ function Till() {
           </button>
           {lookup.rewards.map((reward) => (
             <button key={reward.id} className="builder-secondary" onClick={() => redeem(reward.id)}>
-              Redeem: {reward.description}
+              Redeem: {reward.key?.startsWith("birthday-item:") ? "Birthday treat, " : ""}
+              {reward.description}
+            </button>
+          ))}
+          {lookup.offers.map((offer) => (
+            <button
+              key={offer.id}
+              className="builder-secondary"
+              onClick={() => redeemItem(offer.title, offer.code)}
+            >
+              Redeem: {offer.title} ({offer.code})
             </button>
           ))}
           {lastStampId && (
             <button className="builder-secondary" onClick={undo}>
-              Undo last stamp
+              Undo last stamp (10 minutes)
             </button>
           )}
           <FormField label="Offer code" hint="Campaign codes and specials use this one field.">
@@ -608,7 +686,31 @@ function Till() {
           </p>
         ))}
       </section>
-    </main>
+      <TillAccountActions paired={paired} onUnpair={unpair} onLogOut={leave} />
+    </StaffShell>
+  );
+}
+
+function TillAccountActions({
+  paired,
+  onUnpair,
+  onLogOut,
+}: {
+  paired: boolean;
+  onUnpair: () => void;
+  onLogOut: () => void;
+}) {
+  return (
+    <div className="till-account-actions">
+      {paired && (
+        <button type="button" className="guest-back" data-testid="unpair-till" onClick={onUnpair}>
+          Unpair this till
+        </button>
+      )}
+      <button type="button" className="guest-back" data-testid="staff-logout" onClick={onLogOut}>
+        Log out
+      </button>
+    </div>
   );
 }
 
@@ -693,11 +795,7 @@ function OrderSheet({
           inputMode="numeric"
         />
       </FormField>
-      <button
-        className="builder-primary"
-        disabled={pickCount === 0}
-        onClick={onSave}
-      >
+      <button className="builder-primary" disabled={pickCount === 0} onClick={onSave}>
         Save order{pickCount > 0 ? ` (${pickCount})` : ""}
       </button>
       <button className="guest-back" onClick={onSkip}>

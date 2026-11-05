@@ -1,5 +1,6 @@
 import type { MenuItem, PageTemplate, Restaurant, Special } from "@/data/types";
 import { APP_NAME } from "@/config/app";
+import { BackLink } from "@/components/patron/BackLink";
 import { PatronBrand } from "@/lib/patron-brand";
 import { johannesburgTime, venueIsOpenNow } from "@/lib/johannesburg-time";
 import { LoyaltyCard } from "./LoyaltyCard";
@@ -21,21 +22,30 @@ export interface VenueTemplateProps {
   memberOffers?: Array<{ title: string; body: string; kind: string; code: string | null }>;
 }
 
-
-
 const dateLabel = (iso: string) =>
   new Intl.DateTimeFormat("en-ZA", {
     dateStyle: "medium",
     timeZone: "Africa/Johannesburg",
   }).format(new Date(iso));
 
-function Hours({ restaurant, compact = false, now }: { restaurant: Restaurant; compact?: boolean; now: number }) {
+function Hours({
+  restaurant,
+  compact = false,
+  now,
+}: {
+  restaurant: Restaurant;
+  compact?: boolean;
+  now: number;
+}) {
   const today = johannesburgTime(now).weekday;
   const todayHours = restaurant.hours[today];
   if (compact) {
     return (
       <div className="pt-hours pt-hours--compact">
-        <p className="pt-hours-today"><strong>Today · {today.slice(0, 3)}</strong><span>{todayHours ? `${todayHours.open}–${todayHours.close}` : "Closed"}</span></p>
+        <p className="pt-hours-today">
+          <strong>Today · {today.slice(0, 3)}</strong>
+          <span>{todayHours ? `${todayHours.open}–${todayHours.close}` : "Closed"}</span>
+        </p>
         <details>
           <summary>Full week</summary>
           {Object.entries(restaurant.hours).map(([day, span]) => (
@@ -128,11 +138,7 @@ function JoinBlock({ restaurant, href }: { restaurant: Restaurant; href: string 
   );
 }
 
-function MemberOffers({
-  offers,
-}: {
-  offers: NonNullable<VenueTemplateProps["memberOffers"]>;
-}) {
+function MemberOffers({ offers }: { offers: NonNullable<VenueTemplateProps["memberOffers"]> }) {
   if (offers.length === 0) return null;
   return (
     <section className="pt-offers">
@@ -141,7 +147,13 @@ function MemberOffers({
       <div className="pt-offer-grid">
         {offers.map((offer) => (
           <article key={`${offer.title}-${offer.code ?? ""}`} className="pt-offer">
-            <small>{offer.kind === "public" ? "Everyone" : offer.kind === "members" ? "Members" : "Just for you"}</small>
+            <small>
+              {offer.kind === "public"
+                ? "Everyone"
+                : offer.kind === "members"
+                  ? "Members"
+                  : "Just for you"}
+            </small>
             <strong>{offer.title}</strong>
             <p>{offer.body}</p>
             {offer.code && <code>{offer.code}</code>}
@@ -169,7 +181,9 @@ function Masthead({ restaurant, open }: { restaurant: Restaurant; open: boolean 
   return (
     <header className="pt-masthead">
       <div className="pt-masthead-brands">
-        <a href={`/r/${restaurant.slug}`} className="pt-venue-wordmark">{restaurant.name}</a>
+        <a href={`/r/${restaurant.slug}`} className="pt-venue-wordmark">
+          {restaurant.name}
+        </a>
         <PatronBrand className="pt-product-wordmark" />
       </div>
       <span className={`pt-open${open ? " is-open" : ""}`}>
@@ -179,19 +193,29 @@ function Masthead({ restaurant, open }: { restaurant: Restaurant; open: boolean 
   );
 }
 
-export function PublicTemplate({ template, ...props }: VenueTemplateProps & { template: PageTemplate }) {
+export function PublicTemplate({
+  template,
+  ...props
+}: VenueTemplateProps & { template: PageTemplate }) {
   const { restaurant, sections, special, now, joinHref, memberOffers = [] } = props;
   // Derive open status from the same instant used for the highlighted weekday.
   const open = venueIsOpenNow(restaurant.hours, now);
   const today = johannesburgTime(now).weekday;
   const heroStyle = restaurant.theme.coverPhoto
-    ? { ["--pt-photo" as string]: `url(${restaurant.theme.coverPhoto})`, ["--pt-hero-ink" as string]: restaurant.theme.ink }
-    : { ["--pt-hero-accent" as string]: restaurant.theme.accent, ["--pt-hero-paper" as string]: restaurant.theme.paper };
+    ? {
+        ["--pt-photo" as string]: `url(${restaurant.theme.coverPhoto})`,
+        ["--pt-hero-ink" as string]: restaurant.theme.ink,
+      }
+    : {
+        ["--pt-hero-accent" as string]: restaurant.theme.accent,
+        ["--pt-hero-paper" as string]: restaurant.theme.paper,
+      };
 
   if (template === "minimal") {
     return (
       <main className="pt pt--minimal" data-template="minimal">
         <div className="pt-min-wrap">
+          <BackLink to="/find" label="Find a restaurant" className="pt-back" />
           <Masthead restaurant={restaurant} open={open} />
           <section className="pt-min-hero">
             <span className="pt-kicker">{restaurant.suburb} · Johannesburg</span>
@@ -243,6 +267,7 @@ export function PublicTemplate({ template, ...props }: VenueTemplateProps & { te
   if (template === "menu-first") {
     return (
       <main className="pt pt--menu-first" data-template="menu-first">
+        <BackLink to="/find" label="Find a restaurant" className="pt-back" />
         <Masthead restaurant={restaurant} open={open} />
         <section className="pt-mf-head">
           <div>
@@ -272,6 +297,7 @@ export function PublicTemplate({ template, ...props }: VenueTemplateProps & { te
   if (template === "hero") {
     return (
       <main className="pt pt--hero" data-template="hero">
+        <BackLink to="/find" label="Find a restaurant" className="pt-back" />
         <Masthead restaurant={restaurant} open={open} />
         <section
           className={`pt-hero-photo${restaurant.theme.coverPhoto ? " has-uploaded-photo" : ""}`}
@@ -326,6 +352,7 @@ export function PublicTemplate({ template, ...props }: VenueTemplateProps & { te
   // Classic is the default: a restaurant that customises nothing still looks finished.
   return (
     <main className="pt pt--classic" data-template="classic">
+      <BackLink to="/find" label="Find a restaurant" className="pt-back" />
       <Masthead restaurant={restaurant} open={open} />
       <div className="pt-wrap">
         <section className="pt-classic-hero">

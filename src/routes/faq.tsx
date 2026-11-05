@@ -108,7 +108,7 @@ function Faq() {
           <p>Book a short visit and we will walk you through it on your counter.</p>
         </div>
         <a className="builder-primary" href="/contact">
-          Book a visit <ArrowRight size={16} />
+          Talk to us <ArrowRight size={16} />
         </a>
       </section>
     </MarketingShell>

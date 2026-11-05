@@ -1,87 +1,108 @@
-# Screenshot pass
+# Screenshot passes
 
-Every page was captured at 375px and 1280px on 2 November 2026 with
+Every route was captured at 375px and 1280px on 4 November 2026 with
 `scripts/shot-verify.mjs`, signed in through `/dev/roles?role=...`.
 
-The walk now hides the demo pill and every fixed or sticky bottom bar before the
-full-page shot, waits for any click navigation to finish, and writes
+## 03 diner pass
+
+The diner pass ran against the fresh 03 build with
+`SHOT_ONLY=site-find,site-venue,me-home,me-settings`: 4 stages, 8 shots at
+375px and 1280px, 0 failed stages, 0 console or page errors, 0 pages scrolling
+sideways and 0 element-overflow flags. I opened every full shot and crop.
+
+| Screen | 375px | 1280px | What I saw |
+| --- | --- | --- | --- |
+| Find a restaurant | 2816 / 2 | 1601 / 2 | Location line, two-line title with italic accent, search, neighbourhood, Find action, filter pills and Nearest sort. Three illustrated cards with category, suburb, distance, name, tagline, reward line and full width View restaurant button. The sample-photo label sits above the cards. |
+| Public venue | 2065 / 2 | 1731 / 2 | Fitted hero, overlapping logo tile, name, tagline, open status, contact links and Get directions. The loyalty card sits below the hero on the phone and sticks in the right column at 1280. How it works, Today's special, menu prices and the Claim this page footer are visible without joining. |
+| My cards | 847 / 0 | 900 / 0 | Two dotted cards with initials badges, suburb and category, ticked stamp circles and a gift at the end, Regular tier pills, offer and spin pills, relative last visit and View card. One filled Scan a QR to join a place action. |
+| Me | 2094 / 2 | 1873 / 2 | Details, per restaurant SMS and push switches, Suggest a feature, Log out and the existing data controls. The two restaurant message rows now align consistently at both widths. |
+
+The public restaurant stage (`site-venue`) is now part of the walk, so a full
+pass has 68 stages and 136 shots. The 03 pass reran only the four screens that
+changed. Demo venue art is generated in CSS; a restaurant's uploaded
+`theme.coverPhoto` replaces it when present.
+
+## 02 baseline
+
+Every route in the 02 pass was captured at 375px and 1280px on 4 November 2026
+with `scripts/shot-verify.mjs`, signed in through `/dev/roles?role=...`.
+
+The walk hides the demo pill and every fixed or sticky bottom bar before the
+full-page shot, uses reduced motion so revealed sections are never captured
+blank, waits for click navigation to finish, and writes
 `screenshots/<stage>-<width>.png`. Any page taller than 1500px is also cut into
 bands of at most 1500px under `screenshots/pieces/`, so every part can be
 opened.
 
-Final walk: **66 stages x 2 widths = 132 shots**, 0 failed stages, 0 console or
-page errors, and 0 pages whose document scrolls sideways. 69 of the shots were
-taller than 1500px and produced **167 crops**. The only elements reported past
-the viewport are deliberate: the honeypot field (hidden anti-spam field), the
-home marquee ticker, and the for-business snap strip on phones. Each page's
-scroll width stays at the viewport width.
+02 full walk: **67 stages x 2 widths = 134 shots**, 0 failed stages, 0 console
+or page errors, 0 interaction failures, and 0 pages whose document scrolls
+sideways. 72 shots were taller than 1500px and produced **176 crops**.
+
+The walker reports 42 shots with an element past the viewport. 32 are the
+intended owner navigation row on the phone, which scrolls inside its own strip
+under the header. The other 10 are expected: the home marquee at both widths,
+hidden honeypot fields on contact, suggest, feedback and for-business, and the
+for-business demo screen at 375px. Every page's `scrollWidth` stays equal to
+its viewport width.
+
+Five phone stages were rerun individually against the fresh build because the
+first complete pass either timed out, missed a click, or showed the wrong tab:
+owner dashboard, owner menu preview, owner specials, operator enquiries, and
+till order categories. Their final shots are merged into the report above. The
+menu stage now shows the guest preview inside its phone frame, and the till
+stage shows Zanele at 3 of 6 with the order categories and stamp toast.
 
 ## Changed screens
 
-Opened as full shots and crops on 2 November. Heights are at 375px unless
-stated.
+I opened these full shots and bands by hand. Heights are shown as
+`height / crops`.
 
-| Screen | Height / crops | What the crops show |
-| --- | --- | --- |
-| Owner customer profile | 2286 / 2 | Crop 1: header, one row of three stat cards, both actions, Message starters. Crop 2: Contact, birthday line, Know your guest sentence ("Thandi usually comes in on Thursday mornings and usually has a flat white. They have 0 stamps on their card, and their birthday is 1 October."), visit timeline, rewards, and the new empty state on Consent history. |
-| Owner customers list | 3344 / 3 | Crop 1: heading, Export CSV, search and filters. Crops 2 and 3: 20 guest rows, every name in first name plus initial form (James M., Sipho M., Thandi N., Naledi N.), with stamps, last visit and reward pill. No duplicate first names without an initial. |
-| Owner loyalty, Rewards tab | 1881 / 2 | Four tabs wrap three plus one on the phone, no sideways scroll. Draft, Preview and Publish steps are visible. Crop 2: card rules with collapsed preset sections, so the page is short. |
-| Owner loyalty, Preview step | 2637 / 2 | Preview banner and phone frame. Slightly over 2,500px because the whole card preview is shown; no overflow. |
-| Owner loyalty, Loyalty tools | 1084 / 1 | One helper style, preset details collapsed. |
-| Owner loyalty, Spin wheel | 2519 / 2 | Tab is 2,519px. The prize list scrolls inside its own panel so the page stays near 2,500px. |
-| Owner loyalty, Tiers and challenges | 1024 / 1 | Short tab, no empty gap under the heading. |
-| Guest card | 3046 / 3 | Crop 1: card, stamps, tiers, welcome spin. Crop 2: QR, Bring a friend, rewards. Crop 3: offers, real buttons for Menu and specials, All restaurants, Notifications and details, then recent visits. Nothing is covered by a fixed bar. |
-| Till order step, items | 2 | Demo pill and fixed bar are gone, so the Offer code field and Undo last stamp (now a secondary button) are fully visible. Nothing overlaps. |
-| Owner public page | 2642 / 2 | Crop 1: words and the first opening-hours rows. Crop 2: remaining days, Preview button. Day labels and time fields are tight at 375px but readable. The version list appears below once a version exists. |
-| Owner menu | 2 | Menu rows, preview form, and the new Previous versions panel. With no publishes yet it shows "No published menu yet. Publish an item to start." |
-| Owner feedback | 2 | Form with category, note, picture, contact tick box, and Your past feedback with Planned and Done status pills. |
-| Ops feedback | 2 | Operator nav includes Feedback; filters, four seeded notes and the open-note panel with status and private note. |
-| Blog post | 2 | "Placeholder draft, not final" banner above the title. |
+| Screen | 375px | 1280px | What I saw |
+| --- | --- | --- | --- |
+| Home | 4890 / 4 | 3721 / 3 | Sentence-case hero with one italic Lora accent, search with one filled Find action, trust strip, two-sided explainer, three venue cards, outline owner call to action, FAQ heading and questions, final call to action, marquee and footer. No heavy all-caps display type or bracketed mono labels. |
+| `/dev/kit` | 3963 / 3 | 3079 / 3 | Colour tokens, type stack, primary, secondary, quiet and danger buttons, fields, filter pills with counts, tabs, status pills, stat cards, page header, empty and loading states, toasts, drawer trigger, initials avatars, stamp circles and back link. Two-column fields become one column on the phone. |
+| Guest card | 3048 / 3 | 2696 / 2 | Restaurant and card identity, stamp row, membership pills, welcome spin, visit challenge, QR and member code, referral, waiting rewards, offers and recent visits. The 1280 view keeps the card in a centred phone-width column. |
+| Guest home | 1386 / 0 | 1263 / 0 | Restaurant identity top left, cards, offers and account links in the shared guest shell. |
+| Owner dashboard | 1751 / 2 | 1248 / 0 | Logo, OWNER tag, venue switcher with three venues, account menu, horizontal phone navigation, one filled Open the till action, five figures, visit chart, next campaign and last campaign. The fifth figure sits alone in a half cell by design. |
+| Owner customers | 3372 / 3 | 2969 / 2 | Search and filter pills, guest rows with stamps, last visit and reward state, and no clipped names or sideways scroll. |
+| Owner menu preview | 1804 / 2 | 1514 / 2 | Draft, Preview and Publish steps, preview notice, four template pills, guest phone frame, Publish to my menu as the only filled page action, and Back to editing as an outline button. |
+| Owner specials | 2204 / 2 | 1595 / 2 | Public, Members and Targeted choices, draft fields, existing live specials and a proper empty state for recent redemptions. |
+| Operator enquiries | 2596 / 2 | 1415 / 0 | Operator identity, wrapped phone navigation, four figures, filters, enquiry rows, detail panel and one filled Save notes action. No missing styles or MIME errors. |
+| Till sign-in | 965 / 0 | 977 / 0 | Restaurant identity top left, Staff badge, paired operator, swap and log out actions. |
+| Till order categories | 2377 / 2 | 2306 / 2 | Staff shell, member lookup, Zanele at 3 of 6, one filled Add stamp action, offer field, six order categories, disabled Save order until a category is picked, stamp toast and stamped-today list. |
+| Operator restaurants | 1434 / 0 | 900 / 0 | Operator navigation, one filled Add a restaurant action, responsive table with active status pills, member counts, credit and Look and feel, View page and QR actions. |
+| For business | 12652 / 9 | 9006 / 7 | Long marketing page. The demo device strip is intentionally wider than the phone viewport and is flagged for that reason. |
 
-The remaining screens kept their existing layout; their full shots and crops
-were measured in the same walk (no console errors, no sideways scroll) but were
-not opened again by hand this pass. Nothing in their code changed except shared
-spacing, helper text and guest names.
+The remaining stages were measured in the same walk. Their full shots and crops
+have no console errors, no failed actions and no page-level sideways scroll.
+They kept their existing layout, with only the shared kit, type, spacing and
+shell changes applied.
 
-## Fixes made during this pass
+## Browser rules
 
-| Fix | Where |
-| --- | --- |
-| The demo pill and fixed bottom bars covered real content in full-page shots. They are hidden for the capture, and clicks that navigate no longer abort the walk. | `scripts/shot-verify.mjs` |
-| Tall pages were unreadable in one image. They are now cut into 1500px bands. | `scripts/shot-verify.mjs` |
-| The loyalty tabs ran past the phone edge. They wrap at 700px. | `src/ui.css` |
-| The spin wheel tab was 3,784px. The prize list scrolls inside its panel, bringing the tab to 2,519px. | `src/ui.css` |
-| "Know your guest" repeated the name and said "has flat white". One sentence now, name once, then "they". | `src/domain/customers.ts` |
-| Guest names in owner lists showed the full name twice in Insights. Lists now use first name plus last initial, including names that end in a number. | `src/lib/wording.ts`, `src/domain/insights.ts`, `src/domain/campaigns.ts` |
-| The guest profile stat cards wrapped two plus one. They sit in one row, or one column below 340px. | `src/components/patron/dash.tsx`, `src/ui.css` |
-| Plain text acted as buttons on the guest card and till. They are the shared button styles now. | `src/routes/r.$slug.card.tsx`, `src/routes/r.$slug.join.tsx`, `src/routes/stamp.tsx` |
+The Playwright design-kit spec passes 3 of 3:
 
-## Browser page audit
+- The kit catalogue renders every shared piece.
+- Owner navigation scrolls under the header at 375px without page overflow.
+- Every covered page has at most one primary action.
 
-`scripts/audit-pages.mjs` opens every page route in a real Chromium browser,
-375px and 1280px, each page in a fresh session signed in through `/dev/roles`.
-It reports console errors, links that answer 404, pages with no content and no
-empty state, pages with more than one `h1`, text styled as a button that is not
-one, and buttons that produce no DOM change.
-
-```bash
-AUDIT_BASE=http://127.0.0.1:5174 node scripts/audit-pages.mjs
-AUDIT_BASE=http://127.0.0.1:5174 AUDIT_ONLY=owner node scripts/audit-pages.mjs
+```text
+ok 1 the design kit catalogue renders every shared piece
+ok 2 owner navigation scrolls under the header at 375px without page overflow
+ok 3 each covered page has at most one primary action
+3 passed (1.2m)
 ```
 
-Results on 2 November: owner 48 pages, public plus operator 46 pages, guest and
-staff 10 pages. No console errors, no 404 links, no double headers, no empty
-page without an empty state and no fake buttons. The only notes were buttons
-with no visible change in 250ms. They were already-selected options, the
-first-row move arrow, the browser print dialog, and the pricing day picker on
-its default day. All are expected. Two real problems found earlier in the audit
-were fixed: the QR pack read `window.location.origin` during the first render
-(hydration mismatch), and the activity log printed times without the
-Johannesburg timezone.
+On the final 03 build, the design-kit and navigation/sign-out specs passed
+**10 of 10** tests. The extra seven cover the public venue and `/me/settings`,
+the login links, every non-tab back control and the guest, owner, staff and
+operator sign-out paths.
 
 ## Not done by screenshot
 
-- Real SMS delivery, email and operator notifications are covered by domain
-  tests, not pixels.
-- The audit's button check is a 250ms heuristic; a slow modal or an external
-  dialog can land after the window.
+- Real SMS delivery, email, payments and operator notifications are covered by
+  domain tests, not pixels.
+- The 1280 guest card intentionally stays in a phone-width column; it is not a
+  desktop dashboard.
+- The screenshot walk checks document width and known problem elements. It is
+  not a full visual regression diff against an older build.

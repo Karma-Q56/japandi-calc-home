@@ -5,6 +5,9 @@
  * status-pill styles in src/ui.css, so pages stay consistent.
  */
 import { useState, type ReactNode } from "react";
+import { Badge as KitBadge, Button, EmptyState as KitEmptyState, LoadingState } from "./kit";
+
+export { LoadingState };
 
 /* ------------------------------------------------------------------ header */
 
@@ -16,7 +19,7 @@ export function PageHeader(props: {
 }) {
   return (
     // A div, not <header>: dashboard shells already own the one page header.
-    <div className="dash-header">
+    <div className="dash-header pk-page-header">
       <p className="eyebrow">
         <span className="eyebrow-line" />
         {props.eyebrow}
@@ -39,12 +42,12 @@ export function StatCard(props: {
   href?: string | undefined;
   tone?: "good" | "bad" | undefined;
 }) {
-  const className = `stat-card${props.tone ? ` is-${props.tone}` : ""}`;
+  const className = `stat-card pk-stat${props.tone ? ` is-${props.tone}` : ""}`;
   const body = (
     <>
-      <strong>{props.value}</strong>
-      <span>{props.label}</span>
-      {props.hint ? <small>{props.hint}</small> : null}
+      <strong className="pk-stat-value">{props.value}</strong>
+      <span className="pk-stat-label">{props.label}</span>
+      {props.hint ? <small className="pk-stat-change">{props.hint}</small> : null}
     </>
   );
   return props.href ? (
@@ -57,12 +60,16 @@ export function StatCard(props: {
 }
 
 export function StatGrid(props: { children: ReactNode; dense?: boolean }) {
-  return <div className={`stat-grid${props.dense ? " stat-grid--three" : ""}`}>{props.children}</div>;
+  return (
+    <div className={`stat-grid pk-stat-grid${props.dense ? " stat-grid--three" : ""}`}>
+      {props.children}
+    </div>
+  );
 }
 
 /** One helper line under a field or heading. The only small-text style on owner screens. */
 export function Helper(props: { children: ReactNode }) {
-  return <span className="builder-hint">{props.children}</span>;
+  return <span className="builder-hint pk-helper">{props.children}</span>;
 }
 
 /* ------------------------------------------------------------------- badge */
@@ -70,9 +77,9 @@ export function Helper(props: { children: ReactNode }) {
 /** Status badge on the shared .status-pill pill. data-s picks the colour. */
 export function Badge(props: { tone?: "sent" | "active" | undefined; children: ReactNode }) {
   return (
-    <span className="status-pill" {...(props.tone ? { "data-s": props.tone } : {})}>
+    <KitBadge tone={props.tone === "sent" ? "success" : props.tone === "active" ? "accent" : "neutral"}>
       {props.children}
-    </span>
+    </KitBadge>
   );
 }
 
@@ -144,13 +151,7 @@ export function DataTable<Row>(props: {
 /* ------------------------------------------------------------- empty state */
 
 export function EmptyState(props: { title: string; hint?: string; action?: ReactNode }) {
-  return (
-    <div className="dash-empty">
-      <strong>{props.title}</strong>
-      {props.hint ? <p>{props.hint}</p> : null}
-      {props.action ? <div className="page-actions">{props.action}</div> : null}
-    </div>
-  );
+  return <KitEmptyState title={props.title} hint={props.hint} action={props.action} />;
 }
 
 /* -------------------------------------------------------------- form field */
@@ -158,7 +159,7 @@ export function EmptyState(props: { title: string; hint?: string; action?: React
 /** Label plus optional helper line, on the shared .builder-field styles. */
 export function FormField(props: { label: string; hint?: string; children: ReactNode }) {
   return (
-    <label className="builder-field">
+    <label className="builder-field pk-field">
       {props.label}
       {props.children}
       {props.hint ? <Helper>{props.hint}</Helper> : null}
@@ -187,18 +188,18 @@ export function ConfirmDialog(props: {
   return (
     <span className="dash-confirm" role="alertdialog" aria-label={props.question}>
       <span>{props.question}</span>
-      <button
-        className="builder-primary"
+      <Button
+        variant="primary"
         onClick={() => {
           setOpen(false);
           props.onConfirm();
         }}
       >
         {props.confirmLabel ?? "Yes"}
-      </button>
-      <button className="guest-back" onClick={() => setOpen(false)}>
+      </Button>
+      <Button variant="quiet" onClick={() => setOpen(false)}>
         No
-      </button>
+      </Button>
     </span>
   );
 }

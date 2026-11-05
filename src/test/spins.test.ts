@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { demoRepo, updateDemo } from "@/data/repo";
-import { pickSegment, saveSpinConfig, spinState, spinWheel } from "@/domain/spins";
+import { MAX_SPIN_PRIZES, pickSegment, saveSpinConfig, spinState, spinWheel } from "@/domain/spins";
 import { createSpecial } from "@/domain/specials";
 import type { SpinConfig, SpinMode } from "@/data/types";
 
@@ -41,6 +41,78 @@ describe("spin wheel", () => {
     expect(pickSegment(segments, () => 0.99)?.id).toBe("b");
     expect(pickSegment([], () => 0.5)).toBeNull();
     expect(pickSegment([{ id: "a", label: "A", weight: 0, valueCents: 0 }], () => 0.5)).toBeNull();
+  });
+
+  it("gives the same segment for the same random draw, every time", () => {
+    const segments = [
+      { id: "a", label: "A", weight: 2, valueCents: 0 },
+      { id: "b", label: "B", weight: 1, valueCents: 0 },
+      { id: "c", label: "C", weight: 1, valueCents: 0 },
+    ];
+    const draws = [0.05, 0.4, 0.6, 0.9];
+    const run = () => draws.map((value) => pickSegment(segments, () => value)?.id);
+    expect(run()).toEqual(run());
+    expect(run()).toEqual(["a", "a", "b", "c"]);
+  });
+
+  it("refuses more prizes than the wheel can show", () => {
+    const { restaurant } = spinFixture();
+    const segments = Array.from({ length: MAX_SPIN_PRIZES + 1 }, (_, index) => ({
+      id: `prize-${index}`,
+      label: `Prize ${index}`,
+      weight: 1,
+      valueCents: 0,
+    }));
+    const saved = saveSpinConfig({
+      restaurantId: restaurant.id,
+      config: { ...restaurant.spin, segments },
+    });
+    expect(saved.ok).toBe(false);
+    if (!saved.ok) expect(saved.error.code).toBe("INVALID");
+  });
+
+  it("refuses prizes whose weights are all zero or negative", () => {
+    const { restaurant } = spinFixture();
+    const allZero = saveSpinConfig({
+      restaurantId: restaurant.id,
+      config: {
+        ...restaurant.spin,
+        segments: [{ id: "z", label: "Zero", weight: 0, valueCents: 0 }],
+      },
+    });
+    expect(allZero.ok).toBe(false);
+    const negative = saveSpinConfig({
+      restaurantId: restaurant.id,
+      config: {
+        ...restaurant.spin,
+        segments: [{ id: "n", label: "Negative", weight: -1, valueCents: 0 }],
+      },
+    });
+    expect(negative.ok).toBe(false);
+  });
+
+  it("a guest cannot spin the same earned visit twice", () => {
+    const { restaurant, membership } = spinFixture();
+    const state = spinState(membership.id);
+    const available = state.earned - state.used;
+    for (let index = 0; index < available; index++) {
+      expect(spinWheel({ restaurantId: restaurant.id, membershipId: membership.id }).ok).toBe(true);
+    }
+    const extra = spinWheel({ restaurantId: restaurant.id, membershipId: membership.id });
+    expect(extra.ok).toBe(false);
+    expect(spinState(membership.id).used).toBe(state.earned);
+  });
+
+  it("a spin is refused for a guest of another restaurant", () => {
+    const state = demoRepo.read();
+    const [restaurantA, restaurantB] = state.restaurants;
+    const membershipOfA = state.memberships.find(
+      (item) => item.restaurantId === restaurantA!.id && item.stampsTotal >= 2,
+    )!;
+    spinFixture();
+    const spun = spinWheel({ restaurantId: restaurantB!.id, membershipId: membershipOfA.id });
+    expect(spun.ok).toBe(false);
+    expect(demoRepo.read().spins.some((item) => item.membershipId === membershipOfA.id)).toBe(false);
   });
 
   it("earns a spin from visits and turns a prize into a personal single-use offer", () => {

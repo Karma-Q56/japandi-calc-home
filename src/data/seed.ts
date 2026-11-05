@@ -74,6 +74,8 @@ const baseRestaurants: Restaurant[] = [
     plan: "custom",
     suburb: "Parkhurst",
     address: "4th Avenue, Parkhurst",
+    phoneE164: "+27821110001",
+    distanceKm: 0.6,
     hours,
     stampsRequired: 8,
     rewardDescription: "a free coffee",
@@ -126,6 +128,8 @@ const baseRestaurants: Restaurant[] = [
     plan: "managed",
     suburb: "Melville",
     address: "7th Street, Melville",
+    phoneE164: "+27821110002",
+    distanceKm: 1.4,
     hours,
     stampsRequired: 6,
     rewardDescription: "A pastry of your choice",
@@ -169,6 +173,8 @@ const baseRestaurants: Restaurant[] = [
     plan: "partner",
     suburb: "Rosebank",
     address: "Oxford Road, Rosebank",
+    phoneE164: "+27821110003",
+    distanceKm: 2.2,
     hours,
     stampsRequired: 10,
     rewardDescription: "a free main",
@@ -213,7 +219,7 @@ function guestNameAt(i: number): string {
   return `${first} ${initial}.`;
 }
 
-export function createSeed(now = Date.UTC(2026, 9, 1, 8)): DemoState {
+export function createSeed(now = Date.now()): DemoState {
   const restaurants = structuredClone(baseRestaurants);
   // The demo venues show both till order modes: the coffee shop tracks items,
   // the bakery counts simple categories, and the bistro keeps it off.
@@ -562,6 +568,7 @@ export function createSeed(now = Date.UTC(2026, 9, 1, 8)): DemoState {
     messages,
     redemptions: [],
     specialCodes,
+    offers: [],
     spins: [],
     challenges: [
       {
@@ -739,6 +746,17 @@ export function createSeed(now = Date.UTC(2026, 9, 1, 8)): DemoState {
     onboarding: restaurants.map((r) => ({ restaurantId: r.id, done: {} })),
     pageVersions: [],
     menuVersions: [],
+    helpDrafts: [],
+    helpRequests: [
+      {
+        id: "help-request-seed-1",
+        restaurantId: "rest-daily-grind",
+        ask: "Our page says we close at 15:00 on Fridays, but it is 16:00 now. Can you write it so it sounds like us?",
+        photos: [],
+        status: "open",
+        createdAt: new Date(now - 3 * 86400000).toISOString(),
+      },
+    ],
     feedback: [
       {
         id: "feedback-seed-1",

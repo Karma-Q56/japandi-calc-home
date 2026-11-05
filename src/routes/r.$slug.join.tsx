@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { api } from "@/api";
-import { DemoControlBar } from "@/components/patron/DemoControlBar";
 import { VerificationStep } from "@/components/patron/VerificationStep";
 import { demoRepo, updateDemo } from "@/data/repo";
 import { getDataModeFn, joinGuestFn } from "@/server/live";
@@ -11,6 +10,9 @@ import { ThemeProvider } from "@/theme";
 import { isValidSAMobile } from "@/lib/phone";
 import { isValidBirthday, MONTH_NAMES } from "@/lib/birthday";
 import { rewardJoinPitch } from "@/lib/reward-copy";
+import { BackLink } from "@/components/patron/BackLink";
+import { VenueMark } from "@/components/patron/kit";
+import { venueName } from "@/lib/venue-name";
 
 export const Route = createFileRoute("/r/$slug/join")({
   loader: async () => {
@@ -108,11 +110,7 @@ function JoinPage() {
         setError(res.message);
         return;
       }
-      void navigate({
-        to: "/r/$slug/card",
-        params: { slug },
-        search: { customerId: res.customerId },
-      });
+      void navigate({ to: "/r/$slug/card", params: { slug } });
       return;
     }
     const result = api.member.join({
@@ -168,11 +166,26 @@ function JoinPage() {
   return (
     <ThemeProvider theme={restaurant.theme}>
       <main className="guest-page">
-        <header className="guest-header">
-          <a href={`/r/${slug}`}>{restaurant.name}</a>
+        <header className="guest-header guest-header-venue">
+          <a href={`/r/${slug}`} className="guest-venue-link">
+            <VenueMark name={venueName(restaurant.name)} theme={restaurant.theme} size="sm" />
+            <span>{venueName(restaurant.name)}</span>
+          </a>
           <a href="/">Patron home</a>
         </header>
         <section className="guest-flow">
+          <div className="join-back">
+            {step === 0 ? (
+              <BackLink to={`/r/${slug}`} label="Restaurant" />
+            ) : (
+              <BackLink
+                onClick={() => {
+                  setError("");
+                  setStep(step - 1);
+                }}
+              />
+            )}
+          </div>
           <div className="guest-progress" aria-label={`Step ${step + 1} of 3`}>
             {["Welcome", "Details", "Verification"].map((label, index) => (
               <span className={index === step ? "active" : ""} key={label}>
@@ -184,14 +197,15 @@ function JoinPage() {
             {step === 0 && (
               <section className="guest-step">
                 <span className="eyebrow">Good food · familiar faces</span>
-                <h1>Join the regulars at {restaurant.name}.</h1>
+                <h1>Join the regulars at {venueName(restaurant.name)}.</h1>
                 <p>{rewardJoinPitch(restaurant.rewardDescription)}.</p>
                 {welcome > 0 && (
                   <p className="welcome-stamp-note" role="status">
                     <strong>
                       You start with {welcome} stamp{welcome === 1 ? "" : "s"}.
                     </strong>{" "}
-                    That leaves {restaurant.stampsRequired - welcome} to {restaurant.rewardDescription}.
+                    That leaves {restaurant.stampsRequired - welcome} to{" "}
+                    {restaurant.rewardDescription}.
                   </p>
                 )}
                 {customer && (
@@ -204,7 +218,7 @@ function JoinPage() {
                 )}
                 <div className="join-button-row">
                   <button className="builder-primary" onClick={continueAsGuest}>
-                    {customer ? `Continue as ${customer.name}` : `Join ${restaurant.name}`}
+                    {customer ? `Continue as ${customer.name}` : `Join ${venueName(restaurant.name)}`}
                   </button>
                   {consentLineNode}
                 </div>
@@ -283,21 +297,9 @@ function JoinPage() {
                 {error}
               </p>
             )}
-            {step > 0 && (
-              <button
-                className="guest-back"
-                onClick={() => {
-                  setError("");
-                  setStep(step - 1);
-                }}
-              >
-                Back
-              </button>
-            )}
           </div>
           <small className="demo-data-note">Demo data · No SMS is sent.</small>
         </section>
-        <DemoControlBar />
       </main>
     </ThemeProvider>
   );

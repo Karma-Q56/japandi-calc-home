@@ -143,6 +143,29 @@ export const special = pgTable('special', {
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
 });
 
+// Offer: merged Specials and Campaigns. Old special and campaign rows stay as read-only history.
+export const offer = pgTable('offer', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  restaurantId: uuid('restaurant_id').notNull().references(() => restaurant.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  body: text('body').notNull().default(''),
+  kind: text('kind').notNull().default('public'),
+  code: text('code'),
+  minTier: text('min_tier'),
+  validFrom: timestamp('valid_from', { mode: 'date' }),
+  validTo: timestamp('valid_to', { mode: 'date' }),
+  active: boolean('active').notNull().default(true),
+  placementPage: boolean('placement_page').notNull().default(true),
+  placementTill: boolean('placement_till').notNull().default(false),
+  placementPush: boolean('placement_push').notNull().default(false),
+  placementSms: boolean('placement_sms').notNull().default(false),
+  audience: jsonb('audience'),
+  status: text('status').notNull().default('live'),
+  legacySpecialId: uuid('legacy_special_id'),
+  legacyCampaignId: uuid('legacy_campaign_id'),
+  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+});
+
 // Customer
 export const customer = pgTable('customer', {
   id: uuid('id').primaryKey().defaultRandom(),

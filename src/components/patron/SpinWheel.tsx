@@ -1,17 +1,20 @@
 import { useState } from "react";
-import { useSyncExternalStore } from "react";
 import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
 import type { SpinMode, SpinResult } from "@/data/types";
 import { spinModeLabel } from "@/domain/spins";
 import { useDemoState } from "@/data/useDemoState";
+import { SpinWheelSvg } from "@/components/patron/SpinWheelSvg";
 
-/** Guest-facing spin control. The result is chosen by the domain layer, never here. */
+/**
+ * Guest-facing spin control. The result is chosen by the domain layer before
+ * the wheel moves; the wheel only turns to land on that result.
+ */
 export function SpinWheel({ membershipId }: { membershipId: string }) {
   useDemoState();
   const [result, setResult] = useState<SpinResult | null>(null);
+  const [pending, setPending] = useState<{ result: SpinResult; spinId: number } | null>(null);
   const [error, setError] = useState("");
-  const [spinning, setSpinning] = useState(false);
   const [mode, setMode] = useState<SpinMode | null>(null);
   const state = api.spin.state(membershipId);
   if (!state.enabled) return null;
@@ -24,33 +27,39 @@ export function SpinWheel({ membershipId }: { membershipId: string }) {
   if (availableModes.length === 0) return null;
   // Open on the first mode the guest can actually use (welcome spin first).
   const activeMode = (mode && availableModes.includes(mode) ? mode : availableModes[0])!;
+  const spinning = pending !== null;
   const blocked =
     (activeMode === "join" && !state.joinAvailable) ||
     (activeMode === "earned" && state.earned <= 0) ||
     (activeMode === "reward_decider" && !state.rewardReady) ||
     (activeMode === "daily_surprise" && state.dailyAlreadyUsed);
 
+  const snapshot = demoRepo.read();
+  const membership = snapshot.memberships.find((item) => item.id === membershipId);
+  const restaurant = snapshot.restaurants.find((item) => item.id === membership?.restaurantId);
+  const wheelSegments = restaurant?.spin?.segments ?? [];
+
   const spin = () => {
     if (spinning) return;
     setError("");
-    setSpinning(true);
-    window.setTimeout(() => {
-      const outcome = api.spin.wheel({ restaurantId: restaurantIdFor(), membershipId, mode: activeMode });
-      setSpinning(false);
-      if (!outcome.ok) {
-        setError(outcome.error.message);
-        return;
-      }
-      setResult(outcome.data);
-      // One-shot modes fall back to the next wheel the guest can still use.
-      if (activeMode !== "earned") setMode(null);
-    }, 700);
+    const outcome = api.spin.wheel({ restaurantId: restaurant?.id ?? "", membershipId, mode: activeMode });
+    if (!outcome.ok) {
+      setError(outcome.error.message);
+      return;
+    }
+    // The outcome is already decided; the wheel now turns to land on it.
+    setResult(null);
+    setPending({ result: outcome.data, spinId: Date.now() });
   };
 
-  function restaurantIdFor(): string {
-    const membership = demoRepo.read().memberships.find((item) => item.id === membershipId);
-    return membership?.restaurantId ?? "";
-  }
+  const settle = () => {
+    if (!pending) return;
+    const decided = pending.result;
+    setPending(null);
+    setResult(decided);
+    // One-shot modes fall back to the next wheel the guest can still use.
+    if (decided.mode !== "earned") setMode(null);
+  };
 
   const prizeCode = result?.prizeSpecialId
     ? demoRepo
@@ -71,7 +80,8 @@ export function SpinWheel({ membershipId }: { membershipId: string }) {
   return (
     <section className="spin-panel">
       <div className="spin-head">
-        <span className="spin-kicker">Spin &amp; win</span>          <strong>
+        <span className="spin-kicker">Spin &amp; win</span>
+        <strong>
           {activeMode === "join" && state.joinAvailable
             ? "Welcome spin ready"
             : `${state.earned} spin${state.earned === 1 ? "" : "s"} ready`}
@@ -88,6 +98,14 @@ export function SpinWheel({ membershipId }: { membershipId: string }) {
                 }.`
               : "One daily surprise is available per Johannesburg day."}
       </p>
+      {wheelSegments.length > 0 && (
+        <SpinWheelSvg
+          segments={wheelSegments}
+          winnerId={pending?.result.segmentId ?? null}
+          spinId={pending?.spinId}
+          onSettled={settle}
+        />
+      )}
       {availableModes.length > 1 && (
         <label className="builder-field">
           Spin type

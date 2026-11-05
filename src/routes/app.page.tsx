@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { Link, createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
@@ -144,6 +144,9 @@ function PageWordsEditor() {
 
       {step === 1 && (
         <>
+          <p className="builder-hint">
+            Colours, stamps and logo live on the <Link to="/app/design">card design</Link> page.
+          </p>
           <section className="builder-panel">
             <h2>Words</h2>
             <div className="builder-fields">

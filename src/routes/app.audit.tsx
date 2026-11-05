@@ -29,6 +29,15 @@ const ACTION_LABELS: Partial<Record<AuditAction | "all", string>> = {
   redeem: "Redeem",
   pin_reset: "PIN reset",
   pairing: "Till paired",
+  help_enabled: "Help from Patron on",
+  help_disabled: "Help from Patron off",
+  help_start: "Patron opened help mode",
+  help_stop: "Patron closed help mode",
+  help_draft: "Draft from Patron",
+  help_draft_used: "You used a draft",
+  help_draft_discarded: "You threw away a draft",
+  help_request: "You asked for work",
+  help_reply: "Patron answered your request",
 };
 
 export const Route = createFileRoute("/app/audit")({

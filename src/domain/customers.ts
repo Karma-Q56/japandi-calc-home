@@ -7,6 +7,7 @@ import { dayName, TIME_OF_DAY_LABEL, visitPattern } from "@/lib/visits";
 import type { TimeOfDay, VisitPattern } from "@/lib/visits";
 import { failure, success, type ApiResult } from "./demo";
 import { logAudit, requireScope } from "./audit";
+import { operatorPhoneLock } from "./help";
 
 export type CustomerFilter =
   | "all"
@@ -16,6 +17,7 @@ export type CustomerFilter =
   | "lapsed45"
   | "lapsed60"
   | "sms"
+  | "no_sms"
   | "birthdays"
   | "one_stamp_away"
   | "recent30"
@@ -141,6 +143,8 @@ export function listCustomers(input: {
     rows = rows.filter((r) => daysSince(r.lastVisitAt) >= 60);
   } else if (filter === "sms") {
     rows = rows.filter((r) => r.smsOptedIn);
+  } else if (filter === "no_sms") {
+    rows = rows.filter((r) => !r.smsOptedIn);
   } else if (filter === "birthdays") {
     const month = johannesburgMonthDay(now).month;
     rows = rows.filter((r) => {
@@ -200,6 +204,7 @@ export function matchingCustomerMembershipIds(input: {
     if (filter === "lapsed45" && daysSince(row.lastVisitAt) < 45) return false;
     if (filter === "lapsed60" && daysSince(row.lastVisitAt) < 60) return false;
     if (filter === "sms" && !row.smsOptedIn) return false;
+    if (filter === "no_sms" && row.smsOptedIn) return false;
     const required = state.restaurants.find((item) => item.id === input.restaurantId)?.stampsRequired ?? 8;
     if (filter === "one_stamp_away" && required - row.stampsCurrent !== 1) return false;
     if (filter === "recent30" && (row.lastVisitAt === null || daysSince(row.lastVisitAt) > 30)) return false;
@@ -223,6 +228,9 @@ export function revealPhone(input: {
 }) {
   const scoped = requireScope(input.session.role, input.session.restaurantId, input.restaurantId);
   if (!scoped.ok) return scoped;
+  if (input.session.role === "operator" || operatorPhoneLock(input.restaurantId)) {
+    return failure("FORBIDDEN", "Guest phone numbers stay masked while Patron is helping.");
+  }
   const customer = demoRepo.read().customers.find((c) => c.id === input.customerId);
   if (!customer) return failure("NOT_FOUND", "Guest not found.");
   logAudit({
@@ -244,6 +252,9 @@ export function exportCsv(input: {
   }
   const scoped = requireScope(input.session.role, input.session.restaurantId, input.restaurantId);
   if (!scoped.ok) return scoped;
+  if (input.session.role === "operator" || operatorPhoneLock(input.restaurantId)) {
+    return failure("FORBIDDEN", "The guest list cannot be exported while Patron is helping.");
+  }
   const state = demoRepo.read();
   const lines = ["name,phone,joined,last_visit,stamps,sms_opted_in,visits"];
   for (const m of state.memberships.filter((x) => x.restaurantId === input.restaurantId)) {

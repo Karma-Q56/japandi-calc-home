@@ -36,7 +36,16 @@ export type AuditAction =
   | "feedback_received"
   | "feedback_updated"
   | "miss_you_award"
-  | "custom_reward";
+  | "custom_reward"
+  | "help_enabled"
+  | "help_disabled"
+  | "help_start"
+  | "help_stop"
+  | "help_draft"
+  | "help_draft_used"
+  | "help_draft_discarded"
+  | "help_request"
+  | "help_reply";
 
 /** Never pass PINs or full phone numbers, ids only. */
 export function logAudit(input: {
@@ -45,9 +54,12 @@ export function logAudit(input: {
   restaurantId?: string;
   object?: string;
 }) {
+  // Log the staff member by name so the owner sees who did what at the till.
+  const staff = demoRepo.read().staff.find((member) => member.id === input.actor);
   const event: AuditEvent = {
     id: `audit-${crypto.randomUUID()}`,
     ...input,
+    actor: staff?.displayName ?? input.actor,
     createdAt: new Date(clock.now()).toISOString(),
   };
   updateDemo((current) => ({ ...current, audit: [event, ...current.audit] }));

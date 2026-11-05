@@ -47,7 +47,7 @@ function BlogPost() {
             Find a place on Patron
           </a>
           <a className="builder-secondary" href="/contact">
-            Book a visit
+            Talk to us
           </a>
         </div>
         {next && next.slug !== post.slug && (

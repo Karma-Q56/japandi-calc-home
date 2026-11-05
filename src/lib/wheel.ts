@@ -40,3 +40,40 @@ export function arcShare(arc: WheelArc, arcs: ReadonlyArray<WheelArc>): number {
   const total = arcs.reduce((sum, item) => sum + item.segment.weight, 0);
   return total > 0 ? Math.round((arc.segment.weight / total) * 100) : 0;
 }
+
+/** Plain-language odds for one prize, such as "about 1 in 10". */
+export function oddsInWords(weight: number, segments: ReadonlyArray<SpinSegment>): string {
+  const total = segments
+    .filter((segment) => segment.label.trim().length > 0 && segment.weight > 0)
+    .reduce((sum, segment) => sum + segment.weight, 0);
+  if (total <= 0 || weight <= 0) return "never on this wheel";
+  const oneIn = Math.max(1, Math.round(total / weight));
+  return oneIn === 1 ? "every spin" : `about 1 in ${oneIn}`;
+}
+
+/**
+ * A warning for the owner when the prize weights cannot make a draw: nothing
+ * has a positive weight, or some weighted prizes have no name and are skipped.
+ */
+export function weightWarning(segments: ReadonlyArray<SpinSegment>): string | null {
+  const weighted = segments.filter((segment) => segment.weight > 0);
+  if (weighted.length === 0) return "No prize has a chance yet. Give at least one prize a weight above 0.";
+  const unnamed = weighted.filter((segment) => segment.label.trim().length === 0);
+  if (unnamed.length > 0) {
+    return "A prize with a chance has no name, so it is left off the wheel. Name it or set its chance to 0.";
+  }
+  return null;
+}
+
+/** Shortens a long prize name for the wheel; the full name stays in the result card. */
+export function shortWheelLabel(label: string, max = 14): string {
+  const clean = label.trim();
+  if (clean.length <= max) return clean;
+  const words = clean.split(/\s+/);
+  let out = "";
+  for (const word of words) {
+    if ((out + " " + word).trim().length > max - 1) break;
+    out = (out + " " + word).trim();
+  }
+  return `${out || clean.slice(0, max - 1)}…`;
+}

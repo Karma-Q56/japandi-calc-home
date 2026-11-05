@@ -1,9 +1,9 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { WheelPreview } from "@/components/patron/preview";
 import { demoRepo } from "@/data/repo";
-import { arcShare, wheelArcs } from "@/lib/wheel";
+import { arcShare, oddsInWords, shortWheelLabel, wheelArcs, weightWarning } from "@/lib/wheel";
 import type { SpinSegment } from "@/data/types";
 
 const segments: SpinSegment[] = [
@@ -15,10 +15,12 @@ const segments: SpinSegment[] = [
 
 beforeEach(() => {
   demoRepo.reset();
+  vi.useFakeTimers();
 });
 
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
 });
 
 describe("wheel test spin", () => {
@@ -31,19 +33,24 @@ describe("wheel test spin", () => {
     expect(arcShare(arcs[1]!, arcs)).toBe(25);
   });
 
-  it("shows a landed prize and changes nothing in the demo data", () => {
+  it("shows a landed prize after the wheel stops and changes nothing in the demo data", () => {
     const before = structuredClone(demoRepo.read());
     render(<WheelPreview segments={segments} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Test spin" }));
-    expect(
-      screen.getByRole("status").textContent,
-    ).toMatch(/Test spin lands on (Free coffee|R20 off)\./);
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    expect(screen.getByRole("status").textContent).toMatch(
+      /Test spin lands on (Free coffee|R20 off)\./,
+    );
     expect(screen.getByRole("status").textContent).toContain("no budget was used");
     expect(screen.getByRole("status").textContent).toContain("no offer was created");
 
     fireEvent.click(screen.getByRole("button", { name: "Test spin again" }));
-    fireEvent.click(screen.getByRole("button", { name: "Test spin again" }));
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
 
     // A test spin is an owner preview, not a real spin: no spin record, no
     // prize code, no reward and no budget change may appear.
@@ -54,5 +61,25 @@ describe("wheel test spin", () => {
     render(<WheelPreview segments={[{ id: "x", label: "", weight: 5, valueCents: 0 }]} />);
     expect(screen.getByText(/Add at least one prize/)).toBeTruthy();
     expect(screen.queryByRole("button", { name: /Test spin/ })).toBeNull();
+  });
+});
+
+describe("wheel odds and warnings", () => {
+  it("states odds in plain words", () => {
+    // Total weight with a name is 40 (30 + 10).
+    expect(oddsInWords(10, segments)).toBe("about 1 in 4");
+    expect(oddsInWords(40, [{ id: "z", label: "Only", weight: 40, valueCents: 0 }])).toBe("every spin");
+    expect(oddsInWords(0, segments)).toBe("never on this wheel");
+  });
+
+  it("warns when no prize can be drawn or a weighted prize has no name", () => {
+    expect(weightWarning([{ id: "x", label: "Coffee", weight: 0, valueCents: 0 }])).toMatch(/No prize has a chance/);
+    expect(weightWarning(segments)).toMatch(/has no name/);
+    expect(weightWarning([{ id: "y", label: "Coffee", weight: 5, valueCents: 0 }])).toBeNull();
+  });
+
+  it("shortens long prize names without cutting words in the middle", () => {
+    expect(shortWheelLabel("Free coffee")).toBe("Free coffee");
+    expect(shortWheelLabel("Free coffee and a slice of cake")).toBe("Free coffee…");
   });
 });

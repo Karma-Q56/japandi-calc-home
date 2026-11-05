@@ -518,6 +518,31 @@ button:focus-visible {
 }
 
 /* ---------- owner shell ---------- */
+@media (min-width: 861px) {
+  .ox-side {
+    gap: 16px;
+    padding: 20px 14px 16px;
+  }
+  .ox-link {
+    min-height: 38px;
+    padding: 0 10px;
+    font-size: 14px;
+  }
+  .ox-link svg {
+    width: 18px;
+    height: 18px;
+  }
+  .ox-nav {
+    gap: 1px;
+    scrollbar-width: thin;
+  }
+  .ox-foot {
+    font-size: 11px;
+  }
+  .ox-side .ox-brand-wordmark > span {
+    display: none;
+  }
+}
 .ox {
   display: grid;
   grid-template-columns: 252px minmax(0, 1fr);
@@ -540,6 +565,18 @@ button:focus-visible {
   align-items: center;
   gap: 12px;
   padding: 0 8px;
+}
+.ox-brand-copy {
+  min-width: 0;
+  flex: 1;
+}
+.ox-brand-copy strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ox-brand-wordmark {
+  flex: none;
 }
 .ox-brand-mark {
   display: grid;
@@ -625,7 +662,18 @@ button:focus-visible {
     border-bottom: 1px solid var(--line);
   }
   .ox-top .ox-brand {
+    min-width: 0;
+    gap: 8px;
     padding: 0;
+  }
+  @media (max-width: 620px) {
+    .ox-top.has-venue-select .ox-brand-copy {
+      display: none;
+    }
+    .ox-venue-select {
+      min-width: 0;
+      flex: 0 1 168px;
+    }
   }
   .ox-top .ox-brand-mark {
     width: 34px;
@@ -702,6 +750,7 @@ button:focus-visible {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   max-width: 520px;
   margin-inline: auto;
   padding: 18px 20px 6px;
@@ -710,6 +759,14 @@ button:focus-visible {
 .gx-top a {
   color: inherit;
   text-decoration: none;
+}
+.gx-title {
+  min-width: 0;
+  max-width: 46%;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .gx-body {
   display: grid;
@@ -2348,6 +2405,11 @@ input[type="range"] {
   font: 700 12px var(--font-sans);
   color: var(--primary);
 }
+@media (min-width: 561px) {
+  .customer-row-main > span:first-child strong + small {
+    margin-left: 8px;
+  }
+}
 .customer-row-meta {
   display: flex;
   flex-wrap: wrap;
@@ -3844,6 +3906,21 @@ input[type="range"] {
   border-top: 15px solid var(--primary);
   filter: drop-shadow(0 2px 2px oklch(0.3 0.04 60 / 0.3));
 }
+.pv-wheel-svg {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 6px solid var(--card);
+  box-shadow:
+    0 10px 26px oklch(0.3 0.04 60 / 0.22),
+    inset 0 0 0 1px var(--border);
+  display: block;
+}
+.spin-odds {
+  display: block;
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
 .pv-wheel-button {
   min-height: 40px;
   padding: 0 18px;
@@ -4779,5 +4856,155 @@ details.preset-rule > summary + * {
     max-height: 520px;
     overflow-y: auto;
     padding-right: 4px;
+  }
+}
+
+/* ---------- one back control, one account menu, one small demo pill ---------- */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 38px;
+  padding: 0 12px 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink-soft);
+  font: 650 13px var(--font-sans);
+  text-decoration: none;
+  cursor: pointer;
+}
+.back-link:hover {
+  border-color: var(--primary);
+  color: var(--ink);
+}
+.back-link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.marketing-back {
+  padding-top: 18px;
+}
+.join-back {
+  display: flex;
+  margin-bottom: 12px;
+}
+.pt-back {
+  display: inline-flex;
+  margin: 18px 22px 0;
+  color: var(--pt-ink, var(--ink));
+}
+.venue-live-back {
+  padding: 18px 20px 0;
+}
+.ox-accountbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 14px 24px 0;
+}
+.ox-account {
+  position: relative;
+}
+.ox-account summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 4px 10px 4px 5px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  font: 650 12px var(--font-sans);
+  cursor: pointer;
+  list-style: none;
+}
+.ox-account summary::-webkit-details-marker {
+  display: none;
+}
+.ox-avatar {
+  display: grid;
+  place-items: center;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 12px;
+}
+.ox-account-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 40;
+  display: grid;
+  gap: 12px;
+  width: 220px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: 0 18px 40px rgb(47 37 25 / 12%);
+}
+.ox-account-menu p {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+}
+.ox-account-menu small {
+  color: var(--ink-soft);
+}
+.ox-account-menu button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.ox-back {
+  padding: 10px 24px 0;
+}
+.till-account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+.opsx-logout {
+  flex: 0 0 auto;
+  min-height: 34px;
+  margin-left: 8px;
+  padding: 0 12px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: 650 12px var(--font-sans);
+  cursor: pointer;
+}
+
+/* Bottom left, small by default, and gift to the screenshots. */
+.demo-control {
+  right: auto;
+  left: 12px;
+  bottom: calc(86px + env(safe-area-inset-bottom));
+}
+.demo-control-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 11px;
+  font-size: 11px;
+  opacity: 0.88;
+}
+.demo-control-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+@media (min-width: 861px) {
+  .demo-control {
+    bottom: 14px;
   }
 }

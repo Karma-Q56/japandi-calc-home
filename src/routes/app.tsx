@@ -8,10 +8,24 @@ import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
 import { canOpenArea } from "@/lib/auth-rules";
 import { getDataModeFn, getOwnerOverviewFn, getViewerFn } from "@/server/live";
-import { OwnerSideNav, OwnerTabs } from "@/components/patron/OwnerNav";
+import { OwnerSideNav, OwnerMobileNav } from "@/components/patron/OwnerNav";
 import { PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
+import { DemoHome } from "@/components/patron/DemoHome";
+import { BackLink } from "@/components/patron/BackLink";
 import { markOutletComponent } from "@/lib/nested";
-import { PatronBrand } from "@/lib/patron-brand";
+import { signOut } from "@/lib/sign-out";
+import { Avatar, VenueMark } from "@/components/patron/kit";
+import { ChevronDown, LogOut } from "lucide-react";
+
+const OWNER_TABS = new Set(["/app", "/app/insights", "/app/reports", "/app/customers"]);
+
+/** Non-tab owner screens get one parent destination from the route they are on. */
+function ownerBackFor(pathname: string) {
+  const clean = pathname.replace(/\/$/, "") || "/app";
+  if (!clean.startsWith("/app/") || OWNER_TABS.has(clean)) return null;
+  const parent = clean.slice(0, clean.lastIndexOf("/"));
+  return { to: OWNER_TABS.has(parent) ? parent : "/app", label: "Back" };
+}
 
 export const Route = createFileRoute("/app")({
   beforeLoad: async () => {
@@ -60,43 +74,64 @@ function OwnerShell() {
       return { ...current, session };
     });
   };
+  const showVenueSwitcher = !isLive && state.restaurants.length > 1;
+  const back = ownerBackFor(location.pathname);
+  const signedInName = state.session.staffId
+    ? state.staff.find((item) => item.id === state.session.staffId)?.displayName
+    : undefined;
+  const viewerName = signedInName ?? (state.session.role === "manager" ? "Manager" : "Owner");
   const brand = (
     <div className="ox-brand">
-      <PatronBrand className="ox-brand-wordmark" />
-      <span>
+      <VenueMark name={restaurantName} theme={restaurant.theme} size="sm" />
+      <span className="ox-brand-copy">
         <strong>{restaurantName}</strong>
-        <small>Owner view</small>
+        <span className="ox-owner-tag">OWNER</span>
       </span>
     </div>
   );
+  const venuePicker = showVenueSwitcher ? (
+    <select
+      className="ox-venue-select"
+      aria-label="Switch venue"
+      value={restaurant.id}
+      onChange={(event) => switchVenue(event.target.value)}
+    >
+      {state.restaurants.map((item) => (
+        <option key={item.id} value={item.id}>
+          {item.name}
+        </option>
+      ))}
+    </select>
+  ) : null;
   return (
     <div className="ox">
       <aside className="ox-side">
         {brand}
+        {showVenueSwitcher && (
+          <label className="ox-venue-picker">
+            Venue
+            {venuePicker}
+          </label>
+        )}
         <OwnerSideNav />
         <p className="ox-foot">
           Powered by {APP_NAME}.<br />
-          {isLive ? "Live data from this restaurant." : "Demo data. Nothing is sent to real guests."}
+          {isLive
+            ? "Live data from this restaurant."
+            : "Demo data. Nothing is sent to real guests."}
         </p>
       </aside>
       <div className="ox-main">
+        <OwnerAccount displayName={viewerName} venueName={restaurantName} mode={data.mode} />
+        {back && (
+          <div className="ox-back">
+            <BackLink to={back.to} label={back.label} />
+          </div>
+        )}
         <header className="ox-top">
           {brand}
-          {!isLive && state.restaurants.length > 1 && (
-            <select
-              className="ox-venue-select"
-              aria-label="Switch venue"
-              value={restaurant.id}
-              onChange={(event) => switchVenue(event.target.value)}
-            >
-              {state.restaurants.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-          )}
         </header>
+        <OwnerMobileNav venueSwitcher={venuePicker} />
         {children.length > 0 ? (
           isLive ? (
             liveChild ? (
@@ -113,7 +148,42 @@ function OwnerShell() {
           <Overview restaurantId={restaurant.id} live={live?.overview ?? null} />
         )}
       </div>
-      <OwnerTabs />
+    </div>
+  );
+}
+
+function OwnerAccount({
+  displayName,
+  venueName,
+  mode,
+}: {
+  displayName: string;
+  venueName: string;
+  mode: "demo" | "live";
+}) {
+  return (
+    <div className="ox-accountbar">
+      <details className="ox-account">
+        <summary data-testid="owner-account">
+          <Avatar name={displayName} />
+          <span className="ox-account-name">{displayName}</span>
+          <ChevronDown size={15} aria-hidden="true" />
+        </summary>
+        <div className="ox-account-menu">
+          <p>
+            <strong>{displayName}</strong>
+            <small>{venueName}</small>
+          </p>
+          <button
+            type="button"
+            className="builder-secondary"
+            data-testid="owner-logout"
+            onClick={() => void signOut(mode)}
+          >
+            <LogOut size={15} aria-hidden="true" /> Log out
+          </button>
+        </div>
+      </details>
     </div>
   );
 }
@@ -123,13 +193,15 @@ function LiveToolsNotice() {
     <main className="demo-hub page-width">
       <PageHeader
         eyebrow="Live mode"
-        title="The overview is live. The other owner tools come next."
-        intro="This phase connects your real stamps, guests, rewards, credit and campaigns to the overview. Campaign builders and settings still open in demo only, so they are switched off while live."
+        title="This owner tool is not live yet."
+        intro="Your overview, guest list, guest profiles, campaign list and results, loyalty card rules and menu are connected to your restaurant. This screen still uses demo data, so it is switched off while live."
       />
       <section className="builder-panel">
-        <h2>What works now</h2>
-        <p>The overview shows counts from your restaurant in Postgres.</p>
-        <p className="demo-data-note">Guests and campaigns are counted from real rows.</p>
+        <h2>What is live today</h2>
+        <p>
+          Use the owner menu for real stamps, guests, rewards, campaigns, card rules and menu items.
+        </p>
+        <p className="demo-data-note">The remaining builders follow in a later phase.</p>
         <div className="page-actions">
           <a className="builder-primary" href="/app">
             Back to the live overview
@@ -161,23 +233,8 @@ function LiveUnavailable() {
 }
 
 function Overview({ restaurantId, live }: { restaurantId: string; live: Overview | null }) {
-  const state = useDemoState();
-  const session = state.session;
   if (live) return <OverviewBody data={live} />;
-  const result = api.dash.overview(restaurantId, {
-    role: session.role,
-    restaurantId: session.restaurantId,
-  });
-  if (!result.ok) {
-    return (
-      <main className="demo-hub page-width">
-        <h1>We couldn’t load the overview.</h1>
-        <p>{result.error.message}</p>
-        <a href="/">Back to Patron</a>
-      </main>
-    );
-  }
-  return <OverviewBody data={result.data} />;
+  return <DemoHome restaurantId={restaurantId} />;
 }
 
 function OverviewBody({ data }: { data: Overview }) {

@@ -15,15 +15,15 @@ export function DemoControlBar() {
   )
     return null;
   return (
-    <aside className="demo-control" aria-label="Demo controls">
+    <aside className="demo-control" aria-label="Demo controls" data-demo-pill data-shot-hide>
       <button
         className="demo-control-toggle"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
+        aria-label={open ? "Close demo data" : "Open demo data"}
       >
-        Demo · {state.session.role} ·{" "}
-        {state.restaurants.find((item) => item.id === state.session.restaurantId)?.name ??
-          "Choose a venue"}
+        <span className="demo-control-dot" aria-hidden="true" />
+        Demo with sample data
       </button>
       {open && (
         <div className="demo-control-panel">
@@ -105,9 +105,16 @@ export function DemoControlBar() {
             <button onClick={() => clock.reset()}>Reset clock</button>
           </div>
           <div className="demo-control-actions">
-            <button onClick={() => demoRepo.reset()}>Reset demo data</button>
+            <button
+              onClick={() => {
+                demoRepo.reset();
+                window.location.assign("/");
+              }}
+            >
+              Reset demo data
+            </button>
             <Link to="/demo/outbox">Open outbox</Link>
-            <Link to="/dev/roles">Developer roles</Link>
+            <Link to="/dev/roles">Demo roles</Link>
           </div>
         </div>
       )}

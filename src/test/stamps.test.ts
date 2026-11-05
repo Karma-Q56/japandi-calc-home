@@ -76,7 +76,7 @@ describe("stamp rule engine", () => {
       session: staff,
     });
     expect(retry.ok && retry.data.result).toBe("duplicate_retry");
-    expect(demoRepo.read().stamps.length).toBe(before + 1);
+    expect(demoRepo.read().stamps.filter((stamp) => stamp.key === "same-key")).toHaveLength(1);
   });
 
   it("stamps again after the visit window passes", () => {

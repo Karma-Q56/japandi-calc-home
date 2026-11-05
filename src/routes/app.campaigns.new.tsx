@@ -1,6 +1,6 @@
 import { createFileRoute, redirect, useNavigate, useSearch } from "@tanstack/react-router";
 import { countLabel } from "@/lib/count-label";
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import { api } from "@/api";
 import {
   checkCopy,
@@ -13,6 +13,7 @@ import {
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
 import { PreviewOnly, PublishSteps, PushPreview, SmsPreview } from "@/components/patron/preview";
+import { Switch } from "@/components/patron/Switch";
 import {
   applyFillIns,
   messageFillFacts,
@@ -48,7 +49,7 @@ export const Route = createFileRoute("/app/campaigns/new")({
 
 const zar = (cents: number) => `R${(cents / 100).toFixed(2)}`;
 const SEGMENT_CHOICES: Array<{ type: SegmentType; title: string; hint: string }> = [
-  { type: "everyone", title: "Everyone opted in", hint: "Everyone who said yes to SMS offers." },
+  { type: "everyone", title: "Everyone opted in", hint: "Everyone who said yes to offers." },
   { type: "new", title: "New guests", hint: "Joined in the last 14 days." },
   { type: "lapsed30", title: "Lapsed 30+ days", hint: "No visit in a month. Best for win-backs." },
   { type: "close_to_reward", title: "Close to a reward", hint: "Within 2 stamps of a reward." },
@@ -56,6 +57,8 @@ const SEGMENT_CHOICES: Array<{ type: SegmentType; title: string; hint: string }>
   { type: "birthday_month", title: "Birthdays this month", hint: "Guests whose birthday falls in this month." },
   { type: "saved_list", title: "A saved list", hint: "A named list you built earlier." },
 ];
+
+const STEPS = ["Offer", "Who", "How", "Review", "Send"] as const;
 
 function ComposerPage() {
   const state = useDemoState();
@@ -76,10 +79,13 @@ function ComposerPage() {
   const [segment, setSegment] = useState<SegmentType>(
     initialListId ? "saved_list" : (initialSegment ?? "everyone"),
   );
-  const [channel, setChannel] = useState<"sms" | "push" | "push_then_sms">("sms");
+  // Push first, because it is free. SMS is a deliberate second choice.
+  const [pushOn, setPushOn] = useState(true);
+  const [smsOn, setSmsOn] = useState(false);
+  const [onPage, setOnPage] = useState(true);
+  const [atTill, setAtTill] = useState(false);
   const [weekday, setWeekday] = useState(initialWeekday ?? 3);
   const [listId, setListId] = useState(initialListId ?? "");
-  const [specialId, setSpecialId] = useState("");
   const [body, setBody] = useState(
     initialBody ?? "Hi {first_name}, we miss you! Pop by this week.",
   );
@@ -94,23 +100,20 @@ function ComposerPage() {
   const [editingListId, setEditingListId] = useState<string | null>(null);
   const [editingIds, setEditingIds] = useState<string[]>([]);
   const [editingName, setEditingName] = useState("");
-  const [previewChannel, setPreviewChannel] = useState<"sms" | "push">(
-    channel === "push" ? "push" : "sms",
-  );
+  const [previewChannel, setPreviewChannel] = useState<"sms" | "push">("push");
 
   const restaurant = state.restaurants.find((r) => r.id === restaurantId);
   if (!restaurant) {
     return (
       <main className="demo-hub page-width">
-        <h1>New campaign.</h1>
+        <h1>New offer.</h1>
         <p className="demo-intro">Choose a venue first, then open this page again.</p>
       </main>
     );
   }
   const savedLists = api.audience.lists(restaurant.id);
-  // The saved-list card shows the list's own size, not the SMS-eligible subset.
+  // The saved-list card shows the list's own size, not the opted-in subset.
   const selectedList = savedLists.find((list) => list.id === listId);
-  const specials = api.special.ownerList(restaurant.id);
   const audience: CampaignAudience =
     segment === "saved_list"
       ? { type: "saved_list", listId }
@@ -125,9 +128,15 @@ function ComposerPage() {
               : segment === "close_to_reward"
                 ? { type: "close_to_reward", remaining: 2 }
                 : { type: "everyone" };
-  const pushEligible = channel === "sms" ? [] : eligiblePushMemberships(state, restaurant.id, audience);
+  const channel: "push" | "sms" | "push_then_sms" | "none" =
+    pushOn && smsOn ? "push_then_sms" : pushOn ? "push" : smsOn ? "sms" : "none";
+  const pushEligible = pushOn ? eligiblePushMemberships(state, restaurant.id, audience) : [];
   const pushIds = new Set(pushEligible.map((membership) => membership.id));
-  const smsEligible = channel === "push" ? [] : eligibleMemberships(state, restaurant.id, audience).filter((membership) => channel !== "push_then_sms" || !pushIds.has(membership.id));
+  const smsEligible = smsOn
+    ? eligibleMemberships(state, restaurant.id, audience).filter(
+        (membership) => channel !== "push_then_sms" || !pushIds.has(membership.id),
+      )
+    : [];
   const eligible = [...pushEligible, ...smsEligible];
   const rawCount = api.audience.count(restaurant.id, audience);
   const fillFacts = messageFillFacts(restaurant.id);
@@ -137,12 +146,19 @@ function ComposerPage() {
   const creditResult = api.credit.list(restaurant.id);
   const balance = creditResult.ok ? creditResult.data.balanceCents : 0;
   const warnings = checkCopy(body);
-  const selectedSpecial = specials.find((row) => row.special.id === specialId)?.special;
   const suggestions = suggestMessages({ restaurant, audience, facts: fillFacts });
 
   const save = (nextStep: number) => {
     if (segment === "saved_list" && !listId) {
       setNotice("Choose a saved list, or build one from a segment.");
+      return;
+    }
+    if (!body.trim()) {
+      setNotice("Write the offer before going on.");
+      return;
+    }
+    if (channel === "none") {
+      setNotice("Turn on push or SMS so the offer reaches someone.");
       return;
     }
     const saved = api.campaign.saveDraft({
@@ -151,12 +167,12 @@ function ComposerPage() {
       actorRole: state.session.role,
       ...(draftId ? { draftId } : {}),
       fields: {
-        name: name || "Untitled campaign",
+        name: name || "Untitled offer",
         body,
         audience,
         channel,
+        placements: { page: onPage, till: atTill, push: pushOn, sms: smsOn },
         ...(code ? { code } : {}),
-        ...(specialId ? { specialId } : {}),
         ...(validFrom ? { validFrom } : {}),
         ...(validTo ? { validTo } : {}),
       },
@@ -227,8 +243,7 @@ function ComposerPage() {
   };
 
   const preview = applyFillIns(body, fillFacts, sampleName);
-  const short = balance < costPreviewCents(smsEligible.length, messageSegments(preview, sampleName));
-  const steps = ["Draft", "Preview", "Cost", "Publish"] as const;
+  const short = balance < smsEligible.length * segments * 35;
   const back =
     step > 1 ? (
       <button className="cmp-back" onClick={() => setStep(step - 1)}>
@@ -240,46 +255,87 @@ function ComposerPage() {
     <main className="demo-hub page-width cmp">
       <p className="eyebrow">
         <span className="eyebrow-line" />
-        {restaurant.name} · New campaign
+        {restaurant.name} · New offer
       </p>
-      <h1>Bring them back.</h1>
-      <PublishSteps step={step} labels={steps} />
+      <h1>One offer, start to send.</h1>
+      <PublishSteps step={step} labels={STEPS} />
 
       {step === 1 && (
         <section className="cmp-card">
-          <h2>Who should hear from you?</h2>
+          <h2>What is the offer?</h2>
           <label className="builder-field">
-            Campaign name
+            Name it for yourself
             <input
               value={name}
-              placeholder="e.g. We miss you"
+              placeholder="e.g. Tuesday pasta night"
               onChange={(event) => setName(event.target.value)}
             />
+            <small>Guests never see this name. It is how you find the offer later.</small>
           </label>
-          <fieldset className="option-cards">
-            <legend>Send by</legend>
-            {([
-              ["push", "Push only", "Free and instant for guests who turned notifications on."],
-              ["sms", "SMS only", "A text message to every opted-in guest, charged from your credit."],
-              ["push_then_sms", "Push first, then SMS", "Free push first; SMS goes only to guests without push."],
-            ] as const).map(([value, title, description]) => (
-              <label className="option-card" key={value}>
-                <input
-                  type="radio"
-                  name="campaign-channel"
-                  value={value}
-                  checked={channel === value}
-                  onChange={() => setChannel(value)}
-                />
-                <span className="option-card-mark" aria-hidden="true" />
-                <span className="option-card-body">
-                  <strong>{title}</strong>
-                  <small>{description}</small>
-                </span>
-              </label>
-            ))}
-            <p>{pushEligible.length} push recipients · {smsEligible.length} SMS recipients. Push is free; SMS only is charged from credit.</p>
-          </fieldset>
+          {suggestions.length > 0 && (
+            <div className="cmp-suggest">
+              <p className="cmp-suggest-head">
+                <strong>Suggested wording</strong>
+                <span>Built from real data. Tap to use, then edit as much as you like.</span>
+              </p>
+              {suggestions.map((suggestion) => (
+                <button
+                  key={suggestion.id}
+                  type="button"
+                  className="cmp-suggest-card"
+                  onClick={() => setBody(suggestion.body)}
+                >
+                  <b>{suggestion.title}</b>
+                  <span>{suggestion.note}</span>
+                  <small>{applyFillIns(suggestion.body, fillFacts, sampleName)}</small>
+                </button>
+              ))}
+            </div>
+          )}
+          <label className="builder-field">
+            The words guests read
+            <textarea value={body} onChange={(event) => setBody(event.target.value)} rows={4} />
+            <small>
+              Use {"{first_name}"}, {"{favourite_item}"}, {"{usual_day}"} or {"{reward}"} to personalise. Anything you
+              leave out is filled from the guest's data, or with safe wording. The STOP line is
+              added for you.
+            </small>
+          </label>
+          {warnings.map((warning) => (
+            <p className="cmp-warn" key={warning.kind}>
+              {warning.message}{" "}
+              {warning.fixable && <button onClick={() => setBody(fixCopy(body))}>Fix it for me</button>}
+            </p>
+          ))}
+          <div className="cmp-row">
+            <label className="builder-field">
+              Offer code
+              <input
+                value={code}
+                onChange={(event) => setCode(event.target.value.toUpperCase())}
+                placeholder="Auto"
+              />
+              <small>Shown at the till. Leave blank and we make one.</small>
+            </label>
+            <label className="builder-field">
+              Valid from
+              <input type="date" value={validFrom} onChange={(event) => setValidFrom(event.target.value)} />
+            </label>
+            <label className="builder-field">
+              Valid to
+              <input type="date" value={validTo} onChange={(event) => setValidTo(event.target.value)} />
+            </label>
+          </div>
+          <button className="builder-primary" onClick={() => save(2)}>
+            Continue
+          </button>
+        </section>
+      )}
+
+      {step === 2 && (
+        <section className="cmp-card">
+          {back}
+          <h2>Who should get it?</h2>
           <div className="cmp-options" role="radiogroup" aria-label="Audience segment">
             {SEGMENT_CHOICES.map((choice) => (
               <button
@@ -335,14 +391,14 @@ function ComposerPage() {
             </label>
           )}
           <div className="live-count" role="status">
-            <strong>{eligible.length}</strong> eligible guests · {pushEligible.length} push / {smsEligible.length} SMS.
+            <strong>{countLabel(rawCount, "guest")}</strong> in this group.
           </div>
 
           <details className="saved-lists">
             <summary>Saved lists ({savedLists.length})</summary>
             <p className="gx-note">
               Save a segment now, then edit it later by ticking guests. Saved lists can be reused
-              in any campaign.
+              in any offer.
             </p>
             <div className="saved-list-create">
               <input
@@ -378,18 +434,13 @@ function ComposerPage() {
               <div className="list-editor">
                 <label className="builder-field">
                   List name
-                  <input
-                    value={editingName}
-                    onChange={(event) => setEditingName(event.target.value)}
-                  />
+                  <input value={editingName} onChange={(event) => setEditingName(event.target.value)} />
                 </label>
                 <div className="list-editor-guests">
                   {state.memberships
                     .filter((membership) => membership.restaurantId === restaurant.id)
                     .map((membership) => {
-                      const customer = state.customers.find(
-                        (item) => item.id === membership.customerId,
-                      );
+                      const customer = state.customers.find((item) => item.id === membership.customerId);
                       return (
                         <label key={membership.id} className="list-editor-guest">
                           <input
@@ -419,59 +470,60 @@ function ComposerPage() {
               </div>
             )}
           </details>
-          <button className="builder-primary" onClick={() => save(2)}>
+          <button className="builder-primary" onClick={() => save(3)}>
             Continue
           </button>
         </section>
       )}
 
-      {step === 2 && (
+      {step === 3 && (
         <section className="cmp-card">
           {back}
-          <h2>What do you want to say?</h2>
-          {suggestions.length > 0 && (
-            <div className="cmp-suggest">
-              <p className="cmp-suggest-head">
-                <strong>Suggested wording</strong>
-                <span>Built from real data. Tap to use, then edit as much as you like.</span>
-              </p>
-              {suggestions.map((suggestion) => (
-                <button
-                  key={suggestion.id}
-                  type="button"
-                  className="cmp-suggest-card"
-                  onClick={() => setBody(suggestion.body)}
-                >
-                  <b>{suggestion.title}</b>
-                  <span>{suggestion.note}</span>
-                  <small>{applyFillIns(suggestion.body, fillFacts, sampleName)}</small>
-                </button>
-              ))}
-            </div>
-          )}
-          <label className="builder-field">
-            Your message
-            <textarea value={body} onChange={(event) => setBody(event.target.value)} rows={4} />
-            <small>
-              Use {"{first_name}"}, {"{favourite_item}"}, {"{usual_day}"} or {"{reward}"} to personalise. Anything you
-              leave out is filled from the guest's data, or with safe wording. The STOP line is
-              added for you.
-            </small>
-          </label>
-          <div className="cmp-meter">
-            <span>
-              {segments} SMS segment{segments === 1 ? "" : "s"} × {smsEligible.length} SMS guests
-            </span>
-            <span>{pushEligible.length} push · {smsEligible.length} SMS recipients</span>
+          <h2>How should it reach them?</h2>
+          <div className="switch-list">
+            <Switch
+              checked={pushOn}
+              onChange={setPushOn}
+              label="Push notification"
+              hint="Free, instant, and only to guests who turned notifications on."
+            />
+            <Switch
+              checked={smsOn}
+              onChange={setSmsOn}
+              label="SMS"
+              hint="Goes to every opted-in guest. Charged from your credit, R0.35 a segment."
+            />
+            <Switch
+              checked={onPage}
+              onChange={setOnPage}
+              label="Show on your guest page"
+              hint="Guests can find the offer when they open your page, even if they get no message."
+            />
+            <Switch
+              checked={atTill}
+              onChange={setAtTill}
+              label="Usable at the till"
+              hint="Staff can put the code through at the counter."
+            />
           </div>
-          {warnings.map((warning) => (
-            <p className="cmp-warn" key={warning.kind}>
-              {warning.message}{" "}
-              {warning.fixable && (
-                <button onClick={() => setBody(fixCopy(body))}>Fix it for me</button>
-              )}
-            </p>
-          ))}
+          <div className="live-count" role="status">
+            <strong>{eligible.length}</strong> guests will hear about it · {pushEligible.length} push /{" "}
+            {smsEligible.length} SMS.
+            {channel === "push_then_sms" ? " SMS only goes to guests without push." : ""}
+          </div>
+          {channel === "none" && (
+            <p className="cmp-warn">Turn on push or SMS, or nobody gets the offer.</p>
+          )}
+          <button className="builder-primary" onClick={() => save(4)}>
+            Continue
+          </button>
+        </section>
+      )}
+
+      {step === 4 && (
+        <section className="cmp-card">
+          {back}
+          <h2>Review and cost</h2>
           <div className="cmp-options" role="radiogroup" aria-label="Preview channel">
             <button
               type="button"
@@ -512,68 +564,13 @@ function ComposerPage() {
           <PreviewOnly>
             Preview only, nothing was sent. Guests get this after you press Publish on the last step.
           </PreviewOnly>
-
-          <label className="builder-field">
-            Attach a special (optional)
-            <select value={specialId} onChange={(event) => setSpecialId(event.target.value)}>
-              <option value="">No special</option>
-              {specials.map(({ special }) => (
-                <option key={special.id} value={special.id}>
-                  {special.title} · {special.kind}
-                </option>
-              ))}
-            </select>
-            <small>
-              {selectedSpecial?.kind === "targeted"
-                ? "Each recipient gets their own single-use code."
-                : selectedSpecial
-                  ? `Shared code ${selectedSpecial.code}. One redemption per member.`
-                  : "Public and members specials use one shared code; targeted specials are personal."}
-            </small>
-          </label>
-          <div className="cmp-row">
-            <label className="builder-field">
-              Offer code
-              <input
-                value={code}
-                onChange={(event) => setCode(event.target.value.toUpperCase())}
-                placeholder="Auto"
-              />
-            </label>
-            <label className="builder-field">
-              Valid from
-              <input
-                type="date"
-                value={validFrom}
-                onChange={(event) => setValidFrom(event.target.value)}
-              />
-            </label>
-            <label className="builder-field">
-              Valid to
-              <input
-                type="date"
-                value={validTo}
-                onChange={(event) => setValidTo(event.target.value)}
-              />
-            </label>
-          </div>
-          <button className="builder-primary" onClick={() => save(3)}>
-            Continue
-          </button>
-        </section>
-      )}
-
-      {step === 3 && (
-        <section className="cmp-card">
-          {back}
-          <h2>What it will cost</h2>
           <div className="cmp-tiles">
             <div>
               <small>Guests</small>
               <strong>{eligible.length}</strong>
             </div>
             <div>
-              <small>Segments each</small>
+              <small>SMS segments</small>
               <strong>{segments}</strong>
             </div>
             <div className={short ? "is-bad" : ""}>
@@ -586,18 +583,22 @@ function ComposerPage() {
           </p>
           <p className="cmp-note">
             The estimate is held from your credit when you confirm. You are only charged for
-            messages actually sent.
+            messages actually sent. Push costs nothing.
           </p>
-          <button className="builder-primary" onClick={() => save(4)}>
+          <button className="builder-primary" onClick={() => save(5)}>
             Continue
           </button>
         </section>
       )}
 
-      {step === 4 && (
+      {step === 5 && (
         <section className="cmp-card">
           {back}
-          <h2>Publish this campaign?</h2>
+          <h2>Send it?</h2>
+          <p className="cmp-note">
+            {api.audience.label(audience)}. {pushEligible.length} push recipients and {smsEligible.length} SMS
+            recipients. {smsEligible.length > 0 ? `${zar(smsEligible.length * segments * 35)} from credit.` : "Nothing charged."}
+          </p>
           <div className="cmp-options" role="radiogroup" aria-label="When">
             <button
               type="button"
@@ -630,9 +631,6 @@ function ComposerPage() {
               />
             </label>
           )}
-          <p className="cmp-note">
-            Audience: {api.audience.label(audience)}. {pushEligible.length} push recipients and {smsEligible.length} SMS recipients.
-          </p>
           {eligible.length > 200 && (
             <label className="builder-field">
               Type SEND to confirm ({eligible.length} recipients)
@@ -661,9 +659,4 @@ function segmentAudience(type: SegmentType, weekday: number, listId: string): Ca
   if (type === "lapsed30") return { type: "lapsed30", days: 30 };
   if (type === "close_to_reward") return { type: "close_to_reward", remaining: 2 };
   return { type: "everyone" };
-}
-
-const SEGMENT_CENTS = 35;
-function costPreviewCents(recipients: number, segments: number) {
-  return recipients * segments * SEGMENT_CENTS;
 }
