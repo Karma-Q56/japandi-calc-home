@@ -4,10 +4,19 @@ import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
 import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
+import { getDataModeFn } from "@/server/live";
+import { LiveTeam } from "@/components/patron/LiveTeam";
 import { EmptyState, FormField, PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
 
 export const Route = createFileRoute("/app/team")({
-  beforeLoad: () => {
+  loader: async () => {
+    const { mode } = await getDataModeFn();
+    return { mode };
+  },
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    // Live mode is guarded by the signed-in owner on the server.
+    if (mode === "live") return;
     if (!requireRole("owner")(demoRepo.read().session)) {
       throw redirect({ to: "/login" });
     }
@@ -16,6 +25,11 @@ export const Route = createFileRoute("/app/team")({
 });
 
 function Team() {
+  const { mode } = Route.useLoaderData();
+  return mode === "live" ? <LiveTeam /> : <DemoTeam />;
+}
+
+function DemoTeam() {
   const state = useDemoState();
   const restaurant =
     state.restaurants.find((item) => item.id === state.session.restaurantId) ??

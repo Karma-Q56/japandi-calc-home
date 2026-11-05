@@ -18,6 +18,8 @@ const recordSchema = z.object({
 const redeemSchema = z.object({
   membershipId: z.string().min(1),
   staffId: z.string().min(1),
+  restaurantId: z.string().min(1),
+  rewardId: z.string().min(1),
 });
 
 /**
@@ -55,13 +57,18 @@ export const record = async (input: z.infer<typeof recordSchema> & { key?: strin
  * Redeem a reward
  */
 export const redeem = async (input: z.infer<typeof redeemSchema>) => {
-  // In production:
-  // 1. Check if member has rewards available
-  // 2. Mark reward as redeemed
-  // 3. Return result
-
-  console.log('[Stamp] Redeem:', input);
-  return { success: true, rewardsRemaining: 0 };
+  // Marks an available reward redeemed, once, for this restaurant only, and
+  // records an audit_event. A second try changes nothing.
+  try {
+    const parsed = redeemSchema.parse(input);
+    const { redeemRewardAs } = await import("@/server/live-till");
+    return await redeemRewardAs(parsed);
+  } catch (error) {
+    return {
+      ok: false as const,
+      message: error instanceof Error ? error.message : "Could not redeem that reward.",
+    };
+  }
 };
 
 /**
