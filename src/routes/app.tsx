@@ -1,3 +1,4 @@
+import { useEffect, useState, type FormEvent } from "react";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { Outlet, useChildMatches, useLocation } from "@tanstack/react-router";
 import { api } from "@/api";
@@ -7,14 +8,20 @@ import { demoRepo, updateDemo } from "@/data/repo";
 import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
 import { canOpenArea } from "@/lib/auth-rules";
-import { getDataModeFn, getOwnerOverviewFn, getViewerFn } from "@/server/live";
+import {
+  createRestaurantFn,
+  checkSlugFn,
+  getDataModeFn,
+  getOwnerOverviewFn,
+  getViewerFn,
+} from "@/server/live";
 import {
   OwnerSideNav,
   OwnerMobileNav,
   OwnerTabs,
   OwnerSectionTabs,
 } from "@/components/patron/OwnerNav";
-import { PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
+import { FormField, PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
 import { DemoHome } from "@/components/patron/DemoHome";
 import { BackLink } from "@/components/patron/BackLink";
 import { markOutletComponent } from "@/lib/nested";
@@ -37,7 +44,9 @@ export const Route = createFileRoute("/app")({
     const { mode } = await getDataModeFn();
     if (mode === "live") {
       const viewer = await getViewerFn();
-      if (!viewer || !canOpenArea(viewer.role, "app")) {
+      // A new signed-in guest with no restaurant sets one up here.
+      const needsSetup = viewer?.role === "guest" && viewer.restaurantId === null;
+      if (!viewer || (!needsSetup && !canOpenArea(viewer.role, "app"))) {
         throw redirect({ to: "/login" });
       }
       return;
@@ -48,8 +57,10 @@ export const Route = createFileRoute("/app")({
   },
   loader: async () => {
     const { mode } = await getDataModeFn();
-    if (mode !== "live") return { mode, live: null };
-    return { mode, live: await getOwnerOverviewFn() };
+    if (mode !== "live") return { mode, live: null, needsSetup: false };
+    const viewer = await getViewerFn();
+    const needsSetup = viewer?.role === "guest" && viewer.restaurantId === null;
+    return { mode, live: needsSetup ? null : await getOwnerOverviewFn(), needsSetup };
   },
   component: markOutletComponent(OwnerShell),
 });
@@ -108,6 +119,7 @@ function OwnerShell() {
       ))}
     </select>
   ) : null;
+  const setupNeeded = isLive && data.needsSetup;
   return (
     <div className="ox">
       <aside className="ox-side">
@@ -136,7 +148,9 @@ function OwnerShell() {
         <header className="ox-top">{brand}</header>
         <OwnerMobileNav venueSwitcher={venuePicker} />
         <OwnerSectionTabs />
-        {children.length > 0 ? (
+        {setupNeeded ? (
+          <RestaurantSetup />
+        ) : children.length > 0 ? (
           isLive ? (
             liveChild ? (
               <Outlet />
@@ -147,7 +161,11 @@ function OwnerShell() {
             <Outlet />
           )
         ) : isLive && !live ? (
-          <LiveUnavailable />
+          data.needsSetup ? (
+            <RestaurantSetup />
+          ) : (
+            <LiveUnavailable />
+          )
         ) : (
           <Overview restaurantId={restaurant.id} live={live?.overview ?? null} />
         )}
@@ -217,6 +235,142 @@ function LiveToolsNotice() {
   );
 }
 
+function NextSteps() {
+  return (
+    <section className="builder-panel">
+      <h2>Next steps</h2>
+      <p>
+        Your restaurant is private (draft) until you publish it. Guests cannot find it yet.
+      </p>
+      <div className="page-actions">
+        <a className="builder-secondary" href="/app/menu">
+          Add your menu
+        </a>
+        <a className="builder-secondary" href="/app/loyalty">
+          Set your loyalty card
+        </a>
+        <a className="builder-secondary" href="/app/team">
+          Add your team and pair the till
+        </a>
+        <a className="builder-secondary" href="/app/qr">
+          Print your QR
+        </a>
+      </div>
+    </section>
+  );
+}
+
+const PAGE_ADDRESS_PATTERN = /[^a-z0-9]+/g;
+
+/** Suggest a page address from the restaurant name, e.g. "Daily Grind" becomes "daily-grind". */
+function suggestSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(PAGE_ADDRESS_PATTERN, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40)
+    .replace(/-+$/, "");
+}
+
+function RestaurantSetup() {
+  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [slugTouched, setSlugTouched] = useState(false);
+  const [suburb, setSuburb] = useState("");
+  const [city, setCity] = useState("Johannesburg");
+  const [status, setStatus] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const effectiveSlug = slugTouched ? slug : suggestSlug(name);
+
+  useEffect(() => {
+    const candidate = effectiveSlug;
+    if (!candidate) {
+      setStatus(null);
+      return;
+    }
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      void checkSlugFn({ data: { slug: candidate } }).then((result) => {
+        if (cancelled) return;
+        setStatus(result.message);
+      });
+    }, 300);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [effectiveSlug]);
+
+  const create = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSaving(true);
+    setError(null);
+    try {
+      const result = await createRestaurantFn({
+        data: { name, slug: effectiveSlug, suburb, city },
+      });
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+      // Reload so the viewer and the owner shell pick up the new restaurant.
+      window.location.assign("/app");
+    } catch {
+      setError("We could not create your restaurant. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <main className="demo-hub page-width">
+      <PageHeader
+        eyebrow="Get started"
+        title="Set up your restaurant"
+        intro="Tell us about your restaurant. You can change everything later. It stays private until you publish it."
+      />
+      <form className="builder-panel" onSubmit={create}>
+        <FormField label="Restaurant name">
+          <input
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            maxLength={80}
+            required
+          />
+        </FormField>
+        <FormField
+          label="Page address"
+          hint={status ?? "Letters, numbers and single hyphens. 3 to 40 characters."}
+        >
+          <input
+            value={effectiveSlug}
+            onChange={(event) => {
+              setSlugTouched(true);
+              setSlug(event.target.value.toLowerCase());
+            }}
+            maxLength={40}
+            required
+          />
+        </FormField>
+        <FormField label="Suburb">
+          <input value={suburb} onChange={(event) => setSuburb(event.target.value)} maxLength={80} />
+        </FormField>
+        <FormField label="City">
+          <input value={city} onChange={(event) => setCity(event.target.value)} maxLength={80} />
+        </FormField>
+        {error && <p role="alert">{error}</p>}
+        <div className="page-actions">
+          <button type="submit" className="builder-primary" disabled={saving}>
+            Create my restaurant
+          </button>
+        </div>
+      </form>
+    </main>
+  );
+}
+
 function LiveUnavailable() {
   return (
     <main className="demo-hub page-width">
@@ -238,7 +392,14 @@ function LiveUnavailable() {
 }
 
 function Overview({ restaurantId, live }: { restaurantId: string; live: Overview | null }) {
-  if (live) return <OverviewBody data={live} />;
+  if (live) {
+    return (
+      <>
+        <NextSteps />
+        <OverviewBody data={live} />
+      </>
+    );
+  }
   return <DemoHome restaurantId={restaurantId} />;
 }
 

@@ -561,3 +561,41 @@ export const tillUndoRedeemFn = createServerFn({ method: "POST" })
     const { undoRedeemAtTill } = await import("./live-till");
     return undoRedeemAtTill(data.rewardId);
   });
+
+/** Is this page address free? Signed-in guests only. */
+export const checkSlugFn = createServerFn({ method: "POST" })
+  .validator(z.object({ slug: z.string().max(80) }))
+  .handler(async ({ data }) => {
+    const [{ readViewer }, { checkSlug }] = await Promise.all([
+      import("./auth-viewer"),
+      import("./live-onboarding"),
+    ]);
+    return checkSlug(await readViewer(), data.slug);
+  });
+
+/** Create the signed-in guest's own restaurant. Returns only the page address. */
+export const createRestaurantFn = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      name: z.string().max(200),
+      slug: z.string().max(80),
+      suburb: z.string().max(80),
+      city: z.string().max(80),
+    }),
+  )
+  .handler(async ({ data }) => {
+    const [{ readViewer }, { createRestaurantForGuest }] = await Promise.all([
+      import("./auth-viewer"),
+      import("./live-onboarding"),
+    ]);
+    return createRestaurantForGuest(await readViewer(), data);
+  });
+
+/** The signed-in owner's page address, for the live QR page. The restaurant comes from the session. */
+export const getMyRestaurantSlugFn = createServerFn({ method: "GET" }).handler(async () => {
+  const [{ readViewer }, { loadMyRestaurantSlug }] = await Promise.all([
+    import("./auth-viewer"),
+    import("./live-onboarding"),
+  ]);
+  return loadMyRestaurantSlug(await readViewer());
+});
