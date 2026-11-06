@@ -376,6 +376,10 @@ function RestaurantSetup() {
           <input value={city} onChange={(event) => setCity(event.target.value)} maxLength={80} />
         </FormField>
         {error && <p role="alert">{error}</p>}
+        <p className="demo-data-note">
+          This login becomes your restaurant login. To keep your own guest cards, sign up with a
+          different email for your restaurant.
+        </p>
         <div className="page-actions">
           <button type="submit" className="builder-primary" disabled={saving}>
             Create my restaurant
