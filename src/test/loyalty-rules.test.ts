@@ -17,11 +17,12 @@ describe("loyalty rule changes", () => {
       (m) =>
         m.restaurantId === "rest-daily-grind" &&
         m.stampsCurrent <= 3 &&
+        // No visits in the last 28 days: no weekly streak bonus can fire, whatever the hour.
         state.stamps.every(
           (s) =>
             s.membershipId !== m.id ||
             s.status !== "valid" ||
-            state.now - new Date(s.createdAt).getTime() > 240 * 60 * 1000,
+            state.now - new Date(s.createdAt).getTime() > 28 * 24 * 60 * 60 * 1000,
         ),
     )!;
     const earnedBefore = state.rewards.filter((r) => r.membershipId === membership.id).length;

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { CardScanner } from "@/components/patron/CardScanner";
 import { FormField, PageHeader } from "@/components/patron/dash";
 import { signOut } from "@/lib/sign-out";
+import { SIGNED_OUT_MESSAGE, UNLOCK_FIRST_MESSAGE } from "@/lib/till-messages";
 import {
   getTillStateFn,
   lookupGuestFn,
@@ -35,10 +36,16 @@ export function LiveTill() {
     null,
   );
 
-  const say = (kind: "ok" | "error", text: string) => setFeedback({ kind, text });
-
   const load = async () => {
     setState(await getTillStateFn());
+  };
+
+  const say = (kind: "ok" | "error", text: string) => {
+    setFeedback({ kind, text });
+    // The server clears a dead sign in, so reloading puts the PIN screen back.
+    if (kind === "error" && (text === SIGNED_OUT_MESSAGE || text === UNLOCK_FIRST_MESSAGE)) {
+      void load();
+    }
   };
 
   useEffect(() => {
@@ -200,12 +207,19 @@ export function LiveTill() {
             Pair device
           </button>
           {feedback && (
-            <p role={feedback.kind === "error" ? "alert" : "status"} className="till-toast is-error">
+            <p
+              role={feedback.kind === "error" ? "alert" : "status"}
+              className="till-toast is-error"
+            >
               {feedback.text}
             </p>
           )}
         </section>
-        <TillAccountActions paired={false} onUnpair={() => void unpair()} onLogOut={() => void leave()} />
+        <TillAccountActions
+          paired={false}
+          onUnpair={() => void unpair()}
+          onLogOut={() => void leave()}
+        />
       </main>
     );
   }

@@ -1,6 +1,7 @@
 import { createHmac, randomInt, randomUUID } from "node:crypto";
 import { sql, type SQL } from "drizzle-orm";
 import { deleteCookie, getCookies, setCookie } from "@tanstack/react-start/server";
+import { SIGNED_OUT_MESSAGE, UNLOCK_FIRST_MESSAGE } from "@/lib/till-messages";
 import type { Viewer } from "./auth-viewer";
 import { withContext, type DatabaseTransaction } from "./db";
 import {
@@ -81,8 +82,15 @@ export type LiveLookup =
     };
 
 export type RedeemOutcome =
-  | { ok: true; description: string; canUndoUntil: number }
-  | { ok: false; message: string };
+  { ok: true; description: string; canUndoUntil: number } | { ok: false; message: string };
+
+/** True SQL fragment: this staff member still exists and is active in this restaurant. */
+function staffIsActive(restaurantId: string, staffId: string): SQL {
+  return sql`exists (
+    select 1 from staff_member s
+    where s.id = ${staffId} and s.restaurant_id = ${restaurantId} and s.active = true
+  )`;
+}
 
 type DbResult<T> = { rows: T[] };
 
@@ -135,7 +143,11 @@ export function generatePairingCode(): string {
 }
 
 export function normalizePairingCode(raw: string): string {
-  return raw.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
+  return raw
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 8);
 }
 
 export function pairingCodeHash(pepper: string, code: string): string {
@@ -341,9 +353,18 @@ export async function addStaffMember(
           values (${staffId}, ${restaurantId}, ${displayName}, ${hmac})
         `,
       );
-      await audit(transaction, "owner", viewer.userId, restaurantId, "staff_added", "staff_member", staffId, {
-        displayName,
-      });
+      await audit(
+        transaction,
+        "owner",
+        viewer.userId,
+        restaurantId,
+        "staff_added",
+        "staff_member",
+        staffId,
+        {
+          displayName,
+        },
+      );
       return { ok: true as const, staffId, pin };
     },
   ).catch(() => ({ ok: false as const, message: "Could not add that staff member." }));
@@ -411,7 +432,15 @@ export async function resetStaffPin(
         `,
       );
       // Never put the PIN in the audit trail.
-      await audit(transaction, "owner", viewer.userId, restaurantId, "pin_reset", "staff_member", staffId);
+      await audit(
+        transaction,
+        "owner",
+        viewer.userId,
+        restaurantId,
+        "pin_reset",
+        "staff_member",
+        staffId,
+      );
       return { ok: true as const, pin, displayName: found.display_name };
     },
   ).catch(() => ({ ok: false as const, message: "Could not reset that PIN." }));
@@ -520,7 +549,10 @@ export async function pairTill(
     return { status: "ok", restaurantId } as const;
   });
   if (result.status === "limited") {
-    return { ok: false, message: "Too many tries. Wait a few minutes and ask the owner for a new code." };
+    return {
+      ok: false,
+      message: "Too many tries. Wait a few minutes and ask the owner for a new code.",
+    };
   }
   if (result.status !== "ok") return { ok: false, message: "That pairing code did not work." };
   await withContext(
@@ -707,7 +739,7 @@ export async function unpairTill(): Promise<{ ok: true }> {
 
 function requireSession(): TillSession | { error: string } {
   const session = readTillSession();
-  if (!session) return { error: "Unlock the till first." };
+  if (!session) return { error: UNLOCK_FIRST_MESSAGE };
   return session;
 }
 
@@ -720,12 +752,19 @@ export async function lookupGuest(rawCode: string): Promise<LiveLookup> {
   return withContext(
     { databaseUrl: databaseUrl(), restaurantId: session.restaurantId, isOperator: false },
     async (transaction) => {
-      const restaurants = await q<{ stamps_required: number }>(
+      const restaurants = await q<{ stamps_required: number; staff_ok: boolean }>(
         transaction,
-        sql`select stamps_required from restaurant where id = ${session.restaurantId} limit 1`,
+        sql`
+          select r.stamps_required,
+                 ${staffIsActive(session.restaurantId, session.staffId)} as staff_ok
+          from restaurant r where r.id = ${session.restaurantId} limit 1
+        `,
       );
       const restaurant = restaurants[0];
-      if (!restaurant) return { ok: false as const, message: "That till is not linked to a restaurant." };
+      if (!restaurant)
+        return { ok: false as const, message: "That till is not linked to a restaurant." };
+      // A deactivated staff member loses the till at once, not when the 12 hour session ends.
+      if (!restaurant.staff_ok) return { ok: false as const, message: SIGNED_OUT_MESSAGE };
       const phoneMatch =
         digits.length >= 7
           ? sql`right(regexp_replace(c.phone_e164, '[^0-9]', '', 'g'), 9) = ${digits.slice(-9)}`
@@ -785,15 +824,17 @@ export async function recordStampAtTill(
   return withContext(
     { databaseUrl: databaseUrl(), restaurantId: session.restaurantId, isOperator: false },
     async (transaction) => {
-      const member = await q<{ id: string }>(
+      const member = await q<{ id: string; staff_ok: boolean }>(
         transaction,
         sql`
-          select id from membership
-          where id = ${membershipId} and restaurant_id = ${session.restaurantId}
+          select m.id, ${staffIsActive(session.restaurantId, session.staffId)} as staff_ok
+          from membership m
+          where m.id = ${membershipId} and m.restaurant_id = ${session.restaurantId}
           limit 1
         `,
       );
       if (!member[0]) return { ok: false as const, message: "That member is not on this list." };
+      if (!member[0].staff_ok) return { ok: false as const, message: SIGNED_OUT_MESSAGE };
       const rows = await q<{
         out_result: string;
         out_stamp_id: string | null;
@@ -851,6 +892,7 @@ export async function redeemRewardAs(input: {
             and membership_id = ${input.membershipId}
             and restaurant_id = ${input.restaurantId}
             and status = 'available'
+            and ${staffIsActive(input.restaurantId, input.staffId)}
             and exists (
               select 1 from membership m
               where m.id = reward.membership_id and m.restaurant_id = reward.restaurant_id
@@ -908,7 +950,9 @@ export async function redeemRewardAtTill(
   });
 }
 
-export async function undoRedeemAtTill(rewardId: string): Promise<{ ok: true } | { ok: false; message: string }> {
+export async function undoRedeemAtTill(
+  rewardId: string,
+): Promise<{ ok: true } | { ok: false; message: string }> {
   const session = requireSession();
   if ("error" in session) return { ok: false, message: session.error };
   return withContext(
@@ -923,6 +967,7 @@ export async function undoRedeemAtTill(rewardId: string): Promise<{ ok: true } |
             and restaurant_id = ${session.restaurantId}
             and status = 'redeemed'
             and redeemed_by_staff = ${session.staffId}
+            and ${staffIsActive(session.restaurantId, session.staffId)}
             and redeemed_at > now() - make_interval(mins => ${REDEEM_UNDO_MINUTES})
           returning id
         `,

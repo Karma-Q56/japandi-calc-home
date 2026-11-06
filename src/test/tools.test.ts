@@ -37,7 +37,17 @@ function nextJohannesburgWeekday(weekday: number) {
 
 function membershipFor(restaurantId: string) {
   const state = demoRepo.read();
-  return state.memberships.find((item) => item.restaurantId === restaurantId)!;
+  // Pick a guest with no visits in the last four weeks. The seeded regulars already have
+  // weekly visits, so on some weekdays they would earn a streak bonus the tests do not expect.
+  const quietSince = state.now - 28 * DAY;
+  const quiet = (membershipId: string) =>
+    !state.stamps.some(
+      (stamp) =>
+        stamp.membershipId === membershipId &&
+        stamp.status === "valid" &&
+        Date.parse(stamp.createdAt) > quietSince,
+    );
+  return state.memberships.find((item) => item.restaurantId === restaurantId && quiet(item.id))!;
 }
 
 function bonusStamps(membershipId: string) {

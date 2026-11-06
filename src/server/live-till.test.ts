@@ -2,19 +2,24 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Viewer } from "./auth-viewer";
 import {
   PAIR_CODE_MINUTES,
+  TILL_DEVICE_COOKIE,
+  TILL_STAFF_COOKIE,
   addStaffMember,
   createPairingCode,
   generatePairingCode,
   generatePin,
   isPairingCodeUsable,
+  lookupGuest,
   pairTill,
   pairingCodeHash,
   readTillValue,
+  recordStampAtTill,
   redeemRewardAs,
   resetStaffPin,
   signInTill,
   signTillValue,
 } from "./live-till";
+import { SIGNED_OUT_MESSAGE } from "@/lib/till-messages";
 import { pinHmacHex } from "./repos/pg";
 
 // Mirrors src/server/repos/pin-commit.test.ts: the mock answers queries by
@@ -91,6 +96,34 @@ vi.mock("./db", () => ({
         if (text.includes("count(*)::int as n from rate_limit_hit")) {
           return { rows: [{ n: db.pairFails }] };
         }
+        // Reward and till-loop queries come first: their SQL also contains "from staff_member s"
+        // (the still-active check), which must not be mistaken for the sign in lookup below.
+        if (text.includes("select r.stamps_required")) {
+          const staff = db.staff.find((member) => text.includes(member.id));
+          return { rows: [{ stamps_required: 8, staff_ok: Boolean(staff?.active) }] };
+        }
+        if (text.includes("from membership m") && text.includes("as staff_ok")) {
+          const staff = db.staff.find((member) => text.includes(member.id));
+          return { rows: [{ id: "member-1", staff_ok: Boolean(staff?.active) }] };
+        }
+        if (text.includes("update reward")) {
+          const staff = db.staff.find((member) => text.includes(member.id));
+          // Rows with no staff entry keep the older tests working (staff-1 is not modelled there).
+          if (staff && !staff.active) return { rows: [] };
+          const row = db.rewards.find(
+            (reward) =>
+              text.includes(reward.id) &&
+              text.includes(reward.restaurant_id) &&
+              text.includes(reward.membership_id),
+          );
+          if (!row || row.status !== "available") return { rows: [] };
+          row.status = "redeemed";
+          return { rows: [{ id: row.id, description: row.description }] };
+        }
+        if (text.includes("select status from reward")) {
+          const row = db.rewards.find((reward) => text.includes(reward.id));
+          return { rows: row ? [{ status: row.status }] : [] };
+        }
         if (text.includes("select id, display_name from staff_member")) {
           const row = db.staff.find((member) => text.includes(member.id));
           return { rows: row ? [{ id: row.id, display_name: row.display_name }] : [] };
@@ -143,21 +176,6 @@ vi.mock("./db", () => ({
           if (!row || row.used_at !== null) return { rows: [] };
           row.used_at = new Date().toISOString();
           return { rows: [{ restaurant_id: db.restaurantId }] };
-        }
-        if (text.includes("update reward")) {
-          const row = db.rewards.find(
-            (reward) =>
-              text.includes(reward.id) &&
-              text.includes(reward.restaurant_id) &&
-              text.includes(reward.membership_id),
-          );
-          if (!row || row.status !== "available") return { rows: [] };
-          row.status = "redeemed";
-          return { rows: [{ id: row.id, description: row.description }] };
-        }
-        if (text.includes("select status from reward")) {
-          const row = db.rewards.find((reward) => text.includes(reward.id));
-          return { rows: row ? [{ status: row.status }] : [] };
         }
         throw new Error(`unexpected query in mock: ${text.slice(0, 160)}`);
       },
@@ -216,15 +234,18 @@ describe("pure helpers", () => {
 
   it("treats used and expired pairing codes as unusable", () => {
     const now = Date.parse("2026-01-01T00:00:00.000Z");
-    expect(isPairingCodeUsable({ used_at: null, expires_at: "2026-01-01T00:10:00.000Z" }, now)).toBe(
-      true,
-    );
     expect(
-      isPairingCodeUsable({ used_at: "2026-01-01T00:01:00.000Z", expires_at: "2026-01-01T00:10:00.000Z" }, now),
+      isPairingCodeUsable({ used_at: null, expires_at: "2026-01-01T00:10:00.000Z" }, now),
+    ).toBe(true);
+    expect(
+      isPairingCodeUsable(
+        { used_at: "2026-01-01T00:01:00.000Z", expires_at: "2026-01-01T00:10:00.000Z" },
+        now,
+      ),
     ).toBe(false);
-    expect(isPairingCodeUsable({ used_at: null, expires_at: "2025-12-31T23:59:00.000Z" }, now)).toBe(
-      false,
-    );
+    expect(
+      isPairingCodeUsable({ used_at: null, expires_at: "2025-12-31T23:59:00.000Z" }, now),
+    ).toBe(false);
   });
 
   it("rejects a tampered signed till cookie", () => {
@@ -421,6 +442,73 @@ describe("redeem", () => {
       membershipId,
       rewardId,
       staffId: "staff-1",
+    });
+    expect(result.ok).toBe(false);
+    expect(db.rewards[0]?.status).toBe("available");
+    expect(db.audits).toHaveLength(0);
+  });
+});
+
+describe("a deactivated staff member loses the till at once", () => {
+  const staffId = "88888888-8888-4888-8888-888888888888";
+  const membershipId = "55555555-5555-4555-8555-555555555555";
+
+  function signInCookies() {
+    const pepper = "test-pepper-till";
+    cookies[TILL_DEVICE_COOKIE] = signTillValue(
+      pepper,
+      "device",
+      JSON.stringify({ r: db.restaurantId }),
+    );
+    cookies[TILL_STAFF_COOKIE] = signTillValue(
+      pepper,
+      "staff",
+      JSON.stringify({ r: db.restaurantId, s: staffId, e: Date.now() + 60 * 60 * 1000 }),
+    );
+  }
+
+  function addStaff(active: boolean) {
+    db.staff.push({
+      id: staffId,
+      restaurant_id: db.restaurantId,
+      display_name: "Sam",
+      pin_hmac: "x",
+      active,
+    });
+  }
+
+  it("is refused on lookup", async () => {
+    addStaff(false);
+    signInCookies();
+    const result = await lookupGuest("0825550101");
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.message).toBe(SIGNED_OUT_MESSAGE);
+  });
+
+  it("is refused when stamping", async () => {
+    addStaff(false);
+    signInCookies();
+    const result = await recordStampAtTill(membershipId, "key-1");
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.message).toBe(SIGNED_OUT_MESSAGE);
+    expect(db.queries.some((text) => text.includes("record_stamp"))).toBe(false);
+  });
+
+  it("is refused when redeeming, and the reward stays available", async () => {
+    addStaff(false);
+    const rewardId = "66666666-6666-4666-8666-666666666666";
+    db.rewards.push({
+      id: rewardId,
+      membership_id: membershipId,
+      restaurant_id: db.restaurantId,
+      status: "available",
+      description: "Free coffee",
+    });
+    const result = await redeemRewardAs({
+      restaurantId: db.restaurantId,
+      membershipId,
+      rewardId,
+      staffId,
     });
     expect(result.ok).toBe(false);
     expect(db.rewards[0]?.status).toBe("available");
