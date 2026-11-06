@@ -12,6 +12,7 @@ import {
   createRestaurantFn,
   checkSlugFn,
   getDataModeFn,
+  getMyRestaurantFn,
   getOwnerOverviewFn,
   getViewerFn,
 } from "@/server/live";
@@ -57,10 +58,12 @@ export const Route = createFileRoute("/app")({
   },
   loader: async () => {
     const { mode } = await getDataModeFn();
-    if (mode !== "live") return { mode, live: null, needsSetup: false };
+    if (mode !== "live") return { mode, live: null, needsSetup: false, published: true };
     const viewer = await getViewerFn();
     const needsSetup = viewer?.role === "guest" && viewer.restaurantId === null;
-    return { mode, live: needsSetup ? null : await getOwnerOverviewFn(), needsSetup };
+    if (needsSetup) return { mode, live: null, needsSetup, published: false };
+    const [live, mine] = await Promise.all([getOwnerOverviewFn(), getMyRestaurantFn()]);
+    return { mode, live, needsSetup, published: mine?.published ?? false };
   },
   component: markOutletComponent(OwnerShell),
 });
@@ -167,7 +170,11 @@ function OwnerShell() {
             <LiveUnavailable />
           )
         ) : (
-          <Overview restaurantId={restaurant.id} live={live?.overview ?? null} />
+          <Overview
+            restaurantId={restaurant.id}
+            live={live?.overview ?? null}
+            published={data.published}
+          />
         )}
       </div>
       <OwnerTabs />
@@ -239,9 +246,7 @@ function NextSteps() {
   return (
     <section className="builder-panel">
       <h2>Next steps</h2>
-      <p>
-        Your restaurant is private (draft) until you publish it. Guests cannot find it yet.
-      </p>
+      <p>Your restaurant is private (draft) until you publish it. Guests cannot find it yet.</p>
       <div className="page-actions">
         <a className="builder-secondary" href="/app/menu">
           Add your menu
@@ -266,6 +271,8 @@ const PAGE_ADDRESS_PATTERN = /[^a-z0-9]+/g;
 function suggestSlug(name: string): string {
   return name
     .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(PAGE_ADDRESS_PATTERN, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 40)
@@ -292,10 +299,14 @@ function RestaurantSetup() {
     }
     let cancelled = false;
     const timer = window.setTimeout(() => {
-      void checkSlugFn({ data: { slug: candidate } }).then((result) => {
-        if (cancelled) return;
-        setStatus(result.message);
-      });
+      void checkSlugFn({ data: { slug: candidate } })
+        .then((result) => {
+          if (cancelled) return;
+          setStatus(result.message);
+        })
+        .catch(() => {
+          if (!cancelled) setStatus(null);
+        });
     }, 300);
     return () => {
       cancelled = true;
@@ -355,7 +366,11 @@ function RestaurantSetup() {
           />
         </FormField>
         <FormField label="Suburb">
-          <input value={suburb} onChange={(event) => setSuburb(event.target.value)} maxLength={80} />
+          <input
+            value={suburb}
+            onChange={(event) => setSuburb(event.target.value)}
+            maxLength={80}
+          />
         </FormField>
         <FormField label="City">
           <input value={city} onChange={(event) => setCity(event.target.value)} maxLength={80} />
@@ -391,11 +406,19 @@ function LiveUnavailable() {
   );
 }
 
-function Overview({ restaurantId, live }: { restaurantId: string; live: Overview | null }) {
+function Overview({
+  restaurantId,
+  live,
+  published,
+}: {
+  restaurantId: string;
+  live: Overview | null;
+  published: boolean;
+}) {
   if (live) {
     return (
       <>
-        <NextSteps />
+        {published ? null : <NextSteps />}
         <OverviewBody data={live} />
       </>
     );

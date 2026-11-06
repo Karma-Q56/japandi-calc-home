@@ -53,22 +53,60 @@ export function nameProblem(raw: string): string | null {
   return null;
 }
 
+const REFUSAL_CODES = [
+  "slug_taken",
+  "slug_reserved",
+  "bad_slug",
+  "bad_name",
+  "bad_location",
+  "already_has_restaurant",
+  "not_a_guest",
+  "user_not_found",
+] as const;
+
+/**
+ * The database raises each refusal with the bare code as its message. The driver wraps that
+ * error, and the wrapper's own message holds the query text and the typed values, so the code
+ * is read from the error chain by exact match and never searched for inside other text.
+ */
+export function refusalCode(error: unknown): string | null {
+  let current: unknown = error;
+  for (let depth = 0; depth < 5 && current instanceof Error; depth++) {
+    const message = current.message;
+    const match = REFUSAL_CODES.find((code) => code === message);
+    if (match) return match;
+    current = (current as Error & { cause?: unknown }).cause;
+  }
+  return null;
+}
+
 /** Turn a database refusal code into a plain sentence for the owner. */
 export function plainCreateError(error: unknown): string {
-  const text = error instanceof Error ? error.message : String(error);
-  if (text.includes("slug_taken")) return "That page address is taken. Try another.";
-  if (text.includes("slug_reserved")) return "That page address is reserved. Try another.";
-  if (text.includes("bad_slug")) return "Use 3 to 40 letters or numbers. Single hyphens are fine.";
-  if (text.includes("bad_name")) return "Restaurant name must be 2 to 80 characters.";
-  if (text.includes("bad_location")) return "Check the suburb and city and try again.";
-  if (text.includes("already_has_restaurant")) return "This account already has a restaurant.";
-  if (text.includes("not_a_guest")) return "Only a new account can set up a restaurant.";
-  if (text.includes("user_not_found")) return "Sign in again.";
-  return "We could not create your restaurant. Please try again.";
+  switch (refusalCode(error)) {
+    case "slug_taken":
+      return "That page address is taken. Try another.";
+    case "slug_reserved":
+      return "That page address is reserved. Try another.";
+    case "bad_slug":
+      return "Use 3 to 40 letters or numbers. Single hyphens are fine.";
+    case "bad_name":
+      return "Restaurant name must be 2 to 80 characters.";
+    case "bad_location":
+      return "Check the suburb and city and try again.";
+    case "already_has_restaurant":
+      return "This account already has a restaurant.";
+    case "not_a_guest":
+      return "Only a new account can set up a restaurant.";
+    case "user_not_found":
+      return "Sign in again.";
+    default:
+      return "We could not create your restaurant. Please try again.";
+  }
 }
 
 function liveOnly(): { ok: false; message: string } | null {
-  if (getDataMode() !== "live") return { ok: false, message: "Restaurant set up is only available in live mode." };
+  if (getDataMode() !== "live")
+    return { ok: false, message: "Restaurant set up is only available in live mode." };
   return null;
 }
 
@@ -127,19 +165,22 @@ export async function checkSlug(
   });
 }
 
-/** The owner's own page address. Null unless the viewer is an owner or manager with a restaurant. */
-export async function loadMyRestaurantSlug(viewer: Viewer | null): Promise<string | null> {
+/** The owner's own page address and whether it is published yet. Null unless the viewer is an owner or manager with a restaurant. */
+export async function loadMyRestaurant(
+  viewer: Viewer | null,
+): Promise<{ slug: string; published: boolean } | null> {
   if (getDataMode() !== "live" || !viewer) return null;
   if ((viewer.role !== "owner" && viewer.role !== "manager") || !viewer.restaurantId) return null;
   const restaurantId = viewer.restaurantId;
   return withContext(
     { databaseUrl: databaseUrl(), restaurantId, isOperator: false },
     async (transaction) => {
-      const rows = await q<{ slug: string }>(
+      const rows = await q<{ slug: string; status: string }>(
         transaction,
-        sql`select slug from restaurant where id = ${restaurantId} limit 1`,
+        sql`select slug, status::text as status from restaurant where id = ${restaurantId} limit 1`,
       );
-      return rows[0]?.slug ?? null;
+      const row = rows[0];
+      return row ? { slug: row.slug, published: row.status === "active" } : null;
     },
   );
 }

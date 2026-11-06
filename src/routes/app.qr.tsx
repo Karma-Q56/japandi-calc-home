@@ -9,7 +9,7 @@ import { joinUrl } from "@/lib/qr-links";
 import { qrSvg } from "@/lib/qr";
 import { QrPrintPack } from "@/components/patron/QrPrintPack";
 import { PageHeader } from "@/components/patron/dash";
-import { getDataModeFn, getMyRestaurantSlugFn, getViewerFn } from "@/server/live";
+import { getDataModeFn, getMyRestaurantFn, getViewerFn } from "@/server/live";
 
 export const Route = createFileRoute("/app/qr")({
   beforeLoad: async () => {
@@ -23,8 +23,8 @@ export const Route = createFileRoute("/app/qr")({
   },
   loader: async () => {
     const { mode } = await getDataModeFn();
-    if (mode !== "live") return { mode, slug: null };
-    return { mode, slug: await getMyRestaurantSlugFn() };
+    if (mode !== "live") return { mode, restaurant: null };
+    return { mode, restaurant: await getMyRestaurantFn() };
   },
   ssr: false,
   component: QrOwner,
@@ -32,7 +32,7 @@ export const Route = createFileRoute("/app/qr")({
 
 function QrOwner() {
   const data = Route.useLoaderData();
-  if (data.mode === "live") return <LiveQr slug={data.slug} />;
+  if (data.mode === "live") return <LiveQr restaurant={data.restaurant} />;
   return <DemoQr />;
 }
 
@@ -54,12 +54,12 @@ function DemoQr() {
 }
 
 /** Live: the real join link for this restaurant, with a copy button and its QR image. */
-function LiveQr({ slug }: { slug: string | null }) {
+function LiveQr({ restaurant }: { restaurant: { slug: string; published: boolean } | null }) {
   const [origin, setOrigin] = useState(APP_URL);
   const [copied, setCopied] = useState(false);
   useEffect(() => setOrigin(window.location.origin), []);
 
-  if (!slug) {
+  if (!restaurant) {
     return (
       <main className="demo-hub page-width">
         <PageHeader
@@ -71,7 +71,15 @@ function LiveQr({ slug }: { slug: string | null }) {
     );
   }
 
-  const url = joinUrl(origin, slug, "qr");
+  const url = joinUrl(origin, restaurant.slug, "qr");
+  // The QR maker has a size limit. A very long address must not break the page, so the
+  // link and the copy button stay and only the picture is left out.
+  let qr: string | null = null;
+  try {
+    qr = qrSvg(url, "#1f3027", "#ffffff");
+  } catch {
+    qr = null;
+  }
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(url);
@@ -90,7 +98,7 @@ function LiveQr({ slug }: { slug: string | null }) {
       />
       <section className="builder-panel">
         <div className="qr-preview">
-          <div dangerouslySetInnerHTML={{ __html: qrSvg(url, "#1f3027", "#ffffff") }} />
+          {qr ? <div dangerouslySetInnerHTML={{ __html: qr }} /> : null}
           <div>
             <strong>Join link</strong>
             <p>
@@ -102,10 +110,17 @@ function LiveQr({ slug }: { slug: string | null }) {
               </button>
             </div>
             {copied && <p role="status">Link copied.</p>}
-            <p className="demo-data-note">
-              Your restaurant is private (draft) until you publish it. The link works once it is
-              published.
-            </p>
+            {qr ? null : (
+              <p className="demo-data-note">
+                This address is too long for a picture code here. Copy the link instead.
+              </p>
+            )}
+            {restaurant.published ? null : (
+              <p className="demo-data-note">
+                Your restaurant is private (draft) until you publish it. The link works once it is
+                published.
+              </p>
+            )}
           </div>
         </div>
       </section>

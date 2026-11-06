@@ -591,11 +591,11 @@ export const createRestaurantFn = createServerFn({ method: "POST" })
     return createRestaurantForGuest(await readViewer(), data);
   });
 
-/** The signed-in owner's page address, for the live QR page. The restaurant comes from the session. */
-export const getMyRestaurantSlugFn = createServerFn({ method: "GET" }).handler(async () => {
-  const [{ readViewer }, { loadMyRestaurantSlug }] = await Promise.all([
+/** The signed-in owner's page address and published state. The restaurant comes from the session. */
+export const getMyRestaurantFn = createServerFn({ method: "GET" }).handler(async () => {
+  const [{ readViewer }, { loadMyRestaurant }] = await Promise.all([
     import("./auth-viewer"),
     import("./live-onboarding"),
   ]);
-  return loadMyRestaurantSlug(await readViewer());
+  return loadMyRestaurant(await readViewer());
 });

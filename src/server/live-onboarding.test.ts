@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { DrizzleQueryError } from "drizzle-orm/errors";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Viewer } from "./auth-viewer";
 import {
@@ -6,8 +7,9 @@ import {
   SLUG_CHECK_PER_HOUR,
   checkSlug,
   createRestaurantForGuest,
-  loadMyRestaurantSlug,
+  loadMyRestaurant,
   plainCreateError,
+  refusalCode,
   slugProblem,
 } from "./live-onboarding";
 
@@ -20,6 +22,10 @@ const db = {
   restaurantSlugs: [] as string[],
   // What the create function answers with: "" for success, or a refusal code.
   createRefusal: "",
+  // When true the refusal is wrapped the way the real driver wraps it: the message holds the
+  // query text and the typed values, and the database's own message sits in `cause`.
+  wrapRefusal: false,
+  restaurantStatus: "draft",
   createCalls: 0,
   attemptsByBucket: {} as Record<string, number>,
 };
@@ -41,15 +47,23 @@ vi.mock("./db", () => ({
         }
         if (text.includes("create_restaurant_for_owner")) {
           db.createCalls++;
-          if (db.createRefusal) throw new Error(db.createRefusal);
+          if (db.createRefusal) {
+            const refusal = new Error(db.createRefusal);
+            if (!db.wrapRefusal) throw refusal;
+            throw new DrizzleQueryError(
+              "select create_restaurant_for_owner($1, $2, $3, $4, $5)",
+              ["user-guest", "Daily Grind", "daily-grind", "Melville", "Johannesburg"],
+              refusal,
+            );
+          }
           return { rows: [{ create_restaurant_for_owner: "ok" }] };
         }
         if (text.includes("select id from restaurant where slug")) {
           const taken = db.restaurantSlugs.some((slug) => text.includes(`"${slug}"`));
           return { rows: taken ? [{ id: "r-1" }] : [] };
         }
-        if (text.includes("select slug from restaurant")) {
-          return { rows: [{ slug: "daily-grind" }] };
+        if (text.includes("select slug, status::text as status from restaurant")) {
+          return { rows: [{ slug: "daily-grind", status: db.restaurantStatus }] };
         }
         return { rows: [] };
       },
@@ -84,6 +98,8 @@ beforeEach(() => {
   db.queries = [];
   db.restaurantSlugs = [];
   db.createRefusal = "";
+  db.wrapRefusal = false;
+  db.restaurantStatus = "draft";
   db.createCalls = 0;
   db.attemptsByBucket = {};
   process.env["DATABASE_URL"] = "postgres://mock:5432/db";
@@ -146,7 +162,10 @@ describe("signed-in checks", () => {
       await createRestaurantForGuest(guest, good);
     }
     const fourth = await createRestaurantForGuest(guest, good);
-    expect(fourth).toEqual({ ok: false, message: "Too many attempts. Wait an hour and try again." });
+    expect(fourth).toEqual({
+      ok: false,
+      message: "Too many attempts. Wait an hour and try again.",
+    });
     expect(db.createCalls).toBe(RESTAURANT_CREATE_PER_HOUR);
   });
 
@@ -173,9 +192,13 @@ describe("success", () => {
     expect(db.createCalls).toBe(1);
   });
 
-  it("only the owner can read their own page address", async () => {
-    expect(await loadMyRestaurantSlug(guest)).toBeNull();
-    expect(await loadMyRestaurantSlug(owner)).toBe("daily-grind");
+  it("only the owner can read their own page address, and sees if it is published", async () => {
+    expect(await loadMyRestaurant(guest)).toBeNull();
+    expect(await loadMyRestaurant(owner)).toEqual({ slug: "daily-grind", published: false });
+    db.restaurantStatus = "active";
+    expect(await loadMyRestaurant(owner)).toEqual({ slug: "daily-grind", published: true });
+    db.restaurantStatus = "paused";
+    expect(await loadMyRestaurant(owner)).toEqual({ slug: "daily-grind", published: false });
   });
 });
 
@@ -184,7 +207,7 @@ describe("demo mode", () => {
     db.mode = "demo";
     expect((await createRestaurantForGuest(guest, good)).ok).toBe(false);
     expect((await checkSlug(guest, "daily-grind")).ok).toBe(false);
-    expect(await loadMyRestaurantSlug(owner)).toBeNull();
+    expect(await loadMyRestaurant(owner)).toBeNull();
     expect(db.createCalls).toBe(0);
   });
 });
@@ -194,6 +217,37 @@ describe("error messages", () => {
     expect(plainCreateError(new Error("slug_taken"))).toMatch(/taken/);
     expect(plainCreateError(new Error("already_has_restaurant"))).toMatch(/already has/);
     expect(plainCreateError(new Error("something else"))).toMatch(/could not create/);
+  });
+
+  it("reads the refusal from inside the driver's wrapper, as the real driver delivers it", () => {
+    const wrapped = new DrizzleQueryError(
+      "select create_restaurant_for_owner($1, $2, $3, $4, $5)",
+      ["user-guest", "Daily Grind", "daily-grind", "Melville", "Johannesburg"],
+      new Error("slug_taken"),
+    );
+    expect(wrapped.message).not.toBe("slug_taken");
+    expect(refusalCode(wrapped)).toBe("slug_taken");
+    expect(plainCreateError(wrapped)).toMatch(/taken/);
+  });
+
+  it("does not take a code from the typed values or the query text", () => {
+    // A restaurant called "slug_taken" must not be able to fake a refusal.
+    const wrapped = new DrizzleQueryError(
+      "select create_restaurant_for_owner($1, $2, $3, $4, $5)",
+      ["user-guest", "slug_taken", "slug-taken", "bad_name", "Johannesburg"],
+      new Error("connection terminated"),
+    );
+    expect(refusalCode(wrapped)).toBeNull();
+    expect(plainCreateError(wrapped)).toMatch(/could not create/);
+    expect(refusalCode(new Error("x slug_taken y"))).toBeNull();
+    expect(refusalCode("slug_taken")).toBeNull();
+  });
+
+  it("gives the plain sentence end to end when the driver wraps the refusal", async () => {
+    db.createRefusal = "slug_taken";
+    db.wrapRefusal = true;
+    const result = await createRestaurantForGuest(guest, good);
+    expect(result).toEqual({ ok: false, message: "That page address is taken. Try another." });
   });
 });
 
@@ -206,13 +260,37 @@ describe("migration 0013 text", () => {
     expect(sqlText).toMatch(/set search_path/i);
   });
 
+  it("switches operator context on only for its own run and puts the caller's value back", () => {
+    // A function level "set app.is_operator" is refused by Postgres for non superusers, and a
+    // bare set_config would stay on for the caller's whole transaction. The function must
+    // remember the caller's value and restore it before it returns.
+    expect(sqlText).not.toMatch(/^\s*set\s+app\.is_operator/im);
+    expect(sqlText).toMatch(
+      /prior_operator\s+text\s*:=\s*current_setting\('app\.is_operator', true\)/i,
+    );
+    const on = sqlText.indexOf("set_config('app.is_operator', 'true', true)");
+    const restore = sqlText.indexOf(
+      "set_config('app.is_operator', coalesce(prior_operator, ''), true)",
+    );
+    const returned = sqlText.indexOf("return new_id");
+    expect(on).toBeGreaterThan(-1);
+    expect(restore).toBeGreaterThan(on);
+    expect(returned).toBeGreaterThan(restore);
+  });
+
   it("revokes public execute and grants only the app role", () => {
-    expect(sqlText).toMatch(/revoke all on function create_restaurant_for_owner\(text, text, text, text, text\) from public/i);
-    expect(sqlText).toMatch(/grant execute on function create_restaurant_for_owner\(text, text, text, text, text\) to app_user/i);
+    expect(sqlText).toMatch(
+      /revoke all on function create_restaurant_for_owner\(text, text, text, text, text\) from public/i,
+    );
+    expect(sqlText).toMatch(
+      /grant execute on function create_restaurant_for_owner\(text, text, text, text, text\) to app_user/i,
+    );
   });
 
   it("does not let the caller choose role, plan, status or id", () => {
-    const signature = sqlText.match(/create or replace function create_restaurant_for_owner\(([^)]*)\)/i)?.[1] ?? "";
+    const signature =
+      sqlText.match(/create or replace function create_restaurant_for_owner\(([^)]*)\)/i)?.[1] ??
+      "";
     expect(signature).not.toMatch(/role|plan|status|credit|\bid\b/i);
     expect(sqlText).toMatch(/'draft'/);
     expect(sqlText).toMatch(/'starter'/);

@@ -32,9 +32,12 @@ declare
   clean_slug  text := lower(btrim(coalesce(p_slug, '')));
   clean_sub   text := nullif(btrim(coalesce(p_suburb, '')), '');
   clean_city  text := coalesce(nullif(btrim(coalesce(p_city, '')), ''), 'Johannesburg');
+  prior_operator text := current_setting('app.is_operator', true);
 begin
-  -- app_user and restaurant are forced under row level security. This function is the
-  -- only code that switches operator context on, and only for this transaction.
+  -- app_user and restaurant are forced under row level security, so the function needs
+  -- operator context. It switches it on here and puts the caller's value back before it
+  -- returns, so nothing else in the caller's transaction gains operator access. A refusal
+  -- aborts the transaction or savepoint, which restores the value as well.
   perform set_config('app.is_operator', 'true', true);
 
   -- Lock this user's link row first, so one user cannot create two restaurants at once.
@@ -82,6 +85,7 @@ begin
     values ('owner', p_user_id, new_id, 'restaurant_created', 'restaurant', new_id::text,
             jsonb_build_object('slug', clean_slug));
 
+  perform set_config('app.is_operator', coalesce(prior_operator, ''), true);
   return new_id;
 end;
 $$;
