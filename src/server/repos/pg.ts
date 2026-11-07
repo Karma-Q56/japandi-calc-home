@@ -318,9 +318,9 @@ export function createPgRepos(ctx: Ctx): PatronRepos {
 
     async getCard(slug, customerId) {
       return withContext({ ...ctx, customerId }, async (tx) => {
-        const rRows = await q<{ id: string; slug: string; name: string; stamps_required: number; reward_description: string }>(
+        const rRows = await q<{ id: string; slug: string; name: string; stamps_required: number; reward_description: string; reward_kind: string; reward_percent_off: number | null; reward_amount_off_cents: number | null; reward_valid_days: number | null }>(
           tx,
-          sql`select id, slug, name, stamps_required, reward_description from restaurant where slug = ${slug} and status = 'active' limit 1`,
+          sql`select id, slug, name, stamps_required, reward_description, reward_kind, reward_percent_off, reward_amount_off_cents, reward_valid_days from restaurant where slug = ${slug} and status = 'active' limit 1`,
         );
         const r = rRows[0];
         if (!r) return null;
@@ -343,16 +343,26 @@ export function createPgRepos(ctx: Ctx): PatronRepos {
           tx,
           sql`select id, created_at, status from stamp_event where membership_id = ${m.id} order by created_at desc limit 20`,
         );
-        const rewards = await q<{ id: string; description: string; status: string }>(
+        const rewards = await q<{ id: string; description: string; status: string; kind: string; percent_off: number | null; amount_off_cents: number | null; expires_at: string | null }>(
           tx,
-          sql`select id, description, status from reward where membership_id = ${m.id}`,
+          sql`select id, description, status, kind, percent_off, amount_off_cents, expires_at from reward where membership_id = ${m.id}`,
         );
         const consents = await q<{ id: string; purpose: string; action: string; wording_version: string; wording_text: string }>(
           tx,
           sql`select id, purpose, action, wording_version, wording_text from consent_event where membership_id = ${m.id} order by created_at desc`,
         );
         return {
-          restaurant: { id: r.id, slug: r.slug, name: r.name, stampsRequired: r.stamps_required, rewardDescription: r.reward_description },
+          restaurant: {
+            id: r.id,
+            slug: r.slug,
+            name: r.name,
+            stampsRequired: r.stamps_required,
+            rewardDescription: r.reward_description,
+            rewardKind: r.reward_kind as "free_item" | "percent_off" | "amount_off",
+            rewardPercentOff: r.reward_percent_off,
+            rewardAmountOffCents: r.reward_amount_off_cents,
+            rewardValidDays: r.reward_valid_days,
+          },
           customer: { id: m.cid, name: m.cname, qrToken: m.qr_token },
           membership: {
             id: m.id,
@@ -362,7 +372,15 @@ export function createPgRepos(ctx: Ctx): PatronRepos {
             marketingSms: m.marketing_sms,
           },
           stamps: stamps.map((x) => ({ id: x.id, createdAt: new Date(x.created_at).toISOString(), status: x.status })),
-          rewards: rewards.map((x) => ({ id: x.id, description: x.description, status: x.status })),
+          rewards: rewards.map((x) => ({
+            id: x.id,
+            description: x.description,
+            status: x.status,
+            kind: x.kind as "free_item" | "percent_off" | "amount_off",
+            percentOff: x.percent_off,
+            amountOffCents: x.amount_off_cents,
+            expiresAt: x.expires_at ? new Date(x.expires_at).toISOString() : null,
+          })),
           consents: consents.map((x) => ({
             id: x.id,
             purpose: x.purpose,

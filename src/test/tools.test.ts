@@ -37,7 +37,17 @@ function nextJohannesburgWeekday(weekday: number) {
 
 function membershipFor(restaurantId: string) {
   const state = demoRepo.read();
-  return state.memberships.find((item) => item.restaurantId === restaurantId)!;
+  // Pick a guest with no visits in the last four weeks. The seeded regulars already have
+  // weekly visits, so on some weekdays they would earn a streak bonus the tests do not expect.
+  const quietSince = state.now - 28 * DAY;
+  const quiet = (membershipId: string) =>
+    !state.stamps.some(
+      (stamp) =>
+        stamp.membershipId === membershipId &&
+        stamp.status === "valid" &&
+        Date.parse(stamp.createdAt) > quietSince,
+    );
+  return state.memberships.find((item) => item.restaurantId === restaurantId && quiet(item.id))!;
 }
 
 function bonusStamps(membershipId: string) {
@@ -68,6 +78,9 @@ function stampVisit(membershipId: string, key: string) {
 describe("double stamp day", () => {
   it("earns one extra stamp on the chosen weekday, and again on the next visit that day", () => {
     const membership = membershipFor(RESTAURANT);
+    // Start on a Johannesburg morning so both visits, five hours apart each, land on the same day
+    // whatever time the tests run.
+    demoRepo.update((current) => ({ ...current, now: nextJohannesburgWeekday(2) }));
     const weekday = johannesburgWeekday(clock.now() + 5 * 60 * 60 * 1000);
     ensureTools({ doubleStamp: true, weekday });
     stampVisit(membership.id, "v1");

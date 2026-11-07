@@ -7,7 +7,13 @@
  */
 import { useState, type ReactNode } from "react";
 import { PreviewBanner } from "@/components/patron/dash";
-import { COST_PER_SEGMENT_CENTS, fullBody, messageSegments, renderBody, STOP_FOOTER } from "@/domain/campaigns";
+import {
+  COST_PER_SEGMENT_CENTS,
+  fullBody,
+  messageSegments,
+  renderBody,
+  STOP_FOOTER,
+} from "@/domain/campaigns";
 import { PREVIEW_ONLY } from "@/domain/publish";
 import { pickSegment } from "@/domain/spins";
 import type { SpinSegment } from "@/data/types";
@@ -63,7 +69,12 @@ export function SmsPreview(props: {
   );
 }
 
-export function PushPreview(props: { sender: string; title: string; body: string; recipients: number }) {
+export function PushPreview(props: {
+  sender: string;
+  title: string;
+  body: string;
+  recipients: number;
+}) {
   return (
     <div className="pv-push">
       <div className="pv-push-card">
@@ -72,8 +83,8 @@ export function PushPreview(props: { sender: string; title: string; body: string
         <p>{props.body || "Your message"}</p>
       </div>
       <p className="pv-meta">
-        Free · {props.recipients} {props.recipients === 1 ? "guest has" : "guests have"} notifications
-        on
+        Free · {props.recipients} {props.recipients === 1 ? "guest has" : "guests have"}{" "}
+        notifications on
       </p>
     </div>
   );
@@ -83,7 +94,11 @@ export function PushPreview(props: { sender: string; title: string; body: string
 
 export function PublishSteps(props: { step: number; labels: ReadonlyArray<string> }) {
   return (
-    <ol className="cmp-steps" aria-label={`Step ${props.step} of ${props.labels.length}`}>
+    <ol
+      className="cmp-steps"
+      aria-label={`Step ${props.step} of ${props.labels.length}`}
+      style={{ gridTemplateColumns: `repeat(${props.labels.length}, minmax(0, 1fr))` }}
+    >
       {props.labels.map((label, index) => (
         <li
           key={label}
@@ -150,7 +165,12 @@ export function WheelPreview(props: { segments: ReadonlyArray<SpinSegment> }) {
           setSpinning(false);
         }}
       />
-      <button type="button" className="builder-primary pv-wheel-button" onClick={spin} disabled={spinning}>
+      <button
+        type="button"
+        className="builder-primary pv-wheel-button"
+        onClick={spin}
+        disabled={spinning}
+      >
         {tests === 0 ? "Test spin" : "Test spin again"}
       </button>
       <p className="pv-meta" role="status">

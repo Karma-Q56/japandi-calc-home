@@ -33,7 +33,7 @@ function TimeEditor({
 }) {
   const closed = span === null;
   return (
-    <div className="menu-owner-row" key={day}>
+    <div className="menu-owner-row hours-row" key={day}>
       <div>
         <strong>{day}</strong>
         {closed && <small>Closed</small>}

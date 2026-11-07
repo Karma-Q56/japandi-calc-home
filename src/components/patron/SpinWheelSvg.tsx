@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { prefersReducedMotion } from "@/components/patron/motion";
 import type { SpinSegment } from "@/data/types";
-import { shortWheelLabel, wheelArcs, type WheelArc } from "@/lib/wheel";
+import { wheelArcs, wheelLabelLines, type WheelArc } from "@/lib/wheel";
 
 /** Dark ink reads well on every colour in the wheel palette (all light tints). */
 const LABEL_INK = "#2b2118";
 const RADIUS = 100;
 const SLOW_STOP_MS = 4200;
+const LABEL_LINE_HEIGHT = 10;
 
 function point(angle: number, radius: number) {
   const rad = (angle * Math.PI) / 180;
@@ -91,12 +92,15 @@ export function SpinWheelSvg({
           {arcs.map((arc) => {
             const mid = (arc.start + arc.end) / 2;
             const label = point(mid, RADIUS * 0.6);
+            const lines = wheelLabelLines(arc.segment.label, arcs.length);
+            const startY = label.y - ((lines.length - 1) * LABEL_LINE_HEIGHT) / 2;
             return (
               <g key={arc.segment.id}>
+                <title>{arc.segment.label}</title>
                 <path d={arcPath(arc)} fill={arc.color} stroke="var(--card)" strokeWidth="1.5" />
                 <text
                   x={label.x}
-                  y={label.y}
+                  y={startY}
                   fill={LABEL_INK}
                   fontSize="9"
                   fontWeight="650"
@@ -104,7 +108,11 @@ export function SpinWheelSvg({
                   dominantBaseline="middle"
                   transform={`rotate(${mid} ${label.x} ${label.y})`}
                 >
-                  {shortWheelLabel(arc.segment.label)}
+                  {lines.map((line, index) => (
+                    <tspan key={line} x={label.x} dy={index === 0 ? 0 : LABEL_LINE_HEIGHT}>
+                      {line}
+                    </tspan>
+                  ))}
                 </text>
               </g>
             );

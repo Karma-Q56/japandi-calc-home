@@ -4,10 +4,19 @@ import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
 import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
+import { getDataModeFn } from "@/server/live";
+import { LiveTeam } from "@/components/patron/LiveTeam";
 import { EmptyState, FormField, PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
 
 export const Route = createFileRoute("/app/team")({
-  beforeLoad: () => {
+  loader: async () => {
+    const { mode } = await getDataModeFn();
+    return { mode };
+  },
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    // Live mode is guarded by the signed-in owner on the server.
+    if (mode === "live") return;
     if (!requireRole("owner")(demoRepo.read().session)) {
       throw redirect({ to: "/login" });
     }
@@ -16,6 +25,11 @@ export const Route = createFileRoute("/app/team")({
 });
 
 function Team() {
+  const { mode } = Route.useLoaderData();
+  return mode === "live" ? <LiveTeam /> : <DemoTeam />;
+}
+
+function DemoTeam() {
   const state = useDemoState();
   const restaurant =
     state.restaurants.find((item) => item.id === state.session.restaurantId) ??
@@ -67,8 +81,15 @@ function Team() {
         intro="A 4-digit PIN is a convenience, not a lock. The real protections are till pairing, lockout after 5 wrong tries, restaurant scope, and the audit trail."
       />
       <StatGrid>
-        <StatCard value={staff.filter((member) => member.active).length} label="Active on the till" />
-        <StatCard value={staff.length} label="People on your team" hint="Add someone below, then set their PIN" />
+        <StatCard
+          value={staff.filter((member) => member.active).length}
+          label="Active on the till"
+        />
+        <StatCard
+          value={staff.length}
+          label="People on your team"
+          hint="Add someone below, then set their PIN"
+        />
       </StatGrid>
       {staff.length === 0 && (
         <EmptyState
@@ -90,13 +111,13 @@ function Team() {
                 : "never"}
             </small>
           </span>
-          <span className="status-open">
+          <span className="row-actions">
             <button
               className="builder-secondary"
               onClick={() => void issue(member.id, member.displayName)}
             >
               {member.pinHash ? "Reset PIN" : "Set PIN"}
-            </button>{" "}
+            </button>
             <button
               className="builder-secondary"
               onClick={() => {

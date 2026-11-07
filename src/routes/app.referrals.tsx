@@ -16,6 +16,7 @@ import {
 } from "@/components/patron/dash";
 import { Switch } from "@/components/patron/Switch";
 import { PhoneFrame, PreviewOnly, PublishSteps } from "@/components/patron/preview";
+import { LoyaltyTabs } from "@/components/patron/LoyaltyTabs";
 import { referralGuestPreview } from "@/domain/referrals";
 
 import type { ReferralConfig } from "@/data/types";
@@ -106,10 +107,11 @@ function ReferralsBody({
   return (
     <main className="demo-hub page-width">
       <PageHeader
-        eyebrow={`${restaurant.name} · Bring a friend`}
+        eyebrow={`Loyalty · ${restaurant.name}`}
         title="Let your happy guests bring friends."
         intro="Every guest gets a personal link. When their friend gets their first stamp, both guests earn the reward you choose."
       />
+      <LoyaltyTabs active="referrals" />
       <PublishSteps step={step} labels={STEP_LABELS} />
 
       {step === 1 && (

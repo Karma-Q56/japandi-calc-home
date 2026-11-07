@@ -1,12 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { api } from "@/api";
-import {
-  campaignBadge,
-  Badge,
-  DataTable,
-  EmptyState,
-  PageHeader,
-} from "@/components/patron/dash";
+import { campaignBadge, Badge, DataTable, EmptyState, PageHeader } from "@/components/patron/dash";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
 import { getCampaignListFn, getDataModeFn } from "@/server/live";
@@ -109,9 +103,7 @@ function LiveCampaigns({ data }: { data: LiveCampaignList | null }) {
               {
                 key: "open",
                 header: "",
-                cell: (campaign) => (
-                  <a href={`/app/campaigns/${campaign.id}`}>Open →</a>
-                ),
+                cell: (campaign) => <a href={`/app/campaigns/${campaign.id}`}>Open →</a>,
               },
             ]}
           />
@@ -141,10 +133,10 @@ function DemoCampaignsPage() {
       <PageHeader
         eyebrow={restaurant.name}
         title="Past campaigns"
-        intro="History only. Offers are written and sent from one place now, so nothing is entered twice."
+        intro="History only. Campaigns are written and sent from one place now, so nothing is entered twice."
         actions={
           <a className="builder-primary" href="/app/specials">
-            Go to Offers
+            Go to Campaigns
           </a>
         }
       />
@@ -169,10 +161,10 @@ function DemoCampaignsPage() {
         {campaigns.length === 0 ? (
           <EmptyState
             title="No past campaigns."
-            hint="Everything you send from Offers will be listed here afterwards."
+            hint="Everything you send from Campaigns will be listed here afterwards."
             action={
               <a className="builder-primary" href="/app/specials">
-                Go to Offers
+                Go to Campaigns
               </a>
             }
           />

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useDemoState } from "@/data/useDemoState";
+import { TrendChart } from "@/components/patron/TrendChart";
 import { PageHeader, StatCard, StatGrid, EmptyState } from "@/components/patron/dash";
 import {
   attentionItems,
@@ -30,7 +31,8 @@ const clock = (iso: string) =>
   new Intl.DateTimeFormat("en-ZA", { hour: "2-digit", minute: "2-digit", timeZone: TZ }).format(
     new Date(iso),
   );
-const rand = (cents: number) => `R${(cents / 100).toLocaleString("en-ZA", { maximumFractionDigits: 0 })}`;
+const rand = (cents: number) =>
+  `R${(cents / 100).toLocaleString("en-ZA", { maximumFractionDigits: 0 })}`;
 
 export function DemoHome({ restaurantId }: { restaurantId: string }) {
   const state = useDemoState();
@@ -90,8 +92,8 @@ export function DemoHome({ restaurantId }: { restaurantId: string }) {
     <main className="demo-hub page-width">
       <PageHeader
         eyebrow="Overview"
-        title={`Good to see you, ${restaurant.name}`}
-        intro="Here is how your guests are doing today."
+        title="Welcome back."
+        intro={`Here is how ${restaurant.name} is doing today.`}
         actions={
           <>
             <a className="builder-primary" href="/stamp">
@@ -101,10 +103,30 @@ export function DemoHome({ restaurantId }: { restaurantId: string }) {
         }
       />
       <StatGrid>
-        <StatCard value={today.visits} label="Visits today" hint={change(today.visits, yesterday.visits)} href="/stamp" />
-        <StatCard value={today.unique} label="Guests today" hint={change(today.unique, yesterday.unique)} href="/app/customers" />
-        <StatCard value={today.newMembers} label="New members today" hint={change(today.newMembers, yesterday.newMembers)} href="/app/customers" />
-        <StatCard value={rewardsWaiting} label="Rewards waiting" hint="Earned and not yet redeemed." href="/app/customers" />
+        <StatCard
+          value={today.visits}
+          label="Visits today"
+          hint={change(today.visits, yesterday.visits)}
+          href="/stamp"
+        />
+        <StatCard
+          value={today.unique}
+          label="Guests today"
+          hint={change(today.unique, yesterday.unique)}
+          href="/app/customers"
+        />
+        <StatCard
+          value={today.newMembers}
+          label="New members today"
+          hint={change(today.newMembers, yesterday.newMembers)}
+          href="/app/customers"
+        />
+        <StatCard
+          value={rewardsWaiting}
+          label="Rewards waiting"
+          hint="Earned and not yet redeemed."
+          href="/app/customers"
+        />
       </StatGrid>
 
       <section className="builder-panel">
@@ -120,7 +142,12 @@ export function DemoHome({ restaurantId }: { restaurantId: string }) {
         </div>
         <div role="group" aria-label="Metric" className="home-pills">
           {METRICS.map((m) => (
-            <button key={m.key} type="button" aria-pressed={metric === m.key} onClick={() => setMetric(m.key)}>
+            <button
+              key={m.key}
+              type="button"
+              aria-pressed={metric === m.key}
+              onClick={() => setMetric(m.key)}
+            >
               {m.label}
             </button>
           ))}
@@ -130,15 +157,23 @@ export function DemoHome({ restaurantId }: { restaurantId: string }) {
           {metric === "sales" ? " Estimated from visits at an average spend, not till totals." : ""}
         </p>
         {total === 0 ? (
-          <EmptyState title="No activity yet" hint="Stamps and new members will show here once guests start visiting." />
+          <EmptyState
+            title="No activity yet"
+            hint="Stamps and new members will show here once guests start visiting."
+          />
         ) : (
-          <div className="week-chart" role="img" aria-label={`${METRICS.find((m) => m.key === metric)!.label} by day`}>
-            {series.map((p) => (
-              <span key={p.day} title={String(metricValue(p, metric))}>
-                <i style={{ height: `${Math.round((metricValue(p, metric) / max) * 100)}%` }} />
-              </span>
-            ))}
-          </div>
+          <TrendChart
+            label={`${METRICS.find((m) => m.key === metric)!.label} by day`}
+            format={metric === "sales" ? rand : undefined}
+            points={series.map((p) => ({
+              label: new Intl.DateTimeFormat("en-ZA", {
+                day: "numeric",
+                month: "short",
+                timeZone: TZ,
+              }).format(new Date(p.day)),
+              value: metricValue(p, metric),
+            }))}
+          />
         )}
       </section>
 
@@ -175,16 +210,26 @@ export function DemoHome({ restaurantId }: { restaurantId: string }) {
                 </span>
               ))}
             </div>
+            <div className="hour-labels" aria-hidden="true">
+              {hours.map((h) => (
+                <span key={h.hour}>{h.hour % 2 === 0 ? String(h.hour).padStart(2, "0") : ""}</span>
+              ))}
+            </div>
           </>
         ) : (
-          <EmptyState title="No visits in the last 14 days" hint="Busy hours appear once guests start stamping." />
+          <EmptyState
+            title="No visits in the last 14 days"
+            hint="Busy hours appear once guests start stamping."
+          />
         )}
       </section>
 
       <section className="builder-panel">
         <h2>Your best regulars</h2>
         {regulars.length === 0 ? (
-          <p className="demo-data-note">Guests with two or more visits in 30 days will appear here.</p>
+          <p className="demo-data-note">
+            Guests with two or more visits in 30 days will appear here.
+          </p>
         ) : (
           <ul className="home-feed">
             {regulars.map((r) => (
@@ -215,7 +260,7 @@ export function DemoHome({ restaurantId }: { restaurantId: string }) {
       <section className="builder-panel">
         <h2>Quick actions</h2>
         <div className="page-actions">
-          <a className="builder-primary" href="/app/campaigns/new">
+          <a className="builder-secondary" href="/app/campaigns/new">
             New campaign
           </a>
           <a className="builder-secondary" href="/app/customers">

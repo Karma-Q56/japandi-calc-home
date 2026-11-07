@@ -106,7 +106,7 @@ function ComposerPage() {
   if (!restaurant) {
     return (
       <main className="demo-hub page-width">
-        <h1>New offer.</h1>
+        <h1>New campaign.</h1>
         <p className="demo-intro">Choose a venue first, then open this page again.</p>
       </main>
     );
@@ -255,9 +255,9 @@ function ComposerPage() {
     <main className="demo-hub page-width cmp">
       <p className="eyebrow">
         <span className="eyebrow-line" />
-        {restaurant.name} · New offer
+        {restaurant.name} · New campaign
       </p>
-      <h1>One offer, start to send.</h1>
+      <h1>One campaign, start to send.</h1>
       <PublishSteps step={step} labels={STEPS} />
 
       {step === 1 && (

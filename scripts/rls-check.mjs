@@ -12,6 +12,8 @@ if (!ownerUrl || !appUrl) {
 const owner = postgres(ownerUrl, { max: 1, prepare: false });
 const app = postgres(appUrl, { max: 1, prepare: false });
 const suffix = randomUUID().replaceAll("-", "");
+// Phone numbers must be digits only (E.164). Hex from the UUID passed only about 4 runs in 100.
+const digits = String(BigInt(`0x${suffix.slice(0, 12)}`) % 10000000n).padStart(7, "0");
 let restaurantA;
 let restaurantB;
 let customerA;
@@ -21,8 +23,8 @@ try {
   const fixtures = await owner.begin(async (tx) => {
     const [a] = await tx`insert into restaurant (slug, name) values (${`rls-a-${suffix.slice(0, 24)}`}, 'RLS A') returning id`;
     const [b] = await tx`insert into restaurant (slug, name) values (${`rls-b-${suffix.slice(0, 24)}`}, 'RLS B') returning id`;
-    const [guestA] = await tx`insert into customer (user_id, phone_e164, name) values (${`rls-a-${suffix}`}, ${`+2782${suffix.slice(0, 7)}`}, 'Fixture A') returning id`;
-    const [guestB] = await tx`insert into customer (user_id, phone_e164, name) values (${`rls-b-${suffix}`}, ${`+2783${suffix.slice(0, 7)}`}, 'Fixture B') returning id`;
+    const [guestA] = await tx`insert into customer (user_id, phone_e164, name) values (${`rls-a-${suffix}`}, ${`+2782${digits}`}, 'Fixture A') returning id`;
+    const [guestB] = await tx`insert into customer (user_id, phone_e164, name) values (${`rls-b-${suffix}`}, ${`+2783${digits}`}, 'Fixture B') returning id`;
     const [memberA] = await tx`insert into membership (restaurant_id, customer_id) values (${a.id}, ${guestA.id}) returning id`;
     const [memberB] = await tx`insert into membership (restaurant_id, customer_id) values (${b.id}, ${guestB.id}) returning id`;
     const [campaign] = await tx`
@@ -46,8 +48,11 @@ try {
   });
   ({ restaurantA, restaurantB, customerA, customerB } = fixtures);
 
-  const tenantTables = [
-    "staff_member", "menu_section", "menu_item", "special", "membership", "stamp_event",
+  // Menu and specials are public on purpose (diners read them before they join), so other
+  // restaurants may READ them. What must never happen is another restaurant WRITING to them.
+  const publicReadTables = ["menu_section", "menu_item", "special"];
+  const privateTables = [
+    "staff_member", "membership", "stamp_event",
     "reward", "campaign", "message", "redemption", "credit_ledger", "payment", "data_request", "audit_event",
   ];
   await app.begin(async (tx) => {
@@ -56,9 +61,20 @@ try {
              set_config('app.customer_id', ${customerA}, true),
              set_config('app.is_operator', 'false', true)
     `;
-    for (const table of tenantTables) {
+    for (const table of privateTables) {
       const [{ count }] = await tx.unsafe(`select count(*)::int as count from ${table} where restaurant_id = $1`, [restaurantB]);
       assert.equal(count, 0, `${table} leaked restaurant B rows into restaurant A's context`);
+    }
+    for (const table of publicReadTables) {
+      const [{ count }] = await tx.unsafe(`select count(*)::int as count from ${table} where restaurant_id = $1`, [restaurantB]);
+      assert.equal(count, 1, `${table} should be publicly readable`);
+      const changed = await tx.unsafe(`update ${table} set restaurant_id = restaurant_id where restaurant_id = $1 returning id`, [restaurantB]);
+      assert.equal(changed.length, 0, `cross-tenant ${table} UPDATE affected rows`);
+      // The app role has no DELETE right on special at all, so only the other two are tried.
+      if (table !== "special") {
+        const removed = await tx.unsafe(`delete from ${table} where restaurant_id = $1 returning id`, [restaurantB]);
+        assert.equal(removed.length, 0, `cross-tenant ${table} DELETE affected rows`);
+      }
     }
     const updated = await tx`update membership set stamps_total = stamps_total + 1 where restaurant_id = ${restaurantB} returning id`;
     const deleted = await tx`delete from membership where restaurant_id = ${restaurantB} returning id`;
@@ -66,7 +82,7 @@ try {
     assert.equal(deleted.length, 0, "cross-tenant membership DELETE affected rows");
   });
 
-  process.stdout.write(`RLS isolation passed for ${tenantTables.length} tenant tables; cross-tenant UPDATE/DELETE affected zero rows.\n`);
+  process.stdout.write(`RLS isolation passed for ${privateTables.length} private tables and ${publicReadTables.length} public-read tables; cross-tenant UPDATE/DELETE affected zero rows.\n`);
 } finally {
   if (restaurantA && restaurantB) {
     await owner.begin(async (tx) => {

@@ -77,3 +77,49 @@ export function shortWheelLabel(label: string, max = 14): string {
   }
   return `${out || clean.slice(0, max - 1)}…`;
 }
+
+/** Longest line a wheel label may take, so two lines still fit a slice. */
+export const WHEEL_LINE_MAX = 14;
+
+/**
+ * A prize name on the wheel wraps onto at most two lines, split at a space
+ * near the middle and each line no longer than WHEEL_LINE_MAX. Only a name
+ * that still does not fit in two lines is cut with "...". The segment count
+ * is passed in so a crowded wheel can reuse the same helper.
+ */
+export function wheelLabelLines(label: string, segmentCount: number): string[] {
+  void segmentCount;
+  const clean = label.trim().replace(/\s+/g, " ");
+  if (!clean) return [];
+  if (clean.length <= WHEEL_LINE_MAX) return [clean];
+  const words = clean.split(" ");
+  let best: [string, string] | null = null;
+  let bestGap = Number.POSITIVE_INFINITY;
+  for (let index = 1; index < words.length; index += 1) {
+    const left = words.slice(0, index).join(" ");
+    const right = words.slice(index).join(" ");
+    if (left.length > WHEEL_LINE_MAX || right.length > WHEEL_LINE_MAX) continue;
+    const gap = Math.abs(left.length - right.length);
+    if (gap < bestGap) {
+      bestGap = gap;
+      best = [left, right];
+    }
+  }
+  if (best) return best;
+  const firstWords: string[] = [];
+  for (const word of words) {
+    if ([...firstWords, word].join(" ").length > WHEEL_LINE_MAX) break;
+    firstWords.push(word);
+  }
+  const first =
+    firstWords.length > 0 ? firstWords.join(" ") : clean.slice(0, WHEEL_LINE_MAX);
+  const rest =
+    firstWords.length > 0
+      ? words.slice(firstWords.length).join(" ")
+      : clean.slice(WHEEL_LINE_MAX);
+  if (rest.length <= WHEEL_LINE_MAX) return [first, rest];
+  const cut = rest.slice(0, WHEEL_LINE_MAX - 3);
+  const atSpace = cut.lastIndexOf(" ");
+  const trimmed = atSpace > 0 ? cut.slice(0, atSpace) : cut;
+  return [first, `${trimmed.trimEnd()}...`];
+}

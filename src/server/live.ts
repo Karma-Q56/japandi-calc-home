@@ -368,6 +368,10 @@ export const updateLoyaltySettingsFn = createServerFn({ method: "POST" })
     z.object({
       stampsRequired: z.number().int().min(2).max(30),
       rewardDescription: z.string().trim().min(1).max(120),
+      rewardKind: z.enum(["free_item", "percent_off", "amount_off"]),
+      rewardPercentOff: z.number().int().min(1).max(100).nullable(),
+      rewardAmountOffCents: z.number().int().min(1).nullable(),
+      rewardValidDays: z.number().int().min(1).max(365).nullable(),
       visitWindowMinutes: z.number().int().min(0).max(1440),
       welcomeStamp: z.boolean(),
       marketingWeeklyCap: z.number().int().min(0).max(14),
@@ -440,3 +444,162 @@ export const setMenuItemAvailableFn = createServerFn({ method: "POST" })
     if (!viewer) return { ok: false as const, message: "Sign in again." };
     return setItemAvailable(viewer, data.itemId, data.available);
   });
+
+// ---------------------------------------------------------------- live till
+
+/** Team list for the signed-in owner. Managers get null. */
+export const getTeamFn = createServerFn({ method: "GET" }).handler(async () => {
+  const [{ readViewer }, { loadTeam }] = await Promise.all([
+    import("./auth-viewer"),
+    import("./live-till"),
+  ]);
+  const viewer = await readViewer();
+  if (!viewer) return null;
+  return loadTeam(viewer);
+});
+
+/** Add a staff member and return their one-time PIN. Owner only. */
+export const addStaffFn = createServerFn({ method: "POST" })
+  .validator(z.object({ name: z.string().trim().min(1).max(40) }))
+  .handler(async ({ data }) => {
+    const [{ readViewer }, { addStaffMember }] = await Promise.all([
+      import("./auth-viewer"),
+      import("./live-till"),
+    ]);
+    const viewer = await readViewer();
+    if (!viewer) return { ok: false as const, message: "Sign in again." };
+    return addStaffMember(viewer, data.name);
+  });
+
+/** Deactivate or reactivate a staff member. Owner only. */
+export const setStaffActiveFn = createServerFn({ method: "POST" })
+  .validator(z.object({ staffId: uuidSchema, active: z.boolean() }))
+  .handler(async ({ data }) => {
+    const [{ readViewer }, { setStaffActive }] = await Promise.all([
+      import("./auth-viewer"),
+      import("./live-till"),
+    ]);
+    const viewer = await readViewer();
+    if (!viewer) return { ok: false as const, message: "Sign in again." };
+    return setStaffActive(viewer, data.staffId, data.active);
+  });
+
+/** New one-time PIN for a staff member. Owner only. */
+export const resetStaffPinFn = createServerFn({ method: "POST" })
+  .validator(z.object({ staffId: uuidSchema }))
+  .handler(async ({ data }) => {
+    const [{ readViewer }, { resetStaffPin }] = await Promise.all([
+      import("./auth-viewer"),
+      import("./live-till"),
+    ]);
+    const viewer = await readViewer();
+    if (!viewer) return { ok: false as const, message: "Sign in again." };
+    return resetStaffPin(viewer, data.staffId);
+  });
+
+/** Create an 8 character pairing code, shown once. Owner only. */
+export const createTillPairingFn = createServerFn({ method: "POST" }).handler(async () => {
+  const [{ readViewer }, { createPairingCode }] = await Promise.all([
+    import("./auth-viewer"),
+    import("./live-till"),
+  ]);
+  const viewer = await readViewer();
+  if (!viewer) return { ok: false as const, message: "Sign in again." };
+  return createPairingCode(viewer);
+});
+
+/** Pair this browser as a till. Single use, rate limited per IP. */
+export const pairTillFn = createServerFn({ method: "POST" })
+  .validator(z.object({ code: z.string().trim().min(1).max(40) }))
+  .handler(async ({ data }) => {
+    const { pairTill } = await import("./live-till");
+    return pairTill(data.code, requestIpHash());
+  });
+
+export const getTillStateFn = createServerFn({ method: "GET" }).handler(async () => {
+  const { loadTillState } = await import("./live-till");
+  return loadTillState();
+});
+
+export const tillSignInFn = createServerFn({ method: "POST" })
+  .validator(z.object({ staffId: uuidSchema, pin: pinSchema }))
+  .handler(async ({ data }) => {
+    const { signInTill } = await import("./live-till");
+    return signInTill(data.staffId, data.pin);
+  });
+
+export const tillSignOutFn = createServerFn({ method: "POST" }).handler(async () => {
+  const { signOutTill } = await import("./live-till");
+  return signOutTill();
+});
+
+export const tillUnpairFn = createServerFn({ method: "POST" }).handler(async () => {
+  const { unpairTill } = await import("./live-till");
+  return unpairTill();
+});
+
+export const lookupGuestFn = createServerFn({ method: "POST" })
+  .validator(z.object({ code: z.string().trim().min(1).max(80) }))
+  .handler(async ({ data }) => {
+    const { lookupGuest } = await import("./live-till");
+    return lookupGuest(data.code);
+  });
+
+export const tillRecordStampFn = createServerFn({ method: "POST" })
+  .validator(z.object({ membershipId: uuidSchema, key: keySchema }))
+  .handler(async ({ data }) => {
+    const { recordStampAtTill } = await import("./live-till");
+    return recordStampAtTill(data.membershipId, data.key);
+  });
+
+export const tillRedeemRewardFn = createServerFn({ method: "POST" })
+  .validator(z.object({ membershipId: uuidSchema, rewardId: uuidSchema }))
+  .handler(async ({ data }) => {
+    const { redeemRewardAtTill } = await import("./live-till");
+    return redeemRewardAtTill(data.membershipId, data.rewardId);
+  });
+
+export const tillUndoRedeemFn = createServerFn({ method: "POST" })
+  .validator(z.object({ rewardId: uuidSchema }))
+  .handler(async ({ data }) => {
+    const { undoRedeemAtTill } = await import("./live-till");
+    return undoRedeemAtTill(data.rewardId);
+  });
+
+/** Is this page address free? Signed-in guests only. */
+export const checkSlugFn = createServerFn({ method: "POST" })
+  .validator(z.object({ slug: z.string().max(80) }))
+  .handler(async ({ data }) => {
+    const [{ readViewer }, { checkSlug }] = await Promise.all([
+      import("./auth-viewer"),
+      import("./live-onboarding"),
+    ]);
+    return checkSlug(await readViewer(), data.slug);
+  });
+
+/** Create the signed-in guest's own restaurant. Returns only the page address. */
+export const createRestaurantFn = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      name: z.string().max(200),
+      slug: z.string().max(80),
+      suburb: z.string().max(80),
+      city: z.string().max(80),
+    }),
+  )
+  .handler(async ({ data }) => {
+    const [{ readViewer }, { createRestaurantForGuest }] = await Promise.all([
+      import("./auth-viewer"),
+      import("./live-onboarding"),
+    ]);
+    return createRestaurantForGuest(await readViewer(), data);
+  });
+
+/** The signed-in owner's page address and published state. The restaurant comes from the session. */
+export const getMyRestaurantFn = createServerFn({ method: "GET" }).handler(async () => {
+  const [{ readViewer }, { loadMyRestaurant }] = await Promise.all([
+    import("./auth-viewer"),
+    import("./live-onboarding"),
+  ]);
+  return loadMyRestaurant(await readViewer());
+});

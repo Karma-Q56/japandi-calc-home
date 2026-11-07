@@ -93,6 +93,9 @@ describe("offers from the composer", () => {
       now: Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 8),
     }));
     const placements = { page: true, till: true, push: true, sms: false };
+    const sampleCount = demoRepo.read().offers.length;
+    const mine = () =>
+      demoRepo.read().offers.filter((offer) => offer.title.startsWith("Friday push"));
     const draft = saveDraft({
       restaurantId: "rest-daily-grind",
       actor: "owner-1",
@@ -105,8 +108,8 @@ describe("offers from the composer", () => {
       },
     });
     if (!draft.ok) throw new Error(draft.error.message);
-    expect(demoRepo.read().offers).toHaveLength(1);
-    expect(demoRepo.read().offers[0]).toMatchObject({
+    expect(demoRepo.read().offers).toHaveLength(sampleCount + 1);
+    expect(mine()[0]).toMatchObject({
       id: `offer-${draft.data.id}`,
       title: "Friday push",
       placements,
@@ -126,12 +129,16 @@ describe("offers from the composer", () => {
       },
     });
     expect(edited.ok).toBe(true);
-    expect(demoRepo.read().offers).toHaveLength(1);
-    expect(demoRepo.read().offers[0]?.title).toBe("Friday push, edited");
+    expect(demoRepo.read().offers).toHaveLength(sampleCount + 1);
+    expect(mine()[0]?.title).toBe("Friday push, edited");
 
-    const confirmed = confirmCampaign({ campaignId: draft.data.id, actor: "owner-1", sendNow: true });
+    const confirmed = confirmCampaign({
+      campaignId: draft.data.id,
+      actor: "owner-1",
+      sendNow: true,
+    });
     expect(confirmed.ok).toBe(true);
-    expect(demoRepo.read().offers).toHaveLength(1);
-    expect(demoRepo.read().offers[0]?.status).toBe("live");
+    expect(demoRepo.read().offers).toHaveLength(sampleCount + 1);
+    expect(mine()[0]?.status).toBe("live");
   });
 });

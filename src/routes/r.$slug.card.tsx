@@ -12,12 +12,13 @@ import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
 import { ThemeProvider } from "@/theme";
 import { LoyaltyCard } from "@/components/patron/LoyaltyCard";
+import { BackLink } from "@/components/patron/BackLink";
 import { GuestShell } from "@/components/patron/GuestShell";
 import { PageHeader } from "@/components/patron/dash";
 import { MemberQr } from "@/components/patron/MemberQr";
 import { SpinWheel } from "@/components/patron/SpinWheel";
 import { ChallengeRow } from "@/components/patron/ChallengeRow";
-import { rewardEarned, rewardProgress } from "@/lib/reward-copy";
+import { rewardEarned, rewardGuestLine, rewardProgress } from "@/lib/reward-copy";
 import { signInAsDemoAccount } from "@/lib/demo-signin";
 
 export const Route = createFileRoute("/r/$slug/card")({
@@ -103,6 +104,7 @@ function GuestCard() {
     return (
       <main className="guest-page">
         <section className="guest-panel">
+          <BackLink to={`/r/${slug}`} label="Restaurant" />
           <h1>No guest session yet.</h1>
           <p>Log in as a diner to see this card.</p>
           <a className="builder-primary" href="/login">
@@ -438,6 +440,14 @@ function BringAFriend({ slug, membershipId }: { slug: string; membershipId: stri
 
 type LiveCard = NonNullable<Awaited<ReturnType<typeof getCardFn>>["card"]>;
 
+/** Expiry label for a reward, in the restaurant's own time (Johannesburg). */
+function johannesburgDate(iso: string): string {
+  return new Intl.DateTimeFormat("en-ZA", {
+    dateStyle: "medium",
+    timeZone: "Africa/Johannesburg",
+  }).format(new Date(iso));
+}
+
 /** Live-mode guest card (DATA_MODE=live): RLS-scoped rows from Postgres through
  *  the getCard server function. Demo rendering above is unchanged. */
 function LiveGuestCard({ slug, card }: { slug: string; card: LiveCard }) {
@@ -447,12 +457,25 @@ function LiveGuestCard({ slug, card }: { slug: string; card: LiveCard }) {
       <PageHeader
         eyebrow="Loyalty card"
         title={card.restaurant.name}
-        intro={`${card.membership.stampsCurrent} of ${card.restaurant.stampsRequired} stamps · ${card.restaurant.rewardDescription}`}
+        intro={`${card.membership.stampsCurrent} of ${card.restaurant.stampsRequired} stamps · ${rewardGuestLine({ kind: card.restaurant.rewardKind ?? "free_item", description: card.restaurant.rewardDescription, percentOff: card.restaurant.rewardPercentOff ?? null, amountOffCents: card.restaurant.rewardAmountOffCents ?? null })}`}
       />
       <section className="gx-panel">
         {available.length > 0 && (
           <p role="status">
-            <strong>Reward ready:</strong> {available.map((r) => r.description).join(", ")}
+            <strong>Reward ready:</strong>{" "}
+            {available
+              .map((r) =>
+                rewardGuestLine(
+                  {
+                    kind: r.kind ?? "free_item",
+                    description: r.description,
+                    percentOff: r.percentOff ?? null,
+                    amountOffCents: r.amountOffCents ?? null,
+                  },
+                  r.expiresAt ? johannesburgDate(r.expiresAt) : null,
+                ),
+              )
+              .join(", ")}
           </p>
         )}
         <div className="guest-section-heading">

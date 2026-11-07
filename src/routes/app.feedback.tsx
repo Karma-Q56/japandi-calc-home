@@ -123,7 +123,7 @@ function FeedbackPage() {
     setRequestNotice("Asked. Your request is in the Patron queue.");
   };
 
-  const useDraft = (draftId: string) => {
+  const applyDraft = (draftId: string) => {
     const result = api.help.use({ draftId, session: state.session });
     setRequestNotice(
       result.ok ? "The words are live on your page now." : result.error.message,
@@ -209,7 +209,7 @@ function FeedbackPage() {
           </div>
         )}
         <div className="page-actions">
-          <button className="builder-primary" onClick={askForHelp}>
+          <button className="builder-secondary" onClick={askForHelp}>
             Send request
           </button>
           <Helper>
@@ -254,7 +254,7 @@ function FeedbackPage() {
                         <p>{draft.about}</p>
                         <small>Prepared by {draft.preparedBy}</small>
                         <div className="page-actions">
-                          <button className="builder-primary" onClick={() => useDraft(draft.id)}>
+                          <button className="builder-primary" onClick={() => applyDraft(draft.id)}>
                             Use these words
                           </button>
                           <button onClick={() => dropDraft(draft.id)}>Throw away</button>

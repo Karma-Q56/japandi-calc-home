@@ -1,10 +1,11 @@
-import { type ComponentType, type ReactNode } from "react";
+import { useState, type ComponentType, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   Users,
   Gift,
-  Tag,
+  Megaphone,
+  Ellipsis,
   Globe,
   ChartNoAxesColumn,
   Settings,
@@ -17,7 +18,7 @@ export const OWNER_NAV: Item[] = [
   { to: "/app", label: "Home", icon: LayoutDashboard, end: true },
   { to: "/app/customers", label: "Guests", icon: Users },
   { to: "/app/loyalty", label: "Loyalty", icon: Gift },
-  { to: "/app/specials", label: "Offers", icon: Tag },
+  { to: "/app/specials", label: "Campaigns", icon: Megaphone },
   { to: "/app/page", label: "Your page", icon: Globe },
   { to: "/app/insights", label: "Insights", icon: ChartNoAxesColumn },
   { to: "/app/settings", label: "Settings", icon: Settings },
@@ -75,24 +76,113 @@ export function OwnerSideNav() {
     </nav>
   );
 }
+/** Phone: only the venue switcher sits at the top. The sections live in the bottom bar. */
 export function OwnerMobileNav({ venueSwitcher }: { venueSwitcher?: ReactNode } = {}) {
-  const active = useActive();
-  return (
+  return venueSwitcher ? (
     <div className="ox-mobile-wrap">
-      <nav className="ox-mobile-nav" aria-label="Owner sections">
-        {OWNER_NAV.map((item) => (
+      <div className="ox-mobile-venue">{venueSwitcher}</div>
+    </div>
+  ) : null;
+}
+
+const PRIMARY = OWNER_NAV.slice(0, 4);
+const MORE = OWNER_NAV.slice(4);
+
+/** Phone bottom bar: four main sections and a More sheet for the rest. */
+export function OwnerTabs() {
+  const active = useActive();
+  const [open, setOpen] = useState(false);
+  const moreActive = MORE.some(active);
+  return (
+    <>
+      <nav className="ox-tabs" aria-label="Owner sections">
+        {PRIMARY.map((item) => (
           <Link
             key={item.to}
             to={item.to}
-            className={`ox-mobile-link${active(item) ? " is-active" : ""}`}
+            className={`ox-tab${active(item) ? " is-active" : ""}`}
             aria-current={active(item) ? "page" : undefined}
           >
             <item.icon />
             {item.label}
           </Link>
         ))}
+        <button
+          type="button"
+          className={`ox-tab${moreActive ? " is-active" : ""}`}
+          onClick={() => setOpen(true)}
+          aria-haspopup="dialog"
+        >
+          <Ellipsis />
+          More
+        </button>
       </nav>
-      {venueSwitcher ? <div className="ox-mobile-venue">{venueSwitcher}</div> : null}
-    </div>
+      {open && (
+        <div
+          className="ox-more"
+          role="dialog"
+          aria-label="More sections"
+          onClick={() => setOpen(false)}
+        >
+          <div className="ox-more-sheet" onClick={(event) => event.stopPropagation()}>
+            {MORE.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`ox-link${active(item) ? " is-active" : ""}`}
+                onClick={() => setOpen(false)}
+              >
+                <item.icon />
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+/** Pages that belong together. Shown as tabs under the header so nothing is hidden. */
+const SECTION_TABS: Record<string, Array<{ to: string; label: string }>> = {
+  "/app/page": [
+    { to: "/app/page", label: "Page" },
+    { to: "/app/menu", label: "Menu" },
+    { to: "/app/design", label: "Card design" },
+    { to: "/app/qr", label: "QR codes" },
+  ],
+  "/app/settings": [
+    { to: "/app/settings", label: "Details" },
+    { to: "/app/team", label: "Team" },
+    { to: "/app/feedback", label: "Feedback" },
+    { to: "/app/audit", label: "Activity log" },
+  ],
+  "/app/insights": [
+    { to: "/app/insights", label: "Insights" },
+    { to: "/app/reports", label: "Reports" },
+  ],
+  // Loyalty is not listed here. Its Loyalty, Challenges and Referrals pages share one
+  // tab bar (LoyaltyTabs) inside the page, so a second bar above would repeat it.
+};
+
+export function OwnerSectionTabs() {
+  const path = useRouterState({ select: (state) => state.location.pathname });
+  const clean = path.replace(/\/$/, "") || "/app";
+  const section = sectionFor(clean);
+  const tabs = section ? SECTION_TABS[section] : undefined;
+  if (!tabs) return null;
+  return (
+    <nav className="ox-subtabs" aria-label="In this section">
+      {tabs.map((tab) => (
+        <Link
+          key={tab.to}
+          to={tab.to}
+          className={`ox-subtab${clean === tab.to ? " is-active" : ""}`}
+          aria-current={clean === tab.to ? "page" : undefined}
+        >
+          {tab.label}
+        </Link>
+      ))}
+    </nav>
   );
 }

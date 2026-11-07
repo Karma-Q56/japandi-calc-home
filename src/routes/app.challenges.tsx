@@ -7,6 +7,7 @@ import { requireRole } from "@/data/session";
 import { Badge, ConfirmDialog, EmptyState, FormField, PageHeader } from "@/components/patron/dash";
 import { ChallengeRow } from "@/components/patron/ChallengeRow";
 import { PhoneFrame, PreviewOnly, PublishSteps } from "@/components/patron/preview";
+import { LoyaltyTabs } from "@/components/patron/LoyaltyTabs";
 
 export const Route = createFileRoute("/app/challenges")({
   beforeLoad: () => {
@@ -88,10 +89,11 @@ function Challenges() {
   return (
     <main className="demo-hub page-width">
       <PageHeader
-        eyebrow={`Visit challenges · ${restaurant.name}`}
+        eyebrow={`Loyalty · ${restaurant.name}`}
         title="Visit challenges"
         intro="A short sprint that pays bonus stamps. You see it as a guest before it goes live."
       />
+      <LoyaltyTabs active="challenges" />
       <PublishSteps step={step} labels={["Write", "Preview", "Publish"]} />
       {notice && (
         <p role="status" className="demo-data-note">

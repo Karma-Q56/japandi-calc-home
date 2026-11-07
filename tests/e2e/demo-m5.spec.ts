@@ -5,7 +5,7 @@ test.use({ viewport: { width: 390, height: 844 } });
 test("owner overview loads with stats and chart", async ({ page }) => {
   await page.goto("/dev/roles?role=owner&restaurant=rest-daily-grind&to=/app");
   await expect(page).toHaveURL(/\/app$/);
-  await expect(page.locator("main")).toContainText(/Your week at a glance/);
+  await expect(page.locator("main")).toContainText(/Welcome back/);
 });
 
 test("customers list and loyalty editor load", async ({ page }) => {
