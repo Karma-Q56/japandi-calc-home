@@ -47,21 +47,23 @@ test("the design kit catalogue renders every shared piece", async ({ page }) => 
   }
 });
 
-test("owner navigation scrolls under the header at 375px without page overflow", async ({
+test("owner navigation is a bottom bar with a More sheet at 375px, without page overflow", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto(roleUrl({ role: "owner", restaurant: "rest-daily-grind", to: "/app" }));
   await waitForRole(page, "/app");
-  const nav = page.locator(".ox-mobile-nav");
-  await expect(nav).toBeVisible();
-  const metrics = await nav.evaluate((element) => ({
-    scrollWidth: element.scrollWidth,
-    clientWidth: element.clientWidth,
-    links: [...element.querySelectorAll("a")].map((link) => link.getBoundingClientRect().height),
+  const bar = page.locator("nav.ox-tabs");
+  await expect(bar).toBeVisible();
+  const metrics = await bar.evaluate((element) => ({
+    bottom: element.getBoundingClientRect().bottom,
+    links: [...element.querySelectorAll("a, button")].map((item) => item.getBoundingClientRect().height),
   }));
-  expect(metrics.scrollWidth).toBeGreaterThan(metrics.clientWidth);
+  expect(metrics.links.length).toBe(5);
   expect(Math.min(...metrics.links)).toBeGreaterThanOrEqual(44);
+  expect(metrics.bottom).toBeLessThanOrEqual(812 + 1);
+  await bar.getByRole("button", { name: "More" }).click();
+  await expect(page.getByRole("dialog", { name: "More sections" })).toBeVisible();
   const pageWidth = await page.evaluate(() => ({
     scrollWidth: document.documentElement.scrollWidth,
     innerWidth: window.innerWidth,

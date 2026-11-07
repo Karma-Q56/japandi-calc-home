@@ -86,7 +86,7 @@ test("login offers account and password links in demo mode", async ({ page }) =>
   await expect(page.getByRole("link", { name: "Forgot password?" })).toBeVisible();
 });
 
-test("the demo pill starts small at the bottom left and stays out of the page flow", async ({
+test("the demo pill starts small at the bottom right and stays out of the page flow", async ({
   page,
 }) => {
   await page.goto("/?demo=1");
@@ -96,7 +96,7 @@ test("the demo pill starts small at the bottom left and stays out of the page fl
   const box = await pill.boundingBox();
   const viewport = page.viewportSize()!;
   expect(box).not.toBeNull();
-  expect(box!.x).toBeLessThan(80);
+  expect(box!.x + box!.width).toBeGreaterThan(viewport.width - 80);
   expect(box!.y + box!.height).toBeGreaterThan(viewport.height - 130);
   const toggle = pill.locator(".demo-control-toggle");
   await expect(toggle).toHaveAttribute("aria-expanded", "false");

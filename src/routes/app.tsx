@@ -493,7 +493,7 @@ function OverviewBody({ data }: { data: Overview }) {
           <>
             <p>No campaign planned.</p>
             <div className="page-actions">
-              <a className="builder-primary" href="/app/campaigns/new">
+              <a className="builder-secondary" href="/app/campaigns/new">
                 New campaign
               </a>
             </div>

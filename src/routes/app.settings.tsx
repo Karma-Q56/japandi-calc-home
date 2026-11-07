@@ -277,7 +277,7 @@ function Settings() {
               : "Off. Patron cannot open this restaurant in help mode."}
         </p>
         <div className="page-actions">
-          <button className="builder-primary" onClick={() => saveHelp(helpOn)}>
+          <button className="builder-secondary" onClick={() => saveHelp(helpOn)}>
             Save help setting
           </button>
           {help.enabled ? (

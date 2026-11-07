@@ -260,7 +260,7 @@ export function DemoHome({ restaurantId }: { restaurantId: string }) {
       <section className="builder-panel">
         <h2>Quick actions</h2>
         <div className="page-actions">
-          <a className="builder-primary" href="/app/campaigns/new">
+          <a className="builder-secondary" href="/app/campaigns/new">
             New campaign
           </a>
           <a className="builder-secondary" href="/app/customers">

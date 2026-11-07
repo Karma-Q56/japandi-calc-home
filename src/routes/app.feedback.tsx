@@ -209,7 +209,7 @@ function FeedbackPage() {
           </div>
         )}
         <div className="page-actions">
-          <button className="builder-primary" onClick={askForHelp}>
+          <button className="builder-secondary" onClick={askForHelp}>
             Send request
           </button>
           <Helper>
