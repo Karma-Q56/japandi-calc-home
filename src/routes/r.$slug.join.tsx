@@ -4,6 +4,7 @@ import { api } from "@/api";
 import { VerificationStep } from "@/components/patron/VerificationStep";
 import { demoRepo, updateDemo } from "@/data/repo";
 import { getDataModeFn, joinGuestFn } from "@/server/live";
+import { linkReferralFn } from "@/server/live-challenges-fns";
 import { useDemoState } from "@/data/useDemoState";
 import { requireRole, setDemoSession } from "@/data/session";
 import { ThemeProvider } from "@/theme";
@@ -109,6 +110,10 @@ function JoinPage() {
       if (!res.ok) {
         setError(res.message);
         return;
+      }
+      // A friend's link is linked once; a bad or repeated code does not stop the join.
+      if (referralCode) {
+        await linkReferralFn({ data: { slug, code: referralCode } }).catch(() => undefined);
       }
       void navigate({ to: "/r/$slug/card", params: { slug } });
       return;

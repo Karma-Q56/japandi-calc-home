@@ -20,6 +20,14 @@ export const visitHooks: AfterVisitHook[] = [
     const stampId = await latestVisitStampId(restaurantId, membershipId);
     if (stampId) await applyVisitBonuses(restaurantId, membershipId, stampId);
   },
+  async ({ restaurantId, membershipId }) => {
+    const { applyChallengeHook } = await import("./live-challenges");
+    await applyChallengeHook(restaurantId, membershipId);
+  },
+  async ({ restaurantId, membershipId }) => {
+    const { rewardReferralFor } = await import("./live-referrals");
+    await rewardReferralFor(restaurantId, membershipId);
+  },
 ];
 
 /** Runs every hook. A failing hook is reported to the console, not to the guest. */

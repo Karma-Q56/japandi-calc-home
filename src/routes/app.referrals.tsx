@@ -18,15 +18,25 @@ import { Switch } from "@/components/patron/Switch";
 import { PhoneFrame, PreviewOnly, PublishSteps } from "@/components/patron/preview";
 import { LoyaltyTabs } from "@/components/patron/LoyaltyTabs";
 import { referralGuestPreview } from "@/domain/referrals";
+import { getDataModeFn } from "@/server/live";
+import { getReferralSettingsFn } from "@/server/live-challenges-fns";
+import { LiveReferralsTab } from "@/components/patron/live/LiveReferralsTab";
 
 import type { ReferralConfig } from "@/data/types";
 import type { ReferralOverview } from "@/domain/referrals";
 
 export const Route = createFileRoute("/app/referrals")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode === "live") return;
     if (!requireRole("owner", "manager")(demoRepo.read().session)) {
       throw redirect({ to: "/login" });
     }
+  },
+  loader: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode !== "live") return { mode, live: null };
+    return { mode, live: await getReferralSettingsFn() };
   },
   component: ReferralsPage,
 });
@@ -34,6 +44,24 @@ export const Route = createFileRoute("/app/referrals")({
 const STEP_LABELS = ["Draft", "Preview", "Publish"] as const;
 
 function ReferralsPage() {
+  const data = Route.useLoaderData();
+  if (data.mode === "live") {
+    return (
+      <main className="demo-hub page-width">
+        <PageHeader
+          eyebrow="Loyalty"
+          title="Let your happy guests bring friends."
+          intro="Every guest gets a personal link. When their friend gets their first stamp, both guests earn the reward you choose."
+        />
+        <LoyaltyTabs active="referrals" />
+        <LiveReferralsTab settings={data.live} />
+      </main>
+    );
+  }
+  return <DemoReferralsPage />;
+}
+
+function DemoReferralsPage() {
   const state = useDemoState();
   const restaurant =
     state.restaurants.find((item) => item.id === state.session.restaurantId) ??

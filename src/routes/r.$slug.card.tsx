@@ -18,6 +18,9 @@ import { PageHeader } from "@/components/patron/dash";
 import { MemberQr } from "@/components/patron/MemberQr";
 import { SpinWheel } from "@/components/patron/SpinWheel";
 import { ChallengeRow } from "@/components/patron/ChallengeRow";
+import { GuestChallenges } from "@/components/patron/GuestChallenges";
+import { ReferralShare } from "@/components/patron/ReferralShare";
+import { getGuestExtrasFn } from "@/server/live-challenges-fns";
 import { rewardEarned, rewardGuestLine, rewardProgress } from "@/lib/reward-copy";
 import { signInAsDemoAccount } from "@/lib/demo-signin";
 
@@ -27,7 +30,8 @@ export const Route = createFileRoute("/r/$slug/card")({
     const { mode } = await getDataModeFn();
     if (mode !== "live") return { mode, live: null };
     const { card } = await getCardFn({ data: { slug: params.slug } });
-    return { mode, live: card };
+    const extras = card ? await getGuestExtrasFn({ data: { slug: params.slug } }) : null;
+    return { mode, live: card, extras };
   },
   beforeLoad: async () => {
     const { mode } = await getDataModeFn();
@@ -98,7 +102,8 @@ function GuestCard() {
     if (membershipId) api.member.markSeen(membershipId);
   }, [membershipId]);
 
-  if (loaderData.live) return <LiveGuestCard slug={slug} card={loaderData.live} />;
+  if (loaderData.live)
+    return <LiveGuestCard slug={slug} card={loaderData.live} extras={loaderData.extras} />;
 
   if (!customerId) {
     return (
@@ -450,7 +455,15 @@ function johannesburgDate(iso: string): string {
 
 /** Live-mode guest card (DATA_MODE=live): RLS-scoped rows from Postgres through
  *  the getCard server function. Demo rendering above is unchanged. */
-function LiveGuestCard({ slug, card }: { slug: string; card: LiveCard }) {
+function LiveGuestCard({
+  slug,
+  card,
+  extras,
+}: {
+  slug: string;
+  card: LiveCard;
+  extras: Awaited<ReturnType<typeof getGuestExtrasFn>> | null | undefined;
+}) {
   const available = card.rewards.filter((r) => r.status === "available");
   return (
     <GuestShell back={{ to: "/me", label: "My cards" }}>
@@ -501,6 +514,8 @@ function LiveGuestCard({ slug, card }: { slug: string; card: LiveCard }) {
           View menu &amp; specials
         </a>
       </section>
+      {extras && extras.challenges.length > 0 && <GuestChallenges challenges={extras.challenges} />}
+      {extras?.referralCode && <ReferralShare slug={slug} code={extras.referralCode} />}
     </GuestShell>
   );
 }
