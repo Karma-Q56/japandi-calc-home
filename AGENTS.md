@@ -9,6 +9,11 @@
 - Keep runs cheap: run `npx tsc --noEmit` and your own new test files only. The reviewer runs the full suite, lint, build and the database checks.
 - Finish with: the branch name, the files you changed, and what you could not verify. Do not claim "done" for anything you did not run.
 
+## Skill and parallel work
+- Before any Patron task, load the skill `patron-phase-builder` (`/skill:patron-phase-builder`, files in `.agents/skills/patron-phase-builder/`). It has the build loop, the database and screen rules, the test helper and the handoff format.
+- Prompts for each phase live in `docs/prompts/` (start with `docs/prompts/README.md`). Several phases are built at the same time on separate branches, so own only the files your prompt lists and use only your reserved migration number.
+- After you push, GitHub runs the full checks (install, all migrations on a fresh database, build, type check, lint, all tests, real-database tests, browser tests). Read the result and fix red before you say done.
+
 ## Live mode rules (real database), learned from reviews
 - The signed in user comes from the server session. Never accept a restaurant id, role, plan, status or credit amount from the browser.
 - Database access goes through `withContext` (restaurantId set, isOperator false). Operator context is only switched on inside a SECURITY DEFINER function, which must remember the caller's `app.is_operator` value and put it back before it returns (copy db/migrations/0013_create_restaurant_dev.sql). A function level SET is refused by Postgres for this setting.
