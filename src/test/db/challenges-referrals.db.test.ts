@@ -48,9 +48,12 @@ describe.skipIf(!dbTestsEnabled)("challenges and referrals (real database, as ap
     const { id: restaurantB } = await makeRestaurant(db.owner, fixtures);
     const guest = await makeGuest(db.owner, fixtures);
     const membershipA = await makeMembership(db.owner, restaurantA, guest.id);
+    const [challengeB] = await db.owner`
+      insert into challenge (restaurant_id, title, visits, window_days, bonus_stamps)
+      values (${restaurantB}, ${`fx-${token()}`}, 2, 7, 1) returning id`;
     await expect(
       asApp(db.app, { restaurantId: restaurantB }, (tx) =>
-        tx`select claim_challenge(${restaurantB}, ${membershipA}, null, ${`fx-${token()}`}, 0)`,
+        tx`select claim_challenge(${restaurantB}, ${membershipA}, ${challengeB!["id"]}, ${`fx-${token()}`}, 0)`,
       ),
     ).rejects.toThrow();
   });
