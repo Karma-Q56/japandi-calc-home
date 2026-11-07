@@ -857,7 +857,7 @@ export async function recordStampAtTill(
 ): Promise<TillStampOutcome> {
   const session = requireSession();
   if ("error" in session) return { ok: false, message: session.error };
-  return withContext(
+  const outcome = await withContext(
     { databaseUrl: databaseUrl(), restaurantId: session.restaurantId, isOperator: false },
     async (transaction) => {
       const member = await q<{ id: string; staff_ok: boolean }>(
@@ -899,14 +899,6 @@ export async function recordStampAtTill(
         membershipId,
         { staffId: session.staffId },
       );
-      if (row.out_result === "stamped") {
-        await runAfterVisitHooks({
-          restaurantId: session.restaurantId,
-          membershipId,
-          staffId: session.staffId,
-          result: row.out_result,
-        });
-      }
       return {
         ok: true as const,
         result: row.out_result,
@@ -915,6 +907,16 @@ export async function recordStampAtTill(
       };
     },
   );
+  // Hooks open their own connections, so they run only after the stamp above has committed.
+  if (outcome.ok && outcome.result === "stamped") {
+    await runAfterVisitHooks({
+      restaurantId: session.restaurantId,
+      membershipId,
+      staffId: session.staffId,
+      result: outcome.result,
+    });
+  }
+  return outcome;
 }
 
 /** The real redemption. Callers must have a signed in staff member. */
