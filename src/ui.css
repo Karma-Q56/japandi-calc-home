@@ -1122,6 +1122,13 @@ button:focus-visible {
   grid-template-columns: 1fr 120px;
   align-items: end;
 }
+/* A long page address must wrap inside the card instead of pushing the page wider. */
+.qr-preview {
+  grid-template-columns: minmax(0, 1fr);
+}
+.qr-preview code {
+  overflow-wrap: anywhere;
+}
 .qr-preview svg {
   width: 160px;
   height: auto;

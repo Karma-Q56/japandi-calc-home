@@ -161,11 +161,8 @@ const SECTION_TABS: Record<string, Array<{ to: string; label: string }>> = {
     { to: "/app/insights", label: "Insights" },
     { to: "/app/reports", label: "Reports" },
   ],
-  "/app/loyalty": [
-    { to: "/app/loyalty", label: "Stamp card" },
-    { to: "/app/challenges", label: "Challenges" },
-    { to: "/app/referrals", label: "Bring a friend" },
-  ],
+  // Loyalty is not listed here. Its Loyalty, Challenges and Referrals pages share one
+  // tab bar (LoyaltyTabs) inside the page, so a second bar above would repeat it.
 };
 
 export function OwnerSectionTabs() {
@@ -173,8 +170,7 @@ export function OwnerSectionTabs() {
   const clean = path.replace(/\/$/, "") || "/app";
   const section = sectionFor(clean);
   const tabs = section ? SECTION_TABS[section] : undefined;
-  // The Loyalty page already has its own tabs for the card rules.
-  if (!tabs || clean === "/app/loyalty") return null;
+  if (!tabs) return null;
   return (
     <nav className="ox-subtabs" aria-label="In this section">
       {tabs.map((tab) => (

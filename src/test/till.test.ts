@@ -3,12 +3,7 @@ import { demoRepo, updateDemo } from "@/data/repo";
 import { clock } from "@/lib/clock";
 import type { Campaign, Message } from "@/data/types";
 import { johannesburgWeekday } from "@/domain/tools";
-import {
-  lookupMember,
-  recordStamp,
-  redeemCampaignCode,
-  undoStamp,
-} from "@/domain/stamps";
+import { lookupMember, recordStamp, redeemCampaignCode, undoStamp } from "@/domain/stamps";
 
 const RESTAURANT = "rest-daily-grind";
 const staff = { role: "staff", restaurantId: RESTAURANT };
@@ -36,9 +31,13 @@ function stampableMembership() {
         .filter((stamp) => stamp.membershipId === membershipId && stamp.status === "valid")
         .map((stamp) => new Date(stamp.createdAt).getTime()),
     );
+  // Pick a guest with no visits in the last 28 days, so no weekly streak bonus can fire
+  // and the answer does not depend on the time of day the tests run.
+  const quiet = (membershipId: string) =>
+    state.now - latest(membershipId) > 28 * 24 * 60 * 60 * 1000;
   const membership = state.memberships
     .filter((m) => m.restaurantId === RESTAURANT)
-    .find((m) => state.now - latest(m.id) > windowMs)!;
+    .find((m) => state.now - latest(m.id) > windowMs && quiet(m.id))!;
   return membership;
 }
 
@@ -186,9 +185,7 @@ describe("till lookup card", () => {
     });
     if (!result.ok) throw new Error(result.error.message);
     const rewardIds = result.data.rewards.map((reward) => reward.id);
-    expect(rewardIds).toEqual(
-      expect.arrayContaining(["reward-ready", "reward-birthday"]),
-    );
+    expect(rewardIds).toEqual(expect.arrayContaining(["reward-ready", "reward-birthday"]));
     expect(rewardIds).not.toContain("reward-spent");
     expect(result.data.offers.map((offer) => offer.code)).toEqual(["SPIN123"]);
   });

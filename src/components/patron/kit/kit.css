@@ -2722,3 +2722,8 @@
     transition-delay: calc(var(--i, 0) * 140ms + 200ms);
   }
 }
+
+/* Challenges and Referrals tabs are links: no underline, same look as the button tabs. */
+a.loyalty-tab {
+  text-decoration: none;
+}

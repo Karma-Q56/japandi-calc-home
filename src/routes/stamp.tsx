@@ -8,6 +8,7 @@ import { requireRole } from "@/data/session";
 import { isScanTokenShape, verifyScanToken } from "@/lib/scan";
 import { CardScanner } from "@/components/patron/CardScanner";
 import { StaffShell } from "@/components/patron/StaffShell";
+import { LiveTill } from "@/components/patron/LiveTill";
 import { Badge, FormField, PageHeader } from "@/components/patron/dash";
 import type { StampResult } from "@/domain/stamps";
 import { signOut } from "@/lib/sign-out";
@@ -43,6 +44,11 @@ type Lookup =
     };
 
 function Till() {
+  const { mode } = Route.useLoaderData();
+  return mode === "live" ? <LiveTill /> : <DemoTill />;
+}
+
+function DemoTill() {
   const { mode } = Route.useLoaderData();
   const state = useDemoState();
   const session = state.session;

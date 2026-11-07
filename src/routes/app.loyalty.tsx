@@ -5,6 +5,8 @@ import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
 import { StampSlots } from "@/components/patron/StampSlots";
 import { Switch } from "@/components/patron/Switch";
+import { LoyaltyTabs } from "@/components/patron/LoyaltyTabs";
+import { LOYALTY_PAGE_TABS, type LoyaltyPageTab } from "@/lib/loyalty-tabs";
 import { ConfirmDialog, FormField, Helper, PageHeader } from "@/components/patron/dash";
 import {
   PhoneFrame,
@@ -26,6 +28,11 @@ import {
 import type { LiveLoyaltySettings } from "@/server/live-loyalty";
 
 export const Route = createFileRoute("/app/loyalty")({
+  // Challenges and Referrals link back here with the tab they want open.
+  validateSearch: (search: Record<string, unknown>): { tab?: LoyaltyPageTab } => {
+    const tab = LOYALTY_PAGE_TABS.find((item) => item === search["tab"]);
+    return tab ? { tab } : {};
+  },
   beforeLoad: async () => {
     const { mode } = await getDataModeFn();
     if (mode === "live") return;
@@ -41,16 +48,8 @@ export const Route = createFileRoute("/app/loyalty")({
   component: Loyalty,
 });
 
-const TABS: ReadonlyArray<{ id: string; label: string; href?: string }> = [
-  { id: "rewards", label: "Stamp card" },
-  { id: "tools", label: "Rewards" },
-  { id: "challenges", label: "Challenges", href: "/app/challenges" },
-  { id: "referrals", label: "Referrals", href: "/app/referrals" },
-  { id: "tiers", label: "Tiers" },
-  { id: "wheel", label: "Spin" },
-];
 
-type Tab = "rewards" | "tools" | "tiers" | "wheel";
+type Tab = LoyaltyPageTab;
 
 function blankSegment(): SpinSegment {
   return {
@@ -132,7 +131,8 @@ function DemoLoyalty() {
     },
   });
   const [spin, setSpin] = useState<SpinConfig>(restaurant.spin);
-  const [tab, setTab] = useState<Tab>("rewards");
+  const search = Route.useSearch();
+  const [tab, setTab] = useState<Tab>(search.tab ?? "rewards");
   const [steps, setSteps] = useState<Record<Tab, number>>({
     rewards: 1,
     tools: 1,
@@ -348,25 +348,7 @@ function DemoLoyalty() {
         title="The card rules"
         intro="Changing rules never alters rewards already earned. Stamps above a lowered threshold convert on the next stamp."
       />
-      <nav className="loyalty-tabs" aria-label="Loyalty sections">
-        {TABS.map((item) => (
-          "href" in item ? (
-            <a key={item.id} className="loyalty-tab" href={item.href}>
-              {item.label}
-            </a>
-          ) : (
-            <button
-              key={item.id}
-              type="button"
-              className={`loyalty-tab${tab === item.id ? " is-active" : ""}`}
-              aria-current={tab === item.id ? "page" : undefined}
-              onClick={() => setTab(item.id as Tab)}
-            >
-              {item.label}
-            </button>
-          )
-        ))}
-      </nav>
+      <LoyaltyTabs active={tab} onSelect={setTab} />
       <PublishSteps step={step} labels={["Draft", "Preview", "Publish"]} />
 
       {tab === "rewards" && (
