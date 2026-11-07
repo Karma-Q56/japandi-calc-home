@@ -14,7 +14,13 @@ export type AfterVisitContext = {
 
 export type AfterVisitHook = (context: AfterVisitContext) => Promise<void>;
 
-export const visitHooks: AfterVisitHook[] = [];
+export const visitHooks: AfterVisitHook[] = [
+  async ({ restaurantId, membershipId }) => {
+    const { latestVisitStampId, applyVisitBonuses } = await import("./live-tools");
+    const stampId = await latestVisitStampId(restaurantId, membershipId);
+    if (stampId) await applyVisitBonuses(restaurantId, membershipId, stampId);
+  },
+];
 
 /** Runs every hook. A failing hook is reported to the console, not to the guest. */
 export async function runAfterVisitHooks(context: AfterVisitContext): Promise<void> {

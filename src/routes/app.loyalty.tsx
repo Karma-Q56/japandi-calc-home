@@ -25,6 +25,10 @@ import {
   getLoyaltySettingsFn,
   updateLoyaltySettingsFn,
 } from "@/server/live";
+import { getGuestTiersFn, getLoyaltyToolsFn } from "@/server/live-tools-fns";
+import type { LiveToolsSettings, LiveTiers } from "@/server/live-tools";
+import { LiveToolsTab } from "@/components/patron/live/LiveToolsTab";
+import { LiveTiersTab } from "@/components/patron/live/LiveTiersTab";
 import type { LiveLoyaltySettings } from "@/server/live-loyalty";
 import type { LiveRewardKind } from "@/lib/live-loyalty";
 import { rewardGiveLine, rewardGuestLine, type RewardValue } from "@/lib/reward-copy";
@@ -45,7 +49,12 @@ export const Route = createFileRoute("/app/loyalty")({
   loader: async () => {
     const { mode } = await getDataModeFn();
     if (mode !== "live") return { mode, live: null };
-    return { mode, live: await getLoyaltySettingsFn() };
+    const [settings, tools, tiers] = await Promise.all([
+      getLoyaltySettingsFn(),
+      getLoyaltyToolsFn(),
+      getGuestTiersFn(),
+    ]);
+    return { mode, live: settings, liveTools: tools, liveTiers: tiers };
   },
   component: Loyalty,
 });
@@ -64,7 +73,9 @@ function blankSegment(): SpinSegment {
 
 function Loyalty() {
   const data = Route.useLoaderData();
-  if (data.mode === "live") return <LiveLoyalty data={data.live} />;
+  if (data.mode === "live") {
+    return <LiveLoyalty data={data.live} tools={data.liveTools} tiers={data.liveTiers} />;
+  }
   return <DemoLoyalty />;
 }
 
@@ -1121,7 +1132,15 @@ function DemoLoyalty() {
   );
 }
 
-function LiveLoyalty({ data }: { data: LiveLoyaltySettings | null }) {
+function LiveLoyalty({
+  data,
+  tools,
+  tiers,
+}: {
+  data: LiveLoyaltySettings | null;
+  tools: LiveToolsSettings | null;
+  tiers: LiveTiers | null;
+}) {
   const search = Route.useSearch();
   const [tab, setTab] = useState<Tab>(search.tab ?? "rewards");
   const [stampsRequired, setStampsRequired] = useState(data?.stampsRequired ?? 8);
@@ -1340,7 +1359,10 @@ function LiveLoyalty({ data }: { data: LiveLoyaltySettings | null }) {
         </>
       )}
 
-      {tab !== "rewards" && (
+      {tab === "tools" && tools && <LiveToolsTab data={tools} />}
+      {tab === "tiers" && tiers && <LiveTiersTab data={tiers} />}
+
+      {tab !== "rewards" && tab !== "tools" && tab !== "tiers" && (
         <section className="builder-panel" aria-label="Coming soon">
           <h2>This part of Loyalty is being built</h2>
           <Helper>The stamp card rules are live on the Rewards tab for now.</Helper>
