@@ -26,6 +26,8 @@ import {
   updateLoyaltySettingsFn,
 } from "@/server/live";
 import type { LiveLoyaltySettings } from "@/server/live-loyalty";
+import type { LiveRewardKind } from "@/lib/live-loyalty";
+import { rewardGiveLine, rewardGuestLine, type RewardValue } from "@/lib/reward-copy";
 
 export const Route = createFileRoute("/app/loyalty")({
   // Challenges and Referrals link back here with the tab they want open.
@@ -1120,8 +1122,16 @@ function DemoLoyalty() {
 }
 
 function LiveLoyalty({ data }: { data: LiveLoyaltySettings | null }) {
+  const search = Route.useSearch();
+  const [tab, setTab] = useState<Tab>(search.tab ?? "rewards");
   const [stampsRequired, setStampsRequired] = useState(data?.stampsRequired ?? 8);
   const [reward, setReward] = useState(data?.rewardDescription ?? "");
+  const [rewardKind, setRewardKind] = useState<LiveRewardKind>(data?.rewardKind ?? "free_item");
+  const [percentOff, setPercentOff] = useState<number | null>(data?.rewardPercentOff ?? 10);
+  const [amountOffRand, setAmountOffRand] = useState<number | null>(
+    data?.rewardAmountOffCents != null ? data.rewardAmountOffCents / 100 : 20,
+  );
+  const [validDays, setValidDays] = useState<number | null>(data?.rewardValidDays ?? null);
   const [windowMinutes, setWindowMinutes] = useState(data?.visitWindowMinutes ?? 240);
   const [welcomeStamp, setWelcomeStamp] = useState(data?.welcomeStamp ?? false);
   const [marketingCap, setMarketingCap] = useState(data?.marketingWeeklyCap ?? 3);
@@ -1141,12 +1151,26 @@ function LiveLoyalty({ data }: { data: LiveLoyaltySettings | null }) {
     );
   }
 
+  const rewardPreview: RewardValue = {
+    kind: rewardKind,
+    description: reward.trim(),
+    percentOff,
+    amountOffCents: amountOffRand != null ? Math.round(amountOffRand * 100) : null,
+  };
+
   const save = async () => {
     setBusy(true);
     const result = await updateLoyaltySettingsFn({
       data: {
         stampsRequired,
         rewardDescription: reward,
+        rewardKind,
+        rewardPercentOff: rewardKind === "percent_off" ? percentOff : null,
+        rewardAmountOffCents:
+          rewardKind === "amount_off" && amountOffRand != null
+            ? Math.round(amountOffRand * 100)
+            : null,
+        rewardValidDays: validDays,
         visitWindowMinutes: windowMinutes,
         welcomeStamp,
         marketingWeeklyCap: marketingCap,
@@ -1160,6 +1184,14 @@ function LiveLoyalty({ data }: { data: LiveLoyaltySettings | null }) {
     }
     setStampsRequired(result.settings.stampsRequired);
     setReward(result.settings.rewardDescription);
+    setRewardKind(result.settings.rewardKind);
+    setPercentOff(result.settings.rewardPercentOff);
+    setAmountOffRand(
+      result.settings.rewardAmountOffCents != null
+        ? result.settings.rewardAmountOffCents / 100
+        : null,
+    );
+    setValidDays(result.settings.rewardValidDays);
     setWindowMinutes(result.settings.visitWindowMinutes);
     setWelcomeStamp(result.settings.welcomeStamp);
     setMarketingCap(result.settings.marketingWeeklyCap);
@@ -1174,76 +1206,147 @@ function LiveLoyalty({ data }: { data: LiveLoyaltySettings | null }) {
         title="Set the card rules."
         intro="These are the live rules your guests see. Saving here applies them immediately and writes an activity log entry."
         actions={
-          <button className="builder-primary" type="button" disabled={busy} onClick={save}>
-            {busy ? "Saving…" : "Save rules"}
-          </button>
+          tab === "rewards" ? (
+            <button className="builder-primary" type="button" disabled={busy} onClick={save}>
+              {busy ? "Saving…" : "Save rules"}
+            </button>
+          ) : undefined
         }
       />
-      <section className="builder-panel">
-        <h2>Reward</h2>
-        <div className="builder-fields">
-          <FormField label="Stamps needed" hint="Whole number from 2 to 30.">
-            <input
-              type="number"
-              min={2}
-              max={30}
-              value={stampsRequired}
-              onChange={(event) => setStampsRequired(Number(event.target.value))}
+      <LoyaltyTabs active={tab} onSelect={setTab} />
+
+      {tab === "rewards" && (
+        <>
+          <section className="builder-panel">
+            <h2>Reward</h2>
+            <div className="builder-fields">
+              <FormField label="Stamps needed" hint="Whole number from 2 to 30.">
+                <input
+                  type="number"
+                  min={2}
+                  max={30}
+                  value={stampsRequired}
+                  onChange={(event) => setStampsRequired(Number(event.target.value))}
+                />
+              </FormField>
+              <FormField label="What the guest gets" hint="Pick the kind of reward.">
+                <select
+                  value={rewardKind}
+                  onChange={(event) => setRewardKind(event.target.value as LiveRewardKind)}
+                >
+                  <option value="free_item">Free item</option>
+                  <option value="percent_off">Percent off the bill</option>
+                  <option value="amount_off">Rand amount off the bill</option>
+                </select>
+              </FormField>
+              {rewardKind === "free_item" && (
+                <FormField label="Free item" hint="Keep it short and plain, e.g. a flat white.">
+                  <input
+                    maxLength={120}
+                    value={reward}
+                    onChange={(event) => setReward(event.target.value)}
+                  />
+                </FormField>
+              )}
+              {rewardKind === "percent_off" && (
+                <FormField label="Percent off" hint="Whole number from 1 to 100.">
+                  <input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={percentOff ?? ""}
+                    onChange={(event) =>
+                      setPercentOff(event.target.value === "" ? null : Number(event.target.value))
+                    }
+                  />
+                </FormField>
+              )}
+              {rewardKind === "amount_off" && (
+                <FormField label="Rand off" hint="Above zero, e.g. 20 for R20 off.">
+                  <input
+                    type="number"
+                    min={0.01}
+                    step={0.01}
+                    value={amountOffRand ?? ""}
+                    onChange={(event) =>
+                      setAmountOffRand(
+                        event.target.value === "" ? null : Number(event.target.value),
+                      )
+                    }
+                  />
+                </FormField>
+              )}
+              <FormField label="Valid for days" hint="Leave empty for no expiry. 1 to 365 days.">
+                <input
+                  type="number"
+                  min={1}
+                  max={365}
+                  value={validDays ?? ""}
+                  onChange={(event) =>
+                    setValidDays(event.target.value === "" ? null : Number(event.target.value))
+                  }
+                />
+              </FormField>
+              <FormField label="Minutes between visits" hint="Zero allows a stamp every time.">
+                <input
+                  type="number"
+                  min={0}
+                  max={1440}
+                  value={windowMinutes}
+                  onChange={(event) => setWindowMinutes(Number(event.target.value))}
+                />
+              </FormField>
+            </div>
+            <Helper>
+              Guests see: {rewardGuestLine(rewardPreview)}.{" "}
+              {validDays ? "They also see a use-by date. " : ""}Staff see: {rewardGiveLine(rewardPreview)}.
+            </Helper>
+            <Helper>
+              A guest can earn one stamp in this window. Keep it at 240 minutes for a normal cafe.
+            </Helper>
+          </section>
+          <section className="builder-panel">
+            <h2>Starting stamp</h2>
+            <Switch
+              checked={welcomeStamp}
+              onChange={setWelcomeStamp}
+              label="Give one welcome stamp at join"
+              hint="A small head start. It does not earn a reward on its own."
             />
-          </FormField>
-          <FormField label="What the guest gets" hint="Keep it short and plain.">
-            <input
-              maxLength={120}
-              value={reward}
-              onChange={(event) => setReward(event.target.value)}
-            />
-          </FormField>
-          <FormField label="Minutes between visits" hint="Zero allows a stamp every time.">
-            <input
-              type="number"
-              min={0}
-              max={1440}
-              value={windowMinutes}
-              onChange={(event) => setWindowMinutes(Number(event.target.value))}
-            />
-          </FormField>
-        </div>
-        <Helper>
-          A guest can earn one stamp in this window. Keep it at 240 minutes for a normal cafe.
-        </Helper>
-      </section>
-      <section className="builder-panel">
-        <h2>Starting stamp</h2>
-        <Switch
-          checked={welcomeStamp}
-          onChange={setWelcomeStamp}
-          label="Give one welcome stamp at join"
-          hint="A small head start. It does not earn a reward on its own."
-        />
-      </section>
-      <section className="builder-panel">
-        <h2>Message limits</h2>
-        <div className="builder-fields">
-          <FormField label="Marketing SMS each week" hint="0 to 14 messages per guest.">
-            <input
-              type="number"
-              min={0}
-              max={14}
-              value={marketingCap}
-              onChange={(event) => setMarketingCap(Number(event.target.value))}
-            />
-          </FormField>
-          <FormField label="Card messages each week" hint="0 to 14 messages per guest.">
-            <input
-              type="number"
-              min={0}
-              max={14}
-              value={memberCap}
-              onChange={(event) => setMemberCap(Number(event.target.value))}
-            />
-          </FormField>
-        </div>
-      </section>
+          </section>
+          <section className="builder-panel">
+            <h2>Message limits</h2>
+            <div className="builder-fields">
+              <FormField label="Marketing SMS each week" hint="0 to 14 messages per guest.">
+                <input
+                  type="number"
+                  min={0}
+                  max={14}
+                  value={marketingCap}
+                  onChange={(event) => setMarketingCap(Number(event.target.value))}
+                />
+              </FormField>
+              <FormField label="Card messages each week" hint="0 to 14 messages per guest.">
+                <input
+                  type="number"
+                  min={0}
+                  max={14}
+                  value={memberCap}
+                  onChange={(event) => setMemberCap(Number(event.target.value))}
+                />
+              </FormField>
+            </div>
+          </section>
+        </>
+      )}
+
+      {tab !== "rewards" && (
+        <section className="builder-panel" aria-label="Coming soon">
+          <h2>This part of Loyalty is being built</h2>
+          <Helper>The stamp card rules are live on the Rewards tab for now.</Helper>
+        </section>
+      )}
+
       {notice && (
         <p className="builder-hint" role="status">
           {notice}

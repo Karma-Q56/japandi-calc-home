@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { CardScanner } from "@/components/patron/CardScanner";
 import { FormField, PageHeader } from "@/components/patron/dash";
 import { signOut } from "@/lib/sign-out";
+import { rewardGiveLine } from "@/lib/reward-copy";
 import { SIGNED_OUT_MESSAGE, UNLOCK_FIRST_MESSAGE } from "@/lib/till-messages";
 import {
   getTillStateFn,
@@ -136,7 +137,10 @@ export function LiveTill() {
       say("error", result.message);
       return;
     }
-    say("ok", `Redeemed: ${result.description}. Undo within 10 minutes if this was a mistake.`);
+    say(
+      "ok",
+      `Redeemed: ${rewardGiveLine(result)}. Undo within 10 minutes if this was a mistake.`,
+    );
     setLookup({
       ...lookup,
       rewards: lookup.rewards.filter((reward) => reward.id !== rewardId),
@@ -369,7 +373,7 @@ export function LiveTill() {
               disabled={busy}
               onClick={() => void redeem(reward.id)}
             >
-              Redeem: {reward.description}
+              Redeem: {rewardGiveLine(reward)}
             </button>
           ))}
           {lastRedeem && (
