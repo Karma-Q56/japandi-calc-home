@@ -37,6 +37,7 @@ describe.skipIf(!dbTestsEnabled)("operator console (real database, as app_user)"
     const { id: restaurantId } = await makeRestaurant(db.owner, fixtures);
     await asApp(db.app, { operator: true }, (tx) =>
       tx`select operator_set_restaurant_status(${operator}, ${restaurantId}::uuid, 'paused', 'Owner asked to pause')`,
+      { rollback: false },
     );
     expect(await status(restaurantId)).toBe("paused");
     const [audit] = await db.owner`
@@ -72,6 +73,7 @@ describe.skipIf(!dbTestsEnabled)("operator console (real database, as app_user)"
     const { id: restaurantId } = await makeRestaurant(db.owner, fixtures);
     await asApp(db.app, { operator: true }, (tx) =>
       tx`select operator_set_restaurant_plan(${operator}, ${restaurantId}::uuid, 'managed', 'Upgrade agreed')`,
+      { rollback: false },
     );
     const [row] = await db.owner`select plan::text as p from restaurant where id = ${restaurantId}`;
     expect(row!["p"]).toBe("managed");
@@ -89,6 +91,7 @@ describe.skipIf(!dbTestsEnabled)("operator console (real database, as app_user)"
     const run = () =>
       asApp(db.app, { operator: true }, (tx) =>
         tx`select operator_add_credit(${operator}, ${restaurantId}::uuid, 'topup', 50000, ${reference}, 'EFT received') as id`,
+        { rollback: false },
       );
     const first = await run();
     const second = await run();
