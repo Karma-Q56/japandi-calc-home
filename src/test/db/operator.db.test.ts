@@ -154,12 +154,13 @@ describe.skipIf(!dbTestsEnabled)("operator console (real database, as app_user)"
     const operator = await makeAppUser(db.owner, fixtures, { role: "operator" });
     const { id: restaurantId } = await makeRestaurant(db.owner, fixtures);
     const [camp] = await db.owner`
-      insert into campaign (restaurant_id, name, message_body, audience, code, status, requires_approval)
-      values (${restaurantId}, ${`fx-camp-${token()}`}, 'Hello', '{"type":"all_opted_in"}', 'FX123', 'pending_approval', true)
+      insert into campaign (restaurant_id, name, message_body, audience, code, status, requires_approval, created_by)
+      values (${restaurantId}, ${`fx-camp-${token()}`}, 'Hello', '{"type":"all_opted_in"}', 'FX123', 'pending_approval', true, ${operator})
       returning id`;
     const campaignId = camp!["id"] as string;
     await asApp(db.app, { operator: true }, (tx) =>
       tx`select operator_decide_campaign(${operator}, ${campaignId}::uuid, 'approve', 'Looks fine')`,
+      { rollback: false },
     );
     const [row] = await db.owner`select status::text as s from campaign where id = ${campaignId}`;
     expect(row!["s"]).toBe("scheduled");
