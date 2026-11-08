@@ -48,7 +48,7 @@ Send in this order: D10, D12a, D13a, D15, D11, D12e, D17, D18. These are on the 
 - Every prompt owns a short list of files. Nobody else edits them.
 - Server function wrappers go in each phase's own new file, never in `src/server/live.ts`.
 - Shared extension points are small lists that each phase appends one line to: `visitHooks` and `orderHooks` in `src/server/live-after-visit.ts`. Claude resolves any one-line conflict when merging.
-- A phase that needs something in a file it does not own writes it under "Needs from another phase" in its handoff. Claude wires those pieces together after each wave (for example mounting the suburb and category pickers from D19 into Settings and Your page).
+- A phase that needs something in a file it does not own writes it under "Needs from another phase" in its handoff. Claude wires those pieces together after each wave (for example mounting the suburb and category pickers from D19 into Settings and Your page, and adding plain wording for new audit action names such as `restaurant_published`).
 - Only one phase ever replaces `record_stamp()` (D12a). Everything else hooks in after it.
 - Tests that touch the real database run on GitHub automatically for every push. Freebuff does not need a database.
 

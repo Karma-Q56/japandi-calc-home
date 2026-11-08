@@ -14,7 +14,7 @@ Four owner screens stop showing sample data and start using the real database: S
 - `src/test/db/owner-admin.db.test.ts`
 
 ## Read first (the specification)
-The four demo screens, `src/domain/audit.ts`, `feedback.ts`, `ideas.ts`, `help.ts`, and the `audit_event`, `feedback` and `idea` tables (migrations 0001, 0005, 0006). Note the app role is append-only on audit rows.
+The four demo screens, `src/domain/audit.ts`, `feedback.ts`, `ideas.ts`, `help.ts`, and the `audit_event`, `feedback` and `idea` tables (migrations 0001, 0005, 0006 and the privacy rules in 0009). Note the app role is append-only on audit rows.
 
 ## Build
 1. **Settings.** Port each section of the demo Settings page to live wherever it has a real effect, using columns that already exist (message weekly caps, quiet hours) and adding the missing ones in 0022 with check constraints: business details (name, phone, address, suburb, city), who gets enquiries, message limits, offers and alerts preferences, "Help from Patron" mode, and "Orders at the till" (`orders_at_till boolean not null default false`; D13c reads it, you only own the switch). A section that cannot work yet (for example done-for-you campaign requests) saves a request row an operator can read (reuse `lead` or `feedback`) and says so plainly. Only owners and managers save. Changing the business name or phone writes an audit row.

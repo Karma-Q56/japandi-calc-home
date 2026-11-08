@@ -16,7 +16,7 @@ A guest can allow notifications from Patron, and the server can send them a push
 - `src/test/db/web-push.db.test.ts`
 
 ## Read first
-`src/lib/web-push-client.ts`, `docs/decisions.md`, migrations 0001 to 0008 (a push subscription table may already exist: extend it, do not duplicate), `wrangler.jsonc` (is `nodejs_compat` on?).
+`src/lib/web-push-client.ts`, `docs/decisions.md`, migrations 0001 to 0008 (a `push_subscription` table already exists at `db/schema.sql` line 277 with a `disabled_at` column and a customer index: extend it, do not create a second one, and align the column list below with what is there), `wrangler.jsonc` (is `nodejs_compat` on?).
 
 ## Build
 1. **Table** `push_subscription`: `id`, `customer_id` (the guest, cascade), `endpoint text unique`, `p256dh`, `auth`, `user_agent` (max 200), `created_at`, `last_success_at`, `failed_at`. Policy: a guest sees and changes only their own rows; the owner role never reads keys. Server-side only function `push_reach(p_restaurant_id uuid)` SECURITY DEFINER returns how many members of that restaurant have a subscription and valid marketing consent (a number only, never the keys). Operator context save and restore as in 0013.
