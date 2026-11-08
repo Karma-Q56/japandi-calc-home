@@ -76,6 +76,26 @@ describe.skipIf(!dbTestsEnabled)("challenges and referrals (real database, as ap
     }
   }
 
+  it("refuses a percent or amount reward that has no value (a CHECK passes on NULL)", async () => {
+    const { id: restaurantId } = await makeRestaurant(db.owner, fixtures);
+    await expect(
+      db.owner`
+        insert into challenge (restaurant_id, title, visits, window_days, reward_type)
+        values (${restaurantId}, 'bad', 2, 7, 'percent_off')`,
+    ).rejects.toThrow();
+    await expect(
+      db.owner`
+        insert into challenge (restaurant_id, title, visits, window_days, reward_type)
+        values (${restaurantId}, 'bad', 2, 7, 'amount_off')`,
+    ).rejects.toThrow();
+    await expect(
+      db.owner`update restaurant set referrer_reward_type = 'percent_off', referrer_reward_percent_off = null where id = ${restaurantId}`,
+    ).rejects.toThrow();
+    await expect(
+      db.owner`update restaurant set friend_reward_type = 'amount_off', friend_reward_amount_off_cents = null where id = ${restaurantId}`,
+    ).rejects.toThrow();
+  });
+
   it("refuses to pay a challenge the guest has not completed", async () => {
     const { restaurantId, membershipId, challengeId } = await setupChallenge(3);
     await addVisits(restaurantId, membershipId, 2);

@@ -32,9 +32,9 @@ alter table challenge add constraint challenge_reward_check check (
      and reward_percent_off is null and reward_amount_off_cents is null and reward_item is null)
   or (reward_type = 'free_item' and reward_item is not null and length(trim(reward_item)) between 1 and 80
      and reward_percent_off is null and reward_amount_off_cents is null)
-  or (reward_type = 'percent_off' and reward_percent_off between 1 and 100
+  or (reward_type = 'percent_off' and reward_percent_off is not null and reward_percent_off between 1 and 100
      and reward_amount_off_cents is null and reward_item is null)
-  or (reward_type = 'amount_off' and reward_amount_off_cents > 0
+  or (reward_type = 'amount_off' and reward_amount_off_cents is not null and reward_amount_off_cents > 0
      and reward_percent_off is null and reward_item is null)
 );
 
@@ -75,10 +75,10 @@ alter table restaurant add constraint restaurant_referral_check check (
   and friend_reward_type in ('stamps', 'free_item', 'percent_off', 'amount_off')
   and (referrer_reward_type <> 'free_item' or length(trim(coalesce(referrer_reward_item, ''))) between 1 and 80)
   and (friend_reward_type <> 'free_item' or length(trim(coalesce(friend_reward_item, ''))) between 1 and 80)
-  and (referrer_reward_type <> 'percent_off' or referrer_reward_percent_off between 1 and 100)
-  and (friend_reward_type <> 'percent_off' or friend_reward_percent_off between 1 and 100)
-  and (referrer_reward_type <> 'amount_off' or referrer_reward_amount_off_cents > 0)
-  and (friend_reward_type <> 'amount_off' or friend_reward_amount_off_cents > 0)
+  and (referrer_reward_type <> 'percent_off' or (referrer_reward_percent_off is not null and referrer_reward_percent_off between 1 and 100))
+  and (friend_reward_type <> 'percent_off' or (friend_reward_percent_off is not null and friend_reward_percent_off between 1 and 100))
+  and (referrer_reward_type <> 'amount_off' or (referrer_reward_amount_off_cents is not null and referrer_reward_amount_off_cents > 0))
+  and (friend_reward_type <> 'amount_off' or (friend_reward_amount_off_cents is not null and friend_reward_amount_off_cents > 0))
   and (referral_reward_valid_days is null or referral_reward_valid_days between 1 and 365)
 );
 
