@@ -24,6 +24,10 @@ as $$
 declare
   prior_operator text := current_setting('app.is_operator', true);
 begin
+  -- FIRST: the restaurant you were given must be the caller's own restaurant (or the caller is an operator).
+  if not app_is_operator() and app_restaurant() is distinct from p_restaurant_id then
+    raise exception 'not_allowed';
+  end if;
   perform set_config('app.is_operator', 'true', true);   -- only if the function must see across rows
   -- validate first, refuse with a short code: raise exception 'bad_input';
   -- do the work
@@ -38,6 +42,8 @@ grant execute on function do_thing(uuid, text) to app_user;
 Why the restore matters: without it, the caller keeps operator power for the rest of the transaction and can read every restaurant. A function level `SET app.is_operator` is refused by Postgres for this setting, so save and restore as above.
 
 Check that the caller is allowed inside the function too (their restaurant id from `app_restaurant()`, their role), not only in the server code.
+
+Two traps that cost us a review round: (1) `app_restaurant() = p_restaurant_id` is NULL, not false, when there is no context, so always use `is distinct from`. (2) A CHECK constraint passes when its expression is NULL, so a required value needs `col is not null and ...` inside the check.
 
 ## Tables, grants and row level security
 

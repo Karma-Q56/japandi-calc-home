@@ -12,6 +12,9 @@
 ## Skill and parallel work
 - Before any Patron task, load the skill `patron-phase-builder` (`/skill:patron-phase-builder`, files in `.agents/skills/patron-phase-builder/`). It has the build loop, the database and screen rules, the test helper and the handoff format.
 - Prompts for each phase live in `docs/prompts/` (start with `docs/prompts/README.md`). Several phases are built at the same time on separate branches, so own only the files your prompt lists and use only your reserved migration number.
+- Finish the whole prompt in one run. Do not stop to ask or wait for "continue". Decide, list the choice under "Decisions I made", and stop only for production, money, real guests' data or something that cannot be undone.
+- Work only on the one git branch your prompt names. Never create other git branches, and never create, reset or delete anything in Neon, Vercel or Cloudflare. The Neon project is limited to 10 branches.
+- A SECURITY DEFINER function must check the restaurant or membership it is given against the caller's own context (see mistake 8 in the skill).
 - After you push, GitHub runs the full checks (install, all migrations on a fresh database, build, type check, lint, all tests, real-database tests, browser tests). Read the result and fix red before you say done.
 
 ## Live mode rules (real database), learned from reviews

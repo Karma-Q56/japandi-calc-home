@@ -10,18 +10,13 @@ Send one message per prompt, in this form (change the file name):
 
 Then send the next prompt in a new Freebuff conversation (one conversation per prompt keeps each branch clean). When a branch is pushed, tell Claude the branch name. Claude fetches it, applies the migration to the preview database, tests as the restricted role, fixes what is left, merges it into `claude/fix-regressions` and confirms the GitHub check is green.
 
-## Design skills every prompt must use
+## Design skills
 
-For every implementation of every prompt, use these skills, found in `C:\Users\Lenovo\.agents\skills`:
+Skills found in `C:\Users\Lenovo\.agents\skills`: `impeccable`, `design-taste-frontend`, `design-system`, `brand`, `gsap-react`, `accessibility`. They help on new screens, with limits so they do not restyle the product. The rules are in the skill `patron-phase-builder` under "Design skills". In short: `accessibility` always; `impeccable` and `design-taste-frontend` improve new screens inside Patron's existing look; `design-system` and `brand` are read-only; `gsap-react` only when a prompt asks for motion. The handoff says in one line which were applied and which were skipped, and why.
 
-- `impeccable`
-- `design-taste-frontend`
-- `design-system`
-- `brand`
-- `gsap-react`
-- `accessibility`
+## One prompt, one run
 
-The handoff must say which of these were applied to the work and which were not, with the reason.
+Each prompt is meant to be built, tested and handed off in a single run without anyone typing "continue". Freebuff makes its own choices, lists them under "Decisions I made", and stops only for production, money, real guests' data or something that cannot be undone. Freebuff works only on its one named git branch and never creates Neon, Vercel or extra GitHub resources (the Neon project is limited to 10 branches and every pushed git branch already gets one).
 
 ## Waves
 
