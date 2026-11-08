@@ -132,7 +132,7 @@ export function LiveChallengesTab({ challenges }: { challenges: LiveChallenge[] 
           {draft.kind === "quiet_days" && (
             <>
               <FormField label="Days" hint="Only visits on these days count.">
-                <div>
+                <div role="group" aria-label="Days">
                   {DAY_NAMES.map((name, day) => (
                     <label key={name} style={{ marginRight: 8 }}>
                       <input type="checkbox" checked={draft.weekdays.includes(day)} onChange={() => toggleDay(day)} /> {name}
