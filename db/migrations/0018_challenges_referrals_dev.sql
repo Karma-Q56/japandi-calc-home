@@ -171,6 +171,10 @@ declare
   new_reward uuid;
   new_stamp uuid;
 begin
+  -- The caller must be working inside this restaurant (or be an operator).
+  if not app_is_operator() and app_restaurant() is distinct from p_restaurant then
+    raise exception 'not_allowed';
+  end if;
   perform set_config('app.is_operator', 'true', true);
   select * into ch from challenge where id = p_challenge and restaurant_id = p_restaurant and active;
   if not found then
@@ -184,6 +188,11 @@ begin
   if exists (select 1 from challenge_claim where challenge_id = p_challenge and membership_id = p_membership) then
     perform set_config('app.is_operator', coalesce(prior_operator, ''), true);
     return query select 'already_claimed'::text, null::uuid; return;
+  end if;
+  -- The database, not the app, decides whether the guest has done the challenge.
+  if challenge_progress(p_challenge, p_membership) < ch.visits then
+    perform set_config('app.is_operator', coalesce(prior_operator, ''), true);
+    return query select 'not_complete'::text, null::uuid; return;
   end if;
   if p_monthly_limit is not null then
     select count(*) into month_claims from challenge_claim c
@@ -233,6 +242,9 @@ declare
   ref_month integer;
   friend_stamp integer;
 begin
+  if not app_is_operator() and app_restaurant() is distinct from p_restaurant then
+    raise exception 'not_allowed';
+  end if;
   perform set_config('app.is_operator', 'true', true);
   select * into ref from referral
     where restaurant_id = p_restaurant and friend_membership_id = p_friend and status = 'pending'

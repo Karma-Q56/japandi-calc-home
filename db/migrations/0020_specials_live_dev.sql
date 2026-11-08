@@ -87,6 +87,11 @@ declare
   prior_use   special_use%rowtype;
   now_ts      timestamptz := now();
 begin
+  -- The till works inside one restaurant. Refuse a call that names a different restaurant,
+  -- so a session for restaurant A can never use up codes that belong to restaurant B.
+  if not app_is_operator() and app_restaurant() is distinct from p_restaurant then
+    raise exception 'not_allowed';
+  end if;
   perform set_config('app.is_operator', 'true', true);
 
   -- A retry with the same key returns the first answer and changes nothing.

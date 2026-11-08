@@ -27,6 +27,11 @@ declare
   prior_operator text := current_setting('app.is_operator', true);
   reach integer;
 begin
+  -- A restaurant may only count its own reach. Without this, any signed-in owner could
+  -- read another restaurant's push audience size.
+  if not app_is_operator() and app_restaurant() is distinct from p_restaurant_id then
+    raise exception 'not_allowed';
+  end if;
   perform set_config('app.is_operator', 'true', true);
 
   select count(distinct m.customer_id)::integer into reach

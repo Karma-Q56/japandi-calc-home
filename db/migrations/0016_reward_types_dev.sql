@@ -11,14 +11,16 @@ alter table restaurant
 alter table restaurant drop constraint if exists restaurant_reward_kind_check;
 alter table restaurant add constraint restaurant_reward_kind_check check (
   (reward_kind = 'free_item' and reward_percent_off is null and reward_amount_off_cents is null)
-  or (reward_kind = 'percent_off' and reward_percent_off between 1 and 100 and reward_amount_off_cents is null)
-  or (reward_kind = 'amount_off' and reward_amount_off_cents > 0 and reward_percent_off is null)
+  or (reward_kind = 'percent_off' and reward_percent_off is not null and reward_percent_off between 1 and 100 and reward_amount_off_cents is null)
+  or (reward_kind = 'amount_off' and reward_amount_off_cents is not null and reward_amount_off_cents > 0 and reward_percent_off is null)
 );
 
 alter table restaurant drop constraint if exists restaurant_reward_valid_days_check;
 alter table restaurant add constraint restaurant_reward_valid_days_check
   check (reward_valid_days is null or reward_valid_days between 1 and 365);
 
+-- A check passes when it evaluates to NULL, so the percent and amount are tested with
+-- `is not null` as well. Without it a percent_off reward with no percentage got through.
 -- ---------------------------------------------------------------- reward: the kind and value a guest was given
 alter table reward
   add column if not exists kind text not null default 'free_item',
@@ -31,8 +33,8 @@ alter table reward
 alter table reward drop constraint if exists reward_kind_check;
 alter table reward add constraint reward_kind_check check (
   (kind = 'free_item' and percent_off is null and amount_off_cents is null)
-  or (kind = 'percent_off' and percent_off between 1 and 100 and amount_off_cents is null)
-  or (kind = 'amount_off' and amount_off_cents > 0 and percent_off is null)
+  or (kind = 'percent_off' and percent_off is not null and percent_off between 1 and 100 and amount_off_cents is null)
+  or (kind = 'amount_off' and amount_off_cents is not null and amount_off_cents > 0 and percent_off is null)
 );
 
 alter table reward drop constraint if exists reward_source_check;

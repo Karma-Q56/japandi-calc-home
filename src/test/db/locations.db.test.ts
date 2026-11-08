@@ -54,11 +54,19 @@ d("0015 locations (real database)", () => {
     ).rejects.toThrow();
   });
 
-  it("does not show another restaurant's locations", async () => {
+  it("does not show a draft restaurant's locations to another restaurant", async () => {
+    const draft = (await makeRestaurant(conn.owner, fixtures, { status: "draft" })).id;
+    const rows = await asApp(conn.app, { restaurantId: restaurantB, operator: false }, (tx) =>
+      tx`select id from location where restaurant_id = ${draft}`,
+    );
+    expect(rows.length).toBe(0);
+  });
+
+  it("shows the locations of an active restaurant to anyone, like its public page", async () => {
     const rows = await asApp(conn.app, { restaurantId: restaurantB, operator: false }, (tx) =>
       tx`select id from location where restaurant_id = ${restaurantA}`,
     );
-    expect(rows.length).toBe(0);
+    expect(rows.length).toBe(1);
   });
 
   it("app role cannot delete a location", async () => {

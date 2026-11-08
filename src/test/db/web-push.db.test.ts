@@ -78,7 +78,19 @@ describe.skipIf(!dbTestsEnabled)("web push (real database, as app_user)", () => 
 
   it("push_reach returns zero for a restaurant with no members", async () => {
     const restaurant = await makeRestaurant(db.owner, fixtures);
-    const [row] = await db.owner`select push_reach(${restaurant.id}) as reach`;
-    expect(Number(row!["reach"])).toBe(0);
+    const reach = await asApp(db.app, { restaurantId: restaurant.id }, async (tx) => {
+      const [row] = await tx`select push_reach(${restaurant.id}) as reach`;
+      return Number(row!["reach"]);
+    });
+    expect(reach).toBe(0);
+  });
+
+  it("push_reach refuses another restaurant's audience and a call with no context", async () => {
+    const mine = await makeRestaurant(db.owner, fixtures);
+    const theirs = await makeRestaurant(db.owner, fixtures);
+    await expect(
+      asApp(db.app, { restaurantId: mine.id }, (tx) => tx`select push_reach(${theirs.id})`),
+    ).rejects.toThrow(/not_allowed/);
+    await expect(asApp(db.app, {}, (tx) => tx`select push_reach(${theirs.id})`)).rejects.toThrow(/not_allowed/);
   });
 });

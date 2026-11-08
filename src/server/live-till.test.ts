@@ -120,9 +120,9 @@ vi.mock("./db", () => ({
           row.status = "redeemed";
           return { rows: [{ id: row.id, description: row.description }] };
         }
-        if (text.includes("select status from reward")) {
+        if (text.includes("select status from reward") || text.includes("select status, (expires_at")) {
           const row = db.rewards.find((reward) => text.includes(reward.id));
-          return { rows: row ? [{ status: row.status }] : [] };
+          return { rows: row ? [{ status: row.status, expired: false }] : [] };
         }
         if (text.includes("select id, display_name from staff_member")) {
           const row = db.staff.find((member) => text.includes(member.id));

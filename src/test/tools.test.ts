@@ -141,6 +141,9 @@ describe("visit streak", () => {
 describe("monthly tool budget", () => {
   it("stops granting once the cap is reached, and blocks the other tool too", () => {
     const membership = membershipFor(RESTAURANT);
+    // Pin the test to a Wednesday morning in Johannesburg. Without this the result depended on
+    // the real weekday the tests ran on (it failed on a Sunday, when the week boundary is close).
+    demoRepo.update((current) => ({ ...current, now: nextJohannesburgWeekday(3) }));
     const visitWeekday = johannesburgWeekday(clock.now() + 5 * 60 * 60 * 1000);
     ensureTools({ doubleStamp: true, weekday: visitWeekday, streak: true, weeklyVisits: 1, budget: 1 });
     stampVisit(membership.id, "b1"); // double stamp, budget spent

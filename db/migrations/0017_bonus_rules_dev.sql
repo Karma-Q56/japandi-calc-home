@@ -85,8 +85,16 @@ declare
   weeks_with_visits integer;
   n integer;
 begin
+  -- The caller must be working inside the same restaurant as the guest, or be an operator.
+  -- Without this, any app_user session could pay bonuses on another restaurant's guests.
+  if not app_is_operator() and app_restaurant() is null then
+    raise exception 'not_allowed';
+  end if;
   select * into m from membership where id = p_membership;
   if not found then return 0; end if;
+  if not app_is_operator() and m.restaurant_id is distinct from app_restaurant() then
+    raise exception 'not_allowed';
+  end if;
   select * into r from restaurant where id = m.restaurant_id;
   select * into visit from stamp_event where id = p_stamp_event and membership_id = p_membership;
   if not found then return 0; end if;
@@ -173,8 +181,16 @@ declare
   granted integer := 0;
   n integer;
 begin
+  -- The caller must be working inside the same restaurant as the guest, or be an operator.
+  -- Without this, any app_user session could pay bonuses on another restaurant's guests.
+  if not app_is_operator() and app_restaurant() is null then
+    raise exception 'not_allowed';
+  end if;
   select * into m from membership where id = p_membership;
   if not found then return 0; end if;
+  if not app_is_operator() and m.restaurant_id is distinct from app_restaurant() then
+    raise exception 'not_allowed';
+  end if;
   select * into r from restaurant where id = m.restaurant_id;
   select * into c from customer where id = m.customer_id;
 

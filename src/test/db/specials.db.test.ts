@@ -62,18 +62,40 @@ describe.skipIf(!dbTestsEnabled)("specials (real database, as app_user)", () => 
       values (${restaurantId}, ${specialId}, ${membershipId}, ${code})`;
     const key = `fx-${token()}`;
 
-    const first = await asApp(db.app, { restaurantId }, (tx) =>
-      tx`select out_result from redeem_special_code(${restaurantId}, ${code}, ${membershipId}, null, ${key})`,
+    // Both calls commit (rollback: false). With the default rollback the first use would vanish
+    // and the second call would count as a fresh use instead of a replay.
+    const first = await asApp(
+      db.app,
+      { restaurantId },
+      (tx) => tx`select out_result from redeem_special_code(${restaurantId}, ${code}, ${membershipId}, null, ${key})`,
+      { rollback: false },
     );
     expect(first[0]!["out_result"]).toBe("ok");
 
-    const again = await asApp(db.app, { restaurantId }, (tx) =>
-      tx`select out_result from redeem_special_code(${restaurantId}, ${code}, ${membershipId}, null, ${key})`,
+    const again = await asApp(
+      db.app,
+      { restaurantId },
+      (tx) => tx`select out_result from redeem_special_code(${restaurantId}, ${code}, ${membershipId}, null, ${key})`,
+      { rollback: false },
     );
     expect(again[0]!["out_result"]).toBe("replay");
 
     const uses = await db.owner`select count(*)::int as n from special_use where special_id = ${specialId}`;
     expect(uses[0]!["n"]).toBe(1);
+  });
+
+  it("refuses a call made from another restaurant's context", async () => {
+    const { id: restaurantA } = await makeRestaurant(db.owner, fixtures);
+    const { id: restaurantB } = await makeRestaurant(db.owner, fixtures);
+    const guest = await makeGuest(db.owner, fixtures);
+    const membershipA = await makeMembership(db.owner, restaurantA, guest.id);
+    await expect(
+      asApp(
+        db.app,
+        { restaurantId: restaurantB },
+        (tx) => tx`select * from redeem_special_code(${restaurantA}, 'ANY', ${membershipA}, null, ${`fx-${token()}`})`,
+      ),
+    ).rejects.toThrow(/not_allowed/);
   });
 
   it("refuses a code that belongs to another restaurant", async () => {

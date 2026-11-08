@@ -6,14 +6,14 @@ const sql = readFileSync("db/migrations/0016_reward_types_dev.sql", "utf8");
 describe("0016 reward types", () => {
   it("only lets a reward have one of the three kinds with a matching value", () => {
     expect(sql).toMatch(/kind = 'free_item' and percent_off is null and amount_off_cents is null/);
-    expect(sql).toMatch(/kind = 'percent_off' and percent_off between 1 and 100/);
-    expect(sql).toMatch(/kind = 'amount_off' and amount_off_cents > 0/);
+    expect(sql).toMatch(/kind = 'percent_off' and percent_off is not null and percent_off between 1 and 100/);
+    expect(sql).toMatch(/kind = 'amount_off' and amount_off_cents is not null and amount_off_cents > 0/);
   });
 
   it("keeps the restaurant's reward kind to the same three values", () => {
     expect(sql).toMatch(/restaurant_reward_kind_check/);
-    expect(sql).toMatch(/reward_kind = 'percent_off' and reward_percent_off between 1 and 100/);
-    expect(sql).toMatch(/reward_kind = 'amount_off' and reward_amount_off_cents > 0/);
+    expect(sql).toMatch(/reward_kind = 'percent_off' and reward_percent_off is not null and reward_percent_off between 1 and 100/);
+    expect(sql).toMatch(/reward_kind = 'amount_off' and reward_amount_off_cents is not null and reward_amount_off_cents > 0/);
   });
 
   it("limits reward validity to 1 to 365 days or no limit", () => {
