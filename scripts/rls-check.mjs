@@ -22,7 +22,7 @@ let customerB;
 try {
   const fixtures = await owner.begin(async (tx) => {
     const [a] = await tx`insert into restaurant (slug, name) values (${`rls-a-${suffix.slice(0, 24)}`}, 'RLS A') returning id`;
-    const [b] = await tx`insert into restaurant (slug, name) values (${`rls-b-${suffix.slice(0, 24)}`}, 'RLS B') returning id`;
+    const [b] = await tx`insert into restaurant (slug, name, status) values (${`rls-b-${suffix.slice(0, 24)}`}, 'RLS B', 'active') returning id`;
     const [guestA] = await tx`insert into customer (user_id, phone_e164, name) values (${`rls-a-${suffix}`}, ${`+2782${digits}`}, 'Fixture A') returning id`;
     const [guestB] = await tx`insert into customer (user_id, phone_e164, name) values (${`rls-b-${suffix}`}, ${`+2783${digits}`}, 'Fixture B') returning id`;
     const [memberA] = await tx`insert into membership (restaurant_id, customer_id) values (${a.id}, ${guestA.id}) returning id`;
@@ -48,8 +48,8 @@ try {
   });
   ({ restaurantA, restaurantB, customerA, customerB } = fixtures);
 
-  // Menu and specials are public on purpose (diners read them before they join), so other
-  // restaurants may READ them. What must never happen is another restaurant WRITING to them.
+  // Menu and specials are public only once a restaurant is active (migration 0014). Restaurant B
+  // is active in these fixtures, so other restaurants may READ them. Writes must never cross over.
   const publicReadTables = ["menu_section", "menu_item", "special"];
   const privateTables = [
     "staff_member", "membership", "stamp_event",
