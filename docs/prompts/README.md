@@ -10,6 +10,19 @@ Send one message per prompt, in this form (change the file name):
 
 Then send the next prompt in a new Freebuff conversation (one conversation per prompt keeps each branch clean). When a branch is pushed, tell Claude the branch name. Claude fetches it, applies the migration to the preview database, tests as the restricted role, fixes what is left, merges it into `claude/fix-regressions` and confirms the GitHub check is green.
 
+## Design skills every prompt must use
+
+For every implementation of every prompt, use these skills, found in `C:\Users\Lenovo\.agents\skills`:
+
+- `impeccable`
+- `design-taste-frontend`
+- `design-system`
+- `brand`
+- `gsap-react`
+- `accessibility`
+
+The handoff must say which of these were applied to the work and which were not, with the reason.
+
 ## Waves
 
 A wave can start as soon as everything it depends on has been merged into `claude/fix-regressions`. Inside a wave, send all the prompts at once.
