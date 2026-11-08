@@ -21,6 +21,9 @@ import { ChallengeRow } from "@/components/patron/ChallengeRow";
 import { GuestChallenges } from "@/components/patron/GuestChallenges";
 import { ReferralShare } from "@/components/patron/ReferralShare";
 import { getGuestExtrasFn } from "@/server/live-challenges-fns";
+import { getGuestSpecialsFn } from "@/server/live-specials-fns";
+import { GuestSpecials } from "@/components/patron/GuestSpecials";
+import type { GuestSpecial } from "@/server/live-specials";
 import { rewardEarned, rewardGuestLine, rewardProgress } from "@/lib/reward-copy";
 import { signInAsDemoAccount } from "@/lib/demo-signin";
 
@@ -30,8 +33,13 @@ export const Route = createFileRoute("/r/$slug/card")({
     const { mode } = await getDataModeFn();
     if (mode !== "live") return { mode, live: null };
     const { card } = await getCardFn({ data: { slug: params.slug } });
-    const extras = card ? await getGuestExtrasFn({ data: { slug: params.slug } }) : null;
-    return { mode, live: card, extras };
+    const [extras, specials] = card
+      ? await Promise.all([
+          getGuestExtrasFn({ data: { slug: params.slug } }),
+          getGuestSpecialsFn({ data: { slug: params.slug } }),
+        ])
+      : [null, null];
+    return { mode, live: card, extras, specials };
   },
   beforeLoad: async () => {
     const { mode } = await getDataModeFn();
@@ -103,7 +111,14 @@ function GuestCard() {
   }, [membershipId]);
 
   if (loaderData.live)
-    return <LiveGuestCard slug={slug} card={loaderData.live} extras={loaderData.extras} />;
+    return (
+      <LiveGuestCard
+        slug={slug}
+        card={loaderData.live}
+        extras={loaderData.extras}
+        specials={loaderData.specials}
+      />
+    );
 
   if (!customerId) {
     return (
@@ -459,10 +474,12 @@ function LiveGuestCard({
   slug,
   card,
   extras,
+  specials,
 }: {
   slug: string;
   card: LiveCard;
   extras: Awaited<ReturnType<typeof getGuestExtrasFn>> | null | undefined;
+  specials: GuestSpecial[] | null | undefined;
 }) {
   const available = card.rewards.filter((r) => r.status === "available");
   return (
@@ -514,6 +531,7 @@ function LiveGuestCard({
           View menu &amp; specials
         </a>
       </section>
+      {specials && specials.length > 0 && <GuestSpecials specials={specials} />}
       {extras && extras.challenges.length > 0 && <GuestChallenges challenges={extras.challenges} />}
       {extras?.referralCode && <ReferralShare slug={slug} code={extras.referralCode} />}
     </GuestShell>
