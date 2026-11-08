@@ -15,7 +15,7 @@ import {
   type PublishStatus,
   type Readiness,
 } from "@/lib/live-publish";
-import { ConfirmDialog } from "@/components/patron/dash";
+import { Badge, ConfirmDialog } from "@/components/patron/dash";
 
 type State = {
   slug: string;
@@ -30,6 +30,7 @@ export function LivePublishCard() {
   const [loaded, setLoaded] = useState(false);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const load = async () => {
     const next = await getPublishStateFn();
@@ -47,6 +48,12 @@ export function LivePublishCard() {
   const reason = firstMissingReason(state.readiness);
   const isLive = state.status === "active";
 
+  const copyLink = async () => {
+    if (!state) return;
+    await navigator.clipboard.writeText(`${window.location.origin}/r/${state.slug}`);
+    setCopied(true);
+  };
+
   const run = async (action: () => Promise<{ ok: true } | { ok: false; message: string }>) => {
     setBusy(true);
     setMessage("");
@@ -62,9 +69,20 @@ export function LivePublishCard() {
 
   return (
     <section className="builder-panel" aria-labelledby="publish-heading">
-      <h2 id="publish-heading">Your page: {statusLabel(state.status)}</h2>
+      <h2 id="publish-heading">Your page</h2>
+      <p>
+        <Badge tone={isLive ? "active" : undefined}>{statusLabel(state.status)}</Badge>
+      </p>
       {isLive ? (
-        <p>Guests can find your page and join. Your public page is at /r/{state.slug}.</p>
+        <>
+          <p>Guests can find your page and join. Your public page is at /r/{state.slug}.</p>
+          <div className="page-actions">
+            <button type="button" className="builder-secondary" onClick={() => void copyLink()}>
+              {copied ? "Copied" : "Copy public link"}
+            </button>
+            <a href="/app/qr">Open my QR page</a>
+          </div>
+        </>
       ) : (
         <p>Your restaurant is private (draft) until you publish it. Guests cannot find it yet.</p>
       )}
