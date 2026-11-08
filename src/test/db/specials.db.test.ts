@@ -56,6 +56,10 @@ describe.skipIf(!dbTestsEnabled)("specials (real database, as app_user)", () => 
     const membershipId = await makeMembership(db.owner, restaurantId, guest.id);
     const code = `C${token().slice(0, 6).toUpperCase().replace(/[^A-Z0-9]/g, "2")}`;
     const specialId = await makeSpecial(restaurantId, code);
+    // A public special is redeemed by a guest who holds an issued code for their membership.
+    await db.owner`
+      insert into special_code (restaurant_id, special_id, membership_id, code)
+      values (${restaurantId}, ${specialId}, ${membershipId}, ${code})`;
     const key = `fx-${token()}`;
 
     const first = await asApp(db.app, { restaurantId }, (tx) =>
