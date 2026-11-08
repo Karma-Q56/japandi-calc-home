@@ -15,12 +15,12 @@ A diner can find real restaurants on Patron by name, suburb and type, see which 
 - `src/test/db/find.db.test.ts`
 
 ## Read first
-The demo `src/routes/find.tsx`, `src/lib/venue-details.ts`, `src/lib/johannesburg-time.ts` (`venueIsOpenNow`), the `restaurant` table, the opening hours columns added in 0023 (D13b), `location` (D11), `special` (D12e).
+The demo `src/routes/find.tsx`, `src/lib/venue-details.ts`, `src/lib/johannesburg-time.ts` (`venueIsOpenNow`), the `restaurant` table, the opening hours in `restaurant.hours` (edited by D13b), `location` (D11), `special` (D12e).
 
 ## Build
 1. **Columns.** `restaurant.venue_type` ('cafe', 'bakery', 'restaurant', 'takeaway', 'other', default 'other'), plus an index for search on name and suburb (a trigram or full text index, whichever the fresh database supports with no extra extension install; prefer `pg_trgm` only if CI's Postgres has it, otherwise a plain lowercase index and `ilike`).
 2. **One public query function** `find_restaurants(p_query, p_suburb, p_type, p_limit, p_offset)` SECURITY DEFINER or a plain read through the public read policy: returns only restaurants with `status = 'active'` and `public_listed = true`, never any private field (no owner, no phone numbers of guests, no plan or credit). Max 24 per page, limit capped in SQL.
-3. **Open now and member offers.** Open now is computed from the opening hours in Africa/Johannesburg time. Member offers is true when an active members-only special exists. Both come from the same function so the screen never guesses.
+3. **Open now and member offers.** Open now is computed from `restaurant.hours` in Africa/Johannesburg time (`venueIsOpenNow` shows the demo logic and the shape). Member offers is true when an active members-only special exists. Both come from the same function so the screen never guesses.
 4. **Distance.** There are no coordinates in the database. Use `gauteng-suburbs.ts` (a list of Gauteng suburbs with city and approximate centre point; accuracy of about 1 km is fine and say so in a comment). "Nearest" sorts by distance from the guest's chosen suburb or, if they allow it, their device location, computed in the browser. Never send the guest's location to the server.
 5. **Screen (live mode):** the Find page with search box, suburb picker, type pills (All, Cafes, Bakeries, Restaurants, Takeaways), Open now, Member offers, sort, a clear empty state ("No restaurants found. Try another suburb.") and a plain note when nothing is listed yet. Cards show logo, name, suburb, type, open or closed, offer badge. Demo mode keeps its current page.
 6. **Pickers for owners:** build `SuburbPicker` (choose from the list or type your own) and `CategoryPicker`. Do not wire them into Settings or Your page (other phases own those files). List both under "Needs from another phase" in the handoff.
