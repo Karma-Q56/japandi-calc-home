@@ -60,7 +60,7 @@ describe.skipIf(!dbTestsEnabled)("publish restaurant (real database, as app_user
   it("refuses publish, unpublish and listing for a guest or operator login", async () => {
     const operator = await makeAppUser(db.owner, fixtures, { role: "operator" });
     await expect(
-      asApp(db.app, {}, (tx) => tx`select publish_restaurant_for_user(${operator})`, { rollback: true }),
+      asApp(db.app, {}, (tx) => tx`select publish_restaurant(${operator})`, { rollback: true }),
     ).rejects.toMatchObject({ message: "not_allowed" });
 
     const guest = await makeAppUser(db.owner, fixtures);

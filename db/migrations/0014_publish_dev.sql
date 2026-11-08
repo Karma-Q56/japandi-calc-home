@@ -8,6 +8,11 @@
 
 -- 1. Privacy. A draft restaurant's menu and specials are private. Other restaurants
 --    and signed-out visitors may read them only once the restaurant is active.
+drop policy if exists restaurant_read on restaurant;
+create policy restaurant_read on restaurant for select using (
+  id = app_restaurant() or app_is_operator() or status = 'active'
+);
+
 drop policy if exists public_read on menu_section;
 drop policy if exists public_read on menu_item;
 drop policy if exists public_read on special;
