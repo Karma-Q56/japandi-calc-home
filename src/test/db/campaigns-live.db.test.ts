@@ -2,6 +2,8 @@
 // Real database test for migration 0026 (create_campaign, request_topup, campaign_audience_ids).
 // Runs on GitHub for every push. Skips on a laptop unless both addresses are set.
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { sql } from "drizzle-orm";
+import { withContext } from "../../server/db";
 import { createLiveCampaign } from "../../server/live-campaign-create";
 import { getLiveCredit, requestLiveTopup } from "../../server/live-credit";
 import { cancelCampaign } from "../../server/live-actions";
@@ -84,7 +86,11 @@ describe.skipIf(!dbTestsEnabled)("campaigns live (real database)", () => {
       )
         .then((rows) => `ok ${JSON.stringify(rows)}`)
         .catch((error: { message?: string; cause?: { message?: string } }) => `${error.message} | cause: ${error.cause?.message ?? "none"}`);
-      throw new Error(`createLiveCampaign refused: ${result.message} | probe: ${probe}`);
+      const direct = await withContext(
+        { databaseUrl: appUrl ?? "", restaurantId, isOperator: false },
+        (tx) => tx.execute(sql`select create_campaign(${restaurantId}::uuid, ${viewer.userId}::text, 'Probe', 'Probe body', ${JSON.stringify({ type: "everyone" })}::jsonb, ${code()}, ${new Date(Date.now() + 2 * 86_400_000).toISOString()}::timestamptz, 2) as id`),
+      ).then((r) => `ok ${JSON.stringify(r.rows)}`).catch((e: { message?: string; cause?: { message?: string } }) => `${e.message} | cause: ${e.cause?.message ?? "none"}`);
+      throw new Error(`createLiveCampaign refused: ${result.message} | probe: ${probe} | direct: ${direct}`);
     }
     expect(result.ok).toBe(true);
     const rows = await db.owner`
