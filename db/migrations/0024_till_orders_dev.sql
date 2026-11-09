@@ -50,6 +50,10 @@ declare
   item_count  integer;
   bad_count   integer;
 begin
+  -- A caller may pass the array as a JSON string; unwrap it so it is still an array.
+  if p_items is not null and jsonb_typeof(p_items) = 'string' then
+    p_items := (p_items #>> '{}')::jsonb;
+  end if;
   if p_items is null or jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) = 0 then
     return 'no_items';
   end if;
