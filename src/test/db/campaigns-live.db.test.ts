@@ -7,6 +7,7 @@ import { getLiveCredit, requestLiveTopup } from "../../server/live-credit";
 import { cancelCampaign } from "../../server/live-actions";
 import {
   appUrl,
+  asApp,
   cleanup,
   connect,
   dbTestsEnabled,
@@ -76,8 +77,16 @@ describe.skipIf(!dbTestsEnabled)("campaigns live (real database)", () => {
   it("reserves the estimated cost once in the credit ledger", async () => {
     const { restaurantId, viewer } = await setup(10_000);
     const result = await createLiveCampaign(viewer, campaignInput(code(), 2));
+    if (!result.ok) {
+      // Diagnostic: run the same SQL as the app role and show the database's own error.
+      const probe = await asApp(db.app, { restaurantId }, (tx) =>
+        tx`select create_campaign(${restaurantId}::uuid, ${viewer.userId}::text, 'Probe', 'Probe body', ${JSON.stringify({ type: "everyone" })}::jsonb, ${code()}, now() + interval '2 days', 2) as id`,
+      )
+        .then((rows) => `ok ${JSON.stringify(rows)}`)
+        .catch((error: { message?: string; cause?: { message?: string } }) => `${error.message} | cause: ${error.cause?.message ?? "none"}`);
+      throw new Error(`createLiveCampaign refused: ${result.message} | probe: ${probe}`);
+    }
     expect(result.ok).toBe(true);
-    if (!result.ok) return;
     const rows = await db.owner`
       select entry_type, amount_cents from credit_ledger
       where restaurant_id = ${restaurantId} and entry_type = 'reserve'`;
