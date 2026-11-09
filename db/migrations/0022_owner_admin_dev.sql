@@ -317,11 +317,13 @@ begin
   if p_enabled and (p_days is null or p_days not in (1, 7, 14, 30)) then
     raise exception 'invalid_value';
   end if;
-  perform set_config('app.is_operator', 'true', true);
+  -- Written without operator context: guard_patron_help (0011) refuses operator changes to these columns.
+  perform set_config('app.is_operator', coalesce(prior_operator, ''), true);
   update restaurant set
     patron_help_enabled = p_enabled,
     patron_help_expires_at = case when p_enabled then now() + make_interval(days => p_days) else null end
   where id = rid;
+  perform set_config('app.is_operator', 'true', true);
   insert into audit_event (actor_type, actor_id, restaurant_id, action, object_type, object_id, meta)
     values ('owner', p_user_id, rid, 'settings_changed', 'restaurant', rid::text,
             jsonb_build_object('help_enabled', p_enabled));

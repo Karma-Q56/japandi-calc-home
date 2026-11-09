@@ -116,10 +116,10 @@ describe.skipIf(!dbTestsEnabled)("owner admin (real database, as app_user)", () 
     const rows = await asApp(
       db.app,
       { operator: false },
-      (tx) => tx`select restaurant_id::text as rid from list_owner_activity(${a.user}, null)`,
+      (tx) => tx`select actor_id from list_owner_activity(${a.user}, null)`,
     );
     expect(rows.length).toBeGreaterThan(0);
-    for (const row of rows) expect(row["rid"]).toBe(a.restaurantId);
+    for (const row of rows) expect(row["actor_id"]).toBe(a.user);
   });
 
   it("refuses to let an owner read a guest's activity login", async () => {
