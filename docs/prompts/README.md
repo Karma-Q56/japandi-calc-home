@@ -4,15 +4,15 @@ One file per phase. Each is short because the shared rules live in the skill `pa
 
 ## How to send a prompt to Freebuff
 
-Send one message per prompt, in this form (change the file name):
+Send one message per prompt, in this form (change the prompt file and the branch name from the table below):
 
-> Load the skill patron-phase-builder first. Then read docs/prompts/D10-publish.md and do exactly what it says. Reply in the handoff format from the skill.
+> Load the skill patron-phase-builder first. Then run `git fetch origin` and create your branch from the latest main line: `git checkout -b <branch from the table> origin/claude/fix-regressions` (never start from an older freebuff branch). Read docs/prompts/<prompt file> and do exactly what it says, in one run, without stopping to ask or waiting for "continue". Work only on that one branch: do not create other git branches, and do not create, change or delete anything in Neon or Vercel (you do not need a database, GitHub runs the database tests). Push the branch when you are done, read the GitHub check result, fix any failure, and reply in the handoff format from the skill.
 
-Then send the next prompt in a new Freebuff conversation (one conversation per prompt keeps each branch clean). When a branch is pushed, tell Claude the branch name. Claude fetches it, applies the migration to the preview database, tests as the restricted role, fixes what is left, merges it into `claude/fix-regressions` and confirms the GitHub check is green.
+One Freebuff conversation per prompt keeps each branch clean. When a branch is pushed, tell Claude the branch name. Claude fetches it, tests the database on the dev Neon branch, fixes what is left, merges it into `claude/fix-regressions` and confirms the GitHub check is green. Claude then deletes the finished git branch and its Neon preview branch.
 
-## Design skills
+## Neon branch budget (limit 10, we keep at most 5)
 
-Skills found in `C:\Users\Lenovo\.agents\skills`: `impeccable`, `design-taste-frontend`, `design-system`, `brand`, `gsap-react`, `accessibility`. They help on new screens, with limits so they do not restyle the product. The rules are in the skill `patron-phase-builder` under "Design skills". In short: `accessibility` always; `impeccable` and `design-taste-frontend` improve new screens inside Patron's existing look; `design-system` and `brand` are read-only; `gsap-react` only when a prompt asks for motion. The handoff says in one line which were applied and which were skipped, and why.
+Neon makes one database branch for every git branch that is pushed. Always kept: `production`, `preview/claude/fix-regressions` and the dev branch `preview/freebuff/b8bfff...` (it has every migration applied). That leaves room for 2 Freebuff prompt branches at the same time, so send at most 2 prompts at once until the Vercel and Neon setting that creates a database branch for every preview is turned off.
 
 ## One prompt, one run
 
