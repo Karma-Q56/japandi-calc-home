@@ -196,8 +196,9 @@ describe.skipIf(!dbTestsEnabled)("campaigns live (real database)", () => {
       order by entry_type`;
     expect(rows.map((r) => r["entry_type"]).sort()).toEqual(["release", "reserve"]);
     const amounts = rows.map((r) => `${r["entry_type"]}=${r["amount_cents"]}`);
+    expect(amounts.sort()).toEqual(["release=70", "reserve=-70"]);
     const net = rows.reduce((sum, r) => sum + Number(r["amount_cents"]), 0);
-    expect({ net, amounts }).toEqual({ net: 0, amounts: [] as string[] });
+    expect(net).toBe(0);
     const credit = await getLiveCredit(viewer);
     expect(credit?.reservedCents).toBe(0);
   });
