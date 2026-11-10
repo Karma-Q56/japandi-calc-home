@@ -10,9 +10,13 @@ import { LoyaltyCard } from "@/components/patron/LoyaltyCard";
 import { PhoneFrame, PreviewOnly, PublishSteps } from "@/components/patron/preview";
 import { ThemeEditor } from "@/components/patron/ThemeEditor";
 import { themeHasAccessibleContrast } from "@/theme";
+import { getDataModeFn } from "@/server/live";
 
 export const Route = createFileRoute("/app/design")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    // Live mode designs the card in the Stamp card tab. Demo mode keeps this page.
+    const { mode } = await getDataModeFn();
+    if (mode === "live") throw redirect({ to: "/app/loyalty" });
     if (!requireRole("owner", "manager")(demoRepo.read().session)) {
       throw redirect({ to: "/login" });
     }

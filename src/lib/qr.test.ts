@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { makeQrMatrix } from "./qr";
+import jsQR from "jsqr";
+import { logoBox, makeQrMatrix, qrSvg } from "./qr";
 
 const origin = "https://patron.demo";
 
@@ -23,15 +24,72 @@ function sampleUrls(): string[] {
   return urls.slice(0, 20);
 }
 
-describe("demo QR encoder capacity", () => {
-  it("encodes at least 20 join/member URLs within version 5-L", () => {
-    const urls = sampleUrls();
-    expect(urls.length).toBeGreaterThanOrEqual(20);
-    for (const url of urls) {
-      expect(
-        () => makeQrMatrix(url),
-        `QR link too long for the supported version 5-L: ${url}`,
-      ).not.toThrow();
+// Longest join link a slug can produce: a 40 character slug and a long source tag.
+function longestJoinUrl(): string {
+  const slug = "a".repeat(20) + "-" + "b".repeat(19);
+  return `${origin}/r/${slug}/join?src=${"table-".padEnd(60, "x")}`;
+}
+
+// Draws the modules to pixels with a quiet zone, optionally blanking the logo box.
+function renderPixels(matrix: boolean[][], blankLogo: boolean, scale = 8) {
+  const quiet = 4;
+  const count = matrix.length;
+  const size = (count + quiet * 2) * scale;
+  const data = new Uint8ClampedArray(size * size * 4).fill(255);
+  const box = logoBox(count);
+  const inLogo = (x: number, y: number) =>
+    blankLogo &&
+    x >= box.backing.x &&
+    x < box.backing.x + box.backing.size &&
+    y >= box.backing.y &&
+    y < box.backing.y + box.backing.size;
+  for (let y = 0; y < count; y++) {
+    for (let x = 0; x < count; x++) {
+      const dark = matrix[y]![x]! && !inLogo(x, y);
+      const fill = inLogo(x, y) ? 255 : dark ? 0 : 255;
+      for (let dy = 0; dy < scale; dy++) {
+        for (let dx = 0; dx < scale; dx++) {
+          const px = ((y + quiet) * scale + dy) * size + (x + quiet) * scale + dx;
+          const i = px * 4;
+          data[i] = data[i + 1] = data[i + 2] = fill;
+          data[i + 3] = 255;
+        }
+      }
     }
+  }
+  return { data, width: size, height: size };
+}
+
+function decode(matrix: boolean[][], blankLogo = false) {
+  const { data, width, height } = renderPixels(matrix, blankLogo);
+  return jsQR(data, width, height)?.data ?? null;
+}
+
+describe("demo QR encoder", () => {
+  it("encodes every sample join/member URL at level M and decodes it back", () => {
+    for (const url of sampleUrls()) {
+      expect(decode(makeQrMatrix(url, "M")), url).toBe(url);
+    }
+  });
+
+  it("decodes the longest join link with a logo in the centre at level H", () => {
+    const url = longestJoinUrl();
+    const matrix = makeQrMatrix(url, "H");
+    expect(decode(matrix, true), url).toBe(url);
+  });
+
+  it("keeps the logo box no wider than 18 percent of the code", () => {
+    const count = makeQrMatrix(longestJoinUrl(), "H").length;
+    const box = logoBox(count);
+    expect(box.logo.size / count).toBeLessThanOrEqual(0.18);
+  });
+
+  it("writes an SVG with the logo layer only when a logo is given", () => {
+    const plain = qrSvg(sampleUrls()[0]!);
+    expect(plain).not.toContain("<image");
+    const withLogo = qrSvg(sampleUrls()[0]!, "#1f3027", "#ffffff", {
+      href: "data:image/png;base64,AAAA",
+    });
+    expect(withLogo).toContain("<image");
   });
 });

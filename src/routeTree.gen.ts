@@ -89,6 +89,7 @@ import { Route as OpsRestaurantsIdRouteImport } from './routes/ops.restaurants.$
 import { Route as OpsRestaurantsNewRouteImport } from './routes/ops.restaurants.new'
 import { Route as RSlugCardRouteImport } from './routes/r.$slug.card'
 import { Route as RSlugJoinRouteImport } from './routes/r.$slug.join'
+import { Route as RSlugLogoRouteImport } from './routes/r.$slug.logo'
 import { Route as ApiWebhooksSmsProviderRouteImport } from './routes/api/webhooks/sms/$provider'
 import { Route as OpsRestaurantsIdLookRouteImport } from './routes/ops.restaurants.$id.look'
 import { Route as OpsRestaurantsIdQrRouteImport } from './routes/ops.restaurants.$id.qr'
@@ -493,6 +494,11 @@ const RSlugJoinRoute = RSlugJoinRouteImport.update({
   path: '/join',
   getParentRoute: () => RSlugRoute,
 } as any)
+const RSlugLogoRoute = RSlugLogoRouteImport.update({
+  id: '/logo',
+  path: '/logo',
+  getParentRoute: () => RSlugRoute,
+} as any)
 const ApiWebhooksSmsProviderRoute = ApiWebhooksSmsProviderRouteImport.update({
   id: '/api/webhooks/sms/$provider',
   path: '/api/webhooks/sms/$provider',
@@ -590,6 +596,7 @@ export interface FileRoutesByFullPath {
   '/ops/restaurants/new': typeof OpsRestaurantsNewRoute
   '/r/$slug/card': typeof RSlugCardRoute
   '/r/$slug/join': typeof RSlugJoinRoute
+  '/r/$slug/logo': typeof RSlugLogoRoute
   '/api/webhooks/sms/$provider': typeof ApiWebhooksSmsProviderRoute
   '/ops/restaurants/$id/look': typeof OpsRestaurantsIdLookRoute
   '/ops/restaurants/$id/qr': typeof OpsRestaurantsIdQrRoute
@@ -675,6 +682,7 @@ export interface FileRoutesByTo {
   '/ops/restaurants/new': typeof OpsRestaurantsNewRoute
   '/r/$slug/card': typeof RSlugCardRoute
   '/r/$slug/join': typeof RSlugJoinRoute
+  '/r/$slug/logo': typeof RSlugLogoRoute
   '/api/webhooks/sms/$provider': typeof ApiWebhooksSmsProviderRoute
   '/ops/restaurants/$id/look': typeof OpsRestaurantsIdLookRoute
   '/ops/restaurants/$id/qr': typeof OpsRestaurantsIdQrRoute
@@ -761,6 +769,7 @@ export interface FileRoutesById {
   '/ops/restaurants/new': typeof OpsRestaurantsNewRoute
   '/r/$slug/card': typeof RSlugCardRoute
   '/r/$slug/join': typeof RSlugJoinRoute
+  '/r/$slug/logo': typeof RSlugLogoRoute
   '/api/webhooks/sms/$provider': typeof ApiWebhooksSmsProviderRoute
   '/ops/restaurants/$id/look': typeof OpsRestaurantsIdLookRoute
   '/ops/restaurants/$id/qr': typeof OpsRestaurantsIdQrRoute
@@ -848,6 +857,7 @@ export interface FileRouteTypes {
     | '/ops/restaurants/new'
     | '/r/$slug/card'
     | '/r/$slug/join'
+    | '/r/$slug/logo'
     | '/api/webhooks/sms/$provider'
     | '/ops/restaurants/$id/look'
     | '/ops/restaurants/$id/qr'
@@ -933,6 +943,7 @@ export interface FileRouteTypes {
     | '/ops/restaurants/new'
     | '/r/$slug/card'
     | '/r/$slug/join'
+    | '/r/$slug/logo'
     | '/api/webhooks/sms/$provider'
     | '/ops/restaurants/$id/look'
     | '/ops/restaurants/$id/qr'
@@ -1018,6 +1029,7 @@ export interface FileRouteTypes {
     | '/ops/restaurants/new'
     | '/r/$slug/card'
     | '/r/$slug/join'
+    | '/r/$slug/logo'
     | '/api/webhooks/sms/$provider'
     | '/ops/restaurants/$id/look'
     | '/ops/restaurants/$id/qr'
@@ -1629,6 +1641,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RSlugJoinRouteImport
       parentRoute: typeof RSlugRoute
     }
+    '/r/$slug/logo': {
+      id: '/r/$slug/logo'
+      path: '/logo'
+      fullPath: '/r/$slug/logo'
+      preLoaderRoute: typeof RSlugLogoRouteImport
+      parentRoute: typeof RSlugRoute
+    }
     '/api/webhooks/sms/$provider': {
       id: '/api/webhooks/sms/$provider'
       path: '/api/webhooks/sms/$provider'
@@ -1826,11 +1845,13 @@ const OpsRouteWithChildren = OpsRoute._addFileChildren(OpsRouteChildren)
 interface RSlugRouteChildren {
   RSlugCardRoute: typeof RSlugCardRoute
   RSlugJoinRoute: typeof RSlugJoinRoute
+  RSlugLogoRoute: typeof RSlugLogoRoute
 }
 
 const RSlugRouteChildren: RSlugRouteChildren = {
   RSlugCardRoute: RSlugCardRoute,
   RSlugJoinRoute: RSlugJoinRoute,
+  RSlugLogoRoute: RSlugLogoRoute,
 }
 
 const RSlugRouteWithChildren = RSlugRoute._addFileChildren(RSlugRouteChildren)
