@@ -2,7 +2,7 @@
 // Real-database checks for the live Insights page (D14). Skipped unless
 // DATABASE_URL_MIGRATE and DATABASE_URL_TEST are set. Never point these at production.
 // Dates are fixed, so the checks do not depend on the day they run.
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   cleanup,
   connect,
@@ -15,6 +15,40 @@ import {
   type Fixtures,
 } from "../db-fixture";
 import type { Viewer } from "@/server/auth-viewer";
+
+// The app's withContext uses the Neon WebSocket driver, which CI Postgres does not serve.
+// This runs the same steps (set the RLS settings, then the query) with the standard
+// Postgres driver over the app_user role, so the real SQL and row security are tested.
+vi.mock("@/server/db", async () => {
+  const { drizzle } = await import("drizzle-orm/postgres-js");
+  const { sql } = await import("drizzle-orm");
+  const postgres = (await import("postgres")).default;
+  return {
+    withContext: async (
+      context: { databaseUrl: string; restaurantId?: string | null; customerId?: string | null; isOperator?: boolean },
+      callback: (transaction: unknown) => Promise<unknown>,
+    ) => {
+      const client = postgres(context.databaseUrl, { max: 1, prepare: false });
+      try {
+        const database = drizzle(client);
+        return await database.transaction(async (transaction) => {
+          await transaction.execute(sql`
+            select
+              set_config('app.restaurant_id', ${context.restaurantId ?? ""}, true),
+              set_config('app.customer_id', ${context.customerId ?? ""}, true),
+              set_config('app.is_operator', ${context.isOperator ? "true" : "false"}, true)
+          `);
+          const shaped = {
+            execute: async (query: unknown) => ({ rows: await transaction.execute(query as never) }),
+          };
+          return callback(shaped as never);
+        });
+      } finally {
+        await client.end();
+      }
+    },
+  };
+});
 
 const originalUrl = process.env["DATABASE_URL"];
 
