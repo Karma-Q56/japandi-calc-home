@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { CardScanner } from "@/components/patron/CardScanner";
+import { TillOrderStep } from "@/components/patron/live/TillOrderStep";
 import { FormField, PageHeader } from "@/components/patron/dash";
 import { signOut } from "@/lib/sign-out";
 import { rewardGiveLine } from "@/lib/reward-copy";
@@ -33,6 +34,7 @@ export function LiveTill() {
   const [scanning, setScanning] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
   const [busy, setBusy] = useState(false);
+  const [orderFor, setOrderFor] = useState<string | null>(null);
   const [lastRedeem, setLastRedeem] = useState<{ rewardId: string; canUndoUntil: number } | null>(
     null,
   );
@@ -87,6 +89,7 @@ export function LiveTill() {
     const result = await lookupGuestFn({ data: { code } });
     setBusy(false);
     setLastRedeem(null);
+    setOrderFor(null);
     if (!result.ok) {
       setLookup(null);
       say("error", result.message);
@@ -118,6 +121,7 @@ export function LiveTill() {
             : "That stamp was already recorded.",
     );
     setLookup({ ...lookup, stampsCurrent: result.stampsCurrent });
+    setOrderFor(lookup.membershipId);
     // Reload so any new reward shows the Redeem button.
     const fresh = await lookupGuestFn({
       data: { code: lookupCode.trim() || lookup.membershipId },
@@ -382,6 +386,9 @@ export function LiveTill() {
             </button>
           )}
         </section>
+      )}
+      {lookup?.ok && orderFor === lookup.membershipId && (
+        <TillOrderStep membershipId={orderFor} onDone={() => setOrderFor(null)} />
       )}
       <TillAccountActions paired onUnpair={() => void unpair()} onLogOut={() => void leave()} />
     </main>
