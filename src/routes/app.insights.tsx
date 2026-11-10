@@ -1,5 +1,9 @@
 import { TrendChart } from "@/components/patron/TrendChart";
+import { LiveInsights } from "@/components/patron/live/LiveInsights";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { getDataModeFn } from "@/server/live";
+import { getInsightsFn } from "@/server/live-insights-fns";
+import { type InsightRange, todayInSast, windowFor } from "@/lib/live-insights";
 import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
 import { useDemoState } from "@/data/useDemoState";
@@ -15,13 +19,45 @@ type InsightsRange = (typeof RANGE_OPTIONS)[number];
 const DAY_MS = 86400000;
 
 export const Route = createFileRoute("/app/insights")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode === "live") return;
     if (!requireRole("owner", "manager")(demoRepo.read().session)) {
       throw redirect({ to: "/login" });
     }
   },
-  component: InsightsPage,
+  loader: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode !== "live") return { mode, live: null };
+    const todayText = todayInSast();
+    return { mode, live: await getInsightsFn({ data: windowFor(todayText, 30) }) };
+  },
+  component: InsightsRoute,
 });
+
+function InsightsRoute() {
+  const data = Route.useLoaderData();
+  const [range, setRange] = useState<InsightRange>(30);
+  const [tab, setTab] = useState<"guests" | "performance">("guests");
+  const [live, setLive] = useState(data.live);
+  if (data.mode !== "live") return <InsightsPage />;
+  const todayText = todayInSast();
+  const changeRange = (next: InsightRange) => {
+    setRange(next);
+    void getInsightsFn({ data: windowFor(todayText, next) }).then(setLive);
+  };
+  return (
+    <LiveInsights
+      restaurantName={live?.ok ? live.restaurantName : ""}
+      result={live}
+      range={range}
+      tab={tab}
+      onRange={changeRange}
+      onTab={setTab}
+      csvHref={`/api/reports/csv?from=${windowFor(todayText, range).from}&to=${todayText}`}
+    />
+  );
+}
 
 /** One tap opens the composer with that group already chosen. */
 function audienceFor(key: string, weekday: number): CampaignAudience | null {
