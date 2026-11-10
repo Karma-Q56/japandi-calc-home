@@ -1,5 +1,11 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
+import { getDataModeFn } from "@/server/live";
+import {
+  listOwnerFeedbackFn,
+  sendOwnerFeedbackFn,
+} from "@/server/live-admin-fns";
+import type { OwnerFeedbackItem } from "@/server/live-admin";
 import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
@@ -29,15 +35,143 @@ import {
 } from "@/domain/help";
 
 export const Route = createFileRoute("/app/feedback")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode === "live") return;
     if (!requireRole("owner", "manager")(demoRepo.read().session)) {
       throw redirect({ to: "/login" });
     }
+  },
+  loader: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode !== "live") return { mode, live: null };
+    return { mode, live: await listOwnerFeedbackFn() };
   },
   component: FeedbackPage,
 });
 
 function FeedbackPage() {
+  const data = Route.useLoaderData();
+  if (data.mode === "live") return <LiveFeedback initial={data.live} />;
+  return <DemoFeedback />;
+}
+
+/** Live feedback: write a note and see your own past notes. Replies are not shown yet. */
+function LiveFeedback({ initial }: { initial: OwnerFeedbackItem[] | null }) {
+  const [category, setCategory] = useState<FeedbackCategory>("broken");
+  const [message, setMessage] = useState("");
+  const [notice, setNotice] = useState("");
+  const [sending, setSending] = useState(false);
+  const [past, setPast] = useState<OwnerFeedbackItem[]>(initial ?? []);
+
+  const send = async () => {
+    setSending(true);
+    const result = await sendOwnerFeedbackFn({ data: { category, message } });
+    setSending(false);
+    if (!result.ok) {
+      setNotice(result.message);
+      return;
+    }
+    setNotice("Thank you. Your note is with the Patron team.");
+    setMessage("");
+    setPast(await listOwnerFeedbackFn());
+  };
+
+  if (!initial) {
+    return (
+      <main className="demo-hub page-width">
+        <PageHeader
+          eyebrow="Feedback"
+          title="Tell us what to fix."
+          intro="Feedback is not ready for this restaurant yet. Please try again later."
+        />
+      </main>
+    );
+  }
+
+  return (
+    <main className="demo-hub page-width">
+      <PageHeader
+        eyebrow="Feedback"
+        title="Tell us what to fix."
+        intro="A bug, a feature you want, or something that confused you. We read every note. This is separate from guest ideas, which asks for a place to join Patron."
+      />
+      <section className="builder-panel">
+        <h2>Write a note</h2>
+        <FormField label="What is it about?">
+          <select
+            value={category}
+            onChange={(event) => setCategory(event.target.value as FeedbackCategory)}
+          >
+            {FEEDBACK_CATEGORIES.map((value) => (
+              <option key={value} value={value}>
+                {FEEDBACK_CATEGORY_LABELS[value]}
+              </option>
+            ))}
+          </select>
+        </FormField>
+        <FormField
+          label="Your note"
+          hint={`Between ${FEEDBACK_MIN} and ${FEEDBACK_MAX} characters.`}
+        >
+          <textarea
+            rows={5}
+            value={message}
+            maxLength={FEEDBACK_MAX}
+            onChange={(event) => setMessage(event.target.value)}
+            placeholder="For example: the Preview button did nothing on my phone."
+          />
+        </FormField>
+        <div className="page-actions">
+          <button className="builder-primary" onClick={send} disabled={sending}>
+            Send feedback
+          </button>
+          <Helper>Your note is kept with your restaurant. Only the Patron team reads it.</Helper>
+        </div>
+        {notice && (
+          <p role="status" className="demo-data-note">
+            {notice}
+          </p>
+        )}
+      </section>
+
+      <section className="builder-panel">
+        <h2>Your past feedback</h2>
+        {past.length === 0 ? (
+          <EmptyState
+            title="No notes yet."
+            hint="When you send one, it appears here."
+          />
+        ) : (
+          <div className="menu-owner-list">
+            {past.map((item) => (
+              <article className="menu-owner-row" key={item.id}>
+                <div>
+                  <strong>{liveCategoryLabel(item.category)}</strong>
+                  <small>
+                    {formatTime(item.createdAt)} · {item.message}
+                  </small>
+                </div>
+                <Badge>{liveStatusLabel(item.status)}</Badge>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+    </main>
+  );
+}
+
+function liveCategoryLabel(value: string): string {
+  return (FEEDBACK_CATEGORY_LABELS as Record<string, string>)[value] ?? "Note";
+}
+
+function liveStatusLabel(value: string): string {
+  return (FEEDBACK_STATUS_LABELS as Record<string, string>)[value] ?? "Received";
+}
+
+/** Demo feedback screen. Unchanged apart from being split out of the route. */
+function DemoFeedback() {
   const state = useDemoState();
   const restaurant =
     state.restaurants.find((item) => item.id === state.session.restaurantId) ??

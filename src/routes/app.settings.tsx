@@ -6,6 +6,15 @@ import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
 import { Switch } from "@/components/patron/Switch";
 import { FormField, PageHeader } from "@/components/patron/dash";
+import { getDataModeFn } from "@/server/live";
+import {
+  getOwnerSettingsFn,
+  requestOwnerCampaignFn,
+  saveOwnerSettingsFn,
+  setOwnerHelpFn,
+} from "@/server/live-admin-fns";
+import type { OwnerSettings } from "@/server/live-admin";
+import { checkCampaignNote, type SettingsInput } from "@/lib/live-admin";
 import {
   helpDate,
   HELP_DAY_CHOICES,
@@ -14,15 +23,227 @@ import {
 } from "@/domain/help";
 
 export const Route = createFileRoute("/app/settings")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode === "live") return;
     if (!requireRole("owner", "manager")(demoRepo.read().session)) {
       throw redirect({ to: "/login" });
     }
+  },
+  loader: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode !== "live") return { mode, live: null };
+    return { mode, live: await getOwnerSettingsFn() };
   },
   component: Settings,
 });
 
 function Settings() {
+  const data = Route.useLoaderData();
+  if (data.mode === "live") return <LiveSettings initial={data.live} />;
+  return <DemoSettings />;
+}
+
+/** Live settings: business details, enquiries, alerts and orders at the till. */
+function LiveSettings({ initial }: { initial: OwnerSettings | null }) {
+  const [form, setForm] = useState<SettingsInput | null>(initial);
+  const [notice, setNotice] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [helpOn, setHelpOn] = useState<boolean>(initial?.helpOn ?? false);
+  const [helpDays, setHelpDays] = useState<number>(HELP_DEFAULT_DAYS);
+  const [helpBusy, setHelpBusy] = useState(false);
+  const [campaignNote, setCampaignNote] = useState("");
+  const [campaignNotice, setCampaignNotice] = useState("");
+  if (!initial || !form) {
+    return (
+      <main className="demo-hub page-width">
+        <PageHeader eyebrow="Settings" title="The fine details" intro="Only the owner or a manager can change these." />
+        <p role="status">We could not load your settings. Refresh the page or sign in again.</p>
+      </main>
+    );
+  }
+  const canEdit = initial.canEdit;
+  const set = <K extends keyof SettingsInput>(key: K, value: SettingsInput[K]) =>
+    setForm((current) => (current ? { ...current, [key]: value } : current));
+  async function setHelp(enabled: boolean) {
+    setHelpBusy(true);
+    setNotice("");
+    try {
+      const result = await setOwnerHelpFn({ data: { enabled, days: helpDays } });
+      setNotice(result.ok ? (enabled ? "Help from Patron is on." : "Help from Patron is off.") : result.message);
+      if (result.ok) setHelpOn(enabled);
+    } catch {
+      setNotice("We could not change Help from Patron. Try again.");
+    } finally {
+      setHelpBusy(false);
+    }
+  }
+  async function requestCampaign() {
+    const check = checkCampaignNote(campaignNote);
+    if (!check.ok) {
+      setCampaignNotice(check.message);
+      return;
+    }
+    setCampaignNotice("");
+    try {
+      const result = await requestOwnerCampaignFn({ data: { note: check.note } });
+      if (result.ok) {
+        setCampaignNote("");
+        setCampaignNotice("Request saved. Patron will read it. Nothing has been sent to your guests.");
+      } else {
+        setCampaignNotice(result.message);
+      }
+    } catch {
+      setCampaignNotice("We could not save your request. Try again.");
+    }
+  }
+  async function save() {
+    if (!form) return;
+    setSaving(true);
+    setNotice("");
+    try {
+      const result = await saveOwnerSettingsFn({ data: form });
+      setNotice(result.ok ? "Settings saved." : result.message);
+    } catch {
+      setNotice("We could not save your settings. Try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
+  return (
+    <main className="demo-hub page-width">
+      <PageHeader
+        eyebrow={"Settings · " + initial.name}
+        title="The fine details"
+        intro="Your business details, who gets enquiries, and whether the till asks what guests ordered."
+      />
+      <section className="builder-panel">
+        <h2>Business details</h2>
+        <div className="builder-fields">
+          <FormField label="Business name">
+            <input value={form.name} disabled={!canEdit} onChange={(e) => set("name", e.target.value)} />
+          </FormField>
+          <FormField label="Phone">
+            <input value={form.phone} disabled={!canEdit} onChange={(e) => set("phone", e.target.value)} />
+          </FormField>
+          <FormField label="Address">
+            <input value={form.address} disabled={!canEdit} onChange={(e) => set("address", e.target.value)} />
+          </FormField>
+          <FormField label="Suburb">
+            <input value={form.suburb} disabled={!canEdit} onChange={(e) => set("suburb", e.target.value)} />
+          </FormField>
+          <FormField label="City">
+            <input value={form.city} disabled={!canEdit} onChange={(e) => set("city", e.target.value)} />
+          </FormField>
+        </div>
+      </section>
+      <section className="builder-panel">
+        <h2>Messages</h2>
+        <div className="builder-fields">
+          <FormField label="Max messages to guests per week" hint="A number from 0 to 14.">
+            <input
+              type="number"
+              min={0}
+              max={14}
+              value={form.marketingWeeklyCap}
+              disabled={!canEdit}
+              onChange={(e) => set("marketingWeeklyCap", Number(e.target.value))}
+            />
+          </FormField>
+          <FormField label="Max messages to each member per week" hint="A number from 0 to 14.">
+            <input
+              type="number"
+              min={0}
+              max={14}
+              value={form.memberWeeklyCap}
+              disabled={!canEdit}
+              onChange={(e) => set("memberWeeklyCap", Number(e.target.value))}
+            />
+          </FormField>
+        </div>
+      </section>
+      <section className="builder-panel">
+        <h2>Enquiries and alerts</h2>
+        <FormField label="Who gets enquiries (email)">
+          <input value={form.enquiryEmail} disabled={!canEdit} onChange={(e) => set("enquiryEmail", e.target.value)} />
+        </FormField>
+        <Switch
+          checked={form.offersAlerts}
+          disabled={!canEdit}
+          onChange={(next) => set("offersAlerts", next)}
+          label="Send me offers and alerts"
+        />
+        <Switch
+          checked={form.ordersAtTill}
+          disabled={!canEdit}
+          onChange={(next) => set("ordersAtTill", next)}
+          label="Ask the till what guests ordered"
+        />
+      </section>
+      <section className="builder-panel">
+        <h2>Help from Patron</h2>
+        <p className="demo-data-note">
+          When this is on, a Patron operator can look at your settings and help you set up for a set time. They can only change what you ask them to change. They cannot send messages or spend your credit.
+        </p>
+        <div className="builder-fields">
+          <FormField label="Help stops after" hint="Pick a short window. You can turn it off sooner.">
+            <select
+              value={helpDays}
+              disabled={!canEdit || helpBusy}
+              onChange={(e) => setHelpDays(Number(e.target.value))}
+            >
+              {HELP_DAY_CHOICES.map((days) => (
+                <option key={days} value={days}>
+                  {days === 1 ? "1 day" : `${days} days`}
+                </option>
+              ))}
+            </select>
+          </FormField>
+        </div>
+        <p className="demo-data-note">{helpOn ? "On now." : "Off. Patron cannot open this restaurant in help mode."}</p>
+        {canEdit ? (
+          <div className="page-actions">
+            <button type="button" onClick={() => setHelp(true)} disabled={helpBusy}>
+              Turn on help
+            </button>
+            {helpOn ? (
+              <button type="button" onClick={() => setHelp(false)} disabled={helpBusy}>
+                Turn help off
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+      </section>
+      <section className="builder-panel">
+        <h2>Done for you campaigns</h2>
+        <p className="demo-data-note">
+          Ask Patron to write and run a campaign for you. This only saves your request. Nothing is sent to your guests. Patron will get in touch before anything goes out.
+        </p>
+        {canEdit ? (
+          <>
+            <FormField label="What should the campaign say?" hint="Between 10 and 500 characters.">
+              <textarea value={campaignNote} maxLength={500} onChange={(e) => setCampaignNote(e.target.value)} />
+            </FormField>
+            <button type="button" onClick={requestCampaign}>
+              Send campaign request
+            </button>
+          </>
+        ) : null}
+        {campaignNotice ? <p role="status">{campaignNotice}</p> : null}
+      </section>
+      {canEdit ? (
+        <button type="button" onClick={save} disabled={saving}>
+          {saving ? "Saving" : "Save settings"}
+        </button>
+      ) : (
+        <p>Only the owner or a manager can change these settings.</p>
+      )}
+      {notice ? <p role="status">{notice}</p> : null}
+    </main>
+  );
+}
+
+function DemoSettings() {
   const state = useDemoState();
   const restaurant =
     state.restaurants.find((item) => item.id === state.session.restaurantId) ??
