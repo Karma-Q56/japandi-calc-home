@@ -7,6 +7,8 @@ import type { Restaurant } from "@/data/types";
 import { venueIsOpenNow } from "@/lib/johannesburg-time";
 import { venueDistance, venueTypeLabel } from "@/lib/venue-details";
 import { VenueCard } from "@/components/patron/VenueCard";
+import { LiveFindPage } from "@/components/patron/LiveFindPage";
+import { getDataModeFn } from "@/server/live";
 import {
   Badge,
   Button,
@@ -28,8 +30,17 @@ export const Route = createFileRoute("/find")({
       },
     ],
   }),
-  component: FindPage,
+  loader: async () => {
+    const { mode } = await getDataModeFn();
+    return { live: mode === "live" };
+  },
+  component: FindRoute,
 });
+
+function FindRoute() {
+  const { live } = Route.useLoaderData();
+  return live ? <LiveFindPage /> : <FindPage />;
+}
 
 type VenueFilter = "all" | NonNullable<Restaurant["venueType"]> | "open" | "offers";
 type Sort = "nearest" | "name";
