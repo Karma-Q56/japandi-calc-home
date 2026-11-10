@@ -1,33 +1,31 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { safeEqual } from "@/server/sms/BulkSmsProvider";
+import { runLiveSettle } from "@/server/live-settle";
 
-function cronSecret(): string | undefined {
-  return (process.env as Record<string, string | undefined>)["CRON_SECRET"];
+type Env = Record<string, string | undefined>;
+
+/** Refuses when CRON_SECRET is missing or the header does not match. */
+function cronAuthorized(request: Request, env: Env): boolean {
+  const expected = env["CRON_SECRET"];
+  if (!expected) return false;
+  return safeEqual(request.headers.get("x-cron-secret") ?? "", expected);
 }
 
 export const Route = createFileRoute("/api/cron/settle")({
-  component: CronSettlePlaceholder,
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const expected = cronSecret();
-        if (expected && request.headers.get("x-cron-secret") !== expected) {
-          return new Response("Unauthorized", { status: 401 });
+        const env = process.env as Env;
+        if (!cronAuthorized(request, env)) return new Response("Unauthorized", { status: 401 });
+        const databaseUrl = env["DATABASE_URL"];
+        if (!databaseUrl) return new Response("Not configured", { status: 503 });
+        try {
+          const result = await runLiveSettle(databaseUrl);
+          return Response.json(result, { headers: { "Cache-Control": "no-store" } });
+        } catch {
+          return new Response("Settle failed", { status: 500 });
         }
-        // Same story as /api/cron/dispatch: settleCampaign() runs against the
-        // browser demo state (settle from the campaign results page). M9
-        // connects this route to the real database behind CRON_SECRET.
-        return new Response("Demo mode: settle from the campaign results page.", { status: 501 });
       },
     },
   },
 });
-
-function CronSettlePlaceholder() {
-  return (
-    <main className="demo-hub page-width">
-      <h1>Not implemented yet.</h1>
-      <p>SMS cost settlement runs from the campaign results page.</p>
-      <a href="/">Back to Patron</a>
-    </main>
-  );
-}
