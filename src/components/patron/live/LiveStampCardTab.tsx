@@ -1,9 +1,61 @@
 import { useState } from "react";
 import { FormField, Helper } from "@/components/patron/dash";
 import { updateLoyaltySettingsFn } from "@/server/live";
+import { saveLogoFn } from "@/server/live-logo-fns";
 import type { LiveLoyaltySettings } from "@/server/live-loyalty";
 import type { LiveRewardKind } from "@/lib/live-loyalty";
 import { rewardGiveLine, rewardGuestLine, type RewardValue } from "@/lib/reward-copy";
+import { validateLogoFile } from "@/lib/logo-stamp";
+import { bytesToBase64, convertLogo } from "@/lib/logo-convert";
+
+function LogoPanel() {
+  const [logoNotice, setLogoNotice] = useState("");
+  const [logoBusy, setLogoBusy] = useState(false);
+
+  const upload = async (file: File | undefined) => {
+    if (!file) return;
+    const problem = validateLogoFile(file);
+    if (problem) {
+      setLogoNotice(problem);
+      return;
+    }
+    setLogoBusy(true);
+    try {
+      const files = await convertLogo(file);
+      const result = await saveLogoFn({
+        data: {
+          png: bytesToBase64(files.png),
+          printJpeg: bytesToBase64(files.printJpeg),
+        },
+      });
+      setLogoNotice(result.ok ? "Logo saved. It now shows on your page and your QR code." : result.message);
+    } catch {
+      setLogoNotice("Could not read that image. Try a PNG or JPG file.");
+    } finally {
+      setLogoBusy(false);
+    }
+  };
+
+  return (
+    <section className="builder-panel" aria-label="Logo">
+      <h2>Logo</h2>
+      <Helper>PNG, JPG or SVG, up to 300 KB. Your logo shows on your page and on the QR code.</Helper>
+      <FormField label="Choose a logo">
+        <input
+          type="file"
+          accept="image/png,image/jpeg,image/svg+xml"
+          disabled={logoBusy}
+          onChange={(event) => upload(event.target.files?.[0])}
+        />
+      </FormField>
+      {logoNotice && (
+        <p className="builder-hint" role="status">
+          {logoNotice}
+        </p>
+      )}
+    </section>
+  );
+}
 
 export function LiveStampCardTab({ data }: { data: LiveLoyaltySettings }) {
   const [stampsRequired, setStampsRequired] = useState(data.stampsRequired);
@@ -48,6 +100,8 @@ export function LiveStampCardTab({ data }: { data: LiveLoyaltySettings }) {
   };
 
   return (
+    <>
+    <LogoPanel />
     <section className="builder-panel" aria-label="Stamp card rules">
       <h2>Reward</h2>
       <div className="builder-fields">
@@ -126,5 +180,6 @@ export function LiveStampCardTab({ data }: { data: LiveLoyaltySettings }) {
         </p>
       )}
     </section>
+    </>
   );
 }

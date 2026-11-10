@@ -14,9 +14,21 @@ const LAYOUTS = [
 
 type LayoutId = (typeof LAYOUTS)[number]["id"];
 
-export function QrPrintPack({ restaurant }: { restaurant: Restaurant }) {
+export function QrPrintPack({
+  restaurant,
+  logoVersion = null,
+}: {
+  restaurant: Restaurant;
+  /** Live logo version. When set, the QR shows the logo unless the plain switch is on. */
+  logoVersion?: number | null;
+}) {
   const [layoutId, setLayoutId] = useState<LayoutId>("table-tent");
+  const [plain, setPlain] = useState(false);
   const [notice, setNotice] = useState("");
+  const logo =
+    logoVersion !== null && !plain
+      ? { href: `/r/${restaurant.slug}/logo?v=${logoVersion}` }
+      : undefined;
   const layout = LAYOUTS.find((item) => item.id === layoutId) ?? LAYOUTS[0];
   // Start with the configured address on both server and client, then use the
   // browser's own origin after mount. Reading window during the first render
@@ -72,6 +84,12 @@ export function QrPrintPack({ restaurant }: { restaurant: Restaurant }) {
             ))}
           </select>
         </label>
+        {logoVersion !== null && (
+          <label className="builder-field">
+            <input type="checkbox" checked={plain} onChange={(event) => setPlain(event.target.checked)} />
+            Use plain QR code
+          </label>
+        )}
         <button className="builder-secondary no-print" onClick={() => window.print()}>
           Print this layout
         </button>
@@ -102,7 +120,7 @@ export function QrPrintPack({ restaurant }: { restaurant: Restaurant }) {
         <div
           className="qr-code"
           style={{ background }}
-          dangerouslySetInnerHTML={{ __html: qrSvg(url, foreground, background) }}
+          dangerouslySetInnerHTML={{ __html: qrSvg(url, foreground, background, logo) }}
         />
         <div className="qr-copy">
           <span className="eyebrow" style={{ color: foreground }}>
