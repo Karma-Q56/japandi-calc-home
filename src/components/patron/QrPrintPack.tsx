@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { APP_URL } from "@/config/app";
 import { downloadQrPng, qrSvg } from "@/lib/qr";
-import { downloadBlob, qrPdf } from "@/lib/qr-pdf";
+import { downloadBlob, loadLogoJpeg, qrPdf } from "@/lib/qr-pdf";
 import { joinUrl } from "@/lib/qr-links";
 import type { Restaurant } from "@/data/types";
 
@@ -56,7 +56,17 @@ export function QrPrintPack({
     }
   };
 
-  const downloadPdf = () => {
+  const downloadPdf = async () => {
+    // The logo is optional on the PDF. If it cannot load, the PDF is made with the plain code.
+    let logoJpeg: Awaited<ReturnType<typeof loadLogoJpeg>> | undefined;
+    let logoFailed = false;
+    if (logo) {
+      try {
+        logoJpeg = await loadLogoJpeg(logo.href);
+      } catch {
+        logoFailed = true;
+      }
+    }
     downloadBlob(
       qrPdf({
         url,
@@ -65,10 +75,15 @@ export function QrPrintPack({
         label: layout.label,
         foreground,
         background,
+        logo: logoJpeg,
       }),
       `${restaurant.slug}-${layout.id}.pdf`,
     );
-    setNotice("PDF downloaded at A4 size, ready to print.");
+    setNotice(
+      logoFailed
+        ? "PDF downloaded at A4 size with the plain code, because the logo could not load."
+        : "PDF downloaded at A4 size, ready to print.",
+    );
   };
 
   return (
