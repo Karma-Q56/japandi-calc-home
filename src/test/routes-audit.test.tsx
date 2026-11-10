@@ -37,7 +37,8 @@ function leafRoutes(route: AnyRoute, segments: string[] = [], out: Leaf[] = []):
 }
 
 // Server health endpoints are not pages.
-const NON_PAGES = ["/api", "/healthz", "/blog/rss"];
+// /r/<slug>/logo serves a PNG image, not a page.
+const NON_PAGES = ["/api", "/healthz", "/blog/rss", "/r/$slug/logo"];
 
 const NO_HEADER_OK = [
   "/consent-wording",
