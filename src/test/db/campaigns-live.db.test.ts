@@ -1,15 +1,12 @@
 // @vitest-environment node
 // Real database test for migration 0026 (create_campaign, request_topup, campaign_audience_ids).
 // Runs on GitHub for every push. Skips on a laptop unless both addresses are set.
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { sql } from "drizzle-orm";
-import { withContext } from "../../server/db";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createLiveCampaign } from "../../server/live-campaign-create";
 import { getLiveCredit, requestLiveTopup } from "../../server/live-credit";
 import { cancelCampaign } from "../../server/live-actions";
 import {
   appUrl,
-  asApp,
   cleanup,
   connect,
   dbTestsEnabled,
@@ -22,6 +19,37 @@ import {
   type DbConnections,
   type Fixtures,
 } from "../db-fixture";
+
+// The app's withContext uses the Neon WebSocket driver, which CI Postgres does not serve.
+// This runs the same steps (set the RLS settings, then the work) over the app_user role
+// with the standard Postgres driver, so the real SQL, row security and functions are tested.
+vi.mock("../../server/db", async () => {
+  const { drizzle } = await import("drizzle-orm/postgres-js");
+  const { sql } = await import("drizzle-orm");
+  const postgres = (await import("postgres")).default;
+  return {
+    withContext: async (
+      context: { databaseUrl: string; restaurantId?: string | null; customerId?: string | null; isOperator?: boolean },
+      callback: (transaction: unknown) => Promise<unknown>,
+    ) => {
+      const client = postgres(context.databaseUrl, { max: 1, prepare: false });
+      try {
+        const database = drizzle(client);
+        return await database.transaction(async (transaction) => {
+          await transaction.execute(sql`
+            select
+              set_config('app.restaurant_id', ${context.restaurantId ?? ""}, true),
+              set_config('app.customer_id', ${context.customerId ?? ""}, true),
+              set_config('app.is_operator', ${context.isOperator ? "true" : "false"}, true)
+          `);
+          return callback(transaction);
+        });
+      } finally {
+        await client.end();
+      }
+    },
+  };
+});
 
 const savedEnv = { DATA_MODE: process.env["DATA_MODE"], DATABASE_URL: process.env["DATABASE_URL"] };
 
@@ -79,19 +107,6 @@ describe.skipIf(!dbTestsEnabled)("campaigns live (real database)", () => {
   it("reserves the estimated cost once in the credit ledger", async () => {
     const { restaurantId, viewer } = await setup(10_000);
     const result = await createLiveCampaign(viewer, campaignInput(code(), 2));
-    if (!result.ok) {
-      // Diagnostic: run the same SQL as the app role and show the database's own error.
-      const probe = await asApp(db.app, { restaurantId }, (tx) =>
-        tx`select create_campaign(${restaurantId}::uuid, ${viewer.userId}::text, 'Probe', 'Probe body', ${JSON.stringify({ type: "everyone" })}::jsonb, ${code()}, now() + interval '2 days', 2) as id`,
-      )
-        .then((rows) => `ok ${JSON.stringify(rows)}`)
-        .catch((error: { message?: string; cause?: { message?: string } }) => `${error.message} | cause: ${error.cause?.message ?? "none"}`);
-      const direct = await withContext(
-        { databaseUrl: appUrl ?? "", restaurantId, isOperator: false },
-        (tx) => tx.execute(sql`select create_campaign(${restaurantId}::uuid, ${viewer.userId}::text, 'Probe', 'Probe body', ${JSON.stringify({ type: "everyone" })}::jsonb, ${code()}, ${new Date(Date.now() + 2 * 86_400_000).toISOString()}::timestamptz, 2) as id`),
-      ).then((r) => `ok ${JSON.stringify(r.rows)}`).catch((e: { message?: string; cause?: { message?: string } }) => `${e.message} | cause: ${e.cause?.message ?? "none"}`);
-      throw new Error(`createLiveCampaign refused: ${result.message} | probe: ${probe} | direct: ${direct}`);
-    }
     expect(result.ok).toBe(true);
     const rows = await db.owner`
       select entry_type, amount_cents from credit_ledger
