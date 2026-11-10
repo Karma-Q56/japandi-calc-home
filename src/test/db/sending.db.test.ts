@@ -72,7 +72,7 @@ describe.skipIf(!dbTestsEnabled)("sending (real database)", () => {
       db.app,
       { operator: true },
       async (tx) => tx`select record_sms_stop(${phone!["phone_e164"] as string}, 'bulksms', 'STOP') as n`,
-      { rollback: true },
+      { rollback: false },
     );
     expect(Number(changed[0]!["n"])).toBe(1);
 
