@@ -66,7 +66,7 @@ describe.skipIf(!dbTestsEnabled)("live Find directory (real database, as app_use
       set name = ${values.name}, status = ${values.status}::restaurant_status,
           public_listed = ${values.publicListed}, suburb = ${values.suburb},
           venue_type = ${values.venueType},
-          hours = ${JSON.stringify(values.hours ?? {})}::jsonb
+          hours = ${db.owner.json(values.hours ?? {})}
       where id = ${id}
     `;
 
