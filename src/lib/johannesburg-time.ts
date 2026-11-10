@@ -37,5 +37,24 @@ export function venueIsOpenNow(
 ): boolean {
   const local = johannesburgTime(epochMs);
   const today = hours[local.weekday];
-  return !!today && local.time >= today.open && local.time < today.close;
+  if (today) {
+    // A window that closes after midnight (close earlier than open) runs to the
+    // end of today, then continues into tomorrow's early hours.
+    const inToday =
+      today.close > today.open
+        ? local.time >= today.open && local.time < today.close
+        : local.time >= today.open;
+    if (inToday) return true;
+  }
+  // Check yesterday's after-midnight window for the early hours of today.
+  const yesterday = hours[previousWeekday(local.weekday)];
+  return !!yesterday && yesterday.close < yesterday.open && local.time < yesterday.close;
+}
+
+// Long names, the keys used by venue hours.
+const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] as const;
+
+function previousWeekday(weekday: string): string {
+  const index = WEEKDAYS.indexOf(weekday as (typeof WEEKDAYS)[number]);
+  return index <= 0 ? WEEKDAYS[6] : WEEKDAYS[index - 1]!;
 }
