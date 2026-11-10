@@ -194,7 +194,7 @@ describe.skipIf(!dbTestsEnabled)("campaigns live (real database)", () => {
       select entry_type, amount_cents from credit_ledger
       where restaurant_id = ${restaurantId} and campaign_id = ${created.campaignId}
       order by entry_type`;
-    expect(rows.map((r) => r["entry_type"])).toEqual(["release", "reserve"]);
+    expect(rows.map((r) => r["entry_type"]).sort()).toEqual(["release", "reserve"]);
     expect(rows.reduce((sum, r) => sum + Number(r["amount_cents"]), 0)).toBe(0);
     const credit = await getLiveCredit(viewer);
     expect(credit?.reservedCents).toBe(0);
