@@ -42,7 +42,10 @@ vi.mock("../../server/db", async () => {
               set_config('app.customer_id', ${context.customerId ?? ""}, true),
               set_config('app.is_operator', ${context.isOperator ? "true" : "false"}, true)
           `);
-          return callback(transaction);
+          const shaped = {
+            execute: async (query: unknown) => ({ rows: await transaction.execute(query as never) }),
+          };
+          return callback(shaped as never);
         });
       } finally {
         await client.end();
