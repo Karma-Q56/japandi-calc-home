@@ -118,6 +118,9 @@ describe.skipIf(!dbTestsEnabled)("campaigns live (real database)", () => {
     expect(rows[0]!["amount_cents"]).toBe(-70);
     const credit = await getLiveCredit(viewer);
     expect(credit?.reservedCents).toBe(70);
+    // R100.00 on the account, R0.70 set aside, so R99.30 is left to spend (the reserve is counted once).
+    expect(credit?.balanceCents).toBe(10_000);
+    expect(credit?.availableCents).toBe(9_930);
   });
 
   it("refuses when the balance is too low and never goes negative", async () => {

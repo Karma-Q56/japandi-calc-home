@@ -89,12 +89,14 @@ export async function getLiveCredit(viewer: Viewer): Promise<LiveCredit | null> 
         order by created_at desc
         limit 50
       `);
-      const balance = Number(totals.rows[0]?.balance ?? 0);
+      // The ledger sum already has every reservation taken off it (a reserve entry is negative),
+      // so the sum is what the restaurant can spend. Money on the account is that plus what is set aside.
+      const available = Number(totals.rows[0]?.balance ?? 0);
       const reserved = Math.max(0, Number(totals.rows[0]?.reserved ?? 0));
       return {
-        balanceCents: balance,
+        balanceCents: available + reserved,
         reservedCents: reserved,
-        availableCents: balance - reserved,
+        availableCents: available,
         entries: entries.rows.map((row) => ({
           id: row.id,
           entryType: row.entry_type,

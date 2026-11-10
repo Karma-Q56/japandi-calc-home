@@ -32,7 +32,8 @@ create policy visit_item_read_own on visit_item for select using (
   )
 );
 
-grant select, insert on visit_item to app_user;
+-- Writes go only through record_visit_items (security definer), so the app role gets read access only.
+grant select on visit_item to app_user;
 
 -- Save what the guest had. Called by the till right after a stamp.
 --   p_stamp_event: the stamp just recorded. It must be valid, in the caller's restaurant,

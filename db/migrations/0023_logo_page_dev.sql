@@ -19,6 +19,7 @@ create table if not exists restaurant_logo (
 );
 
 alter table restaurant_logo enable row level security;
+alter table restaurant_logo force row level security;
 
 drop policy if exists restaurant_logo_read on restaurant_logo;
 create policy restaurant_logo_read on restaurant_logo for select using (

@@ -233,7 +233,7 @@ function LiveSettings({ initial }: { initial: OwnerSettings | null }) {
       </section>
       {canEdit ? (
         <button type="button" onClick={save} disabled={saving}>
-          {saving ? "Saving" : "Save settings"}
+          Save settings
         </button>
       ) : (
         <p>Only the owner or a manager can change these settings.</p>
