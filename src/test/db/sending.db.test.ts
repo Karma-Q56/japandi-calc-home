@@ -60,7 +60,7 @@ describe.skipIf(!dbTestsEnabled)("sending (real database)", () => {
 
     const [campaign] = await db.owner`
       insert into campaign (restaurant_id, name, message_body, channel, audience, code, status, created_by)
-      values (${first.id}, 'Test offer', 'hi', 'sms', '{"type":"everyone"}'::jsonb, ${`C${token()}`.slice(0, 12)}, 'sent', 'test')
+      values (${first.id}, 'Test offer', 'hi', 'sms', '{"type":"everyone"}'::jsonb, ${`T${token().toUpperCase().replace(/[^A-Z0-9]/g, '')}`.slice(0, 12)}, 'sent', 'test')
       returning id
     `;
     await db.owner`
