@@ -16,7 +16,6 @@ Work that is still open. Each item is removed once it is done.
 
 ## From D14 (branch freebuff/insights-live)
 
-- Run `src/test/db/insights.db.test.ts` against a real database. It is skipped locally; GitHub runs it.
 - Check the live Insights page and CSV download in a browser, signed in as an owner. Not viewed yet.
 - Top items on the Performance tab only fill once orders at the till are on and staff record items.
 - Campaign links (`/app/campaigns/new?audience=...`) are sent but D15 must read the `audience` value.
