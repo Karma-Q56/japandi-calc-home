@@ -19,10 +19,6 @@ type InsightsRange = (typeof RANGE_OPTIONS)[number];
 const DAY_MS = 86400000;
 
 export const Route = createFileRoute("/app/insights")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    range: Number(search["range"]) === 7 || Number(search["range"]) === 90 ? Number(search["range"]) : 30,
-    tab: search["tab"] === "performance" ? ("performance" as const) : ("guests" as const),
-  }),
   beforeLoad: async () => {
     const { mode } = await getDataModeFn();
     if (mode === "live") return;
@@ -30,31 +26,34 @@ export const Route = createFileRoute("/app/insights")({
       throw redirect({ to: "/login" });
     }
   },
-  loaderDeps: ({ search }) => ({ range: search.range }),
-  loader: async ({ deps }) => {
+  loader: async () => {
     const { mode } = await getDataModeFn();
     if (mode !== "live") return { mode, live: null };
     const todayText = todayInSast();
-    return { mode, live: await getInsightsFn({ data: windowFor(todayText, deps.range) }) };
+    return { mode, live: await getInsightsFn({ data: windowFor(todayText, 30) }) };
   },
   component: InsightsRoute,
 });
 
 function InsightsRoute() {
   const data = Route.useLoaderData();
-  const search = Route.useSearch();
-  const navigate = useNavigate();
+  const [range, setRange] = useState<InsightRange>(30);
+  const [tab, setTab] = useState<"guests" | "performance">("guests");
+  const [live, setLive] = useState(data.live);
   if (data.mode !== "live") return <InsightsPage />;
-  const range = search.range as InsightRange;
   const todayText = todayInSast();
+  const changeRange = (next: InsightRange) => {
+    setRange(next);
+    void getInsightsFn({ data: windowFor(todayText, next) }).then(setLive);
+  };
   return (
     <LiveInsights
-      restaurantName={data.live?.ok ? data.live.restaurantName : ""}
-      result={data.live}
+      restaurantName={live?.ok ? live.restaurantName : ""}
+      result={live}
       range={range}
-      tab={search.tab}
-      onRange={(next) => void navigate({ to: "/app/insights", search: { range: next, tab: search.tab } })}
-      onTab={(next) => void navigate({ to: "/app/insights", search: { range, tab: next } })}
+      tab={tab}
+      onRange={changeRange}
+      onTab={setTab}
       csvHref={`/api/reports/csv?from=${windowFor(todayText, range).from}&to=${todayText}`}
     />
   );

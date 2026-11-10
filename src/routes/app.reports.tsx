@@ -29,7 +29,7 @@ export const Route = createFileRoute("/app/reports")({
   beforeLoad: async () => {
     // Live mode reports now live on the Insights Performance tab (D14).
     const { mode } = await getDataModeFn();
-    if (mode === "live") throw redirect({ to: "/app/insights", search: { range: 30, tab: "performance" } });
+    if (mode === "live") throw redirect({ to: "/app/insights" });
     if (!requireRole("owner", "manager")(demoRepo.read().session)) {
       throw redirect({ to: "/login" });
     }
