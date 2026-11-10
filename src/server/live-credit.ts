@@ -57,8 +57,7 @@ export async function getLiveCredit(viewer: Viewer): Promise<LiveCredit | null> 
       const totals = await transaction.execute<{ balance: number; reserved: number }>(sql`
         select
           coalesce(sum(amount_cents), 0)::int as balance,
-          coalesce(-sum(amount_cents) filter (where entry_type = 'reserve'), 0)::int
-            + coalesce(sum(amount_cents) filter (where entry_type = 'release'), 0)::int as reserved
+          coalesce(-sum(amount_cents) filter (where entry_type in ('reserve', 'release')), 0)::int as reserved
         from credit_ledger
         where restaurant_id = ${viewer.restaurantId}
       `);
