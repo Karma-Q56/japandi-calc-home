@@ -81,6 +81,7 @@ import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiCronDispatchRouteImport } from './routes/api/cron/dispatch'
 import { Route as ApiCronNightlyRouteImport } from './routes/api/cron/nightly'
 import { Route as ApiCronSettleRouteImport } from './routes/api/cron/settle'
+import { Route as ApiReportsCsvRouteImport } from './routes/api/reports.csv'
 import { Route as AppCampaignsCampaignIdRouteImport } from './routes/app.campaigns.$campaignId'
 import { Route as AppCampaignsNewRouteImport } from './routes/app.campaigns.new'
 import { Route as AppCustomersCustomerIdRouteImport } from './routes/app.customers.$customerId'
@@ -454,6 +455,11 @@ const ApiCronSettleRoute = ApiCronSettleRouteImport.update({
   path: '/api/cron/settle',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiReportsCsvRoute = ApiReportsCsvRouteImport.update({
+  id: '/api/reports/csv',
+  path: '/api/reports/csv',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppCampaignsCampaignIdRoute = AppCampaignsCampaignIdRouteImport.update({
   id: '/$campaignId',
   path: '/$campaignId',
@@ -588,6 +594,7 @@ export interface FileRoutesByFullPath {
   '/api/cron/dispatch': typeof ApiCronDispatchRoute
   '/api/cron/nightly': typeof ApiCronNightlyRoute
   '/api/cron/settle': typeof ApiCronSettleRoute
+  '/api/reports/csv': typeof ApiReportsCsvRoute
   '/app/campaigns/$campaignId': typeof AppCampaignsCampaignIdRoute
   '/app/campaigns/new': typeof AppCampaignsNewRoute
   '/app/customers/$customerId': typeof AppCustomersCustomerIdRoute
@@ -674,6 +681,7 @@ export interface FileRoutesByTo {
   '/api/cron/dispatch': typeof ApiCronDispatchRoute
   '/api/cron/nightly': typeof ApiCronNightlyRoute
   '/api/cron/settle': typeof ApiCronSettleRoute
+  '/api/reports/csv': typeof ApiReportsCsvRoute
   '/app/campaigns/$campaignId': typeof AppCampaignsCampaignIdRoute
   '/app/campaigns/new': typeof AppCampaignsNewRoute
   '/app/customers/$customerId': typeof AppCustomersCustomerIdRoute
@@ -761,6 +769,7 @@ export interface FileRoutesById {
   '/api/cron/dispatch': typeof ApiCronDispatchRoute
   '/api/cron/nightly': typeof ApiCronNightlyRoute
   '/api/cron/settle': typeof ApiCronSettleRoute
+  '/api/reports/csv': typeof ApiReportsCsvRoute
   '/app/campaigns/$campaignId': typeof AppCampaignsCampaignIdRoute
   '/app/campaigns/new': typeof AppCampaignsNewRoute
   '/app/customers/$customerId': typeof AppCustomersCustomerIdRoute
@@ -849,6 +858,7 @@ export interface FileRouteTypes {
     | '/api/cron/dispatch'
     | '/api/cron/nightly'
     | '/api/cron/settle'
+    | '/api/reports/csv'
     | '/app/campaigns/$campaignId'
     | '/app/campaigns/new'
     | '/app/customers/$customerId'
@@ -935,6 +945,7 @@ export interface FileRouteTypes {
     | '/api/cron/dispatch'
     | '/api/cron/nightly'
     | '/api/cron/settle'
+    | '/api/reports/csv'
     | '/app/campaigns/$campaignId'
     | '/app/campaigns/new'
     | '/app/customers/$customerId'
@@ -1021,6 +1032,7 @@ export interface FileRouteTypes {
     | '/api/cron/dispatch'
     | '/api/cron/nightly'
     | '/api/cron/settle'
+    | '/api/reports/csv'
     | '/app/campaigns/$campaignId'
     | '/app/campaigns/new'
     | '/app/customers/$customerId'
@@ -1076,6 +1088,7 @@ export interface RootRouteChildren {
   ApiCronDispatchRoute: typeof ApiCronDispatchRoute
   ApiCronNightlyRoute: typeof ApiCronNightlyRoute
   ApiCronSettleRoute: typeof ApiCronSettleRoute
+  ApiReportsCsvRoute: typeof ApiReportsCsvRoute
   ApiWebhooksSmsProviderRoute: typeof ApiWebhooksSmsProviderRoute
 }
 
@@ -1585,6 +1598,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCronSettleRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/reports/csv': {
+      id: '/api/reports/csv'
+      path: '/api/reports/csv'
+      fullPath: '/api/reports/csv'
+      preLoaderRoute: typeof ApiReportsCsvRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/campaigns/$campaignId': {
       id: '/app/campaigns/$campaignId'
       path: '/$campaignId'
@@ -1897,6 +1917,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCronDispatchRoute: ApiCronDispatchRoute,
   ApiCronNightlyRoute: ApiCronNightlyRoute,
   ApiCronSettleRoute: ApiCronSettleRoute,
+  ApiReportsCsvRoute: ApiReportsCsvRoute,
   ApiWebhooksSmsProviderRoute: ApiWebhooksSmsProviderRoute,
 }
 export const routeTree = rootRouteImport
