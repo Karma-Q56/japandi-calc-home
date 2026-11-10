@@ -23,7 +23,7 @@ This file is the whole send order. Every message is ready to copy and paste. Sen
 | 6 | 6A D21 Plans and payments | Best after branches. Goes alone |
 | After | D22 launch checklist, the polish pass, production go-live | Claude and Karma, not Freebuff |
 
-Already built and merged, so do not send them again: D10, D11, D12a, D12b, D12c, D12e, D17, D18.
+Already built and merged, so do not send them again: D10, D11, D12a, D12b, D12c, D12e, D13a, D13b, D13c, D15, D17, D18 (rounds 1 and 2 are done as of 10 Nov). Start at round 3.
 
 ## Always do this first
 
