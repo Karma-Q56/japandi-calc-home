@@ -195,8 +195,9 @@ describe.skipIf(!dbTestsEnabled)("campaigns live (real database)", () => {
       where restaurant_id = ${restaurantId} and campaign_id = ${created.campaignId}
       order by entry_type`;
     expect(rows.map((r) => r["entry_type"]).sort()).toEqual(["release", "reserve"]);
-    const amounts = rows.map((r) => `${r["entry_type"]}=${r["amount_cents"]}`).join(",");
-    expect(rows.reduce((sum, r) => sum + Number(r["amount_cents"]), 0), amounts).toBe(0);
+    const amounts = rows.map((r) => `${r["entry_type"]}=${r["amount_cents"]}`);
+    const net = rows.reduce((sum, r) => sum + Number(r["amount_cents"]), 0);
+    expect({ net, amounts }).toEqual({ net: 0, amounts: [] as string[] });
     const credit = await getLiveCredit(viewer);
     expect(credit?.reservedCents).toBe(0);
   });
