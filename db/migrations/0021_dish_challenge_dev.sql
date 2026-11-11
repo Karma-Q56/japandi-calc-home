@@ -46,10 +46,15 @@ create trigger challenge_menu_same_restaurant
 -- ---------------------------------------------------------------- progress for try_item
 -- Counts the till orders (visit_item) for the chosen dish or section, inside the window.
 -- Orders recorded before the challenge started do not count. Other restaurants never match.
+-- Written in plpgsql so the body is checked when it runs, not when created.
+-- visit_item is created by 0024, which runs after this file.
 create or replace function challenge_try_item_progress(p_challenge uuid, p_membership uuid)
 returns integer
-language sql stable security definer set search_path = public, pg_temp as $$
-  select coalesce(sum(vi.quantity), 0)::int
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+declare
+  total integer;
+begin
+  select coalesce(sum(vi.quantity), 0)::int into total
   from challenge c
   join stamp_event se on se.membership_id = p_membership and se.restaurant_id = c.restaurant_id
   join visit_item vi on vi.stamp_event_id = se.id and vi.restaurant_id = c.restaurant_id
@@ -62,34 +67,40 @@ language sql stable security definer set search_path = public, pg_temp as $$
       (c.menu_item_id is not null and vi.menu_item_id = c.menu_item_id)
       or (c.menu_section_id is not null and mi.section_id = c.menu_section_id)
     );
+  return total;
+end;
 $$;
 
 -- ---------------------------------------------------------------- progress: visits, quiet days or dish orders
 create or replace function challenge_progress(p_challenge uuid, p_membership uuid)
 returns integer
-language sql stable security definer set search_path = public, pg_temp as $$
-  select case
-    when (select kind from challenge where id = p_challenge) = 'try_item'
-      then challenge_try_item_progress(p_challenge, p_membership)
-    else (
-      select count(*)::int
-      from stamp_event se
-      join challenge c on c.id = p_challenge
-      where se.membership_id = p_membership
-        and se.restaurant_id = c.restaurant_id
-        and se.status = 'valid'
-        and se.reason = 'visit'
-        and se.created_at >= now() - make_interval(days => c.window_days)
-        and (
-          c.kind = 'visits'
-          or (
-            extract(dow from se.created_at at time zone 'Africa/Johannesburg')::smallint = any (c.weekdays)
-            and (c.start_hour is null or extract(hour from se.created_at at time zone 'Africa/Johannesburg')
-                   between c.start_hour and c.end_hour - 1)
-          )
-        )
-    )
-  end;
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+declare
+  kind_now text;
+  total integer;
+begin
+  select c.kind into kind_now from challenge c where c.id = p_challenge;
+  if kind_now = 'try_item' then
+    return challenge_try_item_progress(p_challenge, p_membership);
+  end if;
+  select count(*)::int into total
+  from stamp_event se
+  join challenge c on c.id = p_challenge
+  where se.membership_id = p_membership
+    and se.restaurant_id = c.restaurant_id
+    and se.status = 'valid'
+    and se.reason = 'visit'
+    and se.created_at >= now() - make_interval(days => c.window_days)
+    and (
+      c.kind = 'visits'
+      or (
+        extract(dow from se.created_at at time zone 'Africa/Johannesburg')::smallint = any (c.weekdays)
+        and (c.start_hour is null or extract(hour from se.created_at at time zone 'Africa/Johannesburg')
+               between c.start_hour and c.end_hour - 1)
+      )
+    );
+  return total;
+end;
 $$;
 
 revoke all on function challenge_try_item_progress(uuid, uuid) from public;

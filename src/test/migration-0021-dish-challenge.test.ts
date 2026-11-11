@@ -30,6 +30,11 @@ describe("migration 0021 (try this dish)", () => {
     expect(sql).toContain("grant execute on function challenge_progress(uuid, uuid) to app_user;");
   });
 
+  it("uses plpgsql for the functions that read visit_item, which 0024 creates later", () => {
+    expect(sql).toMatch(/challenge_try_item_progress\(p_challenge uuid, p_membership uuid\)\s+returns integer\s+language plpgsql/);
+    expect(sql).toMatch(/challenge_progress\(p_challenge uuid, p_membership uuid\)\s+returns integer\s+language plpgsql/);
+  });
+
   it("counts only orders inside the window and after the challenge started", () => {
     expect(sql).toContain("se.created_at >= greatest(c.created_at, now() - make_interval(days => c.window_days))");
   });
