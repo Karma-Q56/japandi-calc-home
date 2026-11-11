@@ -145,14 +145,13 @@ describe.skipIf(!dbTestsEnabled)("try this dish (real database, as app_user)", (
     const challengeId = await makeTryChallenge(restaurantId, { menuItemId: menu.chickenId }, 1);
     await makeOrder(restaurantId, membershipId, [[menu.chickenId, 1]]);
     const key = `fx-${token()}`;
-    const claim = () =>
-      asApp(db.app, { restaurantId }, (tx) =>
-        tx`select claim_challenge(${restaurantId}, ${membershipId}, ${challengeId}, ${key}, null)`,
-      );
-    const [first] = await claim();
-    expect(first!["out_result"]).toBe("claimed");
-    const [again] = await claim();
-    expect(again!["out_result"]).toBe("already_claimed");
+    const result = await asApp(db.app, { restaurantId }, async (tx) => {
+      const [first] = await tx`select out_result from claim_challenge(${restaurantId}, ${membershipId}, ${challengeId}, ${key}, null)`;
+      const [again] = await tx`select out_result from claim_challenge(${restaurantId}, ${membershipId}, ${challengeId}, ${key}, null)`;
+      return { first: first?.["out_result"], again: again?.["out_result"] };
+    });
+    expect(result.first).toBe("claimed");
+    expect(result.again).toBe("already_claimed");
     const [row] = await db.owner`
       select count(*)::int as n from challenge_claim
       where challenge_id = ${challengeId} and membership_id = ${membershipId}`;
