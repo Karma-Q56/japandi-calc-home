@@ -149,8 +149,10 @@ describe.skipIf(!dbTestsEnabled)("try this dish (real database, as app_user)", (
       asApp(db.app, { restaurantId }, (tx) =>
         tx`select claim_challenge(${restaurantId}, ${membershipId}, ${challengeId}, ${key}, null)`,
       );
-    await claim();
-    await claim();
+    const [first] = await claim();
+    expect(first!["out_result"]).toBe("claimed");
+    const [again] = await claim();
+    expect(again!["out_result"]).toBe("already_claimed");
     const [row] = await db.owner`
       select count(*)::int as n from challenge_claim
       where challenge_id = ${challengeId} and membership_id = ${membershipId}`;
