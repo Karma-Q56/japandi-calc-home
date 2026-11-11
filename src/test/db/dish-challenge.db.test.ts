@@ -148,14 +148,13 @@ describe.skipIf(!dbTestsEnabled)("try this dish (real database, as app_user)", (
     const result = await asApp(db.app, { restaurantId }, async (tx) => {
       const [first] = await tx`select out_result from claim_challenge(${restaurantId}, ${membershipId}, ${challengeId}, ${key}, null)`;
       const [again] = await tx`select out_result from claim_challenge(${restaurantId}, ${membershipId}, ${challengeId}, ${key}, null)`;
-      return { first: first?.["out_result"], again: again?.["out_result"] };
+      const [row] = await tx`select count(*)::int as n from challenge_claim
+        where challenge_id = ${challengeId} and membership_id = ${membershipId}`;
+      return { first: first?.["out_result"], again: again?.["out_result"], claims: Number(row?.["n"]) };
     });
     expect(result.first).toBe("claimed");
     expect(result.again).toBe("already_claimed");
-    const [row] = await db.owner`
-      select count(*)::int as n from challenge_claim
-      where challenge_id = ${challengeId} and membership_id = ${membershipId}`;
-    expect(Number(row!["n"])).toBe(1);
+    expect(result.claims).toBe(1);
   });
 
   it("accepts all four reward types", async () => {
