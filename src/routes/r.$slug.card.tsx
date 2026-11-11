@@ -19,6 +19,7 @@ import { MemberQr } from "@/components/patron/MemberQr";
 import { SpinWheel } from "@/components/patron/SpinWheel";
 import { ChallengeRow } from "@/components/patron/ChallengeRow";
 import { GuestChallenges } from "@/components/patron/GuestChallenges";
+import { GuestSpin } from "@/components/patron/GuestSpin";
 import { ReferralShare } from "@/components/patron/ReferralShare";
 import { getGuestExtrasFn } from "@/server/live-challenges-fns";
 import { getGuestSpecialsFn } from "@/server/live-specials-fns";
@@ -533,6 +534,7 @@ function LiveGuestCard({
       </section>
       {specials && specials.length > 0 && <GuestSpecials specials={specials} />}
       {extras && extras.challenges.length > 0 && <GuestChallenges challenges={extras.challenges} />}
+      <GuestSpin slug={slug} />
       {extras?.referralCode && <ReferralShare slug={slug} code={extras.referralCode} />}
     </GuestShell>
   );

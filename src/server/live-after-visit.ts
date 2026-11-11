@@ -28,6 +28,10 @@ export const visitHooks: AfterVisitHook[] = [
     const { rewardReferralFor } = await import("./live-referrals");
     await rewardReferralFor(restaurantId, membershipId);
   },
+  async ({ restaurantId, membershipId }) => {
+    const { applyWheelVisitHook } = await import("./live-wheel");
+    await applyWheelVisitHook(restaurantId, membershipId);
+  },
 ];
 
 export type OrderHookContext = {
