@@ -63,10 +63,14 @@ describe.skipIf(!dbTestsEnabled)("try this dish (real database, as app_user)", (
   ) {
     const [row] = await db.owner`
       insert into challenge (restaurant_id, title, kind, visits, window_days, bonus_stamps, reward_type,
-                             menu_item_id, menu_section_id, reward_amount_off_cents)
+                             menu_item_id, menu_section_id, reward_percent_off, reward_amount_off_cents,
+                             reward_item, created_at)
       values (${restaurantId}, ${`fx-${token()}`}, 'try_item', ${visits}, 30, 2, ${rewardType},
               ${target.menuItemId ?? null}, ${target.menuSectionId ?? null},
-              ${rewardType === "amount_off" ? 2000 : null})
+              ${rewardType === "percent_off" ? 10 : null},
+              ${rewardType === "amount_off" ? 2000 : null},
+              ${rewardType === "free_item" ? "Free side" : null},
+              now() - interval '2 days')
       returning id`;
     return row!["id"] as string;
   }
