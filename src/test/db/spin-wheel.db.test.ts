@@ -55,11 +55,16 @@ describe.skipIf(!dbTestsEnabled)("live spin wheel (real database, as app_user)",
     return { restaurantId: restaurant.id, membershipId, guestId: guest.id };
   }
 
+  // Commit each spin, as a real guest request does. Rolled-back spins would not be seen by the next call.
   const spinAs = (restaurantId: string, membershipId: string, key: string) =>
-    asApp(db.app, { restaurantId }, async (tx) =>
-      tx<{ out_result: string; out_label: string | null }[]>`
-        select * from spin_wheel(${membershipId}, ${key})
-      `,
+    asApp(
+      db.app,
+      { restaurantId },
+      async (tx) =>
+        tx<{ out_result: string; out_label: string | null }[]>`
+          select * from spin_wheel(${membershipId}, ${key})
+        `,
+      { rollback: false },
     );
 
   it("refuses a spin when the guest has no spins left", async () => {
