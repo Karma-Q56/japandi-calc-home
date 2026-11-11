@@ -20,6 +20,8 @@ const blankPrize = (): PrizeInput => ({
   percentOff: null,
   amountOffCents: null,
   validDays: null,
+  valueCents: 0,
+  weeklyCap: null,
 });
 
 const toInput = (p: WheelPrize): PrizeInput => ({
@@ -31,6 +33,8 @@ const toInput = (p: WheelPrize): PrizeInput => ({
   percentOff: p.percentOff,
   amountOffCents: p.amountOffCents,
   validDays: p.validDays,
+  valueCents: p.valueCents,
+  weeklyCap: p.weeklyCap,
 });
 
 const PRIZE_TYPE_LABELS: Record<PrizeType, string> = {
@@ -57,6 +61,9 @@ function WheelForm({ initial }: { initial: OwnerWheel }) {
   const [enabled, setEnabled] = useState(initial.enabled);
   const [mode, setMode] = useState<WheelMode>(initial.mode);
   const [every, setEvery] = useState(initial.earnEveryVisits);
+  const [budget, setBudget] = useState<number | "">(
+    initial.weeklyBudgetCents === null ? "" : initial.weeklyBudgetCents / 100,
+  );
   const [prizes, setPrizes] = useState<PrizeInput[]>(initial.prizes.map(toInput));
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
@@ -73,6 +80,7 @@ function WheelForm({ initial }: { initial: OwnerWheel }) {
         enabled,
         mode,
         earnEveryVisits: every,
+        weeklyBudgetCents: budget === "" ? null : Math.round(budget * 100),
         prizes: prizes.map((p) => ({
           ...p,
           bonusStamps: p.rewardType === "stamps" ? p.bonusStamps : null,
@@ -116,6 +124,16 @@ function WheelForm({ initial }: { initial: OwnerWheel }) {
         </FormField>
       )}
 
+      <FormField label="Weekly budget in rand (blank means no limit)">
+        <input
+          type="number"
+          min={0}
+          value={budget}
+          onChange={(e) => setBudget(e.target.value === "" ? "" : Number(e.target.value))}
+        />
+      </FormField>
+      <Helper>The budget counts what prizes are worth over any 7 days. Once it is used up, only prizes that fit the rest of it can win.</Helper>
+
       <h3>Prizes ({prizes.length} of {MAX_PRIZES})</h3>
       {prizes.map((p, index) => (
         <div key={index} className="builder-panel">
@@ -142,6 +160,25 @@ function WheelForm({ initial }: { initial: OwnerWheel }) {
                 </option>
               ))}
             </select>
+          </FormField>
+          <FormField label="Worth in rand (what the prize costs you)">
+            <input
+              type="number"
+              min={0}
+              value={p.valueCents / 100}
+              onChange={(e) => setPrize(index, { valueCents: Math.round(Number(e.target.value) * 100) })}
+            />
+          </FormField>
+          <FormField label="Most wins in any 7 days (blank means no limit)">
+            <input
+              type="number"
+              min={1}
+              max={10000}
+              value={p.weeklyCap ?? ""}
+              onChange={(e) =>
+                setPrize(index, { weeklyCap: e.target.value === "" ? null : Number(e.target.value) })
+              }
+            />
           </FormField>
           {p.rewardType === "stamps" && (
             <FormField label="Stamps added (1 to 5)">

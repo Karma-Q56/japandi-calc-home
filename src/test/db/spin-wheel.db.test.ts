@@ -28,19 +28,28 @@ describe.skipIf(!dbTestsEnabled)("live spin wheel (real database, as app_user)",
   });
 
   // A restaurant with its wheel on, one guest with the given spins, and their membership.
-  async function setup(spins: number, prizes: { weight: number; type?: "stamps" | "free_item" }[] = [{ weight: 1 }]) {
+  async function setup(
+    spins: number,
+    prizes: { weight: number; type?: "stamps" | "free_item"; valueCents?: number; weeklyCap?: number }[] = [{ weight: 1 }],
+    weeklyBudgetCents: number | null = null,
+  ) {
     const restaurant = await makeRestaurant(db.owner, fixtures, { status: "active" });
-    await db.owner`update restaurant set spin_enabled = true, spin_mode = 'earned' where id = ${restaurant.id}`;
+    await db.owner`
+      update restaurant set spin_enabled = true, spin_mode = 'earned', spin_weekly_budget_cents = ${weeklyBudgetCents}
+      where id = ${restaurant.id}
+    `;
     for (const [index, p] of prizes.entries()) {
       if (p.type === "stamps") {
         await db.owner`
-          insert into spin_prize (restaurant_id, position, label, weight, reward_type, bonus_stamps)
-          values (${restaurant.id}, ${index + 1}, ${`Prize ${index + 1}`}, ${p.weight}, 'stamps', 1)
+          insert into spin_prize (restaurant_id, position, label, weight, reward_type, bonus_stamps, value_cents, weekly_cap)
+          values (${restaurant.id}, ${index + 1}, ${`Prize ${index + 1}`}, ${p.weight}, 'stamps', 1,
+                  ${p.valueCents ?? 0}, ${p.weeklyCap ?? null})
         `;
       } else {
         await db.owner`
-          insert into spin_prize (restaurant_id, position, label, weight, reward_type, reward_item)
-          values (${restaurant.id}, ${index + 1}, ${`Prize ${index + 1}`}, ${p.weight}, 'free_item', 'Coffee')
+          insert into spin_prize (restaurant_id, position, label, weight, reward_type, reward_item, value_cents, weekly_cap)
+          values (${restaurant.id}, ${index + 1}, ${`Prize ${index + 1}`}, ${p.weight}, 'free_item', 'Coffee',
+                  ${p.valueCents ?? 0}, ${p.weeklyCap ?? null})
         `;
       }
     }
@@ -112,6 +121,28 @@ describe.skipIf(!dbTestsEnabled)("live spin wheel (real database, as app_user)",
       select reason from stamp_event where membership_id = ${membershipId} and idempotency_key = ${`spin:${key}`}
     `;
     expect(rows[0]?.reason).toBe("bonus");
+  });
+
+  it("stops prizes once the weekly budget is used up", async () => {
+    const { restaurantId, membershipId } = await setup(2, [{ weight: 1, valueCents: 1000 }], 1000);
+    const [first] = await spinAs(restaurantId, membershipId, token());
+    const [second] = await spinAs(restaurantId, membershipId, token());
+    expect(first?.out_result).toBe("won");
+    expect(second?.out_result).toBe("no_prizes_left");
+  });
+
+  it("stops a prize at its weekly cap and leaves other prizes winnable", async () => {
+    const { restaurantId, membershipId } = await setup(
+      2,
+      [{ weight: 1000, weeklyCap: 1 }, { weight: 1 }],
+    );
+    const [first] = await spinAs(restaurantId, membershipId, token());
+    const [second] = await spinAs(restaurantId, membershipId, token());
+    expect(first?.out_result).toBe("won");
+    expect(second?.out_result).toBe("won");
+    // Whatever came first, the capped prize (Prize 1) can win at most once in the week.
+    const capped = [first, second].filter((row) => row?.out_label === "Prize 1");
+    expect(capped.length).toBeLessThanOrEqual(1);
   });
 
   it("refuses a ninth prize", async () => {

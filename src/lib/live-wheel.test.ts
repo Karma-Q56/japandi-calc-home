@@ -10,6 +10,8 @@ const prize = (over: Partial<WheelInput["prizes"][number]> = {}) => ({
   percentOff: null,
   amountOffCents: null,
   validDays: 30,
+  valueCents: 1500,
+  weeklyCap: null,
   ...over,
 });
 
@@ -17,6 +19,7 @@ const wheel = (over: Partial<WheelInput> = {}): WheelInput => ({
   enabled: true,
   mode: "earned",
   earnEveryVisits: 5,
+  weeklyBudgetCents: 50000,
   prizes: [prize()],
   ...over,
 });
@@ -69,6 +72,22 @@ describe("validateWheel", () => {
     expect(validateWheel(wheel({ prizes: [bad] })).length).toBeGreaterThan(0);
   });
 
+  it("accepts no budget and no weekly limits", () => {
+    expect(validateWheel(wheel({ weeklyBudgetCents: null, prizes: [prize({ weeklyCap: null })] }))).toEqual([]);
+  });
+
+  it("refuses a negative weekly budget", () => {
+    expect(validateWheel(wheel({ weeklyBudgetCents: -1 }))[0]).toMatch(/weekly budget/);
+  });
+
+  it("refuses a negative prize value", () => {
+    expect(validateWheel(wheel({ prizes: [prize({ valueCents: -5 })] }))[0]).toMatch(/rand value/);
+  });
+
+  it("refuses a weekly limit of zero", () => {
+    expect(validateWheel(wheel({ prizes: [prize({ weeklyCap: 0 })] }))[0]).toMatch(/weekly limit/);
+  });
+
   it("refuses a spin for every zero visits", () => {
     expect(validateWheel(wheel({ earnEveryVisits: 0 })).length).toBeGreaterThan(0);
     expect(validateWheel(wheel({ earnEveryVisits: 0 }))[0]).toMatch(/1 to 100 visits/);
@@ -80,6 +99,7 @@ describe("wheelErrorMessage", () => {
     expect(wheelErrorMessage("no_spin")).toMatch(/no spins left/i);
     expect(wheelErrorMessage("too_many_prizes")).toMatch(/8 prizes/i);
     expect(wheelErrorMessage("not_a_member")).toMatch(/membership/i);
+    expect(wheelErrorMessage("no_prizes_left")).toMatch(/no prize can be won this week/i);
   });
 
   it("falls back to a safe message", () => {

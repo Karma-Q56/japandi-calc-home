@@ -16,6 +16,8 @@ export type WheelPrize = {
   percentOff: number | null;
   amountOffCents: number | null;
   validDays: number | null;
+  valueCents: number;
+  weeklyCap: number | null;
 };
 
 export type OwnerWheel = WheelInput & { prizes: WheelPrize[] };
@@ -33,6 +35,7 @@ type WheelRow = {
   spin_enabled: boolean;
   spin_mode: WheelMode;
   spin_earn_every_visits: number;
+  spin_weekly_budget_cents: number | null;
 };
 
 type PrizeRow = {
@@ -46,6 +49,8 @@ type PrizeRow = {
   reward_percent_off: number | null;
   reward_amount_off_cents: number | null;
   reward_valid_days: number | null;
+  value_cents: number;
+  weekly_cap: number | null;
 };
 
 const toPrize = (row: PrizeRow): WheelPrize => ({
@@ -59,6 +64,8 @@ const toPrize = (row: PrizeRow): WheelPrize => ({
   percentOff: row.reward_percent_off === null ? null : Number(row.reward_percent_off),
   amountOffCents: row.reward_amount_off_cents === null ? null : Number(row.reward_amount_off_cents),
   validDays: row.reward_valid_days === null ? null : Number(row.reward_valid_days),
+  valueCents: Number(row.value_cents),
+  weeklyCap: row.weekly_cap === null ? null : Number(row.weekly_cap),
 });
 
 /** The owner's wheel settings and prizes. Null when the viewer cannot manage this restaurant. */
@@ -68,12 +75,13 @@ export async function getOwnerWheel(viewer: Viewer): Promise<OwnerWheel | null> 
     { databaseUrl: databaseUrl(), restaurantId: viewer.restaurantId, isOperator: false },
     async (transaction) => {
       const settings = await transaction.execute<WheelRow>(sql`
-        select spin_enabled, spin_mode, spin_earn_every_visits
+        select spin_enabled, spin_mode, spin_earn_every_visits, spin_weekly_budget_cents
         from restaurant where id = ${viewer.restaurantId}
       `);
       const prizes = await transaction.execute<PrizeRow>(sql`
         select id, position, label, weight, reward_type, bonus_stamps, reward_item,
-               reward_percent_off, reward_amount_off_cents, reward_valid_days
+               reward_percent_off, reward_amount_off_cents, reward_valid_days,
+               value_cents, weekly_cap
         from spin_prize where restaurant_id = ${viewer.restaurantId}
         order by position
       `);
@@ -82,6 +90,7 @@ export async function getOwnerWheel(viewer: Viewer): Promise<OwnerWheel | null> 
         enabled: row?.spin_enabled ?? false,
         mode: row?.spin_mode ?? "earned",
         earnEveryVisits: Number(row?.spin_earn_every_visits ?? 5),
+        weeklyBudgetCents: row?.spin_weekly_budget_cents == null ? null : Number(row.spin_weekly_budget_cents),
         prizes: prizes.rows.map(toPrize),
       };
     },
@@ -117,6 +126,8 @@ export type SpinOutcome =
   | { ok: true; result: "won"; label: string; rewardId: string | null; bonusStamps: number | null }
   | { ok: true; result: "duplicate_retry"; label: string; rewardId: string | null; bonusStamps: null }
   | { ok: false; code: string };
+
+// `no_prizes_left` means every prize is at its weekly limit or over the weekly budget. No spin is used.
 
 /**
  * Spins the wheel once for the guest. The database picks the prize, uses one spin and pays it.
@@ -212,20 +223,22 @@ export async function saveOwnerWheel(
           update restaurant
              set spin_enabled = ${input.enabled},
                  spin_mode = ${input.mode},
-                 spin_earn_every_visits = ${input.earnEveryVisits}
+                 spin_earn_every_visits = ${input.earnEveryVisits},
+                 spin_weekly_budget_cents = ${input.weeklyBudgetCents}
            where id = ${restaurantId}
         `);
         await transaction.execute(sql`delete from spin_prize where restaurant_id = ${restaurantId}`);
         for (const [index, p] of input.prizes.entries()) {
           await transaction.execute(sql`
             insert into spin_prize (restaurant_id, position, label, weight, reward_type, bonus_stamps,
-                                    reward_item, reward_percent_off, reward_amount_off_cents, reward_valid_days)
+                                    reward_item, reward_percent_off, reward_amount_off_cents, reward_valid_days,
+                                    value_cents, weekly_cap)
             values (${restaurantId}, ${index + 1}, ${p.label.trim()}, ${p.weight}, ${p.rewardType},
                     ${p.rewardType === "stamps" ? p.bonusStamps : null},
                     ${p.rewardType === "free_item" ? p.rewardItem.trim() : null},
                     ${p.rewardType === "percent_off" ? p.percentOff : null},
                     ${p.rewardType === "amount_off" ? p.amountOffCents : null},
-                    ${p.validDays})
+                    ${p.validDays}, ${p.valueCents}, ${p.weeklyCap})
           `);
         }
       },

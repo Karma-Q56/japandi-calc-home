@@ -14,12 +14,18 @@ export type PrizeInput = {
   percentOff: number | null;
   amountOffCents: number | null;
   validDays: number | null;
+  /** What the prize is worth in rand, in cents. Counts against the weekly budget. */
+  valueCents: number;
+  /** Most times this prize can be won in any 7 days. Null means no cap. */
+  weeklyCap: number | null;
 };
 
 export type WheelInput = {
   enabled: boolean;
   mode: WheelMode;
   earnEveryVisits: number;
+  /** Most rand worth of prizes the wheel can give in any 7 days, in cents. Null means no budget. */
+  weeklyBudgetCents: number | null;
   prizes: PrizeInput[];
 };
 
@@ -43,6 +49,12 @@ export function validateWheel(input: WheelInput): string[] {
   if (!Number.isInteger(input.earnEveryVisits) || input.earnEveryVisits < 1 || input.earnEveryVisits > 100) {
     problems.push("A spin is earned every 1 to 100 visits.");
   }
+  if (
+    input.weeklyBudgetCents !== null &&
+    (!Number.isInteger(input.weeklyBudgetCents) || input.weeklyBudgetCents < 0 || input.weeklyBudgetCents > 100000000)
+  ) {
+    problems.push("The weekly budget must be a rand amount of zero or more.");
+  }
   if (input.prizes.length > MAX_PRIZES) problems.push(`Use at most ${MAX_PRIZES} prizes.`);
   if (input.enabled && input.prizes.length === 0) problems.push("Add at least one prize before you turn the wheel on.");
 
@@ -51,6 +63,12 @@ export function validateWheel(input: WheelInput): string[] {
     if (!p.label.trim()) problems.push(`Prize ${n} needs a name guests can read.`);
     if (!Number.isInteger(p.weight) || p.weight < 1 || p.weight > 1000) {
       problems.push(`Prize ${n} needs a chance weight from 1 to 1000.`);
+    }
+    if (!Number.isInteger(p.valueCents) || p.valueCents < 0 || p.valueCents > 100000000) {
+      problems.push(`Prize ${n} needs a rand value of zero or more.`);
+    }
+    if (p.weeklyCap !== null && (!Number.isInteger(p.weeklyCap) || p.weeklyCap < 1 || p.weeklyCap > 10000)) {
+      problems.push(`Prize ${n} needs a weekly limit of at least 1, or no limit.`);
     }
     if (p.validDays !== null && (!Number.isInteger(p.validDays) || p.validDays < 1 || p.validDays > 365)) {
       problems.push(`Prize ${n} must stay valid for 1 to 365 days, or forever.`);
@@ -85,6 +103,7 @@ const ERRORS: Record<string, string> = {
   not_allowed: "You can only spin at this restaurant.",
   no_spin: "You have no spins left. Visit to earn another.",
   no_prizes: "This wheel has no prizes yet.",
+  no_prizes_left: "No prize can be won this week. Try again later. No spin was used.",
   not_allowed_owner: "Only the owner or a manager can change the wheel.",
 };
 

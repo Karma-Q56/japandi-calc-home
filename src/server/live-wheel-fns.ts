@@ -13,12 +13,15 @@ const prizeInput = z.object({
   percentOff: z.number().int().min(0).max(100).nullable(),
   amountOffCents: z.number().int().min(0).nullable(),
   validDays: z.number().int().min(0).max(365).nullable(),
+  valueCents: z.number().int().min(0).max(100000000),
+  weeklyCap: z.number().int().min(1).max(10000).nullable(),
 });
 
 const wheelInput = z.object({
   enabled: z.boolean(),
   mode: z.enum(["join", "earned", "reward_decider"]),
   earnEveryVisits: z.number().int().min(1).max(100),
+  weeklyBudgetCents: z.number().int().min(0).max(100000000).nullable(),
   prizes: z.array(prizeInput).max(9),
 });
 

@@ -7,10 +7,14 @@ alter table restaurant
   add column if not exists spin_mode text not null default 'earned',
   add column if not exists spin_earn_every_visits smallint not null default 5;
 
+alter table restaurant
+  add column if not exists spin_weekly_budget_cents integer;
+
 alter table restaurant drop constraint if exists restaurant_spin_check;
 alter table restaurant add constraint restaurant_spin_check check (
   spin_mode in ('join', 'earned', 'reward_decider')
   and spin_earn_every_visits between 1 and 100
+  and (spin_weekly_budget_cents is null or spin_weekly_budget_cents between 0 and 100000000)
 );
 
 -- ---------------------------------------------------------------- prizes (at most 8 per restaurant)
@@ -26,6 +30,8 @@ create table if not exists spin_prize (
   reward_percent_off smallint,
   reward_amount_off_cents integer,
   reward_valid_days smallint,
+  value_cents integer not null default 0,
+  weekly_cap smallint,
   created_at timestamptz not null default now(),
   unique (restaurant_id, position),
   constraint spin_prize_label_check check (length(trim(label)) between 1 and 80),
@@ -41,7 +47,9 @@ create table if not exists spin_prize (
     or (reward_type = 'amount_off' and reward_amount_off_cents > 0
        and bonus_stamps is null and reward_item is null and reward_percent_off is null)
   ),
-  constraint spin_prize_valid_days_check check (reward_valid_days is null or reward_valid_days between 1 and 365)
+  constraint spin_prize_valid_days_check check (reward_valid_days is null or reward_valid_days between 1 and 365),
+  constraint spin_prize_value_check check (value_cents between 0 and 100000000),
+  constraint spin_prize_weekly_cap_check check (weekly_cap is null or weekly_cap between 1 and 10000)
 );
 
 -- Count check: a restaurant can never hold more than 8 prizes, even under concurrent inserts.
@@ -140,6 +148,9 @@ declare
   ticket numeric;
   new_reward uuid := null;
   stamp_id uuid;
+  budget_cents bigint;
+  spent bigint;
+  budget_left bigint;
 begin
   select * into m from membership where id = p_membership for update;
   if not found then
@@ -166,17 +177,44 @@ begin
     return;
   end if;
 
-  select coalesce(sum(weight), 0) into total from spin_prize where restaurant_id = m.restaurant_id;
+  -- Serialise spins per restaurant so the weekly budget and caps are checked against the latest wins.
+  select spin_weekly_budget_cents into budget_cents from restaurant where id = m.restaurant_id for update;
+
+  -- Rolling 7 days: rand paid out so far, from prizes that carry a value.
+  select coalesce(sum(sr.value_cents), 0) into spent
+    from spin_result sr
+    where sr.restaurant_id = m.restaurant_id and sr.won_at >= now() - interval '7 days';
+  budget_left := case when budget_cents is null then null else greatest(budget_cents - spent, 0) end;
+
+  -- Only prizes still under their weekly cap and within the remaining budget can win.
+  select coalesce(sum(sp.weight), 0) into total
+    from spin_prize sp
+    where sp.restaurant_id = m.restaurant_id
+      and (sp.weekly_cap is null or (
+        select count(*) from spin_result sr
+          where sr.prize_id = sp.id and sr.won_at >= now() - interval '7 days') < sp.weekly_cap)
+      and (budget_left is null or sp.value_cents <= budget_left);
   if total <= 0 then
     perform set_config('app.is_operator', coalesce(prior_operator, ''), true);
-    return query select 'no_prizes'::text, null::text, null::uuid, null::uuid, null::integer;
+    if exists (select 1 from spin_prize where restaurant_id = m.restaurant_id) then
+      return query select 'no_prizes_left'::text, null::text, null::uuid, null::uuid, null::integer;
+    else
+      return query select 'no_prizes'::text, null::text, null::uuid, null::uuid, null::integer;
+    end if;
     return;
   end if;
 
-  -- Weighted pick: a random ticket in [0, total), then walk the prizes by position.
+  -- Weighted pick over eligible prizes: a random ticket in [0, total), then walk them by position.
   ticket := random() * total;
   for pick in
-    select * from spin_prize where restaurant_id = m.restaurant_id order by position
+    select sp.* from spin_prize sp
+      where sp.restaurant_id = m.restaurant_id
+        and sp.weight > 0
+        and (sp.weekly_cap is null or (
+          select count(*) from spin_result sr
+            where sr.prize_id = sp.id and sr.won_at >= now() - interval '7 days') < sp.weekly_cap)
+        and (budget_left is null or sp.value_cents <= budget_left)
+      order by sp.position
   loop
     ticket := ticket - pick.weight;
     exit when ticket < 0;
@@ -204,7 +242,7 @@ begin
 
   insert into spin_result (restaurant_id, membership_id, segment_id, label, value_cents, won_at,
                            spin_key, prize_id, reward_id)
-    values (m.restaurant_id, m.id, pick.id::text, pick.label, 0, now(),
+    values (m.restaurant_id, m.id, pick.id::text, pick.label, pick.value_cents, now(),
             p_spin_key, pick.id, new_reward);
 
   perform set_config('app.is_operator', coalesce(prior_operator, ''), true);

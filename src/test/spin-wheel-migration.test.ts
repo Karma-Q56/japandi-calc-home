@@ -44,6 +44,26 @@ describe("0019 live spin wheel", () => {
     expect(restores.length).toBeGreaterThanOrEqual(sets.length);
   });
 
+  it("stores a weekly budget on the restaurant and a value and weekly cap on each prize", () => {
+    expect(sql).toMatch(/spin_weekly_budget_cents integer/);
+    expect(sql).toMatch(/value_cents integer not null default 0/);
+    expect(sql).toMatch(/weekly_cap smallint/);
+  });
+
+  it("checks the rolling 7 day budget and each prize's weekly cap before picking", () => {
+    expect(sql).toMatch(/interval '7 days'/);
+    expect(sql).toMatch(/sp\.value_cents <= budget_left/);
+    expect(sql).toMatch(/sp\.weekly_cap is null or/);
+  });
+
+  it("locks the restaurant row so spins in one restaurant run one at a time", () => {
+    expect(sql).toMatch(/from restaurant where id = m\.restaurant_id for update/);
+  });
+
+  it("reports no_prizes_left when the budget or caps stop every prize", () => {
+    expect(sql).toMatch(/'no_prizes_left'::text/);
+  });
+
   it("gives a bonus stamp with a reason of bonus and a spin key", () => {
     expect(sql).toMatch(/'spin:' \|\| p_spin_key, 'bonus'/);
   });
