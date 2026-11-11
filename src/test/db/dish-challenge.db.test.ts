@@ -150,7 +150,7 @@ describe.skipIf(!dbTestsEnabled)("try this dish (real database, as app_user)", (
     const [row] = await db.owner`
       select count(*)::int as n from challenge_claim
       where challenge_id = ${challengeId} and membership_id = ${membershipId}`;
-    expect(Number(row!!["n"])).toBe(1);
+    expect(Number(row!["n"])).toBe(1);
   });
 
   it("accepts all four reward types", async () => {
