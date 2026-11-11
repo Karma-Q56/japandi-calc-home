@@ -2,7 +2,8 @@ import { sql } from "drizzle-orm";
 import type { Viewer } from "./auth-viewer";
 import { withContext } from "./db";
 import { getDataMode } from "./db/mode";
-import { CODE_PATTERN, MESSAGE_MAX, type AudienceType } from "@/lib/live-campaigns";
+import { messageSegments } from "@/domain/campaigns";
+import { CODE_PATTERN, MESSAGE_MAX, SEGMENT_SAMPLE_NAME, type AudienceType } from "@/lib/live-campaigns";
 
 // Live campaign create (phase D15). Demo mode never imports this file.
 //
@@ -108,6 +109,9 @@ export async function createLiveCampaign(
   if (!Number.isInteger(input.segments) || input.segments < 1 || input.segments > 20) {
     return { ok: false, message: REFUSALS["invalid_segments"]! };
   }
+  // The credit held is never below what the text really needs (name filled in, STOP line added),
+  // whatever the browser sent.
+  const segments = Math.max(input.segments, messageSegments(body, SEGMENT_SAMPLE_NAME));
   const audience = input.audience as { type: AudienceType };
   if (!audience || typeof audience.type !== "string") return { ok: false, message: "Pick a valid audience." };
 
@@ -124,7 +128,7 @@ export async function createLiveCampaign(
             ${JSON.stringify(input.audience)}::jsonb,
             ${code},
             ${scheduled.toISOString()}::timestamptz,
-            ${input.segments}::integer
+            ${segments}::integer
           ) as id
         `);
         return row.rows[0]?.id ?? null;

@@ -35,23 +35,25 @@ A wave can start as soon as everything it depends on has been merged into `claud
 | 2 | D12b Bonus rules and tiers | `freebuff/bonus-rules` | 0017 | D12a | Done (merged 8 Nov) |
 | 2 | D12c Challenges and referrals | `freebuff/challenges-referrals` | 0018 | D12a | Done (merged 8 Nov) |
 | 2 | D12d Spin wheel | `freebuff/spin-wheel` | 0019 | D12a | To do |
-| 2 | D13b Card design, Your page, logo, logo on QR | `freebuff/card-design-logo` | 0023 | D12a | Done (merged 10 Nov) |
+| 2 | D13b Card design, Your page, logo, logo on QR | `freebuff/card-design-logo` | 0023 | D12a | Part done (merged 10 Nov): logo, logo route, QR logo. Rest in D13b2 |
 | 2 | D13c Till order capture | `freebuff/till-orders` | 0024 | D12a, D13a | Done (merged 10 Nov) |
 | 3 | D12f Try-this-dish challenge | `freebuff/dish-challenge` | 0021 | D12c, D13c | To do |
-| 3 | D14 Insights live | `freebuff/insights-live` | 0025 | D13c | To do |
-| 3 | D16 Sending (SMS and push) | `freebuff/sending` | 0027 | D15, D17 | To do |
-| 3 | D19 Find directory | `freebuff/find-live` | 0030 | D10, D13b | To do |
+| 3 | D14 Insights live | `freebuff/insights-live` | 0025 | D13c | Done (merged 11 Nov) |
+| 3 | D16 Sending (SMS and push) | `freebuff/sending` | 0027 | D15, D17 | Core done (merged 11 Nov), push channel and extras in D16b |
+| 3 | D19 Find directory | `freebuff/find-live` | 0030 | D10, D13b | Done (merged 11 Nov) |
+| 4 | D13b2 Finish card design, Your page, scan proof | `freebuff/card-design-finish` | none | D13b | To do |
+| 4 | D16b Finish sending: push, alerts, Worker cron, STOP reply, tests | `freebuff/sending-finish` | 0033 if needed | D16 | To do |
 | 4 | D20 Branches | `freebuff/branches` | 0031 | D10, D11, D13a, D14, D19 | To do |
 | 4 | D21 Plans and payments | `freebuff/billing` | 0032 | D18 (best after D20) | To do |
 | end | D22 Launch checklist | none | none | everything | At the end |
 
 Migration numbers are reserved per prompt. Gaps are harmless (migrations run in file name order), so a phase that ends up needing no migration just leaves its number unused.
 
-Status as of 10 Nov: the database changes for the done prompts are also applied to the Neon preview branch and tested as the restricted app role. Done does not mean walked through in a browser yet, and the screens for some are still to be checked.
+Status as of 11 Nov (wave 3: D14, D16 core and D19 merged and reviewed; the unfinished pieces of D13b and D16 are the two follow-up prompts D13b2 and D16b): the database changes for the done prompts are also applied to the Neon preview branch and tested as the restricted app role. Done does not mean walked through in a browser yet, and the screens for some are still to be checked.
 
 ## If Freebuff can only do a few at a time
 
-Send the ones still to do in this order: D14 and D16 (D14 needs D13c, D16 needs D15 and D17, all done), then D19 and D12d, then D12f and D20, then D21. D12d needs only D12a. See SEND-ORDER.md for the exact messages. Never more than 2 open at once.
+Send the ones still to do in this order: D12d and D13b2, then D16b and D12f, then D20 and D21 (D20 needs D14, D19 and the data from D11, all done). D12d needs only D12a. D14, D16 (core) and D19 are done as of 11 Nov. See SEND-ORDER.md for the exact messages. Never more than 2 open at once.
 
 ## How the parallel work stays clean
 

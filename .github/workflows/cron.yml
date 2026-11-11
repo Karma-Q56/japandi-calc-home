@@ -2,6 +2,11 @@ name: Scheduled sending
 
 # Calls the live cron routes every few minutes. The routes refuse any request
 # without the CRON_SECRET header, so this workflow needs the same secret.
+#
+# OFF until you switch it on: GitHub only runs scheduled workflows from the main branch, and a
+# run with no secrets set would fail every 5 minutes and email you each time. To turn it on, add the
+# repository secrets PATRON_APP_URL and CRON_SECRET (and SMS settings on the app), then add the
+# repository variable CRON_ENABLED with the value true (Settings, Secrets and variables, Actions).
 on:
   schedule:
     - cron: "*/5 * * * *"
@@ -12,6 +17,7 @@ permissions:
 
 jobs:
   dispatch-and-settle:
+    if: ${{ vars.CRON_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     env:
       APP_URL: ${{ secrets.PATRON_APP_URL }}

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { GAUTENG_SUBURBS } from "@/data/gauteng-suburbs";
 import {
-  escapeLikeText,
   sortByDistance,
   suburbDistanceKm,
   uniqueSuburbNames,
@@ -34,9 +33,5 @@ describe("live Find helpers", () => {
   it("has no duplicate suburb names in the picker list", () => {
     const names = GAUTENG_SUBURBS.map((s) => s.name);
     expect(new Set(names).size).toBe(names.length);
-  });
-
-  it("escapes LIKE wildcards in search text", () => {
-    expect(escapeLikeText("100%_off\\")).toBe("100\\%\\_off\\\\");
   });
 });

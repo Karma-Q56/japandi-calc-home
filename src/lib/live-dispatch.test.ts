@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canRetry, isStopReply, sendAtOrDefer, toE164, withStopFooter } from "./live-dispatch";
+import { canRetry, firstNameOf, guestMessage, isStopReply, sendAtOrDefer, toE164, withStopFooter } from "./live-dispatch";
 import { STOP_FOOTER } from "@/domain/campaigns";
 
 // Fixed clocks, so these tests never depend on the day or hour.
@@ -38,6 +38,28 @@ describe("withStopFooter", () => {
     expect(withStopFooter("Hi there")).toBe(`Hi there${STOP_FOOTER}`);
     const once = withStopFooter("Hi there");
     expect(withStopFooter(once)).toBe(once);
+  });
+});
+
+describe("withStopFooter when the message already says STOP", () => {
+  it("still adds the opt-out line", () => {
+    expect(withStopFooter("Never STOP by for a coffee")).toBe(`Never STOP by for a coffee${STOP_FOOTER}`);
+  });
+});
+
+describe("guestMessage", () => {
+  it("fills in the first name and ends with the opt-out line", () => {
+    expect(guestMessage("Hi {first_name}, we miss you!", "Thandi Nkosi")).toBe(`Hi Thandi, we miss you!${STOP_FOOTER}`);
+  });
+
+  it("says friend when the guest has no name", () => {
+    expect(firstNameOf(null)).toBe("friend");
+    expect(firstNameOf("   ")).toBe("friend");
+    expect(guestMessage("Hi {first_name}", "")).toBe(`Hi friend${STOP_FOOTER}`);
+  });
+
+  it("never leaves the placeholder in the text", () => {
+    expect(guestMessage("{first_name}, {first_name}!", "Ayesha")).not.toContain("{first_name}");
   });
 });
 

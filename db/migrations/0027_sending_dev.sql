@@ -19,8 +19,8 @@ begin
   with due as (
     select c.id from campaign c
     where c.status = 'scheduled'
-      and c.scheduled_at <= p_now
-    order by c.scheduled_at
+      and coalesce(c.scheduled_at, c.created_at) <= p_now
+    order by coalesce(c.scheduled_at, c.created_at)
     limit p_limit
     for update skip locked
   )
@@ -61,6 +61,8 @@ begin
   where m.restaurant_id = camp.restaurant_id
     and c.erased_at is null
     and m.marketing_sms = 'opted_in'
+    -- Only the guests the owner chose: same rules as the count shown when the campaign was made.
+    and m.id in (select a.membership_id from campaign_audience_ids(camp.restaurant_id, camp.audience, p_now) a)
     and (
       select count(*) from message x
       where x.membership_id = m.id
@@ -157,10 +159,12 @@ $$;
 revoke all on function record_sms_stop(text, text, text) from public;
 grant execute on function record_sms_stop(text, text, text) to app_user;
 
--- 5. Settle a campaign once every message is final. Posts a charge for the real cost
---    (capped at the reserve) and a release for the unused reserve. The references are
---    unique, so a rerun posts nothing. The campaign becomes sent, or failed when nothing
---    was delivered.
+-- 5. Settle a campaign once every message is final. The ledger rules (0001): a reserve is
+--    negative, a release gives back the WHOLE reservation, and a charge is negative and equals
+--    the real cost of messages that were sent. So reserve + release + charge = minus the real cost.
+--    The cost is what the provider reported, or the usual price per text when it reported none.
+--    The charge is capped at the reserve. References are unique, so a rerun posts nothing.
+--    The campaign becomes sent, or failed when nothing was delivered.
 create or replace function settle_campaign(p_campaign uuid)
 returns text
 language plpgsql security definer set search_path = public, pg_temp as $$
@@ -170,7 +174,6 @@ declare
   actual integer;
   delivered integer;
   charge integer;
-  unused integer;
 begin
   if not app_is_operator() then
     raise exception 'not_allowed' using errcode = '42501';
@@ -188,24 +191,24 @@ begin
 
   select coalesce(-sum(amount_cents), 0)::integer into reserved
   from credit_ledger where campaign_id = p_campaign and entry_type = 'reserve';
-  select coalesce(sum(cost_cents), 0)::integer,
-         count(*) filter (where status in ('sent', 'delivered'))::integer
+  select coalesce(sum(coalesce(cost_cents, coalesce(segments, 1) * 35))
+                    filter (where status in ('sent', 'delivered')), 0)::integer,
+         (count(*) filter (where status in ('sent', 'delivered')))::integer
     into actual, delivered
   from message where campaign_id = p_campaign;
 
   charge := least(actual, reserved);
-  unused := reserved - charge;
 
-  -- The reserve row already holds the full amount, so the charge row records the actual
-  -- cost with amount zero. Reserve plus release then nets to exactly the charge.
-  insert into credit_ledger (restaurant_id, entry_type, amount_cents, reference, campaign_id, created_by, note)
-  values (camp.restaurant_id, 'charge', 0, 'charge:' || p_campaign, p_campaign, 'system',
-    'SMS cost for a campaign: ' || charge || ' cents')
-  on conflict (reference) do nothing;
-  if unused > 0 then
+  if charge > 0 then
     insert into credit_ledger (restaurant_id, entry_type, amount_cents, reference, campaign_id, created_by, note)
-    values (camp.restaurant_id, 'release', unused, 'release:' || p_campaign, p_campaign, 'system',
-      'Unused credit returned from a campaign')
+    values (camp.restaurant_id, 'charge', -charge, 'charge:' || p_campaign, p_campaign, 'system',
+      'SMS cost for a campaign')
+    on conflict (reference) do nothing;
+  end if;
+  if reserved > 0 then
+    insert into credit_ledger (restaurant_id, entry_type, amount_cents, reference, campaign_id, created_by, note)
+    values (camp.restaurant_id, 'release', reserved, 'release:' || p_campaign, p_campaign, 'system',
+      'Credit held for a campaign given back')
     on conflict (reference) do nothing;
   end if;
 
@@ -243,3 +246,105 @@ $$;
 
 revoke all on function campaigns_ready_to_settle(integer) from public;
 grant execute on function campaigns_ready_to_settle(integer) to app_user;
+
+-- 7. Claim a batch of queued texts. A row lock with skip locked and the move to 'sending' mean two
+--    overlapping runs never send the same text. The guest's first name is returned so the text can
+--    say "Hi Thandi" instead of "Hi {first_name}".
+create or replace function claim_queued_messages(p_now timestamptz, p_limit integer, p_max_attempts integer)
+returns table (message_id uuid, body text, first_name text, phone text, sender text, attempt integer)
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if not app_is_operator() then
+    raise exception 'not_allowed' using errcode = '42501';
+  end if;
+  return query
+  with picked as (
+    select m.id from message m
+    join campaign c on c.id = m.campaign_id and c.status = 'sending'
+    where m.status = 'queued' and m.channel = 'sms' and m.attempts < p_max_attempts
+    order by m.queued_at, m.id
+    limit greatest(p_limit, 0)
+    for update of m skip locked
+  ), claimed as (
+    update message m set status = 'sending', attempts = m.attempts + 1, last_attempt_at = p_now
+    from picked where m.id = picked.id
+    returning m.id as cid, m.campaign_id as camp_id, m.membership_id as mem_id, m.restaurant_id as rest_id,
+              m.attempts as att
+  )
+  select cl.cid, c.message_body, cu.name, cu.phone_e164, r.sms_sender_name, cl.att::integer
+  from claimed cl
+  join campaign c on c.id = cl.camp_id
+  join membership mem on mem.id = cl.mem_id
+  join customer cu on cu.id = mem.customer_id
+  join restaurant r on r.id = cl.rest_id;
+end;
+$$;
+
+revoke all on function claim_queued_messages(timestamptz, integer, integer) from public;
+grant execute on function claim_queued_messages(timestamptz, integer, integer) to app_user;
+
+-- 8. The provider accepted the text. Records its id, the real segments and the cost (the usual
+--    price per text when the provider gave none). Never moves a message backwards.
+create or replace function finish_message_send(
+  p_id uuid, p_provider_message_id text, p_cost_cents integer, p_segments integer
+) returns void
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if not app_is_operator() then
+    raise exception 'not_allowed' using errcode = '42501';
+  end if;
+  update message set
+    provider = 'bulksms',
+    provider_message_id = p_provider_message_id,
+    segments = coalesce(p_segments, segments, 1),
+    cost_cents = coalesce(p_cost_cents, coalesce(p_segments, segments, 1) * 35),
+    sent_at = coalesce(sent_at, now()),
+    status = case when status in ('queued', 'sending') then 'sent'::message_status else status end
+  where id = p_id;
+end;
+$$;
+
+revoke all on function finish_message_send(uuid, text, integer, integer) from public;
+grant execute on function finish_message_send(uuid, text, integer, integer) to app_user;
+
+-- 9. The provider refused the text. Puts it back in the queue to try again, or marks it failed.
+create or replace function fail_message_send(p_id uuid, p_retry boolean, p_error text)
+returns void
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if not app_is_operator() then
+    raise exception 'not_allowed' using errcode = '42501';
+  end if;
+  update message set
+    status = case when p_retry then 'queued'::message_status else 'failed'::message_status end,
+    error_code = p_error
+  where id = p_id and status = 'sending';
+end;
+$$;
+
+revoke all on function fail_message_send(uuid, boolean, text) from public;
+grant execute on function fail_message_send(uuid, boolean, text) to app_user;
+
+-- 10. A run that died after claiming texts leaves them in 'sending'. We cannot know whether the
+--     provider got them, so they are marked failed (never resent: a double text costs money and
+--     annoys guests). Failed texts are not charged.
+create or replace function fail_stale_sending(p_now timestamptz, p_minutes integer)
+returns integer
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare
+  n integer;
+begin
+  if not app_is_operator() then
+    raise exception 'not_allowed' using errcode = '42501';
+  end if;
+  update message set status = 'failed', error_code = 'send_unknown'
+  where status = 'sending'
+    and provider_message_id is null
+    and last_attempt_at < p_now - make_interval(mins => greatest(p_minutes, 1));
+  get diagnostics n = row_count;
+  return n;
+end;
+$$;
+
+revoke all on function fail_stale_sending(timestamptz, integer) from public;
+grant execute on function fail_stale_sending(timestamptz, integer) to app_user;

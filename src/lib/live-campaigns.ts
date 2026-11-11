@@ -103,3 +103,6 @@ export function ledgerWording(entryType: string): string {
 
 /** Whether the balance is low enough to warn the owner. */
 export const isLowCredit = (availableCents: number): boolean => availableCents < LOW_CREDIT_CENTS;
+
+/** A long first name used to count text segments, so the credit held is never too small. */
+export const SEGMENT_SAMPLE_NAME = "Nonhlanhla";

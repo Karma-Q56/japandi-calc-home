@@ -53,10 +53,6 @@ export function uniqueSuburbNames(names: Array<string | null | undefined>): stri
   return out;
 }
 
-/** Escape LIKE wildcards so a diner's search text matches literally. */
-export function escapeLikeText(value: string): string {
-  return value.replace(/[\\%_]/g, (ch) => `\\${ch}`);
-}
 
 /** Open now, using the same Johannesburg rules as the venue pages. */
 export function isOpenNow(

@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { withContext } from "./db";
-import { escapeLikeText, isOpenNow, FIND_VENUE_TYPES, type FindVenueType } from "@/lib/live-find";
+import { isOpenNow, FIND_VENUE_TYPES, type FindVenueType } from "@/lib/live-find";
 
 export type FindRow = {
   id: string;
@@ -9,6 +9,7 @@ export type FindRow = {
   suburb: string | null;
   venue_type: string;
   logo_url: string | null;
+  has_logo: boolean;
   hours: Record<string, { open: string; close: string } | null>;
   stamps_required: number;
   reward_description: string;
@@ -43,7 +44,8 @@ export function mapFindRows(rows: FindRow[], epochMs: number): FindResult[] {
     name: row.name,
     suburb: row.suburb,
     venueType: asVenueType(row.venue_type),
-    logoUrl: row.logo_url,
+    // An uploaded logo (D13b) wins over the old text address.
+    logoUrl: row.has_logo ? `/r/${row.slug}/logo` : row.logo_url,
     stampsRequired: row.stamps_required,
     rewardDescription: row.reward_description,
     open: isOpenNow(row.hours ?? {}, epochMs),
@@ -75,7 +77,8 @@ export async function searchFind(
 ): Promise<{ venues: FindResult[]; hasMore: boolean } | { limited: true }> {
   if (!(await hitFindRateLimit(databaseUrl, rateKey))) return { limited: true };
   const offset = Math.max(0, input.page) * FIND_PAGE_SIZE;
-  const query = escapeLikeText(input.query.trim());
+  // The database function escapes % and _ itself, so the text goes in as typed.
+  const query = input.query.trim();
   // Fetch one extra row to know whether another page exists.
   const rows = await withContext({ databaseUrl, restaurantId: null, isOperator: false }, async (tx) => {
     const result = await tx.execute<FindRow>(

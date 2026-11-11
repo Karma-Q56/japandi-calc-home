@@ -6,7 +6,7 @@ This file is the whole send order. Every message is ready to copy and paste. Sen
 
 1. Each message makes Freebuff start a new branch from the latest `claude/fix-regressions`, load the `patron-phase-builder` skill, read `AGENTS.md` and `docs/prompts/README.md`, then do one prompt from start to finish.
 2. Never have more than 2 Freebuff branches open at once. Neon makes a database branch for every pushed git branch and we keep 5 at most (production, `preview/claude/fix-regressions`, the dev branch `preview/freebuff/b8bfff...`, and 2 for Freebuff).
-3. Freebuff does not need any Neon branch or database. GitHub runs the database tests on every push. The dev Neon branch already has every migration up to 0029. I apply each new migration to it after I merge.
+3. Freebuff does not need any Neon branch or database. GitHub runs the database tests on every push. The dev Neon branch already has every migration up to 0030 (0027 and 0030 applied on 11 Nov). I apply each new migration to it after I merge.
 4. When Freebuff finishes, send me the branch name and paste its handoff reply (use the "Message to Claude" at the end of this file). I then fetch the branch, test the database as the restricted app role, fix what is left, merge it into `claude/fix-regressions`, check that GitHub is green, and tell you the slot is free.
 5. When I say a slot is free, delete the finished branch on GitHub (Branches page, trash icon). My session is not allowed to delete git branches. I will remove the matching Neon preview branch myself if I am allowed, and I will tell you if I am not.
 6. If one prompt of a pair finishes early, you can send the next message as soon as I tell you its slot is free. You do not have to wait for the other one.
@@ -17,13 +17,13 @@ This file is the whole send order. Every message is ready to copy and paste. Sen
 |---|---|---|
 | 1 | 1A D13a Settings, Activity log, Feedback, Ideas. 1B D15 New campaign, credit, lists | Other prompts need these two first (D13c needs D13a, D16 needs D15) |
 | 2 | 2A D13c Till orders. 2B D13b Card design, logo, QR logo | D13c needs D13a. D13b is on the path to Find |
-| 3 | 3A D14 Insights. 3B D16 Sending | D14 needs D13c. D16 needs D15 |
-| 4 | 4A D19 Find directory. 4B D12d Spin wheel | D19 needs D13b |
+| 3 | 3A D14 Insights. 3B D16 Sending | Done and merged 11 Nov |
+| 4 | 4B D12d Spin wheel. 4C D13b2 Finish card design and Your page. 4D D16b Finish sending (4A D19 is done) | Send two at a time: 4B and 4C first, then 4D when one slot is free |
 | 5 | 5A D12f Try-this-dish. 5B D20 Branches | D12f needs D13c. D20 needs D14 and D19 |
 | 6 | 6A D21 Plans and payments | Best after branches. Goes alone |
 | After | D22 launch checklist, the polish pass, production go-live | Claude and Karma, not Freebuff |
 
-Already built and merged, so do not send them again: D10, D11, D12a, D12b, D12c, D12e, D13a, D13b, D13c, D15, D17, D18 (rounds 1 and 2 are done as of 10 Nov). Start at round 3.
+Already built and merged, so do not send them again: D10, D11, D12a, D12b, D12c, D12e, D13a, D13b, D13c, D14, D15, D16, D17, D18, D19 (rounds 1, 2 and 3 are done as of 11 Nov). D13b and D16 were merged with some items missing, so two follow-up messages (4C and 4D) finish them. Start at round 4.
 
 ## Always do this first
 
@@ -133,9 +133,9 @@ Paste this:
 
 ## Round 4
 
-Send after round 3 is merged (D19 needs D13b).
+Round 3 is merged (11 Nov). Message 4A (D19) is already done, so skip it. Send 4B and 4C first, then 4D when I say a slot is free.
 
-### Message 4A: D19: the Find directory goes live
+### Message 4A: D19: the Find directory goes live (DONE 11 Nov, do not send)
 
 Branch: `freebuff/find-live`. Prompt: `docs/prompts/D19-find-directory.md`.
 
@@ -161,6 +161,33 @@ Paste this:
 > Step 5: work only on `freebuff/spin-wheel`. Do not create other git branches, and do not create, change or delete anything in Neon or Vercel (you do not need a database, GitHub runs the database tests).
 > Step 6: when the code is done, push the branch, read the GitHub check result for it, fix any failure, and push again until the check is green. Then reply in the handoff format from the skill.
 
+
+
+### Message Message 4C: D13b2: finish the card design, Your page and scan proof (follow-up to D13b)
+
+Branch: `freebuff/card-design-finish`. Prompt: `docs/prompts/D13b2-page-design-scan-proof.md`.
+
+Paste this:
+
+> Step 1: run `git fetch origin`, then create your branch from the latest main line: `git checkout -b freebuff/card-design-finish origin/claude/fix-regressions`. Never start from an older freebuff branch.
+> Step 2: load the skill `patron-phase-builder` (it is the file `.agents/skills/patron-phase-builder/SKILL.md`; if the skill command cannot find it, open that file and follow it). Then read `AGENTS.md` and `docs/prompts/README.md`.
+> Step 3: read `docs/prompts/D13b2-page-design-scan-proof.md` and do exactly what it says. Do the whole prompt in one run: do not stop to ask me questions you can answer yourself and do not wait for me to say "continue". If you have to choose, pick the simplest option that follows AGENTS.md and list it under "Decisions I made" in your handoff. Only stop for production, real money, real guests' data, or something that cannot be undone.
+> Step 4: follow the skill for how to build and test. Use the design skills only on the new screens you build and never restyle existing screens. Buttons must look like buttons and never change their label to "Saving" or "Saved".
+> Step 5: work only on `freebuff/card-design-finish`. Do not create other git branches, and do not create, change or delete anything in Neon or Vercel (you do not need a database, GitHub runs the database tests).
+> Step 6: when the code is done, push the branch, read the GitHub check result for it, fix any failure, and push again until the check is green. Then reply in the handoff format from the skill.
+
+### Message Message 4D: D16b: finish sending (push channel, low-credit alert, Worker cron, STOP reply, missing tests)
+
+Branch: `freebuff/sending-finish`. Prompt: `docs/prompts/D16b-sending-finish.md`.
+
+Paste this:
+
+> Step 1: run `git fetch origin`, then create your branch from the latest main line: `git checkout -b freebuff/sending-finish origin/claude/fix-regressions`. Never start from an older freebuff branch.
+> Step 2: load the skill `patron-phase-builder` (it is the file `.agents/skills/patron-phase-builder/SKILL.md`; if the skill command cannot find it, open that file and follow it). Then read `AGENTS.md` and `docs/prompts/README.md`.
+> Step 3: read `docs/prompts/D16b-sending-finish.md` and do exactly what it says. Do the whole prompt in one run: do not stop to ask me questions you can answer yourself and do not wait for me to say "continue". If you have to choose, pick the simplest option that follows AGENTS.md and list it under "Decisions I made" in your handoff. Only stop for production, real money, real guests' data, or something that cannot be undone.
+> Step 4: follow the skill for how to build and test. Use the design skills only on the new screens you build and never restyle existing screens. Buttons must look like buttons and never change their label to "Saving" or "Saved".
+> Step 5: work only on `freebuff/sending-finish`. Do not create other git branches, and do not create, change or delete anything in Neon or Vercel (you do not need a database, GitHub runs the database tests).
+> Step 6: when the code is done, push the branch, read the GitHub check result for it, fix any failure, and push again until the check is green. Then reply in the handoff format from the skill.
 
 ---
 

@@ -3,8 +3,7 @@ import { countLabel } from "@/lib/count-label";
 import { useState } from "react";
 import { getDataModeFn } from "@/server/live";
 import { countRecipientsFn, createCampaignFn } from "@/server/live-campaign-create-fns";
-import { countSegments } from "@/lib/sms-segments";
-import { CODE_PATTERN, MESSAGE_MAX, estimateCostCents, formatRand } from "@/lib/live-campaigns";
+import { CODE_PATTERN, MESSAGE_MAX, SEGMENT_SAMPLE_NAME, estimateCostCents, formatRand } from "@/lib/live-campaigns";
 import { api } from "@/api";
 import {
   checkCopy,
@@ -76,7 +75,8 @@ function LiveCampaignComposer({ audience, weekday }: { audience: SegmentType | u
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
 
-  const segments = countSegments(body);
+  // Counted as the guest receives it: a long first name filled in and the STOP line added.
+  const segments = messageSegments(body, SEGMENT_SAMPLE_NAME);
   const cost = recipients === null ? 0 : estimateCostCents(recipients, segments);
   const liveAudience = (): CampaignAudience => {
     if (segment === "weekday") return { type: "weekday", weekday: day };

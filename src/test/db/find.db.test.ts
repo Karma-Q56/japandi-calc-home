@@ -112,7 +112,7 @@ describe.skipIf(!dbTestsEnabled)("live Find directory (real database, as app_use
     expect(await find({ query: "%" })).toEqual([]);
   });
 
-  it("caps a page at 24 and pages without repeats", async () => {
+  it("caps a request at 25 (a page of 24 plus one) and pages without repeats", async () => {
     const created = [];
     for (let i = 0; i < 26; i += 1) {
       const venue = await makeRestaurant(db.owner, fixtures, { name: `Page ${i}` });
@@ -120,7 +120,7 @@ describe.skipIf(!dbTestsEnabled)("live Find directory (real database, as app_use
       await setListing(venue.id, { name: `Paged ${tag} ${String(i).padStart(2, "0")}`, status: "active", publicListed: true, suburb: "Sandton", venueType: "other" });
     }
     const first = await find({ query: `paged ${tag}`, limit: 500 });
-    expect(first.length).toBe(24);
+    expect(first.length).toBe(25);
     const second = await find({ query: `paged ${tag}`, limit: 24, offset: 24 });
     expect(second.length).toBe(2);
     const seen = new Set([...first, ...second].map((r) => r.id));

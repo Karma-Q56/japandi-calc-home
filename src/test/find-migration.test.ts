@@ -21,8 +21,12 @@ describe("0030 live Find directory", () => {
     expect(sql).toMatch(/r\.public_listed = true/);
   });
 
-  it("caps a page at 24 rows", () => {
-    expect(sql).toMatch(/limit least\(greatest\(coalesce\(p_limit, 24\), 1\), 24\)/);
+  it("caps a request at 25 rows: a page of 24 plus one to show there is more", () => {
+    expect(sql).toMatch(/limit least\(greatest\(coalesce\(p_limit, 24\), 1\), 25\)/);
+  });
+
+  it("says whether the restaurant has an uploaded logo", () => {
+    expect(sql).toMatch(/exists \(select 1 from restaurant_logo l where l\.restaurant_id = r\.id\) as has_logo/);
   });
 
   it("flags member offers only for active, non-public specials", () => {

@@ -14,6 +14,7 @@ alter table restaurant
   add constraint restaurant_venue_type_check
   check (venue_type in ('cafe', 'bakery', 'restaurant', 'takeaway', 'other'));
 
+-- A page is 24 venues; the function allows one extra row so the screen can tell whether another page exists.
 -- Plain lowercase index for name search (ilike, no extension needed).
 create index if not exists restaurant_name_lower_idx on restaurant (lower(name));
 
@@ -31,6 +32,7 @@ returns table (
   suburb             text,
   venue_type         text,
   logo_url           text,
+  has_logo           boolean,
   hours              jsonb,
   stamps_required    integer,
   reward_description text,
@@ -51,6 +53,7 @@ as $$
     r.suburb,
     r.venue_type,
     r.logo_url,
+    exists (select 1 from restaurant_logo l where l.restaurant_id = r.id) as has_logo,
     r.hours,
     r.stamps_required,
     r.reward_description,
@@ -78,7 +81,7 @@ as $$
       or r.venue_type = btrim(p_type)
     )
   order by r.name, r.id
-  limit least(greatest(coalesce(p_limit, 24), 1), 24)
+  limit least(greatest(coalesce(p_limit, 24), 1), 25)
   offset greatest(coalesce(p_offset, 0), 0)
 $$;
 

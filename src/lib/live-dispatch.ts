@@ -1,7 +1,7 @@
 // Pure rules for live sending (phase D16). No database or network access here, so these
 // are unit tested directly. The server modules call these helpers.
 
-import { STOP_FOOTER, inQuietHours, nextEightAm } from "@/domain/campaigns";
+import { STOP_FOOTER, inQuietHours, nextEightAm, renderBody } from "@/domain/campaigns";
 
 /** Words a guest can text to withdraw marketing consent. Matched on the whole message. */
 const STOP_WORDS = new Set(["stop", "stopall", "unsubscribe", "cancel", "end", "quit"]);
@@ -20,9 +20,20 @@ export function sendAtOrDefer(nowMs: number): number {
   return inQuietHours(nowMs) ? nextEightAm(nowMs) : nowMs;
 }
 
-/** The body actually sent: the campaign copy plus the STOP footer, once. */
+/** The body actually sent: the campaign copy plus the STOP footer, once. Always ends with the footer. */
 export function withStopFooter(body: string): string {
-  return body.includes("STOP") ? body : `${body}${STOP_FOOTER}`;
+  return body.trimEnd().endsWith(STOP_FOOTER.trim()) ? body : `${body}${STOP_FOOTER}`;
+}
+
+/** First word of the guest's name for "Hi {first_name}", or a friendly fallback when there is no name. */
+export function firstNameOf(name: string | null | undefined): string {
+  const first = (name ?? "").trim().split(/\s+/u)[0] ?? "";
+  return first.length > 0 ? first : "friend";
+}
+
+/** The text a guest receives: fill-ins replaced, then the STOP line. */
+export function guestMessage(template: string, name: string | null | undefined): string {
+  return withStopFooter(renderBody(template, firstNameOf(name)));
 }
 
 /** Retry rule: a message can be attempted again until it has used MAX_ATTEMPTS tries. */
