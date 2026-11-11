@@ -63,6 +63,9 @@ type ChallengeRow = {
   reward_amount_off_cents: number | null;
   reward_valid_days: number | null;
   active: boolean;
+  menu_item_id: string | null;
+  menu_section_id: string | null;
+  target_name: string | null;
 };
 
 const toChallenge = (row: ChallengeRow): LiveChallenge => ({
@@ -81,6 +84,9 @@ const toChallenge = (row: ChallengeRow): LiveChallenge => ({
   amountOffCents: row.reward_amount_off_cents === null ? null : Number(row.reward_amount_off_cents),
   validDays: row.reward_valid_days === null ? null : Number(row.reward_valid_days),
   active: row.active,
+  menuItemId: row.menu_item_id,
+  menuSectionId: row.menu_section_id,
+  targetName: row.target_name ?? "",
   claimedByMe: false,
 });
 
@@ -92,7 +98,11 @@ export async function listChallenges(viewer: Viewer): Promise<LiveChallenge[] | 
       const result = await transaction.execute<ChallengeRow>(sql`
         select id, title, kind, visits, window_days, weekdays, start_hour, end_hour, reward_type,
                bonus_stamps, reward_item, reward_percent_off, reward_amount_off_cents,
-               reward_valid_days, active
+               reward_valid_days, active, menu_item_id, menu_section_id,
+               case when menu_item_id is not null
+                    then (select name from menu_item where id = challenge.menu_item_id)
+                    else (select name from menu_section where id = challenge.menu_section_id)
+               end as target_name
         from challenge
         where restaurant_id = ${viewer.restaurantId}
         order by created_at desc
@@ -105,6 +115,7 @@ export async function listChallenges(viewer: Viewer): Promise<LiveChallenge[] | 
 export type GuestChallenge = {
   id: string;
   title: string;
+  kind: ChallengeKind;
   visits: number;
   windowDays: number;
   progress: number;
@@ -126,7 +137,11 @@ export async function listGuestChallenges(
       >(sql`
         select c.id, c.title, c.kind, c.visits, c.window_days, c.weekdays, c.start_hour, c.end_hour,
                c.reward_type, c.bonus_stamps, c.reward_item, c.reward_percent_off,
-               c.reward_amount_off_cents, c.reward_valid_days, c.active,
+               c.reward_amount_off_cents, c.reward_valid_days, c.active, c.menu_item_id, c.menu_section_id,
+               case when c.menu_item_id is not null
+                    then (select name from menu_item where id = c.menu_item_id)
+                    else (select name from menu_section where id = c.menu_section_id)
+               end as target_name,
                challenge_progress(c.id, ${membershipId}) as progress,
                exists (
                  select 1 from challenge_claim cc
@@ -141,6 +156,7 @@ export async function listGuestChallenges(
         return {
           id: challenge.id,
           title: challenge.title,
+          kind: challenge.kind,
           visits: challenge.visits,
           windowDays: challenge.windowDays,
           progress: Number(row.progress),
@@ -175,6 +191,7 @@ export async function saveChallenge(
           update challenge
           set title = ${v.title}, kind = ${v.kind}, visits = ${v.visits}, window_days = ${v.windowDays},
               weekdays = ${v.weekdays}::smallint[], start_hour = ${v.startHour}, end_hour = ${v.endHour},
+              menu_item_id = ${v.menuItemId}, menu_section_id = ${v.menuSectionId},
               reward_type = ${v.rewardType}, bonus_stamps = ${v.bonusStamps}, reward_item = ${v.rewardItem || null},
               reward_percent_off = ${v.percentOff}, reward_amount_off_cents = ${v.amountOffCents},
               reward_valid_days = ${v.validDays}, active = ${v.active}, updated_at = now()
@@ -187,10 +204,11 @@ export async function saveChallenge(
       await transaction.execute(sql`
         insert into challenge (restaurant_id, title, kind, visits, window_days, weekdays, start_hour, end_hour,
                                reward_type, bonus_stamps, reward_item, reward_percent_off,
-                               reward_amount_off_cents, reward_valid_days, active)
+                               reward_amount_off_cents, reward_valid_days, active, menu_item_id, menu_section_id)
         values (${viewer.restaurantId}, ${v.title}, ${v.kind}, ${v.visits}, ${v.windowDays},
                 ${v.weekdays}::smallint[], ${v.startHour}, ${v.endHour}, ${v.rewardType}, ${v.bonusStamps},
-                ${v.rewardItem || null}, ${v.percentOff}, ${v.amountOffCents}, ${v.validDays}, ${v.active})
+                ${v.rewardItem || null}, ${v.percentOff}, ${v.amountOffCents}, ${v.validDays}, ${v.active},
+                ${v.menuItemId}, ${v.menuSectionId})
       `);
       return { ok: true as const };
     },

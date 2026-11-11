@@ -16,7 +16,40 @@ const base: LiveChallengeInput = {
   amountOffCents: null,
   validDays: null,
   active: true,
+  menuItemId: null,
+  menuSectionId: null,
+  targetName: "",
 };
+
+describe("try this dish", () => {
+  const dish: LiveChallengeInput = {
+    ...base,
+    kind: "try_item",
+    visits: 2,
+    windowDays: 30,
+    menuItemId: "11111111-1111-4111-8111-111111111111",
+    menuSectionId: null,
+    targetName: "Peri-peri chicken",
+    rewardType: "amount_off",
+    amountOffCents: 2000,
+  };
+
+  it("writes the preview sentence in plain words", () => {
+    expect(challengeRuleLine(dish)).toBe("Order the Peri-peri chicken 2 times in 30 days");
+  });
+
+  it("accepts one dish and refuses both or neither", () => {
+    expect(validateChallenge(dish).ok).toBe(true);
+    expect(validateChallenge({ ...dish, menuItemId: null, menuSectionId: null }).ok).toBe(false);
+    expect(
+      validateChallenge({ ...dish, menuSectionId: "22222222-2222-4222-8222-222222222222" }).ok,
+    ).toBe(false);
+  });
+
+  it("refuses a count of zero", () => {
+    expect(validateChallenge({ ...dish, visits: 0 }).ok).toBe(false);
+  });
+});
 
 describe("validateChallenge", () => {
   it("accepts a visits challenge with a stamp reward", () => {

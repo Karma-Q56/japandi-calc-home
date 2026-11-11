@@ -1,7 +1,7 @@
 // Validation and plain wording for live challenges and referrals (D12c).
 // Pure code: no database, so it can run in the browser and in tests.
 
-export type ChallengeKind = "visits" | "quiet_days";
+export type ChallengeKind = "visits" | "quiet_days" | "try_item";
 export type RewardType = "stamps" | "free_item" | "percent_off" | "amount_off";
 
 export type LiveChallengeInput = {
@@ -19,6 +19,11 @@ export type LiveChallengeInput = {
   amountOffCents: number | null;
   validDays: number | null;
   active: boolean;
+  /** Try this dish only: the chosen menu item or section (one of the two). */
+  menuItemId: string | null;
+  menuSectionId: string | null;
+  /** Try this dish only: the name shown in the wording, e.g. "Peri-peri chicken". */
+  targetName: string;
 };
 
 export type LiveReferralInput = {
@@ -68,14 +73,31 @@ function rewardProblem(
 export function validateChallenge(input: LiveChallengeInput): Ok<LiveChallengeInput> | Bad {
   const title = cleanText(input.title);
   if (title.length < 2 || title.length > 70) return { ok: false, message: "Give the challenge a name of 2 to 70 letters." };
-  if (input.kind !== "visits" && input.kind !== "quiet_days") return { ok: false, message: "Pick a challenge type." };
+  if (!["visits", "quiet_days", "try_item"].includes(input.kind)) return { ok: false, message: "Pick a challenge type." };
 
   let weekdays: number[] = [];
   let startHour: number | null = null;
   let endHour: number | null = null;
-  if (input.kind === "visits") {
+  let menuItemId: string | null = null;
+  let menuSectionId: string | null = null;
+  let visits = 0;
+  let windowDays = 0;
+  if (input.kind === "try_item") {
+    if (!isInt(input.visits, 1, 50)) return { ok: false, message: "The count must be a whole number from 1 to 50." };
+    if (!isInt(input.windowDays, 1, 365)) return { ok: false, message: "The time limit must be 1 to 365 days." };
+    const hasItem = typeof input.menuItemId === "string" && input.menuItemId.length > 0;
+    const hasSection = typeof input.menuSectionId === "string" && input.menuSectionId.length > 0;
+    if (hasItem === hasSection) return { ok: false, message: "Pick one menu item or one menu section." };
+    menuItemId = hasItem ? input.menuItemId : null;
+    menuSectionId = hasSection ? input.menuSectionId : null;
+    visits = input.visits;
+    windowDays = input.windowDays;
+    if (cleanText(input.targetName).length < 1) return { ok: false, message: "Pick the dish or section for this challenge." };
+  } else if (input.kind === "visits") {
     if (!isInt(input.visits, 2, 50)) return { ok: false, message: "Visits must be a whole number from 2 to 50." };
     if (!isInt(input.windowDays, 1, 365)) return { ok: false, message: "The time limit must be 1 to 365 days." };
+    visits = input.visits;
+    windowDays = input.windowDays;
   } else {
     weekdays = [...new Set(input.weekdays)].sort((a, b) => a - b);
     if (weekdays.length < 1 || !weekdays.every((d) => isInt(d, 0, 6))) {
@@ -108,8 +130,11 @@ export function validateChallenge(input: LiveChallengeInput): Ok<LiveChallengeIn
     value: {
       title,
       kind: input.kind,
-      visits: input.kind === "visits" ? input.visits : 0,
-      windowDays: input.kind === "visits" ? input.windowDays : 0,
+      visits,
+      windowDays,
+      menuItemId,
+      menuSectionId,
+      targetName: input.kind === "try_item" ? cleanText(input.targetName) : "",
       weekdays,
       startHour,
       endHour,
@@ -137,11 +162,18 @@ export function validateReferrals(input: LiveReferralInput): Ok<LiveReferralInpu
 }
 
 /** Plain line for the challenge rule, e.g. "Visit 3 times in 14 days". */
-export function challengeRuleLine(c: Pick<LiveChallengeInput, "kind" | "visits" | "windowDays" | "weekdays" | "startHour" | "endHour">): string {
+export function challengeRuleLine(c: Pick<LiveChallengeInput, "kind" | "visits" | "windowDays" | "weekdays" | "startHour" | "endHour"> & { targetName?: string }): string {
   if (c.kind === "visits") return `Visit ${c.visits} times in ${c.windowDays} days`;
+  if (c.kind === "try_item") return `Order the ${c.targetName ?? "dish"} ${c.visits} times in ${c.windowDays} days`;
   const days = c.weekdays.map((d) => DAY_NAMES[d]).join(", ");
   const hours = c.startHour === null || c.endHour === null ? "" : ` between ${c.startHour}:00 and ${c.endHour}:00`;
   return `Visit on ${days}${hours}`;
+}
+
+/** Guest card progress line, e.g. "1 of 2 ordered" for dish challenges, "1 of 2 in 14 days" otherwise. */
+export function progressLine(c: { kind: ChallengeKind; visits: number; windowDays: number; progress: number }): string {
+  if (c.kind === "try_item") return `${Math.min(c.progress, c.visits)} of ${c.visits} ordered`;
+  return `${Math.min(c.progress, c.visits)} of ${c.visits} in ${c.windowDays} days`;
 }
 
 /** Plain line for a reward, e.g. "Take 10% off the bill". */
