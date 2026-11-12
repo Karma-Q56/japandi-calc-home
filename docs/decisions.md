@@ -578,3 +578,21 @@ The feature table and planner read the same arrays; everything stays marked prop
 
 ## Help from Patron
 Help mode is a time boxed session, not a role change. The demo keeps drafts and requests in browser storage; `0011_help_mode_dev.sql` adds the live tables and blocks operator writes once the window closes. Drafts carry a fixed label, and operators never see full guest numbers. The privacy wording for this feature needs a lawyer before it goes live.
+
+## D21: Plans, billing and payments (migration 0032, NOT APPLIED)
+
+Plan limits and prices are data in `src/config/plans.ts` (`planBilling`). The pricing page and the owner billing screen read the same data. Money is always whole cents in rand. The server builds every amount; the browser never sends a plan or an amount that is trusted.
+
+- **Location limit.** A new location past the plan limit is refused by a trigger (`plan_limit_locations`). Limits live in the `plan_limit` table: starter 1, managed 3, partner 10, custom 50.
+- **D20 is not in this base.** D20 (branches) is not merged, so there is no `location_limit` table. The trigger and its function are created in 0032 instead. 0031 stays reserved for D20.
+- **Card payments (PayFast).** Hosted checkout only, no card data on our side. Monthly plans are subscriptions; top ups are one-off payments. The ITN webhook at `/api/webhooks/payments` checks the signature, the merchant id, the amount against the stored payment, then validates with PayFast before settling. Repeats are safe.
+- **One credit, one time.** A paid top up writes one `topup` ledger entry with reference `payment:<id>` in the same transaction that marks it paid. Failed and cancelled payments change nothing. Top ups are bounded R100 to R100 000.
+- **Refunds** are an operator action that writes a `refund` entry with a note. They are not built into the owner screen.
+- **Invoices.** The operator creates an invoice. The owner sees it with bank details. The operator marks it paid with a payment reference, once. Each step writes an audit row. Bank details come from the env variable `PATRON_BANK_DETAILS`, never from code.
+- **Pro plan** has no online price; it is invoiced only.
+- **Payment status** gained `paid`, `failed` and `cancelled` (the existing values stay).
+- **Ops invoice buttons are not wired.** The `ops.credit` and `ops.restaurants` screens are demo-only today. Live invoice actions exist on the server (`createLiveInvoice`), but no button was added there.
+
+Environment variables (set in the host, never in code): `PAYFAST_MERCHANT_ID`, `PAYFAST_MERCHANT_KEY`, `PAYFAST_PASSPHRASE`, `PAYFAST_MODE` (`sandbox` or `live`), `PATRON_BANK_DETAILS`. When the PayFast values are missing, checkout refuses with a clear message.
+
+Not in this phase: a real payment (tested later in PayFast sandbox), SARS tax invoices (D22).

@@ -7,6 +7,22 @@ export interface Plan {
   features: string[];
 }
 
+// Billing data (phase D21). Money in integer cents, ZAR. The server builds every charge
+// from these numbers; the browser never sends an amount. Pro is managed by invoice, so it
+// has no online monthly price.
+export interface PlanBilling {
+  tier: 'starter' | 'managed' | 'partner';
+  monthlyCents: number | null;
+  includedSmsCredit: number;
+  maxLocations: number;
+}
+
+export const planBilling: Record<string, PlanBilling> = {
+  Starter: { tier: 'starter', monthlyCents: 39900, includedSmsCredit: 0, maxLocations: 1 },
+  Growth: { tier: 'managed', monthlyCents: 120000, includedSmsCredit: 200, maxLocations: 3 },
+  Pro: { tier: 'partner', monthlyCents: null, includedSmsCredit: 500, maxLocations: 10 },
+};
+
 export const plans: Plan[] = [
   {
     name: 'Starter',
