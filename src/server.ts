@@ -3,6 +3,7 @@ import "./lib/error-capture";
 import handler, { createServerEntry } from "@tanstack/react-start/server-entry";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { cronRouteFor } from "./lib/cron-schedule";
 
 async function normalizeCatastrophicSsrResponse(response: Response): Promise<Response> {
   if (response.status < 500) return response;
@@ -28,7 +29,7 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
-export default createServerEntry({
+const entry = createServerEntry({
   async fetch(request, options) {
     try {
       return await normalizeCatastrophicSsrResponse(await handler.fetch(request, options));
@@ -41,3 +42,36 @@ export default createServerEntry({
     }
   },
 });
+
+type ScheduledControllerLike = { cron: string };
+type ExecutionContextLike = { waitUntil(promise: Promise<unknown>): void };
+
+/**
+ * Cloudflare calls this on each schedule in wrangler.jsonc (`triggers.crons`). It calls our own cron
+ * route in-process with the shared secret, so the routes stay the single place the work lives and
+ * keep refusing any other caller.
+ */
+async function scheduled(
+  controller: ScheduledControllerLike,
+  env: Record<string, unknown>,
+  ctx: ExecutionContextLike,
+): Promise<void> {
+  const route = cronRouteFor(controller.cron);
+  if (!route) return;
+  const secret = typeof env["CRON_SECRET"] === "string" ? (env["CRON_SECRET"] as string) : process.env["CRON_SECRET"];
+  if (!secret) {
+    console.error("CRON_SECRET is not set, so the scheduled run was skipped.");
+    return;
+  }
+  const request = new Request(`https://patron.internal${route}`, {
+    method: "POST",
+    headers: { "x-cron-secret": secret },
+  });
+  const run = async () => {
+    const response = await entry.fetch(request);
+    if (!response.ok) console.error(`Scheduled call to ${route} answered ${response.status}.`);
+  };
+  ctx.waitUntil(run());
+}
+
+export default { ...entry, scheduled };

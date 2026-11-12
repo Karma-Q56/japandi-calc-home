@@ -2,14 +2,21 @@
 // are unit tested directly. The server modules call these helpers.
 
 import { STOP_FOOTER, inQuietHours, nextEightAm, renderBody } from "@/domain/campaigns";
+import type { SendOutcome } from "@/server/push/channel";
 
 /** Words a guest can text to withdraw marketing consent. Matched on the whole message. */
 const STOP_WORDS = new Set(["stop", "stopall", "unsubscribe", "cancel", "end", "quit"]);
 
-/** True when an inbound SMS is an opt-out keyword (case and spacing ignored). */
+/** True when an inbound SMS is an opt-out keyword (case, spacing and end punctuation ignored, so "Stop All." counts). */
 export function isStopReply(body: string): boolean {
-  const word = body.trim().replace(/[.!\s]+$/u, "").toLowerCase();
+  const word = body.replace(/\s+/gu, "").replace(/[.!]+$/u, "").toLowerCase();
   return STOP_WORDS.has(word);
+}
+
+/** The one-line reply after a STOP. It never carries the STOP footer: the guest has just opted out. */
+export function stopConfirmation(restaurantName: string): string {
+  const name = restaurantName.trim() || "this restaurant";
+  return `You are unsubscribed from ${name}. You will not get any more messages from them.`;
 }
 
 /**
@@ -47,4 +54,32 @@ export function toE164(raw: string): string | null {
   if (digits.length === 11 && digits.startsWith("27")) return `+${digits}`;
   if (digits.length === 10 && digits.startsWith("0")) return `+27${digits.slice(1)}`;
   return null;
+}
+
+/** What a push to one guest came to, after trying each of the guest's devices. */
+export type PushVerdict = "delivered" | "retry" | "failed";
+
+/**
+ * One guest can have several devices. The push counts as delivered if any device took it.
+ * If none did and at least one asked to be tried again, try the guest again later.
+ * Otherwise (every device gone or refused) it failed for good.
+ */
+export function pushVerdict(outcomes: SendOutcome[]): PushVerdict {
+  if (outcomes.includes("delivered")) return "delivered";
+  if (outcomes.includes("retry")) return "retry";
+  return "failed";
+}
+
+/** The push a guest sees: the restaurant's name on top, the offer under it, a tap opens their card. */
+export function guestPush(
+  template: string,
+  name: string | null | undefined,
+  restaurantName: string,
+  slug: string,
+): { title: string; body: string; url: string } {
+  return {
+    title: restaurantName.trim() || "Patron",
+    body: renderBody(template, firstNameOf(name)),
+    url: `/r/${slug}`,
+  };
 }

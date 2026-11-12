@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { sql } from "drizzle-orm";
 import { withContext, type DatabaseTransaction } from "@/server/db";
 import { BulkSmsProvider, createBulkSmsFromEnv } from "@/server/sms";
-import { isStopReply, toE164 } from "@/lib/live-dispatch";
+import { isStopReply, stopConfirmation, toE164 } from "@/lib/live-dispatch";
 
 type Env = Record<string, string | undefined>;
 
@@ -49,10 +49,31 @@ export const Route = createFileRoute("/api/webhooks/sms/$provider")({
               const phone = toE164(event.from);
               if (!phone) continue;
               const eventId = `stop:${phone}:${event.at.getTime()}`;
-              await withContext({ databaseUrl, isOperator: true }, async (tx) => {
+              const reply = await withContext({ databaseUrl, isOperator: true }, async (tx) => {
                 const fresh = await claimEvent(tx, eventId);
-                if (fresh) await tx.execute(sql`select record_sms_stop(${phone}, 'bulksms', ${STOP_WORDING})`);
+                if (!fresh) return null;
+                const done = await tx.execute<{ n: number }>(
+                  sql`select record_sms_stop(${phone}, 'bulksms', ${STOP_WORDING}) as n`,
+                );
+                if (Number(done.rows[0]?.n ?? 0) === 0) return null;
+                const who = await tx.execute<{ restaurant_name: string; sender: string | null }>(
+                  sql`select restaurant_name, sender from stop_reply_for(${phone})`,
+                );
+                return { name: who.rows[0]?.restaurant_name ?? "", sender: who.rows[0]?.sender ?? null };
               });
+              if (reply) {
+                // The opt-out is already saved. A reply that fails to send must never undo it.
+                try {
+                  await provider.send({
+                    to: phone,
+                    body: stopConfirmation(reply.name),
+                    reference: `stop-${crypto.randomUUID()}`,
+                    ...(reply.sender ? { from: reply.sender } : {}),
+                  });
+                } catch {
+                  // Nothing sensitive to log: the number is not written anywhere.
+                }
+              }
             }
           } else {
             const events = await provider.parseDeliveryWebhook(new Request(request.url, { method: "POST", body: raw }));
@@ -61,8 +82,14 @@ export const Route = createFileRoute("/api/webhooks/sms/$provider")({
               await withContext({ databaseUrl, isOperator: true }, async (tx) => {
                 const fresh = await claimEvent(tx, eventId);
                 if (!fresh) return;
+                const applied = await tx.execute<{ applied: boolean }>(sql`
+                  select record_delivery('bulksms', ${event.providerMessageId}, ${event.status}, ${event.errorCode ?? null}, null, null) as applied
+                `);
+                if (applied.rows[0]?.applied) return;
+                // No text has this id yet: the report beat us to it. Keep it, and it is applied the
+                // moment the id is saved (finish_message_send). Repeats of a report already applied are dropped.
                 await tx.execute(sql`
-                  select record_delivery('bulksms', ${event.providerMessageId}, ${event.status}, ${event.errorCode ?? null}, null, null)
+                  select hold_receipt('bulksms', ${event.providerMessageId}, ${event.status}, ${event.errorCode ?? null})
                 `);
               });
             }

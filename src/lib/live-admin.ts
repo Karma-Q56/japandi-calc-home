@@ -31,6 +31,7 @@ const ACTIVITY_WORDING: Record<string, string> = {
   restaurant_details_changed: "You changed your business name or phone number",
   settings_changed: "You changed your settings",
   credit_added: "Patron added credit to your account",
+  low_credit_alert: "Your credit is running low. Top up so your campaigns can send",
   campaign_approved: "Patron approved a campaign",
   campaign_rejected: "Patron did not approve a campaign",
   "special.redeemed": "A special was redeemed at the till",

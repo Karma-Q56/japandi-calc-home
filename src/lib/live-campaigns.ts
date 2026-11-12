@@ -106,3 +106,30 @@ export const isLowCredit = (availableCents: number): boolean => availableCents <
 
 /** A long first name used to count text segments, so the credit held is never too small. */
 export const SEGMENT_SAMPLE_NAME = "Nonhlanhla";
+
+/** The ways a live campaign can go out. Push is free; "both" tries push first and texts only when push fails. */
+export const LIVE_CHANNELS = ["sms", "push", "both"] as const;
+export type LiveChannel = (typeof LIVE_CHANNELS)[number];
+
+export type ReachCounts = { sms: number; push: number; either: number };
+
+export const CHANNEL_CHOICES: Array<{ channel: LiveChannel; title: string; hint: string }> = [
+  { channel: "push", title: "Push notification (free)", hint: "Guests who installed your card and allow notifications. It costs nothing." },
+  { channel: "sms", title: "Text message", hint: "Any guest who said yes to texts. Each text costs credit." },
+  { channel: "both", title: "Push first, then a text", hint: "A text is sent only to guests the push could not reach." },
+];
+
+/** Guests a campaign can reach on the chosen channel. */
+export function reachFor(channel: LiveChannel, counts: ReachCounts): number {
+  if (channel === "push") return counts.push;
+  if (channel === "sms") return counts.sms;
+  return counts.either;
+}
+
+/**
+ * Credit held for the campaign. Push costs nothing. A text campaign holds every text it might send.
+ * "Both" holds the text worst case too, because every guest could end up on text. What is not used comes back.
+ */
+export function heldCostCents(channel: LiveChannel, counts: ReachCounts, segments: number): number {
+  return channel === "push" ? 0 : estimateCostCents(counts.sms, segments);
+}

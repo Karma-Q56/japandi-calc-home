@@ -3,7 +3,17 @@ import { countLabel } from "@/lib/count-label";
 import { useState } from "react";
 import { getDataModeFn } from "@/server/live";
 import { countRecipientsFn, createCampaignFn } from "@/server/live-campaign-create-fns";
-import { CODE_PATTERN, MESSAGE_MAX, SEGMENT_SAMPLE_NAME, estimateCostCents, formatRand } from "@/lib/live-campaigns";
+import {
+  CHANNEL_CHOICES,
+  CODE_PATTERN,
+  MESSAGE_MAX,
+  SEGMENT_SAMPLE_NAME,
+  formatRand,
+  heldCostCents,
+  reachFor,
+  type LiveChannel,
+  type ReachCounts,
+} from "@/lib/live-campaigns";
 import { api } from "@/api";
 import {
   checkCopy,
@@ -69,7 +79,8 @@ function LiveCampaignComposer({ audience, weekday }: { audience: SegmentType | u
   const [code, setCode] = useState("");
   const [segment, setSegment] = useState<SegmentType>(audience ?? "everyone");
   const [day, setDay] = useState(weekday ?? 3);
-  const [recipients, setRecipients] = useState<number | null>(null);
+  const [channel, setChannel] = useState<LiveChannel>("sms");
+  const [counts, setCounts] = useState<ReachCounts | null>(null);
   const [scheduledAt, setScheduledAt] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
@@ -77,7 +88,8 @@ function LiveCampaignComposer({ audience, weekday }: { audience: SegmentType | u
 
   // Counted as the guest receives it: a long first name filled in and the STOP line added.
   const segments = messageSegments(body, SEGMENT_SAMPLE_NAME);
-  const cost = recipients === null ? 0 : estimateCostCents(recipients, segments);
+  const recipients = counts === null ? null : reachFor(channel, counts);
+  const cost = counts === null ? 0 : heldCostCents(channel, counts, segments);
   const liveAudience = (): CampaignAudience => {
     if (segment === "weekday") return { type: "weekday", weekday: day };
     if (segment === "new") return { type: "new", days: 14 };
@@ -91,7 +103,7 @@ function LiveCampaignComposer({ audience, weekday }: { audience: SegmentType | u
     setBusy(true);
     const result = await countRecipientsFn({ data: { audience: liveAudience() as never } });
     setBusy(false);
-    if (result.ok) setRecipients(result.recipients);
+    if (result.ok) setCounts(result.counts);
     else setNotice(result.message);
   };
 
@@ -105,6 +117,7 @@ function LiveCampaignComposer({ audience, weekday }: { audience: SegmentType | u
         audience: liveAudience() as never,
         scheduledAt: scheduledAt ? new Date(scheduledAt).toISOString() : new Date(Date.now() + 60_000).toISOString(),
         segments,
+        channel,
       },
     });
     setBusy(false);
@@ -121,8 +134,8 @@ function LiveCampaignComposer({ audience, weekday }: { audience: SegmentType | u
     <main className="demo-hub page-width">
       <PageHeader
         eyebrow="New campaign"
-        title="Send a text to your guests."
-        intro="Texts go to guests who said yes to offers. Each guest gets a STOP line, and quiet hours move a send to 08:00."
+        title="Send an offer to your guests."
+        intro="Offers go to guests who said yes to them. Texts end with a STOP line, and quiet hours move a send to 08:00."
       />
       <p className="demo-data-note">Step {step} of 3</p>
       {step === 1 && (
@@ -146,7 +159,7 @@ function LiveCampaignComposer({ audience, weekday }: { audience: SegmentType | u
         <section className="builder-panel">
           <h2>Who gets it</h2>
           <FormField label="Audience">
-            <select value={segment} onChange={(event) => { setSegment(event.target.value as SegmentType); setRecipients(null); }}>
+            <select value={segment} onChange={(event) => { setSegment(event.target.value as SegmentType); setCounts(null); }}>
               {SEGMENT_CHOICES.filter((choice) => choice.type !== "saved_list").map((choice) => (
                 <option key={choice.type} value={choice.type}>{choice.title}</option>
               ))}
@@ -154,14 +167,39 @@ function LiveCampaignComposer({ audience, weekday }: { audience: SegmentType | u
           </FormField>
           {segment === "weekday" && (
             <FormField label="Day">
-              <select value={day} onChange={(event) => { setDay(Number(event.target.value)); setRecipients(null); }}>
+              <select value={day} onChange={(event) => { setDay(Number(event.target.value)); setCounts(null); }}>
                 {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((label, index) => (
                   <option key={label} value={index}>{label}</option>
                 ))}
               </select>
             </FormField>
           )}
-          <p className="demo-data-note">{recipients === null ? "Count the guests this audience reaches before you continue." : `${countLabel(recipients, "guest")} will get this text.`}</p>
+          <FormField label="How it goes out">
+            <div className="cmp-options" role="radiogroup" aria-label="How it goes out">
+              {CHANNEL_CHOICES.map((choice) => (
+                <button
+                  key={choice.channel}
+                  type="button"
+                  role="radio"
+                  aria-checked={channel === choice.channel}
+                  className={`cmp-option${channel === choice.channel ? " is-on" : ""}`}
+                  onClick={() => setChannel(choice.channel)}
+                >
+                  <b>{choice.title}</b>
+                  <span>{choice.hint}</span>
+                </button>
+              ))}
+            </div>
+          </FormField>
+          <p className="demo-data-note">
+            {counts === null || recipients === null
+              ? "Count the guests this audience reaches before you continue."
+              : channel === "both"
+                ? `${countLabel(recipients, "guest")} can be reached: ${counts.push} by push, and a text only if the push fails (${counts.sms} guests can get a text).`
+                : channel === "push"
+                  ? `${countLabel(recipients, "guest")} will get this push notification.`
+                  : `${countLabel(recipients, "guest")} will get this text.`}
+          </p>
           <button className="builder-secondary" onClick={countNow} disabled={busy}>
             Count guests
           </button>{" "}
@@ -178,10 +216,10 @@ function LiveCampaignComposer({ audience, weekday }: { audience: SegmentType | u
           </FormField>
           <ul>
             <li>Guests: {recipients ?? 0}</li>
-            <li>Texts each: {segments}</li>
-            <li>Cost held from credit: {formatRand(cost)}</li>
+            {channel !== "push" && <li>Texts each: {segments}</li>}
+            <li>Cost held from credit: {formatRand(cost)}{channel === "push" ? " (push is free)" : ""}</li>
           </ul>
-          <p className="demo-data-note">Only guests who said yes to offers are included. Guests who opted out or withdrew are never texted.</p>
+          <p className="demo-data-note">Only guests who said yes to offers are included. Guests who opted out or withdrew never get a text or a push.</p>
           <button className="builder-primary" onClick={create} disabled={busy}>
             Create campaign
           </button>

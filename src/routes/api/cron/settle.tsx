@@ -1,15 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { safeEqual } from "@/server/sms/BulkSmsProvider";
+import { cronAuthorized } from "@/server/cron-auth";
 import { runLiveSettle } from "@/server/live-settle";
 
 type Env = Record<string, string | undefined>;
-
-/** Refuses when CRON_SECRET is missing or the header does not match. */
-function cronAuthorized(request: Request, env: Env): boolean {
-  const expected = env["CRON_SECRET"];
-  if (!expected) return false;
-  return safeEqual(request.headers.get("x-cron-secret") ?? "", expected);
-}
 
 export const Route = createFileRoute("/api/cron/settle")({
   server: {

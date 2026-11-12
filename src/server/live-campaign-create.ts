@@ -3,7 +3,15 @@ import type { Viewer } from "./auth-viewer";
 import { withContext } from "./db";
 import { getDataMode } from "./db/mode";
 import { messageSegments } from "@/domain/campaigns";
-import { CODE_PATTERN, MESSAGE_MAX, SEGMENT_SAMPLE_NAME, type AudienceType } from "@/lib/live-campaigns";
+import {
+  CODE_PATTERN,
+  LIVE_CHANNELS,
+  MESSAGE_MAX,
+  SEGMENT_SAMPLE_NAME,
+  type AudienceType,
+  type LiveChannel,
+  type ReachCounts,
+} from "@/lib/live-campaigns";
 
 // Live campaign create (phase D15). Demo mode never imports this file.
 //
@@ -40,6 +48,8 @@ export type CreateCampaignInput = {
   audience: CampaignAudience;
   scheduledAt: string;
   segments: number;
+  /** Defaults to SMS when left out. */
+  channel?: LiveChannel | undefined;
 };
 
 export type Outcome<T = Record<string, never>> = ({ ok: true } & T) | { ok: false; message: string };
@@ -51,6 +61,7 @@ const REFUSALS: Record<string, string> = {
   invalid_message: "The message must be between 1 and 600 characters.",
   invalid_code: "The code must be 3 to 12 letters or numbers.",
   invalid_segments: "The message length could not be checked. Try again.",
+  invalid_channel: "Pick push, text, or both.",
   not_allowed: "Only the owner or a manager can create a campaign.",
 };
 
@@ -70,22 +81,31 @@ function campaignRefusal(error: unknown): string | null {
 
 export const CAMPAIGN_NAME_MAX = 120;
 
-/** Recipients for an audience, counted on the server with the same rules as the send. */
+/**
+ * Guests an audience reaches on each channel, counted on the server with the same rules as the send.
+ * Goes through count_campaign_recipients, which only counts the caller's own restaurant.
+ */
 export async function countCampaignRecipients(
   viewer: Viewer,
   audience: CampaignAudience,
-): Promise<Outcome<{ recipients: number }>> {
+): Promise<Outcome<{ recipients: number; counts: ReachCounts }>> {
   if (getDataMode() !== "live" || !canManage(viewer)) {
     return { ok: false, message: "Only the owner or a manager can see this." };
   }
   return withContext(
     { databaseUrl: databaseUrl(), restaurantId: viewer.restaurantId, isOperator: false },
     async (transaction) => {
-      const row = await transaction.execute<{ n: number }>(sql`
-        select count(*)::int as n
-        from campaign_audience_ids(${viewer.restaurantId}::uuid, ${JSON.stringify(audience)}::jsonb, now())
+      const row = await transaction.execute<{ sms_count: number; push_count: number; either_count: number }>(sql`
+        select sms_count, push_count, either_count
+        from count_campaign_recipients(${viewer.restaurantId}::uuid, ${JSON.stringify(audience)}::jsonb)
       `);
-      return { ok: true as const, recipients: Number(row.rows[0]?.n ?? 0) };
+      const counts: ReachCounts = {
+        sms: Number(row.rows[0]?.sms_count ?? 0),
+        push: Number(row.rows[0]?.push_count ?? 0),
+        either: Number(row.rows[0]?.either_count ?? 0),
+      };
+      // `recipients` stays for older callers: the guests a text campaign reaches.
+      return { ok: true as const, recipients: counts.sms, counts };
     },
   );
 }
@@ -112,6 +132,8 @@ export async function createLiveCampaign(
   // The credit held is never below what the text really needs (name filled in, STOP line added),
   // whatever the browser sent.
   const segments = Math.max(input.segments, messageSegments(body, SEGMENT_SAMPLE_NAME));
+  const channel: LiveChannel = input.channel ?? "sms";
+  if (!LIVE_CHANNELS.includes(channel)) return { ok: false, message: REFUSALS["invalid_channel"]! };
   const audience = input.audience as { type: AudienceType };
   if (!audience || typeof audience.type !== "string") return { ok: false, message: "Pick a valid audience." };
 
@@ -128,7 +150,8 @@ export async function createLiveCampaign(
             ${JSON.stringify(input.audience)}::jsonb,
             ${code},
             ${scheduled.toISOString()}::timestamptz,
-            ${segments}::integer
+            ${segments}::integer,
+            ${channel}::text
           ) as id
         `);
         return row.rows[0]?.id ?? null;

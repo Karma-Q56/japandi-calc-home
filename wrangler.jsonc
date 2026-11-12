@@ -3,10 +3,15 @@
   "name": "patron",
   "compatibility_date": "2026-10-15",
   "compatibility_flags": ["nodejs_compat"],
-  "main": "@tanstack/react-start/server-entry",
+  "main": "src/server.ts",
   "observability": { "enabled": true },
   "env": {
     "staging": { "name": "patron-staging" },
-    "production": { "name": "patron-production" }
+    "production": {
+      "name": "patron-production",
+      // Cloudflare does not carry schedules over from the top level, so they are set here. These
+      // strings must match src/lib/cron-schedule.ts (a test checks it).
+      "triggers": { "crons": ["* * * * *", "*/10 * * * *", "0 6 * * *"] }
+    }
   }
 }

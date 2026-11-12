@@ -37,6 +37,7 @@ export const createCampaignFn = createServerFn({ method: "POST" })
       audience: audienceSchema,
       scheduledAt: z.string().max(40),
       segments: z.number().int().min(0).max(100),
+      channel: z.enum(["sms", "push", "both"]).optional(),
     }),
   )
   .handler(async ({ data }) => {
