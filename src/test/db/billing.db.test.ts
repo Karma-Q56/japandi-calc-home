@@ -126,11 +126,10 @@ describe.skipIf(!dbTestsEnabled)("plans, billing and payments (real database, as
   });
 
   it("the location limit stops a new active location past the plan limit", async () => {
-    // Starter allows one active location. The second insert must be refused.
+    // Starter allows one active location. A new restaurant already has its main
+    // location (migration 0015), so any further active location must be refused.
     const { id: restaurantId } = await makeRestaurant(db.owner, fixtures, { status: "active" });
     await db.owner`update restaurant set plan = 'starter' where id = ${restaurantId}`;
-    await db.owner`
-      insert into location (restaurant_id, name, is_main) values (${restaurantId}, 'Main', true)`;
     await expect(
       db.owner`insert into location (restaurant_id, name) values (${restaurantId}, 'Second')`,
     ).rejects.toThrow(/plan_limit_locations/);

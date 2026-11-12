@@ -142,7 +142,7 @@ begin
     return 'already_paid';
   end if;
   if p_outcome <> 'paid' then
-    update payment set status = case when p_outcome = 'cancelled' then 'cancelled' else 'failed' end,
+    update payment set status = (case when p_outcome = 'cancelled' then 'cancelled' else 'failed' end)::payment_status,
       provider_ref = p_provider_ref where id = p_payment_id;
     perform set_config('app.is_operator', coalesce(prior_operator, ''), true);
     return 'ignored';
