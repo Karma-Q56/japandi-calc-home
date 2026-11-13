@@ -20,6 +20,8 @@ interface RestaurantRow {
   slug: string;
   name: string;
   suburb: string | null;
+  address: string | null;
+  about_text: string | null;
   theme: Record<string, JsonValue> | null;
   hours: Record<string, JsonValue> | null;
   stamps_required: number;
@@ -146,7 +148,7 @@ export function createPgRepos(ctx: Ctx): PatronRepos {
       return withContext(ctx, async (tx) => {
         const rRows = await q<RestaurantRow>(
           tx,
-          sql`select id, slug, name, suburb, theme, hours, stamps_required, reward_description, visit_window_minutes, welcome_stamp, welcome_stamps, page_template from restaurant where slug = ${slug} and status = 'active' limit 1`,
+          sql`select id, slug, name, suburb, address, about_text, theme, hours, stamps_required, reward_description, visit_window_minutes, welcome_stamp, welcome_stamps, page_template from restaurant where slug = ${slug} and status = 'active' limit 1`,
         );
         const r = rRows[0];
         if (!r) return null;
@@ -163,6 +165,8 @@ export function createPgRepos(ctx: Ctx): PatronRepos {
           slug: r.slug,
           name: r.name,
           suburb: r.suburb,
+          address: r.address,
+          aboutText: r.about_text,
           theme: r.theme ?? {},
           hours: r.hours ?? {},
           stampsRequired: r.stamps_required,

@@ -2,13 +2,21 @@ import { useState } from "react";
 import { FormField, Helper } from "@/components/patron/dash";
 import { updateLoyaltySettingsFn } from "@/server/live";
 import { saveLogoFn } from "@/server/live-logo-fns";
+import { removeOwnerLogoFn, saveOwnerDesignFn } from "@/server/live-page-fns";
+import type { OwnerPage } from "@/server/live-page";
+import { themeForSave, validateDesign } from "@/lib/live-page";
+import type { Theme } from "@/data/types";
+import { useLogoPreview } from "@/components/patron/live/use-logo-preview";
+import { ThemeEditor } from "@/components/patron/ThemeEditor";
 import type { LiveLoyaltySettings } from "@/server/live-loyalty";
 import type { LiveRewardKind } from "@/lib/live-loyalty";
 import { rewardGiveLine, rewardGuestLine, type RewardValue } from "@/lib/reward-copy";
 import { validateLogoFile } from "@/lib/logo-stamp";
 import { bytesToBase64, convertLogo } from "@/lib/logo-convert";
 
-function LogoPanel() {
+function LogoPanel({ initialVersion }: { initialVersion: number | null }) {
+  const [version, setVersion] = useState<number | null>(initialVersion);
+  const [shown, setShown] = useLogoPreview(initialVersion !== null);
   const [logoNotice, setLogoNotice] = useState("");
   const [logoBusy, setLogoBusy] = useState(false);
 
@@ -28,9 +36,29 @@ function LogoPanel() {
           printJpeg: bytesToBase64(files.printJpeg),
         },
       });
+      if (result.ok) {
+        setVersion(result.version);
+        setShown(`data:image/png;base64,${bytesToBase64(files.png)}`);
+      }
       setLogoNotice(result.ok ? "Logo saved. It now shows on your page and your QR code." : result.message);
     } catch {
       setLogoNotice("Could not read that image. Try a PNG or JPG file.");
+    } finally {
+      setLogoBusy(false);
+    }
+  };
+
+  const remove = async () => {
+    setLogoBusy(true);
+    try {
+      const result = await removeOwnerLogoFn();
+      if (result.ok) {
+        setVersion(null);
+        setShown(null);
+      }
+      setLogoNotice(result.ok ? "Logo removed." : result.message);
+    } catch {
+      setLogoNotice("Could not remove the logo. Check your connection and try again.");
     } finally {
       setLogoBusy(false);
     }
@@ -40,7 +68,15 @@ function LogoPanel() {
     <section className="builder-panel" aria-label="Logo">
       <h2>Logo</h2>
       <Helper>PNG, JPG or SVG, up to 300 KB. Your logo shows on your page and on the QR code.</Helper>
-      <FormField label="Choose a logo">
+      {version !== null && (
+        <div className="logo-panel-current">
+          {shown && <img src={shown} alt="Your current logo" width={96} height={96} />}
+          <button className="builder-secondary" type="button" disabled={logoBusy} onClick={remove}>
+            Remove logo
+          </button>
+        </div>
+      )}
+      <FormField label={version === null ? "Choose a logo" : "Choose a new logo to replace it"}>
         <input
           type="file"
           accept="image/png,image/jpeg,image/svg+xml"
@@ -57,7 +93,58 @@ function LogoPanel() {
   );
 }
 
-export function LiveStampCardTab({ data }: { data: LiveLoyaltySettings }) {
+/** Colours, stamp shape, background and the pixel stamp made from the logo, with a live card preview. */
+function DesignPanel({ page }: { page: OwnerPage }) {
+  const [theme, setTheme] = useState<Theme>(page.theme);
+  const [notice, setNotice] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const save = async () => {
+    const problem = validateDesign(themeForSave(theme));
+    if (problem) {
+      setNotice(problem);
+      return;
+    }
+    setBusy(true);
+    try {
+      const result = await saveOwnerDesignFn({ data: { theme: themeForSave(theme) } });
+      setNotice(result.ok ? "Saved. Guests see this card design now." : result.message);
+    } catch {
+      setNotice("Could not save. Check your connection and try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className="builder-panel" aria-label="Card design">
+      <h2>Card design</h2>
+      <Helper>
+        Colours, stamp shape and background for the card your guests keep. The line under your name is on
+        Your page.
+      </Helper>
+      <ThemeEditor live theme={theme} onChange={setTheme} name={page.name} />
+      <div className="page-actions">
+        <button className="builder-primary" type="button" disabled={busy} onClick={save}>
+          Save design
+        </button>
+        {notice && (
+          <p className="builder-hint" role="status">
+            {notice}
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}
+
+export function LiveStampCardTab({
+  data,
+  page,
+}: {
+  data: LiveLoyaltySettings;
+  page?: OwnerPage | null;
+}) {
   const [stampsRequired, setStampsRequired] = useState(data.stampsRequired);
   const [reward, setReward] = useState(data.rewardDescription ?? "");
   const [rewardKind, setRewardKind] = useState<LiveRewardKind>(data.rewardKind);
@@ -101,7 +188,7 @@ export function LiveStampCardTab({ data }: { data: LiveLoyaltySettings }) {
 
   return (
     <>
-    <LogoPanel />
+    {page && <LogoPanel initialVersion={page.logoVersion} />}
     <section className="builder-panel" aria-label="Stamp card rules">
       <h2>Reward</h2>
       <div className="builder-fields">
@@ -180,6 +267,7 @@ export function LiveStampCardTab({ data }: { data: LiveLoyaltySettings }) {
         </p>
       )}
     </section>
+    {page && <DesignPanel page={page} />}
     </>
   );
 }

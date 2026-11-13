@@ -42,6 +42,8 @@ export interface PublicPage {
   slug: string;
   name: string;
   suburb: string | null;
+  address?: string | null;
+  aboutText?: string | null;
   theme: Record<string, JsonValue>;
   hours: Record<string, JsonValue>;
   stampsRequired: number;

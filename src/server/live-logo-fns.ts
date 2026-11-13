@@ -15,6 +15,17 @@ export const getLogoFn = createServerFn({ method: "GET" }).handler(async () => {
   return loadLogo(viewer);
 });
 
+/** The signed-in restaurant's own logo as a data link for the owner's preview, or null. */
+export const getLogoPreviewFn = createServerFn({ method: "GET" }).handler(async () => {
+  const [{ readViewer }, { loadLogoPreview }] = await Promise.all([
+    import("./auth-viewer"),
+    import("./live-logo"),
+  ]);
+  const viewer = await readViewer();
+  if (!viewer) return null;
+  return loadLogoPreview(viewer);
+});
+
 // The browser sends base64 bytes. The size cap stops oversized bodies before decoding.
 const base64Schema = z.string().min(1).max(700 * 1024);
 

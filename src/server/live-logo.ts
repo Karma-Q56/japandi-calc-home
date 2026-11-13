@@ -29,6 +29,21 @@ export async function loadLogo(viewer: Viewer): Promise<LogoInfo | null> {
   );
 }
 
+/** The signed-in restaurant's own logo as a data link, so the owner sees it even before the page is published. */
+export async function loadLogoPreview(viewer: Viewer): Promise<string | null> {
+  if (!canManage(viewer)) return null;
+  return withContext(
+    { databaseUrl: databaseUrl(), restaurantId: viewer.restaurantId, isOperator: false },
+    async (transaction) => {
+      const result = await transaction.execute<{ png: Buffer }>(sql`
+        select png from restaurant_logo where restaurant_id = ${viewer.restaurantId} limit 1
+      `);
+      const row = result.rows[0];
+      return row ? `data:image/png;base64,${Buffer.from(row.png).toString("base64")}` : null;
+    },
+  );
+}
+
 /** Store the converted PNG and print JPEG, bump the version and write an audit event. */
 export async function saveLogo(
   viewer: Viewer,
@@ -64,6 +79,8 @@ export async function saveLogo(
       `);
       const row = result.rows[0];
       if (!row) return { ok: false as const, message: "Could not save the logo." };
+      // Point the guest card and public page at the new logo.
+      await transaction.execute(sql`select sync_owner_logo(${viewer.userId})`);
       await transaction.execute(sql`
         insert into audit_event
           (actor_type, actor_id, restaurant_id, action, object_type, object_id, meta)

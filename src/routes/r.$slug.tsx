@@ -11,6 +11,9 @@ import type { VenueSection } from "@/components/patron/PublicTemplates";
 import { VenuePage } from "@/components/patron/VenuePage";
 import { formatRand } from "@/lib/money";
 import { BackLink } from "@/components/patron/BackLink";
+import { PageIdentity } from "@/components/patron/live/PageIdentity";
+import { DEFAULT_THEME } from "@/lib/live-page";
+import type { Theme } from "@/data/types";
 
 const PublicRestaurantPageWithChildren = withChildren(PublicRestaurantPage);
 export const Route = createFileRoute("/r/$slug")({
@@ -108,7 +111,8 @@ function PublicRestaurantPage() {
  *  getPublicPage server function instead of the demo repo. Demo rendering above
  *  is unchanged. */
 function LivePublicPage({ page, slug }: { page: PublicPage; slug: string }) {
-  const hours = page.hours as Record<string, { open: string; close: string } | null>;
+  // A restaurant that never designed its card stores an empty theme, so fill in calm defaults.
+  const theme = { ...DEFAULT_THEME, ...(page.theme as Partial<Theme>) } as Theme;
   const sections = new Map<string, { name: string; items: typeof page.menu }>();
   for (const item of page.menu) {
     const key = item.sectionId ?? "menu";
@@ -117,14 +121,20 @@ function LivePublicPage({ page, slug }: { page: PublicPage; slug: string }) {
     sections.set(key, group);
   }
   return (
+    <ThemeProvider theme={theme}>
     <main className="venue-page">
       <div className="venue-live-back">
         <BackLink to="/find" label="Find a restaurant" />
       </div>
-      <header className="venue-header">
-        <a href="/">{page.name}</a>
-        {page.suburb && <span>{page.suburb} · Johannesburg</span>}
-      </header>
+      <PageIdentity
+        name={page.name}
+        suburb={page.suburb}
+        tagline={typeof theme.tagline === "string" ? theme.tagline : ""}
+        about={page.aboutText ?? ""}
+        address={page.address ?? ""}
+        hours={page.hours}
+        logoUrl={typeof theme.logo === "string" && theme.logo.startsWith("/r/") ? theme.logo : null}
+      />
       <section className="guest-section">
         <h2>
           Collect {page.stampsRequired} stamps, earn {page.rewardDescription}
@@ -132,16 +142,6 @@ function LivePublicPage({ page, slug }: { page: PublicPage; slug: string }) {
         <a className="venue-button" href={`/r/${slug}/join?src=link`}>
           Join our card
         </a>
-      </section>
-      <section className="guest-section">
-        <h2>Hours</h2>
-        <ul>
-          {Object.entries(hours).map(([day, span]) => (
-            <li key={day}>
-              {day}: {span ? `${span.open}–${span.close}` : "Closed"}
-            </li>
-          ))}
-        </ul>
       </section>
       {[...sections.values()].map((group) => (
         <section className="guest-section" key={group.name}>
@@ -172,5 +172,6 @@ function LivePublicPage({ page, slug }: { page: PublicPage; slug: string }) {
         </section>
       )}
     </main>
+    </ThemeProvider>
   );
 }

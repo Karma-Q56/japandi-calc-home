@@ -22,6 +22,8 @@ import type { SpinConfig, SpinMode, SpinSegment } from "@/data/types";
 import { useDemoState } from "@/data/useDemoState";
 import { getDataModeFn, getLoyaltySettingsFn } from "@/server/live";
 import { getGuestTiersFn, getLoyaltyToolsFn } from "@/server/live-tools-fns";
+import { getOwnerPageFn } from "@/server/live-page-fns";
+import type { OwnerPage } from "@/server/live-page";
 import type { LiveToolsSettings, LiveTiers } from "@/server/live-tools";
 import { LiveToolsTab } from "@/components/patron/live/LiveToolsTab";
 import { LiveStampCardTab } from "@/components/patron/live/LiveStampCardTab";
@@ -45,12 +47,13 @@ export const Route = createFileRoute("/app/loyalty")({
   loader: async () => {
     const { mode } = await getDataModeFn();
     if (mode !== "live") return { mode, live: null };
-    const [settings, tools, tiers] = await Promise.all([
+    const [settings, tools, tiers, ownerPage] = await Promise.all([
       getLoyaltySettingsFn(),
       getLoyaltyToolsFn(),
       getGuestTiersFn(),
+      getOwnerPageFn(),
     ]);
-    return { mode, live: settings, liveTools: tools, liveTiers: tiers };
+    return { mode, live: settings, liveTools: tools, liveTiers: tiers, livePage: ownerPage };
   },
   component: Loyalty,
 });
@@ -70,7 +73,14 @@ function blankSegment(): SpinSegment {
 function Loyalty() {
   const data = Route.useLoaderData();
   if (data.mode === "live") {
-    return <LiveLoyalty data={data.live} tools={data.liveTools} tiers={data.liveTiers} />;
+    return (
+      <LiveLoyalty
+        data={data.live}
+        tools={data.liveTools}
+        tiers={data.liveTiers}
+        page={data.livePage}
+      />
+    );
   }
   return <DemoLoyalty />;
 }
@@ -1132,10 +1142,12 @@ function LiveLoyalty({
   data,
   tools,
   tiers,
+  page,
 }: {
   data: LiveLoyaltySettings | null;
   tools: LiveToolsSettings | null;
   tiers: LiveTiers | null;
+  page: OwnerPage | null;
 }) {
   const search = Route.useSearch();
   const [tab, setTab] = useState<Tab>(search.tab ?? "rewards");
@@ -1165,7 +1177,7 @@ function LiveLoyalty({
       />
       <LoyaltyTabs active={tab} onSelect={setTab} />
 
-      {tab === "rewards" && <LiveStampCardTab data={data} />}
+      {tab === "rewards" && <LiveStampCardTab data={data} page={page} />}
       {tab === "tools" && tools && <LiveToolsTab data={tools} />}
       {tab === "tiers" && tiers && <LiveTiersTab data={tiers} />}
       {tab === "wheel" && <LiveWheelTab />}

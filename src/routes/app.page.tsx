@@ -9,64 +9,32 @@ import { PAGE_DAYS, TAGLINE_LIMIT, ABOUT_LIMIT } from "@/domain/page";
 import { ConfirmDialog, FormField, PageHeader } from "@/components/patron/dash";
 import { PhoneFrame, PreviewOnly, PublishSteps } from "@/components/patron/preview";
 import { PublicTemplate, type VenueSection } from "@/components/patron/PublicTemplates";
+import { TimeEditor } from "@/components/patron/TimeEditor";
+import { LivePage } from "@/components/patron/live/LivePage";
+import { getDataModeFn } from "@/server/live";
+import { getOwnerPageFn } from "@/server/live-page-fns";
 import { ThemeProvider } from "@/theme";
 
 export const Route = createFileRoute("/app/page")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode === "live") return;
     if (!requireRole("owner", "manager")(demoRepo.read().session)) {
       throw redirect({ to: "/login" });
     }
   },
-  component: PageWordsEditor,
+  loader: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode !== "live") return { mode, page: null };
+    return { mode, page: await getOwnerPageFn() };
+  },
+  component: YourPage,
 });
 
-type TimeInput = { open: string; close: string } | null;
-
-function TimeEditor({
-  span,
-  day,
-  onChange,
-}: {
-  span: TimeInput;
-  day: string;
-  onChange: (next: TimeInput) => void;
-}) {
-  const closed = span === null;
-  return (
-    <div className="menu-owner-row hours-row" key={day}>
-      <div>
-        <strong>{day}</strong>
-        {closed && <small>Closed</small>}
-      </div>
-      <div className="menu-row-actions">
-        <FormField label="Opens">
-          <input
-            type="time"
-            value={span?.open ?? ""}
-            aria-label={`${day} opening time`}
-            disabled={closed}
-            onChange={(event) =>
-              onChange({ open: event.target.value, close: span?.close ?? "" })
-            }
-          />
-        </FormField>
-        <FormField label="Closes">
-          <input
-            type="time"
-            value={span?.close ?? ""}
-            aria-label={`${day} closing time`}
-            disabled={closed}
-            onChange={(event) =>
-              onChange({ close: event.target.value, open: span?.open ?? "" })
-            }
-          />
-        </FormField>
-        <button onClick={() => onChange(closed ? { open: "07:00", close: "16:00" } : null)}>
-          {closed ? "Set hours" : "Closed that day"}
-        </button>
-      </div>
-    </div>
-  );
+function YourPage() {
+  const data = Route.useLoaderData();
+  if (data.mode === "live") return <LivePage page={data.page} />;
+  return <PageWordsEditor />;
 }
 
 function PageWordsEditor() {

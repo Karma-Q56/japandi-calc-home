@@ -5015,3 +5015,69 @@ details.preset-rule > summary + * {
     bottom: 14px;
   }
 }
+
+/* ---------- live Your page (D13b2) ---------- */
+.live-page-grid {
+  display: grid;
+  gap: 20px;
+  align-items: start;
+}
+@media (min-width: 980px) {
+  .live-page-grid {
+    grid-template-columns: minmax(0, 1fr) 380px;
+  }
+  .live-page-preview {
+    position: sticky;
+    top: 20px;
+  }
+}
+.live-page-fields {
+  display: grid;
+  gap: 16px;
+  align-items: start;
+}
+.live-page-preview-frame {
+  display: grid;
+  gap: 12px;
+}
+.live-page-preview-frame .page-identity h1 {
+  font-size: 30px;
+  line-height: 1.1;
+}
+.page-identity {
+  display: grid;
+  gap: 6px;
+}
+.page-identity h1 {
+  margin: 0;
+}
+.page-identity p {
+  margin: 0;
+}
+.page-identity-logo {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  border-radius: 12px;
+}
+.page-identity-tagline {
+  font-weight: 650;
+}
+.page-identity-where {
+  opacity: 0.75;
+}
+.logo-panel-current {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin: 10px 0;
+}
+.logo-panel-current img {
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+}

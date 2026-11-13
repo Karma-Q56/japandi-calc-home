@@ -118,12 +118,15 @@ export function ThemeEditor({
   name = "Your restaurant",
   template,
   onTemplateChange,
+  live = false,
 }: {
   theme: Theme;
   onChange: (theme: Theme) => void;
   name?: string;
   template?: PageTemplate;
   onTemplateChange?: (template: PageTemplate) => void;
+  /** A real restaurant: no sample looks, photo background, cover photo or old logo upload, and only the card preview. */
+  live?: boolean;
 }) {
   const [view, setView] = useState<"card" | "page">("card");
   const [grid, setGrid] = useState<number>(theme.logoStamp?.grid ?? LOGO_STAMP_GRIDS[0]);
@@ -247,6 +250,7 @@ export function ThemeEditor({
   return (
     <div className="te">
       <div className="te-controls">
+        {!live && (
         <section className="te-group">
           <h3>Start from a look</h3>
           <div className="te-presets">
@@ -262,6 +266,7 @@ export function ThemeEditor({
             </button>
           </div>
         </section>
+        )}
 
         <section className="te-group">
           <h3>Colours</h3>
@@ -320,7 +325,7 @@ export function ThemeEditor({
         <section className="te-group">
           <h3>Card</h3>
           <div className="te-presets">
-            {BACKGROUNDS.map((item) => (
+            {BACKGROUNDS.filter((item) => !live || item.id !== "photo").map((item) => (
               <button
                 key={item.id}
                 type="button"
@@ -441,6 +446,7 @@ export function ThemeEditor({
           </section>
         )}
 
+        {!live && (
         <section className="te-group">
           <h3>Public hero photo</h3>
           <p className="te-help">Your own venue photo only. Without one, the page uses a calm pattern in your palette.</p>
@@ -452,9 +458,11 @@ export function ThemeEditor({
           {coverError && <p className="theme-warning" role="alert">{coverError}</p>}
           {theme.coverPhoto && <button type="button" className="builder-secondary" onClick={removeCover}>Remove cover photo</button>}
         </section>
+        )}
 
         <section className="te-group">
           <h3>Words and type</h3>
+          {!live && (
           <label className="builder-field">
             Tagline
             <input
@@ -463,6 +471,7 @@ export function ThemeEditor({
               onChange={(event) => set("tagline", event.target.value)}
             />
           </label>
+          )}
           <label className="builder-field">
             Heading font
             <select value={theme.headingFont} onChange={(event) => set("headingFont", event.target.value)}>
@@ -479,6 +488,7 @@ export function ThemeEditor({
               <option>Arial</option>
             </select>
           </label>
+          {!live && (
           <label className="builder-field">
             Stamp logo · optional · up to 300 KB
             <input type="file" accept="image/png,image/jpeg,image/svg+xml" onChange={(event) => uploadLogo(event.target.files?.[0])} />
@@ -488,10 +498,12 @@ export function ThemeEditor({
               </button>
             )}
           </label>
+          )}
         </section>
       </div>
 
       <aside className="te-preview" aria-label="Live preview">
+        {!live && (
         <div className="te-tabs" role="group" aria-label="Preview">
           <button type="button" aria-pressed={view === "card"} onClick={() => setView("card")}>
             Guest card
@@ -500,7 +512,8 @@ export function ThemeEditor({
             Public page
           </button>
         </div>
-        <ThemePreview theme={theme} name={name} view={view} />
+        )}
+        <ThemePreview theme={theme} name={name} view={live ? "card" : view} />
       </aside>
     </div>
   );
