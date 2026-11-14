@@ -602,3 +602,7 @@ The feature table and planner read the same arrays; everything stays marked prop
 
 ## Help from Patron
 Help mode is a time boxed session, not a role change. The demo keeps drafts and requests in browser storage; `0011_help_mode_dev.sql` adds the live tables and blocks operator writes once the window closes. Drafts carry a fixed label, and operators never see full guest numbers. The privacy wording for this feature needs a lawyer before it goes live.
+
+## "Try this dish" challenge (D12f)
+
+An owner can set a challenge that asks a guest to order one dish, or any dish in one section, a set number of times in a set number of days. Only orders made after the challenge starts count, and only the chosen dish or section counts. The owner picks from dishes that are on the menu now. A dish or section must belong to the same restaurant as the challenge; the database refuses anything else. The guest card shows "1 of 2 ordered". The reward is the same as the other challenges: bonus stamps, a free item, or a discount. Each guest can claim it once.

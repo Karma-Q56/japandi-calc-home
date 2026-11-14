@@ -6,7 +6,10 @@ import { z } from "zod";
 
 const challengeInput = z.object({
   title: z.string().max(200),
-  kind: z.enum(["visits", "quiet_days"]),
+  kind: z.enum(["visits", "quiet_days", "try_item"]),
+  menuItemId: z.string().uuid().nullable(),
+  menuSectionId: z.string().uuid().nullable(),
+  targetName: z.string().max(120),
   visits: z.number().int().min(0).max(100),
   windowDays: z.number().int().min(0).max(365),
   weekdays: z.array(z.number().int().min(0).max(6)).max(7),

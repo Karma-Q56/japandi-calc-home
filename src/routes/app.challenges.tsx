@@ -8,7 +8,7 @@ import { Badge, ConfirmDialog, EmptyState, FormField, PageHeader } from "@/compo
 import { ChallengeRow } from "@/components/patron/ChallengeRow";
 import { PhoneFrame, PreviewOnly, PublishSteps } from "@/components/patron/preview";
 import { LoyaltyTabs } from "@/components/patron/LoyaltyTabs";
-import { getDataModeFn } from "@/server/live";
+import { getDataModeFn, getMenuFn } from "@/server/live";
 import { getChallengesFn } from "@/server/live-challenges-fns";
 import { LiveChallengesTab } from "@/components/patron/live/LiveChallengesTab";
 
@@ -22,8 +22,9 @@ export const Route = createFileRoute("/app/challenges")({
   },
   loader: async () => {
     const { mode } = await getDataModeFn();
-    if (mode !== "live") return { mode, live: null };
-    return { mode, live: await getChallengesFn() };
+    if (mode !== "live") return { mode, live: null, menu: null };
+    const [live, menu] = await Promise.all([getChallengesFn(), getMenuFn()]);
+    return { mode, live, menu };
   },
   component: Challenges,
 });
@@ -46,7 +47,7 @@ function Challenges() {
           intro="A short sprint that pays bonus stamps or a reward. Guests see it on their card."
         />
         <LoyaltyTabs active="challenges" />
-        <LiveChallengesTab challenges={data.live} />
+        <LiveChallengesTab challenges={data.live} menu={data.menu} />
       </main>
     );
   }

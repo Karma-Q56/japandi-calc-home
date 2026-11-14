@@ -1,4 +1,5 @@
 import type { GuestChallenge } from "@/server/live-challenges";
+import { progressLine } from "@/lib/live-challenges";
 
 /** Challenges a guest can work towards on their card. Progress comes from the server. */
 export function GuestChallenges({ challenges }: { challenges: GuestChallenge[] }) {
@@ -19,7 +20,7 @@ export function GuestChallenges({ challenges }: { challenges: GuestChallenge[] }
               <small>
                 {challenge.claimed
                   ? "Done. Your reward is on your card."
-                  : `${Math.min(challenge.progress, challenge.visits)} of ${challenge.visits} in ${challenge.windowDays} days`}
+                  : progressLine(challenge)}
               </small>
             </span>
             <strong>{done && !challenge.claimed ? "Reward due" : challenge.rewardLine}</strong>

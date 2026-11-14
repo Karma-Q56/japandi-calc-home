@@ -44,7 +44,12 @@ export type OrderHookContext = {
 export type OrderHook = (context: OrderHookContext) => Promise<void>;
 
 /** Runs after a till order is saved (D13c). Phase D12f adds the "Try this dish" check here. */
-export const orderHooks: OrderHook[] = [];
+export const orderHooks: OrderHook[] = [
+  async ({ restaurantId, membershipId }) => {
+    const { applyChallengeHook } = await import("./live-challenges");
+    await applyChallengeHook(restaurantId, membershipId);
+  },
+];
 
 /** Runs every order hook. A failing hook is reported to the console, not to the guest. */
 export async function runOrderHooks(context: OrderHookContext): Promise<void> {

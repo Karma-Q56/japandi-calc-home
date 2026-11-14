@@ -3,6 +3,7 @@ import { saveChallengeFn } from "@/server/live-challenges-fns";
 import type { LiveChallenge } from "@/server/live-challenges";
 import type { LiveChallengeInput, RewardType, ChallengeKind } from "@/lib/live-challenges";
 import { challengeRuleLine, rewardLine } from "@/lib/live-challenges";
+import type { LiveMenu } from "@/server/live-menu";
 import { Badge, EmptyState, FormField } from "@/components/patron/dash";
 
 const blank: LiveChallengeInput = {
@@ -20,6 +21,9 @@ const blank: LiveChallengeInput = {
   amountOffCents: null,
   validDays: null,
   active: true,
+  menuItemId: null,
+  menuSectionId: null,
+  targetName: "",
 };
 
 const rewardValue = (c: LiveChallenge) => ({
@@ -32,7 +36,13 @@ const rewardValue = (c: LiveChallenge) => ({
 const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 /** Owner challenges on the live database: list, write and pause. Uses the shared kit. */
-export function LiveChallengesTab({ challenges }: { challenges: LiveChallenge[] | null }) {
+export function LiveChallengesTab({
+  challenges,
+  menu,
+}: {
+  challenges: LiveChallenge[] | null;
+  menu: LiveMenu | null;
+}) {
   const [draft, setDraft] = useState<LiveChallengeInput>(blank);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
@@ -44,6 +54,20 @@ export function LiveChallengesTab({ challenges }: { challenges: LiveChallenge[] 
 
   const update = <K extends keyof LiveChallengeInput>(key: K, value: LiveChallengeInput[K]) =>
     setDraft((current) => ({ ...current, [key]: value }));
+
+  const pickTarget = (value: string) => {
+    const [kind, id] = value.split(":");
+    const chosen =
+      kind === "item"
+        ? menu?.sections.flatMap((s) => s.items).find((item) => item.id === id)
+        : menu?.sections.find((section) => section.id === id);
+    setDraft((current) => ({
+      ...current,
+      menuItemId: kind === "item" ? id ?? null : null,
+      menuSectionId: kind === "section" ? id ?? null : null,
+      targetName: chosen?.name ?? "",
+    }));
+  };
 
   const toggleDay = (day: number) =>
     update(
@@ -121,10 +145,32 @@ export function LiveChallengesTab({ challenges }: { challenges: LiveChallenge[] 
             <select value={draft.kind} onChange={(e) => update("kind", e.target.value as ChallengeKind)}>
               <option value="visits">Visit N times in D days</option>
               <option value="quiet_days">Quiet-day challenge</option>
+              <option value="try_item">Try this dish</option>
             </select>
           </FormField>
-          <FormField label="Visits needed" hint="Between 2 and 50.">
-            <input type="number" min={2} max={50} value={draft.visits} onChange={(e) => update("visits", Number(e.target.value))} />
+          {draft.kind === "try_item" && (
+            <FormField label="Dish or section" hint="Only dishes that are on the menu now.">
+              <select value={draft.menuItemId ? `item:${draft.menuItemId}` : draft.menuSectionId ? `section:${draft.menuSectionId}` : ""} onChange={(e) => pickTarget(e.target.value)}>
+                <option value="">Choose a dish or section</option>
+                {(menu?.sections ?? []).map((section) => (
+                  <optgroup key={section.id} label={section.name}>
+                    <option value={`section:${section.id}`}>All of {section.name}</option>
+                    {section.items.filter((item) => item.available).map((item) => (
+                      <option key={item.id} value={`item:${item.id}`}>{item.name}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </FormField>
+          )}
+          <FormField label={draft.kind === "try_item" ? "Times ordered" : "Visits needed"} hint={draft.kind === "try_item" ? "Between 1 and 50." : "Between 2 and 50."}>
+            <input
+              type="number"
+              min={draft.kind === "try_item" ? 1 : 2}
+              max={50}
+              value={draft.visits}
+              onChange={(e) => update("visits", Number(e.target.value))}
+            />
           </FormField>
           <FormField label="Within how many days" hint="Between 1 and 365.">
             <input type="number" min={1} max={365} value={draft.windowDays} onChange={(e) => update("windowDays", Number(e.target.value))} />
@@ -205,6 +251,11 @@ export function LiveChallengesTab({ challenges }: { challenges: LiveChallenge[] 
             </FormField>
           )}
         </div>
+        {draft.kind === "try_item" && draft.targetName && (
+          <p className="demo-data-note">
+            Preview: {challengeRuleLine(draft)} and get {rewardLine(draft.rewardType, { bonusStamps: draft.bonusStamps, item: draft.rewardItem, percent: draft.percentOff, amountCents: draft.amountOffCents })}.
+          </p>
+        )}
         {notice && <p role="status" className="demo-data-note">{notice}</p>}
         <div className="page-actions">
           <button className="builder-primary" disabled={busy} onClick={save}>
