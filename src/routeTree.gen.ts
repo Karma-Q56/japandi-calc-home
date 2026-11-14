@@ -38,6 +38,7 @@ import { Route as StampRouteImport } from './routes/stamp'
 import { Route as SuggestRouteImport } from './routes/suggest'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AppAuditRouteImport } from './routes/app.audit'
+import { Route as AppBillingRouteImport } from './routes/app.billing'
 import { Route as AppCampaignsRouteImport } from './routes/app.campaigns'
 import { Route as AppChallengesRouteImport } from './routes/app.challenges'
 import { Route as AppCreditRouteImport } from './routes/app.credit'
@@ -82,6 +83,7 @@ import { Route as ApiCronDispatchRouteImport } from './routes/api/cron/dispatch'
 import { Route as ApiCronNightlyRouteImport } from './routes/api/cron/nightly'
 import { Route as ApiCronSettleRouteImport } from './routes/api/cron/settle'
 import { Route as ApiReportsCsvRouteImport } from './routes/api/reports.csv'
+import { Route as ApiWebhooksPaymentsRouteImport } from './routes/api/webhooks/payments'
 import { Route as AppCampaignsCampaignIdRouteImport } from './routes/app.campaigns.$campaignId'
 import { Route as AppCampaignsNewRouteImport } from './routes/app.campaigns.new'
 import { Route as AppCustomersCustomerIdRouteImport } from './routes/app.customers.$customerId'
@@ -238,6 +240,11 @@ const TermsRoute = TermsRouteImport.update({
 const AppAuditRoute = AppAuditRouteImport.update({
   id: '/audit',
   path: '/audit',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBillingRoute = AppBillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
   getParentRoute: () => AppRoute,
 } as any)
 const AppCampaignsRoute = AppCampaignsRouteImport.update({
@@ -460,6 +467,11 @@ const ApiReportsCsvRoute = ApiReportsCsvRouteImport.update({
   path: '/api/reports/csv',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWebhooksPaymentsRoute = ApiWebhooksPaymentsRouteImport.update({
+  id: '/api/webhooks/payments',
+  path: '/api/webhooks/payments',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppCampaignsCampaignIdRoute = AppCampaignsCampaignIdRouteImport.update({
   id: '/$campaignId',
   path: '/$campaignId',
@@ -551,6 +563,7 @@ export interface FileRoutesByFullPath {
   '/suggest': typeof SuggestRoute
   '/terms': typeof TermsRoute
   '/app/audit': typeof AppAuditRoute
+  '/app/billing': typeof AppBillingRoute
   '/app/campaigns': typeof AppCampaignsRouteWithChildren
   '/app/challenges': typeof AppChallengesRoute
   '/app/credit': typeof AppCreditRoute
@@ -595,6 +608,7 @@ export interface FileRoutesByFullPath {
   '/api/cron/nightly': typeof ApiCronNightlyRoute
   '/api/cron/settle': typeof ApiCronSettleRoute
   '/api/reports/csv': typeof ApiReportsCsvRoute
+  '/api/webhooks/payments': typeof ApiWebhooksPaymentsRoute
   '/app/campaigns/$campaignId': typeof AppCampaignsCampaignIdRoute
   '/app/campaigns/new': typeof AppCampaignsNewRoute
   '/app/customers/$customerId': typeof AppCustomersCustomerIdRoute
@@ -638,6 +652,7 @@ export interface FileRoutesByTo {
   '/suggest': typeof SuggestRoute
   '/terms': typeof TermsRoute
   '/app/audit': typeof AppAuditRoute
+  '/app/billing': typeof AppBillingRoute
   '/app/campaigns': typeof AppCampaignsRouteWithChildren
   '/app/challenges': typeof AppChallengesRoute
   '/app/credit': typeof AppCreditRoute
@@ -682,6 +697,7 @@ export interface FileRoutesByTo {
   '/api/cron/nightly': typeof ApiCronNightlyRoute
   '/api/cron/settle': typeof ApiCronSettleRoute
   '/api/reports/csv': typeof ApiReportsCsvRoute
+  '/api/webhooks/payments': typeof ApiWebhooksPaymentsRoute
   '/app/campaigns/$campaignId': typeof AppCampaignsCampaignIdRoute
   '/app/campaigns/new': typeof AppCampaignsNewRoute
   '/app/customers/$customerId': typeof AppCustomersCustomerIdRoute
@@ -726,6 +742,7 @@ export interface FileRoutesById {
   '/suggest': typeof SuggestRoute
   '/terms': typeof TermsRoute
   '/app/audit': typeof AppAuditRoute
+  '/app/billing': typeof AppBillingRoute
   '/app/campaigns': typeof AppCampaignsRouteWithChildren
   '/app/challenges': typeof AppChallengesRoute
   '/app/credit': typeof AppCreditRoute
@@ -770,6 +787,7 @@ export interface FileRoutesById {
   '/api/cron/nightly': typeof ApiCronNightlyRoute
   '/api/cron/settle': typeof ApiCronSettleRoute
   '/api/reports/csv': typeof ApiReportsCsvRoute
+  '/api/webhooks/payments': typeof ApiWebhooksPaymentsRoute
   '/app/campaigns/$campaignId': typeof AppCampaignsCampaignIdRoute
   '/app/campaigns/new': typeof AppCampaignsNewRoute
   '/app/customers/$customerId': typeof AppCustomersCustomerIdRoute
@@ -815,6 +833,7 @@ export interface FileRouteTypes {
     | '/suggest'
     | '/terms'
     | '/app/audit'
+    | '/app/billing'
     | '/app/campaigns'
     | '/app/challenges'
     | '/app/credit'
@@ -859,6 +878,7 @@ export interface FileRouteTypes {
     | '/api/cron/nightly'
     | '/api/cron/settle'
     | '/api/reports/csv'
+    | '/api/webhooks/payments'
     | '/app/campaigns/$campaignId'
     | '/app/campaigns/new'
     | '/app/customers/$customerId'
@@ -902,6 +922,7 @@ export interface FileRouteTypes {
     | '/suggest'
     | '/terms'
     | '/app/audit'
+    | '/app/billing'
     | '/app/campaigns'
     | '/app/challenges'
     | '/app/credit'
@@ -946,6 +967,7 @@ export interface FileRouteTypes {
     | '/api/cron/nightly'
     | '/api/cron/settle'
     | '/api/reports/csv'
+    | '/api/webhooks/payments'
     | '/app/campaigns/$campaignId'
     | '/app/campaigns/new'
     | '/app/customers/$customerId'
@@ -989,6 +1011,7 @@ export interface FileRouteTypes {
     | '/suggest'
     | '/terms'
     | '/app/audit'
+    | '/app/billing'
     | '/app/campaigns'
     | '/app/challenges'
     | '/app/credit'
@@ -1033,6 +1056,7 @@ export interface FileRouteTypes {
     | '/api/cron/nightly'
     | '/api/cron/settle'
     | '/api/reports/csv'
+    | '/api/webhooks/payments'
     | '/app/campaigns/$campaignId'
     | '/app/campaigns/new'
     | '/app/customers/$customerId'
@@ -1089,6 +1113,7 @@ export interface RootRouteChildren {
   ApiCronNightlyRoute: typeof ApiCronNightlyRoute
   ApiCronSettleRoute: typeof ApiCronSettleRoute
   ApiReportsCsvRoute: typeof ApiReportsCsvRoute
+  ApiWebhooksPaymentsRoute: typeof ApiWebhooksPaymentsRoute
   ApiWebhooksSmsProviderRoute: typeof ApiWebhooksSmsProviderRoute
 }
 
@@ -1295,6 +1320,13 @@ declare module '@tanstack/react-router' {
       path: '/audit'
       fullPath: '/app/audit'
       preLoaderRoute: typeof AppAuditRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/billing': {
+      id: '/app/billing'
+      path: '/billing'
+      fullPath: '/app/billing'
+      preLoaderRoute: typeof AppBillingRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/campaigns': {
@@ -1605,6 +1637,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiReportsCsvRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/webhooks/payments': {
+      id: '/api/webhooks/payments'
+      path: '/api/webhooks/payments'
+      fullPath: '/api/webhooks/payments'
+      preLoaderRoute: typeof ApiWebhooksPaymentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/campaigns/$campaignId': {
       id: '/app/campaigns/$campaignId'
       path: '/$campaignId'
@@ -1720,6 +1759,7 @@ const AppCustomersRouteWithChildren = AppCustomersRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppAuditRoute: typeof AppAuditRoute
+  AppBillingRoute: typeof AppBillingRoute
   AppCampaignsRoute: typeof AppCampaignsRouteWithChildren
   AppChallengesRoute: typeof AppChallengesRoute
   AppCreditRoute: typeof AppCreditRoute
@@ -1743,6 +1783,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAuditRoute: AppAuditRoute,
+  AppBillingRoute: AppBillingRoute,
   AppCampaignsRoute: AppCampaignsRouteWithChildren,
   AppChallengesRoute: AppChallengesRoute,
   AppCreditRoute: AppCreditRoute,
@@ -1918,6 +1959,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCronNightlyRoute: ApiCronNightlyRoute,
   ApiCronSettleRoute: ApiCronSettleRoute,
   ApiReportsCsvRoute: ApiReportsCsvRoute,
+  ApiWebhooksPaymentsRoute: ApiWebhooksPaymentsRoute,
   ApiWebhooksSmsProviderRoute: ApiWebhooksSmsProviderRoute,
 }
 export const routeTree = rootRouteImport

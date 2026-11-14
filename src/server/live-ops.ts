@@ -20,7 +20,7 @@ export function refusalCode(error: unknown): string | null {
   let current: unknown = error;
   for (let depth = 0; depth < 5 && current; depth++) {
     if (current instanceof Error) {
-      const match = /\b(not_operator|restaurant_not_found|campaign_not_found|bad_[a-z_]+|same_status|same_plan|not_pending|slug_taken|slug_reserved|duplicate)\b/.exec(
+      const match = /\b(not_operator|restaurant_not_found|campaign_not_found|bad_[a-z_]+|same_status|same_plan|not_pending|slug_taken|slug_reserved|duplicate|not_allowed|subscription_exists|plan_limit_locations|payment_not_found|amount_mismatch|invoice_not_found|already_paid)\b/.exec(
         current.message,
       );
       // Only the bare refusal raised by the function (the whole message) counts.
