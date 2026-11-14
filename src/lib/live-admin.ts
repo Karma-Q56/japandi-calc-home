@@ -32,6 +32,7 @@ const ACTIVITY_WORDING: Record<string, string> = {
   settings_changed: "You changed your settings",
   page_changed: "You changed your public page words or opening hours",
   design_changed: "You changed your card design",
+  spin_changed: "You changed your spin wheel",
   logo_updated: "You changed your logo",
   logo_removed: "You removed your logo",
   credit_added: "Patron added credit to your account",

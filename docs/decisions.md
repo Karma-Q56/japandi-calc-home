@@ -571,6 +571,30 @@ The older `.dev.vars` URLs were rejected by the server, so the run used the
 configured migration branch and the app role password from the local env file.
 No production database was contacted.
 
+## 25. Phase D12d: the live spin wheel (14 November 2026)
+The wheel has one kind per restaurant: a welcome spin (one when a guest joins, always gives something), earned spins
+(one every N visits, may land on a try again) or the reward decider (when a guest earns their card reward, the wheel
+picks which reward they get, and never one worth less than the smallest value the owner set). Up to 8 prizes, each with
+a chance weight. Prizes are a free item, percent off, rand off, 1 to 5 bonus stamps, or a try again.
+
+The server draws every result in SQL (`spin_wheel` in `0019_spin_wheel_dev.sql`) with the database's own random numbers.
+The browser only animates the prize it is given. One spin uses up one earned spin in the same transaction as the prize,
+and the table refuses `used > earned`. A spin id made by the browser pays once, so a retry returns the same result.
+A guest can only spin their own card, and the app role cannot write the wheel tables or `spin_result` directly.
+
+Choices made without asking:
+- Earned spins count visits from the day the wheel is switched on, never earlier visits. Bonus stamps do not count.
+- A stamp that is later undone does not take back a spin the guest already earned.
+- The reward decider only draws real rewards whose "worth" is at least the smallest value. If none qualifies, the guest
+  keeps the reward they earned. Each earned reward is decided once.
+- The welcome spin is open to any member who has not used it, not only new members.
+- Guests see equal slices and no weights. Owners see the odds in plain words and can test the wheel (a test uses nobody's
+  spin and creates no reward).
+- Not in this version: weekly prize limits or a budget. The wheel is limited by how many spins guests earn.
+- Spins, wheel saves and tests are rate limited per person per hour.
+- Bonus stamps can take a card past its goal. The reward is then given at the next recorded visit, the same as for
+  challenge bonus stamps.
+
 ## Pricing placeholders
 Starter, Growth and Pro, with placeholder monthly bands and a once-off setup band,
 live only in `src/lib/patron.ts` so names and prices change in one place.

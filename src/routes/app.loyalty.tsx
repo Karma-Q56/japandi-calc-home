@@ -23,6 +23,8 @@ import { useDemoState } from "@/data/useDemoState";
 import { getDataModeFn, getLoyaltySettingsFn } from "@/server/live";
 import { getGuestTiersFn, getLoyaltyToolsFn } from "@/server/live-tools-fns";
 import { getOwnerPageFn } from "@/server/live-page-fns";
+import { getOwnerWheelFn } from "@/server/live-wheel-fns";
+import type { OwnerWheel } from "@/server/live-wheel";
 import type { OwnerPage } from "@/server/live-page";
 import type { LiveToolsSettings, LiveTiers } from "@/server/live-tools";
 import { LiveToolsTab } from "@/components/patron/live/LiveToolsTab";
@@ -47,13 +49,14 @@ export const Route = createFileRoute("/app/loyalty")({
   loader: async () => {
     const { mode } = await getDataModeFn();
     if (mode !== "live") return { mode, live: null };
-    const [settings, tools, tiers, ownerPage] = await Promise.all([
+    const [settings, tools, tiers, ownerPage, ownerWheel] = await Promise.all([
       getLoyaltySettingsFn(),
       getLoyaltyToolsFn(),
       getGuestTiersFn(),
       getOwnerPageFn(),
+      getOwnerWheelFn(),
     ]);
-    return { mode, live: settings, liveTools: tools, liveTiers: tiers, livePage: ownerPage };
+    return { mode, live: settings, liveTools: tools, liveTiers: tiers, livePage: ownerPage, liveWheel: ownerWheel };
   },
   component: Loyalty,
 });
@@ -79,6 +82,7 @@ function Loyalty() {
         tools={data.liveTools}
         tiers={data.liveTiers}
         page={data.livePage}
+        wheel={data.liveWheel}
       />
     );
   }
@@ -1143,11 +1147,13 @@ function LiveLoyalty({
   tools,
   tiers,
   page,
+  wheel,
 }: {
   data: LiveLoyaltySettings | null;
   tools: LiveToolsSettings | null;
   tiers: LiveTiers | null;
   page: OwnerPage | null;
+  wheel: OwnerWheel | null;
 }) {
   const search = Route.useSearch();
   const [tab, setTab] = useState<Tab>(search.tab ?? "rewards");
@@ -1180,7 +1186,7 @@ function LiveLoyalty({
       {tab === "rewards" && <LiveStampCardTab data={data} page={page} />}
       {tab === "tools" && tools && <LiveToolsTab data={tools} />}
       {tab === "tiers" && tiers && <LiveTiersTab data={tiers} />}
-      {tab === "wheel" && <LiveWheelTab />}
+      {tab === "wheel" && <LiveWheelTab wheel={wheel} />}
 
       {tab !== "rewards" && tab !== "tools" && tab !== "tiers" && tab !== "wheel" && (
         <section className="builder-panel" aria-label="Coming soon">

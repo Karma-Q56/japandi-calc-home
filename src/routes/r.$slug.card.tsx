@@ -22,6 +22,8 @@ import { GuestChallenges } from "@/components/patron/GuestChallenges";
 import { ReferralShare } from "@/components/patron/ReferralShare";
 import { getGuestExtrasFn } from "@/server/live-challenges-fns";
 import { getGuestSpecialsFn } from "@/server/live-specials-fns";
+import { getGuestSpinFn } from "@/server/live-wheel-fns";
+import { GuestSpin } from "@/components/patron/live/GuestSpin";
 import { GuestSpecials } from "@/components/patron/GuestSpecials";
 import type { GuestSpecial } from "@/server/live-specials";
 import { rewardEarned, rewardGuestLine, rewardProgress } from "@/lib/reward-copy";
@@ -33,13 +35,14 @@ export const Route = createFileRoute("/r/$slug/card")({
     const { mode } = await getDataModeFn();
     if (mode !== "live") return { mode, live: null };
     const { card } = await getCardFn({ data: { slug: params.slug } });
-    const [extras, specials] = card
+    const [extras, specials, spin] = card
       ? await Promise.all([
           getGuestExtrasFn({ data: { slug: params.slug } }),
           getGuestSpecialsFn({ data: { slug: params.slug } }),
+          getGuestSpinFn({ data: { slug: params.slug } }),
         ])
-      : [null, null];
-    return { mode, live: card, extras, specials };
+      : [null, null, null];
+    return { mode, live: card, extras, specials, spin };
   },
   beforeLoad: async () => {
     const { mode } = await getDataModeFn();
@@ -117,6 +120,7 @@ function GuestCard() {
         card={loaderData.live}
         extras={loaderData.extras}
         specials={loaderData.specials}
+        spin={loaderData.spin}
       />
     );
 
@@ -475,11 +479,13 @@ function LiveGuestCard({
   card,
   extras,
   specials,
+  spin,
 }: {
   slug: string;
   card: LiveCard;
   extras: Awaited<ReturnType<typeof getGuestExtrasFn>> | null | undefined;
   specials: GuestSpecial[] | null | undefined;
+  spin: Awaited<ReturnType<typeof getGuestSpinFn>> | undefined;
 }) {
   const available = card.rewards.filter((r) => r.status === "available");
   return (
@@ -531,6 +537,7 @@ function LiveGuestCard({
           View menu &amp; specials
         </a>
       </section>
+      <GuestSpin slug={slug} state={spin ?? null} />
       {specials && specials.length > 0 && <GuestSpecials specials={specials} />}
       {extras && extras.challenges.length > 0 && <GuestChallenges challenges={extras.challenges} />}
       {extras?.referralCode && <ReferralShare slug={slug} code={extras.referralCode} />}

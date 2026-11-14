@@ -18,12 +18,12 @@ This file is the whole send order. Every message is ready to copy and paste. Sen
 | 1 | 1A D13a Settings, Activity log, Feedback, Ideas. 1B D15 New campaign, credit, lists | Other prompts need these two first (D13c needs D13a, D16 needs D15) |
 | 2 | 2A D13c Till orders. 2B D13b Card design, logo, QR logo | D13c needs D13a. D13b is on the path to Find |
 | 3 | 3A D14 Insights. 3B D16 Sending | Done and merged 11 Nov |
-| 4 | 4B D12d Spin wheel. 4C D13b2 Finish card design and Your page. 4D D16b Finish sending (4A D19 is done) | Send two at a time: 4B and 4C first, then 4D when one slot is free |
+| 4 | 4B D12d Spin wheel. 4C D13b2 Finish card design and Your page. 4D D16b Finish sending (4A D19 is done) | Done: Claude built all three on 12 to 14 Nov while Freebuff was offline. Do not send them |
 | 5 | 5A D12f Try-this-dish. 5B D20 Branches | D12f needs D13c. D20 needs D14 and D19 |
 | 6 | 6A D21 Plans and payments | Best after branches. Goes alone |
 | After | D22 launch checklist, the polish pass, production go-live | Claude and Karma, not Freebuff |
 
-Already built and merged, so do not send them again: D10, D11, D12a, D12b, D12c, D12e, D13a, D13b, D13c, D14, D15, D16, D17, D18, D19 (rounds 1, 2 and 3 are done as of 11 Nov). D13b and D16 were merged with some items missing, so two follow-up messages (4C and 4D) finish them. Start at round 4.
+Already built, so do not send them again (D12d, D13b2 and D16b were built by Claude and wait for the merge to the main line): D10, D11, D12a, D12b, D12c, D12e, D13a, D13b, D13c, D14, D15, D16, D17, D18, D19 (rounds 1, 2 and 3 are done as of 11 Nov). D13b and D16 were merged with some items missing, so two follow-up messages (4C and 4D) finish them. Start at round 5.
 
 ## Always do this first
 
