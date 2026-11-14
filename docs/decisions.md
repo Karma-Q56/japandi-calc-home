@@ -607,7 +607,7 @@ Help mode is a time boxed session, not a role change. The demo keeps drafts and 
 
 An owner can set a challenge that asks a guest to order one dish, or any dish in one section, a set number of times in a set number of days. Only orders made after the challenge starts count, and only the chosen dish or section counts. The owner picks from dishes that are on the menu now. A dish or section must belong to the same restaurant as the challenge; the database refuses anything else. The guest card shows "1 of 2 ordered". The reward is the same as the other challenges: bonus stamps, a free item, or a discount. Each guest can claim it once.
 
-## D21: Plans, billing and payments (migration 0032, NOT APPLIED)
+## D21: Plans, billing and payments (migration 0032, applied to the dev database only)
 
 Plan limits and prices are data in `src/config/plans.ts` (`planBilling`). The pricing page and the owner billing screen read the same data. Money is always whole cents in rand. The server builds every amount; the browser never sends a plan or an amount that is trusted.
 
@@ -622,5 +622,15 @@ Plan limits and prices are data in `src/config/plans.ts` (`planBilling`). The pr
 - **Ops invoice buttons are not wired.** The `ops.credit` and `ops.restaurants` screens are demo-only today. Live invoice actions exist on the server (`createLiveInvoice`), but no button was added there.
 
 Environment variables (set in the host, never in code): `PAYFAST_MERCHANT_ID`, `PAYFAST_MERCHANT_KEY`, `PAYFAST_PASSPHRASE`, `PAYFAST_MODE` (`sandbox` or `live`), `PATRON_BANK_DETAILS`. When the PayFast values are missing, checkout refuses with a clear message.
+
+Claude's review fixes (14 Nov):
+
+- **Only the webhook settles a payment.** `settle_card_payment` refuses any call made with a restaurant or guest context, so a signed-in owner or guest cannot settle a payment even if server code around it is wrong. It also refuses outcomes it does not know.
+- **No double billing.** A monthly payment names its plan (`payment.plan`). The first paid notice switches the restaurant to that plan. A second monthly payment is refused (`subscription_exists`) while one is paid, so changing or stopping a running monthly payment is something Patron does by hand (cancel it in the PayFast dashboard, then change the plan). A plan with fewer locations than the restaurant has open is refused.
+- **Invoices are read only for the app role.** Writes go through the operator functions only.
+- **PayFast details.** Signatures encode characters the way PHP does (brackets, apostrophes, `~`), compare in constant time, and a `PENDING` notice changes nothing. The validation call sends the notice without its signature, with an 8 second timeout. The checkout address (return, cancel and notify links) is read from the request on the server, never from the browser. Starting a payment is limited to 20 a hour per person.
+- **The screen only promises what exists.** Monthly SMS credit is not granted by anything, so the screen does not mention it (`includedSmsCredit` stays in the data for later).
+
+Still not built (tell Karma before real money): recurring monthly notices after the first one are ignored (already paid), so a failed renewal does nothing, and the 7 day grace and campaign pause described on the screen are not enforced yet; the operator invoice buttons; refunds; the PayFast sandbox test. The validation call format follows PayFast's published example and has not been run against the sandbox.
 
 Not in this phase: a real payment (tested later in PayFast sandbox), SARS tax invoices (D22).
