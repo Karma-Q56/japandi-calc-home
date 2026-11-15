@@ -53,7 +53,7 @@ Status as of 11 Nov (wave 3: D14, D16 core and D19 merged and reviewed; the unfi
 
 ## If Freebuff can only do a few at a time
 
-Round 4 (D12d, D13b2 and D16b) was built by Claude while Freebuff was offline, so skip it. D12f and D21 are built and merged on `claude/fix-regressions` (Claude reviewed and fixed both on 14 Nov), so skip them too. Only D20 (branches) is still to send, then D22. D12d is done; Freebuff's own `freebuff/spin-wheel` branch is superseded, do not merge it (its weekly budget and per-prize caps are being ported on top of the merged wheel). D14, D16 (core) and D19 are done as of 11 Nov. See SEND-ORDER.md for the exact messages. Never more than 2 open at once.
+Round 4 (D12d, D13b2 and D16b) was built by Claude while Freebuff was offline, so skip it. D12f and D21 are built and merged on `claude/fix-regressions` (Claude reviewed and fixed both on 14 Nov), so skip them too. Only D20 (branches) is still to send, then D22. D12d is done; Freebuff's own `freebuff/spin-wheel` branch is superseded, do not merge it. Its per-prize weekly limit was ported on top of the merged wheel (0035); its money budget was left out on purpose. D14, D16 (core) and D19 are done as of 11 Nov. See SEND-ORDER.md for the exact messages. Never more than 2 open at once.
 
 ## How the parallel work stays clean
 

@@ -237,6 +237,39 @@ describe.skipIf(!dbTestsEnabled)("live spin wheel server functions (real databas
     }
   });
 
+  it("saves and loads a weekly limit with how many wins count against it, and drops a limit on a try again slot", async () => {
+    const { saveOwnerWheel, loadOwnerWheel, guestSpin } = await import("../../server/live-wheel");
+    const r = await owned();
+    const saved = await saveOwnerWheel(
+      r.viewer,
+      wheel({ prizes: [prize("Free coffee", { weeklyCap: 3 }), prize("Try again", { type: "nothing", weeklyCap: 4 })] }),
+    );
+    expect(saved).toEqual({ ok: true });
+    await db.owner`insert into spin_credit (membership_id, restaurant_id, earned) values (${r.membership}, ${r.id}, 5)`;
+    await db.owner`update spin_prize set weight = 0 where restaurant_id = ${r.id} and prize_type = 'nothing'`;
+    expect((await guestSpin(r.guest, r.membership, randomUUID())).ok).toBe(true);
+    const loaded = await loadOwnerWheel(r.viewer);
+    expect(loaded?.prizes.map((p) => [p.label, p.weeklyCap, p.wonThisWeek])).toEqual([
+      ["Free coffee", 3, 1],
+      ["Try again", null, 0],
+    ]);
+  });
+
+  it("tells the guest the wheel is resting, keeps their spin, and tells the owner why a test spin is refused", async () => {
+    const { saveOwnerWheel, guestSpin, loadGuestSpin, testOwnerWheel } = await import("../../server/live-wheel");
+    const r = await owned();
+    await saveOwnerWheel(r.viewer, wheel({ prizes: [prize("Free coffee", { weeklyCap: 1 })] }));
+    await db.owner`insert into spin_credit (membership_id, restaurant_id, earned) values (${r.membership}, ${r.id}, 3)`;
+    expect((await guestSpin(r.guest, r.membership, randomUUID())).ok).toBe(true);
+    const resting = await guestSpin(r.guest, r.membership, randomUUID());
+    expect(resting).toEqual({ ok: false, message: "The wheel is resting right now. Your spin is saved, so please try again soon." });
+    expect(await loadGuestSpin(r.guest, r.membership)).toMatchObject({ paused: true, available: 2 });
+    const test = await testOwnerWheel(r.viewer);
+    expect(test.ok === false && test.message).toMatch(/weekly limit/);
+    const [credit] = await db.owner`select earned, used from spin_credit where membership_id = ${r.membership}`;
+    expect(credit).toMatchObject({ earned: 3, used: 1 });
+  });
+
   it("spins end to end: draws, pays, repeats safely, and runs out", async () => {
     const { saveOwnerWheel, guestSpin, loadGuestSpin } = await import("../../server/live-wheel");
     const r = await owned();

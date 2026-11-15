@@ -9,6 +9,7 @@ export const WEIGHT_MAX = 1000;
 export const EARN_EVERY_MIN = 1;
 export const EARN_EVERY_MAX = 50;
 export const MAX_RAND_CENTS = 1_000_000;
+export const WEEKLY_CAP_MAX = 10_000;
 
 export type WheelMode = "join" | "earned" | "reward_decider";
 export type PrizeType = "nothing" | "stamps" | "free_item" | "percent_off" | "amount_off";
@@ -23,6 +24,10 @@ export type WheelPrizeInput = {
   /** What the prize is worth to the restaurant, in cents. The reward decider never draws one worth less than the floor. */
   valueCents: number;
   validDays: number | null;
+  /** The most times this prize can be won in any 7 days. Empty means no limit. A try again slot never has one. */
+  weeklyCap: number | null;
+  /** Read only, for the owner screen: how many times it was won in the last 7 days. The server ignores it on save. */
+  wonThisWeek?: number;
 };
 
 export type WheelSettingsInput = {
@@ -74,6 +79,7 @@ export function blankPrize(): WheelPrizeInput {
     amountOffCents: null,
     valueCents: 0,
     validDays: null,
+    weeklyCap: null,
   };
 }
 
@@ -143,6 +149,13 @@ export function validateWheel(input: WheelSettingsInput): string | null {
     if (prize.validDays !== null && (!isWhole(prize.validDays) || prize.validDays < 1 || prize.validDays > 365)) {
       return `${name} can be valid for 1 to 365 days, or leave it empty for no expiry.`;
     }
+    if (
+      prize.type !== "nothing" &&
+      prize.weeklyCap !== null &&
+      (!isWhole(prize.weeklyCap) || prize.weeklyCap < 1 || prize.weeklyCap > WEEKLY_CAP_MAX)
+    ) {
+      return `${name} can be won 1 to ${WEEKLY_CAP_MAX} times a week, or leave it empty for no limit.`;
+    }
   }
   // Same rule as save_spin_wheel: a switched-on wheel needs a real prize (not a try again) that can be won.
   if (
@@ -177,6 +190,16 @@ export function oddsLines(input: WheelSettingsInput): string[] {
   });
 }
 
+/** The weekly limit in words, with how many wins count against it right now. Empty when there is no limit. */
+export function limitLine(prize: WheelPrizeInput): string {
+  if (prize.type === "nothing" || prize.weeklyCap === null) return "";
+  const won = prize.wonThisWeek ?? 0;
+  const left = Math.max(0, prize.weeklyCap - won);
+  const week = `${prize.weeklyCap} a week`;
+  if (left === 0) return `Limit ${week}. All ${prize.weeklyCap} are taken, so this prize is off the wheel until a win is 7 days old.`;
+  return `Limit ${week}. Won ${won} in the last 7 days, ${left} left.`;
+}
+
 /** The share of spins that win something real, such as "About 3 spins in 4 win a prize." */
 export function winChanceLine(input: WheelSettingsInput): string | null {
   const eligible = input.prizes.filter((prize) => prizeEligible(prize, input.mode, input.floorCents));
@@ -207,6 +230,8 @@ const REFUSALS: Record<string, string> = {
   no_prizes: "This wheel has no prize to give yet. Add a real prize with a chance above 0.",
   too_many_prizes: `A wheel can have up to ${MAX_PRIZES} prizes.`,
   invalid_value: "One of the values is not allowed. Check the prizes and try again.",
+  prizes_gone:
+    "Every prize has reached its weekly limit, so the wheel is resting. Raise a limit, or wait until a win is 7 days old.",
 };
 
 export const WHEEL_REFUSAL_CODES = Object.keys(REFUSALS);

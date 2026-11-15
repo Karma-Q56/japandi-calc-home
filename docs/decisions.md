@@ -590,7 +590,7 @@ Choices made without asking:
 - The welcome spin is open to any member who has not used it, not only new members.
 - Guests see equal slices and no weights. Owners see the odds in plain words and can test the wheel (a test uses nobody's
   spin and creates no reward).
-- Not in this version: weekly prize limits or a budget. The wheel is limited by how many spins guests earn.
+- Weekly prize limit (migration 0035, 15 Nov): each prize can have a limit on how many times it is won in any 7 days. It counts wins, never money, because owners do not spend money on the wheel. A prize at its limit leaves the wheel. When every real prize is at its limit the wheel stops: the guest sees "The wheel is resting", keeps the spins they earned, and the welcome spin is not used up. A try again slot has no limit and never keeps the wheel going on its own. Wins are counted by the prize's position on the wheel, so editing a prize does not reset its count. Spins on one wheel run one at a time, so two guests cannot both take the last win. Karma's answer on 14 Nov: when the limit runs out, stop the spin. A money budget was left out on purpose (Freebuff's unmerged branch had one).
 - Spins, wheel saves and tests are rate limited per person per hour.
 - Bonus stamps can take a card past its goal. The reward is then given at the next recorded visit, the same as for
   challenge bonus stamps.

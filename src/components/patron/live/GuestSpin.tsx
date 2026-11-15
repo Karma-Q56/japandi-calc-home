@@ -29,7 +29,8 @@ export function GuestSpin({ slug, state }: { slug: string; state: GuestSpinState
   if (!state || !state.enabled || !state.mode || state.prizes.length === 0) return null;
   const mode = state.mode;
   const spinning = pending !== null;
-  const canSpin = available > 0 && !busy && !spinning;
+  const paused = state.paused;
+  const canSpin = available > 0 && !paused && !busy && !spinning;
 
   const spin = async () => {
     if (!canSpin) return;
@@ -43,6 +44,8 @@ export function GuestSpin({ slug, state }: { slug: string; state: GuestSpinState
         // A refusal is final for this spin id, so the next try starts a new spin.
         if (!outcome.message.startsWith("Could not")) spinIdRef.current = null;
         setError(outcome.message);
+        // The wheel may have just been emptied by someone else: refresh so the card shows it resting.
+        void router.invalidate();
         return;
       }
       spinIdRef.current = null;
@@ -72,8 +75,9 @@ export function GuestSpin({ slug, state }: { slug: string; state: GuestSpinState
     void router.invalidate();
   };
 
-  const headline =
-    available > 0
+  const headline = paused
+    ? "The wheel is resting"
+    : available > 0
       ? mode === "join"
         ? "Welcome spin ready"
         : `${available} spin${available === 1 ? "" : "s"} ready`
@@ -105,7 +109,13 @@ export function GuestSpin({ slug, state }: { slug: string; state: GuestSpinState
       <button type="button" className="builder-primary spin-button" disabled={!canSpin} onClick={spin}>
         {BUTTON_LABEL[mode]}
       </button>
-      {available === 0 && !result && (
+      {paused && (
+        <p className="gx-note">
+          Every prize on the wheel has been won this week, so it is resting.{" "}
+          {available > 0 ? `Your ${available === 1 ? "spin is" : "spins are"} saved. Come back soon.` : "Come back soon."}
+        </p>
+      )}
+      {available === 0 && !paused && !result && (
         <p className="gx-note">
           {mode === "join"
             ? "Your welcome spin has been used."

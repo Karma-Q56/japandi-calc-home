@@ -73,6 +73,8 @@ type PrizeRow = {
   amount_off_cents: number | null;
   value_cents: number;
   valid_days: number | null;
+  weekly_cap: number | null;
+  won_this_week: number;
 };
 
 /** The saved wheel of the signed-in restaurant, or calm defaults when none is saved yet. */
@@ -86,8 +88,12 @@ export async function loadOwnerWheel(viewer: Viewer | null): Promise<OwnerWheel 
         from spin_config where restaurant_id = ${viewer.restaurantId} limit 1
       `);
       const prizes = await transaction.execute<PrizeRow>(sql`
-        select label, weight, prize_type, stamps, percent_off, amount_off_cents, value_cents, valid_days
-        from spin_prize where restaurant_id = ${viewer.restaurantId} order by position
+        select p.label, p.weight, p.prize_type, p.stamps, p.percent_off, p.amount_off_cents, p.value_cents, p.valid_days,
+               p.weekly_cap,
+               (select count(*)::int from spin_result r
+                where r.restaurant_id = p.restaurant_id and r.segment_id = p.id::text
+                  and r.won_at >= now() - interval '7 days') as won_this_week
+        from spin_prize p where p.restaurant_id = ${viewer.restaurantId} order by p.position
       `);
       const row = config.rows[0];
       return {
@@ -105,6 +111,8 @@ export async function loadOwnerWheel(viewer: Viewer | null): Promise<OwnerWheel 
             amountOffCents: prize.amount_off_cents === null ? null : Number(prize.amount_off_cents),
             valueCents: Number(prize.value_cents),
             validDays: prize.valid_days === null ? null : Number(prize.valid_days),
+            weeklyCap: prize.weekly_cap === null ? null : Number(prize.weekly_cap),
+            wonThisWeek: Number(prize.won_this_week ?? 0),
           }),
         ),
       };
@@ -127,6 +135,7 @@ export async function saveOwnerWheel(viewer: Viewer | null, input: WheelSettings
     amountOffCents: prize.type === "amount_off" ? prize.amountOffCents : null,
     valueCents: prize.type === "nothing" || prize.type === "stamps" ? 0 : prize.valueCents,
     validDays: prize.type === "nothing" || prize.type === "stamps" ? null : prize.validDays,
+    weeklyCap: prize.type === "nothing" ? null : prize.weeklyCap,
   }));
   try {
     await withContext(
@@ -171,6 +180,8 @@ export type GuestSpinState = {
   enabled: boolean;
   mode: WheelMode | null;
   available: number;
+  /** Every real prize is at its weekly limit: the wheel will not turn, and the guest keeps their spins. */
+  paused: boolean;
   visitsToNext: number | null;
   earnEvery: number | null;
   prizes: Array<{ id: string; label: string; type: PrizeType }>;
@@ -191,6 +202,7 @@ export async function loadGuestSpin(customerId: string, membershipId: string): P
               enabled?: boolean;
               mode?: WheelMode;
               available?: number;
+              paused?: boolean;
               visitsToNext?: number | null;
               earnEvery?: number | null;
               prizes?: Array<{ id: string; label: string; type: PrizeType }>;
@@ -202,6 +214,7 @@ export async function loadGuestSpin(customerId: string, membershipId: string): P
           enabled: !!state.enabled,
           mode: state.mode ?? null,
           available: Number(state.available ?? 0),
+          paused: !!state.paused,
           visitsToNext: state.visitsToNext ?? null,
           earnEvery: state.earnEvery ?? null,
           prizes: state.prizes ?? [],
@@ -258,6 +271,9 @@ export async function guestSpin(customerId: string, membershipId: string, spinId
   } catch (error) {
     const code = wheelRefusalCode(error);
     // A guest can only be refused "not_allowed" for a card that is not theirs, which the screen never offers.
+    if (code === "prizes_gone") {
+      return { ok: false, message: "The wheel is resting right now. Your spin is saved, so please try again soon." };
+    }
     return { ok: false, message: code === "not_allowed" ? "Sign in to your own card to spin." : wheelErrorMessage(code) };
   }
 }

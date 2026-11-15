@@ -3,7 +3,9 @@ import {
   MAX_PRIZES,
   WHEEL_MODES,
   WHEEL_REFUSAL_CODES,
+  WEEKLY_CAP_MAX,
   blankPrize,
+  limitLine,
   modeTitle,
   oddsLines,
   prizeEligible,
@@ -84,6 +86,26 @@ describe("validateWheel", () => {
     expect(validateWheel(wheel({ prizes: [prize("A", { validDays: 0 })] }))).toMatch(/1 to 365 days/);
     expect(validateWheel(wheel({ prizes: [prize("A", { validDays: 366 })] }))).toMatch(/1 to 365 days/);
     expect(validateWheel(wheel({ prizes: [prize("A", { validDays: 365 })] }))).toBeNull();
+  });
+
+  it("checks the weekly limit: empty or a whole number from 1 to 10 000, and none on a try again slot", () => {
+    expect(validateWheel(wheel({ prizes: [prize("A", { weeklyCap: null })] }))).toBeNull();
+    expect(validateWheel(wheel({ prizes: [prize("A", { weeklyCap: 1 })] }))).toBeNull();
+    expect(validateWheel(wheel({ prizes: [prize("A", { weeklyCap: WEEKLY_CAP_MAX })] }))).toBeNull();
+    for (const bad of [0, -3, WEEKLY_CAP_MAX + 1, 2.5, Number.NaN]) {
+      expect(validateWheel(wheel({ prizes: [prize("A", { weeklyCap: bad })] })), String(bad)).toMatch(/times a week/);
+    }
+    // A try again slot has no limit, so a stray value there is not an error (the server drops it).
+    expect(validateWheel(wheel({ prizes: [prize("A"), prize("Again", { type: "nothing", weeklyCap: 0 })] }))).toBeNull();
+  });
+
+  it("explains a weekly limit in plain words", () => {
+    expect(limitLine(prize("A"))).toBe("");
+    expect(limitLine(prize("Again", { type: "nothing", weeklyCap: 5 }))).toBe("");
+    expect(limitLine(prize("A", { weeklyCap: 5 }))).toBe("Limit 5 a week. Won 0 in the last 7 days, 5 left.");
+    expect(limitLine(prize("A", { weeklyCap: 5, wonThisWeek: 2 }))).toBe("Limit 5 a week. Won 2 in the last 7 days, 3 left.");
+    expect(limitLine(prize("A", { weeklyCap: 2, wonThisWeek: 2 }))).toMatch(/All 2 are taken.*off the wheel/);
+    expect(limitLine(prize("A", { weeklyCap: 2, wonThisWeek: 9 }))).toMatch(/All 2 are taken/);
   });
 
   it("will not switch on a wheel with nothing to win, but lets an unfinished wheel be saved while off", () => {

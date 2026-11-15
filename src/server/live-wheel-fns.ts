@@ -13,6 +13,7 @@ const prizeSchema = z.object({
   amountOffCents: z.number().nullable(),
   valueCents: z.number(),
   validDays: z.number().nullable(),
+  weeklyCap: z.number().nullable(),
 });
 
 const settingsSchema = z.object({

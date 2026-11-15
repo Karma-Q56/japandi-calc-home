@@ -10,9 +10,11 @@ import {
   LABEL_LIMIT,
   MAX_PRIZES,
   PRIZE_TYPES,
+  WEEKLY_CAP_MAX,
   WHEEL_MODES,
   WEIGHT_MAX,
   blankPrize,
+  limitLine,
   oddsLines,
   prizeEligible,
   prizeSummary,
@@ -180,7 +182,8 @@ function WheelEditor({ initial }: { initial: OwnerWheel }) {
         <h2>Prizes</h2>
         <Helper>
           Up to {MAX_PRIZES} prizes. The chance is a weight: a prize with 2 comes up twice as often as one with 1. A
-          chance of 0 switches a prize off.
+          chance of 0 switches a prize off. You can also limit how often a prize is won in a week. When every prize
+          has reached its limit, the wheel rests and guests keep their spins until a win is 7 days old.
         </Helper>
         {draft.prizes.length === 0 && <p className="demo-data-note">No prizes yet. Add your first one.</p>}
         {draft.prizes.map((prize, index) => (
@@ -294,6 +297,7 @@ function PrizeRow({
                 stamps: type === "stamps" ? (prize.stamps ?? 1) : null,
                 percentOff: type === "percent_off" ? (prize.percentOff ?? 10) : null,
                 amountOffCents: type === "amount_off" ? (prize.amountOffCents ?? 2000) : null,
+                weeklyCap: type === "nothing" ? null : prize.weeklyCap,
               });
             }}
           >
@@ -369,6 +373,21 @@ function PrizeRow({
             onChange={(event) => onChange({ weight: Number(event.target.value) })}
           />
         </FormField>
+        {prize.type !== "nothing" && (
+          <FormField
+            label="Most wins in a week"
+            hint="Optional. It counts wins, not money. Leave empty for no limit."
+          >
+            <input
+              type="number"
+              min={1}
+              max={WEEKLY_CAP_MAX}
+              value={prize.weeklyCap ?? ""}
+              onChange={(event) => onChange({ weeklyCap: toWhole(event.target.value) })}
+            />
+          </FormField>
+        )}
+        {limitLine(prize) && <p className="builder-hint">{limitLine(prize)}</p>}
       </div>
       <button type="button" className="builder-secondary" onClick={onRemove}>
         Remove prize {index + 1}
