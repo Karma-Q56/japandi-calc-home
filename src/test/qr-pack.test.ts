@@ -29,5 +29,22 @@ describe("QR print pack", () => {
     expect(text).toContain("The Daily Grind");
     expect(text).toContain("Table tent");
     expect(text.trimEnd().endsWith("%%EOF")).toBe(true);
+    expect(text).not.toContain("/Subtype /Image");
+  });
+
+  it("embeds the logo as a JPEG image when one is given", () => {
+    const text = qrPdfDocument({
+      url: "https://patron.co.za/r/daily-grind/join?src=table-tent",
+      restaurantName: "The Daily Grind",
+      reward: "a free coffee",
+      label: "Table tent",
+      foreground: "#263a2d",
+      background: "#f5f0e5",
+      logo: { jpeg: new Uint8Array([0xff, 0xd8, 0xff, 0xd9]), width: 2, height: 2 },
+    });
+    expect(text).toContain("/Subtype /Image");
+    expect(text).toContain("/DCTDecode");
+    expect(text).toContain("/Im1 Do");
+    expect(text.trimEnd().endsWith("%%EOF")).toBe(true);
   });
 });

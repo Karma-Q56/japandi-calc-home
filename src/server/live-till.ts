@@ -2,6 +2,8 @@ import { createHmac, randomInt, randomUUID } from "node:crypto";
 import { sql, type SQL } from "drizzle-orm";
 import { deleteCookie, getCookies, setCookie } from "@tanstack/react-start/server";
 import { SIGNED_OUT_MESSAGE, UNLOCK_FIRST_MESSAGE } from "@/lib/till-messages";
+import type { RewardKind } from "@/lib/reward-copy";
+import { runAfterVisitHooks } from "./live-after-visit";
 import type { Viewer } from "./auth-viewer";
 import { withContext, type DatabaseTransaction } from "./db";
 import {
@@ -78,11 +80,28 @@ export type LiveLookup =
       membershipId: string;
       stampsCurrent: number;
       stampsRequired: number;
-      rewards: Array<{ id: string; description: string }>;
+      rewards: Array<{
+        id: string;
+        description: string;
+        kind: RewardKind;
+        percentOff: number | null;
+        amountOffCents: number | null;
+        useBy: string | null;
+      }>;
     };
 
 export type RedeemOutcome =
-  { ok: true; description: string; canUndoUntil: number } | { ok: false; message: string };
+  | {
+      ok: true;
+      description: string;
+      kind: RewardKind;
+      percentOff: number | null;
+      amountOffCents: number | null;
+      canUndoUntil: number;
+    }
+  | { ok: false; message: string; code?: "reward_expired" };
+
+export const REWARD_EXPIRED_MESSAGE = "That reward has run out. Tell the guest it has expired.";
 
 /** True SQL fragment: this staff member still exists and is active in this restaurant. */
 function staffIsActive(restaurantId: string, staffId: string): SQL {
@@ -787,13 +806,23 @@ export async function lookupGuest(rawCode: string): Promise<LiveLookup> {
       );
       const member = rows[0];
       if (!member) return { ok: false as const, message: "No member matches that code." };
-      const rewardRows = await q<{ id: string; description: string }>(
+      const rewardRows = await q<{
+        id: string;
+        description: string;
+        kind: RewardKind;
+        percent_off: number | null;
+        amount_off_cents: number | null;
+        use_by: string | null;
+      }>(
         transaction,
         sql`
-          select id, description from reward
+          select id, description, kind, percent_off, amount_off_cents,
+                 to_char(expires_at at time zone 'Africa/Johannesburg', 'DD Mon YYYY') as use_by
+          from reward
           where membership_id = ${member.membership_id}
             and restaurant_id = ${session.restaurantId}
             and status = 'available'
+            and (expires_at is null or expires_at > now())
           order by earned_at
         `,
       );
@@ -805,7 +834,14 @@ export async function lookupGuest(rawCode: string): Promise<LiveLookup> {
         membershipId: member.membership_id,
         stampsCurrent: member.stamps_current,
         stampsRequired: restaurant.stamps_required,
-        rewards: rewardRows,
+        rewards: rewardRows.map((row) => ({
+          id: row.id,
+          description: row.description,
+          kind: row.kind,
+          percentOff: row.percent_off === null ? null : Number(row.percent_off),
+          amountOffCents: row.amount_off_cents === null ? null : Number(row.amount_off_cents),
+          useBy: row.use_by,
+        })),
       };
     },
   );
@@ -821,7 +857,7 @@ export async function recordStampAtTill(
 ): Promise<TillStampOutcome> {
   const session = requireSession();
   if ("error" in session) return { ok: false, message: session.error };
-  return withContext(
+  const outcome = await withContext(
     { databaseUrl: databaseUrl(), restaurantId: session.restaurantId, isOperator: false },
     async (transaction) => {
       const member = await q<{ id: string; staff_ok: boolean }>(
@@ -871,6 +907,16 @@ export async function recordStampAtTill(
       };
     },
   );
+  // Hooks open their own connections, so they run only after the stamp above has committed.
+  if (outcome.ok && outcome.result === "stamped") {
+    await runAfterVisitHooks({
+      restaurantId: session.restaurantId,
+      membershipId,
+      staffId: session.staffId,
+      result: outcome.result,
+    });
+  }
+  return outcome;
 }
 
 /** The real redemption. Callers must have a signed in staff member. */
@@ -883,7 +929,13 @@ export async function redeemRewardAs(input: {
   return withContext(
     { databaseUrl: databaseUrl(), restaurantId: input.restaurantId, isOperator: false },
     async (transaction) => {
-      const updated = await q<{ id: string; description: string }>(
+      const updated = await q<{
+        id: string;
+        description: string;
+        kind: RewardKind;
+        percent_off: number | null;
+        amount_off_cents: number | null;
+      }>(
         transaction,
         sql`
           update reward
@@ -892,26 +944,31 @@ export async function redeemRewardAs(input: {
             and membership_id = ${input.membershipId}
             and restaurant_id = ${input.restaurantId}
             and status = 'available'
+            and (expires_at is null or expires_at > now())
             and ${staffIsActive(input.restaurantId, input.staffId)}
             and exists (
               select 1 from membership m
               where m.id = reward.membership_id and m.restaurant_id = reward.restaurant_id
             )
-          returning id, description
+          returning id, description, kind, percent_off, amount_off_cents
         `,
       );
       const row = updated[0];
       if (!row) {
-        const existing = await q<{ status: string }>(
+        const existing = await q<{ status: string; expired: boolean }>(
           transaction,
           sql`
-            select status from reward
+            select status, (expires_at is not null and expires_at <= now()) as expired
+            from reward
             where id = ${input.rewardId}
               and membership_id = ${input.membershipId}
               and restaurant_id = ${input.restaurantId}
             limit 1
           `,
         );
+        if (existing[0]?.status === "available" && existing[0].expired) {
+          return { ok: false as const, message: REWARD_EXPIRED_MESSAGE, code: "reward_expired" };
+        }
         return {
           ok: false as const,
           message: existing[0] ? "Already redeemed." : "That reward is not available.",
@@ -930,6 +987,9 @@ export async function redeemRewardAs(input: {
       return {
         ok: true as const,
         description: row.description,
+        kind: row.kind,
+        percentOff: row.percent_off === null ? null : Number(row.percent_off),
+        amountOffCents: row.amount_off_cents === null ? null : Number(row.amount_off_cents),
         canUndoUntil: Date.now() + REDEEM_UNDO_MINUTES * 60 * 1000,
       };
     },

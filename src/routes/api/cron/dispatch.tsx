@@ -1,34 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { cronAuthorized } from "@/server/cron-auth";
+import { runLiveDispatch } from "@/server/live-dispatch";
 
-function cronSecret(): string | undefined {
-  return (process.env as Record<string, string | undefined>)["CRON_SECRET"];
-}
+type Env = Record<string, string | undefined>;
 
 export const Route = createFileRoute("/api/cron/dispatch")({
-  component: CronDispatchPlaceholder,
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const expected = cronSecret();
-        if (expected && request.headers.get("x-cron-secret") !== expected) {
-          return new Response("Unauthorized", { status: 401 });
+        const env = process.env as Env;
+        if (!cronAuthorized(request, env)) return new Response("Unauthorized", { status: 401 });
+        const databaseUrl = env["DATABASE_URL"];
+        if (!databaseUrl) return new Response("Not configured", { status: 503 });
+        try {
+          const result = await runLiveDispatch(databaseUrl, env);
+          return Response.json(result, { headers: { "Cache-Control": "no-store" } });
+        } catch {
+          // Log nothing sensitive: the driver error can include message text.
+          return new Response("Dispatch failed", { status: 500 });
         }
-        // Demo mode keeps its state in the browser, so there is nothing to
-        // dispatch here. Run the same dispatchBatch() function from the
-        // "Run dispatcher" button on /demo/outbox instead. M9 connects this
-        // route to the real database behind the same CRON_SECRET check.
-        return new Response("Demo mode: run the dispatcher from /demo/outbox.", { status: 501 });
       },
     },
   },
 });
-
-function CronDispatchPlaceholder() {
-  return (
-    <main className="demo-hub page-width">
-      <h1>Not implemented yet.</h1>
-      <p>Queued SMS dispatch runs from the demo outbox.</p>
-      <a href="/">Back to Patron</a>
-    </main>
-  );
-}

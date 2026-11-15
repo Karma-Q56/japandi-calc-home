@@ -23,9 +23,13 @@ import {
   StatGrid,
 } from "@/components/patron/dash";
 import { reportCsv, type ReportRange, type Reports } from "@/domain/reports";
+import { getDataModeFn } from "@/server/live";
 
 export const Route = createFileRoute("/app/reports")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    // Live mode reports now live on the Insights Performance tab (D14).
+    const { mode } = await getDataModeFn();
+    if (mode === "live") throw redirect({ to: "/app/insights" });
     if (!requireRole("owner", "manager")(demoRepo.read().session)) {
       throw redirect({ to: "/login" });
     }

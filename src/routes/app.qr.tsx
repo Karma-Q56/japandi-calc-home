@@ -10,6 +10,7 @@ import { qrSvg } from "@/lib/qr";
 import { QrPrintPack } from "@/components/patron/QrPrintPack";
 import { PageHeader } from "@/components/patron/dash";
 import { getDataModeFn, getMyRestaurantFn, getViewerFn } from "@/server/live";
+import { getLogoFn } from "@/server/live-logo-fns";
 
 export const Route = createFileRoute("/app/qr")({
   beforeLoad: async () => {
@@ -24,7 +25,8 @@ export const Route = createFileRoute("/app/qr")({
   loader: async () => {
     const { mode } = await getDataModeFn();
     if (mode !== "live") return { mode, restaurant: null };
-    return { mode, restaurant: await getMyRestaurantFn() };
+    const [restaurant, logo] = await Promise.all([getMyRestaurantFn(), getLogoFn()]);
+    return { mode, restaurant, logoVersion: logo?.version ?? null };
   },
   ssr: false,
   component: QrOwner,
@@ -32,7 +34,7 @@ export const Route = createFileRoute("/app/qr")({
 
 function QrOwner() {
   const data = Route.useLoaderData();
-  if (data.mode === "live") return <LiveQr restaurant={data.restaurant} />;
+  if (data.mode === "live") return <LiveQr restaurant={data.restaurant} logoVersion={data.logoVersion} />;
   return <DemoQr />;
 }
 
@@ -54,9 +56,16 @@ function DemoQr() {
 }
 
 /** Live: the real join link for this restaurant, with a copy button and its QR image. */
-function LiveQr({ restaurant }: { restaurant: { slug: string; published: boolean } | null }) {
+function LiveQr({
+  restaurant,
+  logoVersion,
+}: {
+  restaurant: { slug: string; published: boolean } | null;
+  logoVersion: number | null;
+}) {
   const [origin, setOrigin] = useState(APP_URL);
   const [copied, setCopied] = useState(false);
+  const [plain, setPlain] = useState(false);
   useEffect(() => setOrigin(window.location.origin), []);
 
   if (!restaurant) {
@@ -76,7 +85,8 @@ function LiveQr({ restaurant }: { restaurant: { slug: string; published: boolean
   // link and the copy button stay and only the picture is left out.
   let qr: string | null = null;
   try {
-    qr = qrSvg(url, "#1f3027", "#ffffff");
+    const logo = logoVersion !== null && !plain ? { href: `/r/${restaurant.slug}/logo?v=${logoVersion}` } : undefined;
+    qr = qrSvg(url, "#1f3027", "#ffffff", logo);
   } catch {
     qr = null;
   }
@@ -104,6 +114,12 @@ function LiveQr({ restaurant }: { restaurant: { slug: string; published: boolean
             <p>
               <code>{url}</code>
             </p>
+            {logoVersion !== null && (
+              <label className="builder-field">
+                <input type="checkbox" checked={plain} onChange={(event) => setPlain(event.target.checked)} />
+                Use plain QR code
+              </label>
+            )}
             <div className="page-actions">
               <button type="button" className="builder-secondary" onClick={() => void copy()}>
                 Copy link

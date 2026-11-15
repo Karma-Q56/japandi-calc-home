@@ -54,6 +54,21 @@ Do these in your own accounts. Never paste a secret into chat or commit it.
    `DATABASE_URL` is the dev branch app_user URL. Start the app and sign up.
    Set it back to `demo` when you want the demo accounts.
 
+## Operator login (Patron staff)
+
+An operator is linked by hand, never from a screen. Run this on the dev branch
+SQL Editor, with placeholders replaced by you. Do not paste real values into
+the repo.
+
+```sql
+update app_user
+set role = 'operator', restaurant_id = null
+where email = 'OPERATOR_EMAIL';
+```
+
+Sign in with that email once, then open `/ops/restaurants`. The database
+checks the operator row again on every action.
+
 ## Not verified
 
 - `0007_auth_dev.sql` has not been run against the dev branch yet.

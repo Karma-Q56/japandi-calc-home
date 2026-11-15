@@ -8,12 +8,23 @@ import { Badge, ConfirmDialog, EmptyState, FormField, PageHeader } from "@/compo
 import { ChallengeRow } from "@/components/patron/ChallengeRow";
 import { PhoneFrame, PreviewOnly, PublishSteps } from "@/components/patron/preview";
 import { LoyaltyTabs } from "@/components/patron/LoyaltyTabs";
+import { getDataModeFn, getMenuFn } from "@/server/live";
+import { getChallengesFn } from "@/server/live-challenges-fns";
+import { LiveChallengesTab } from "@/components/patron/live/LiveChallengesTab";
 
 export const Route = createFileRoute("/app/challenges")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode === "live") return;
     if (!requireRole("owner", "manager")(demoRepo.read().session)) {
       throw redirect({ to: "/login" });
     }
+  },
+  loader: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode !== "live") return { mode, live: null, menu: null };
+    const [live, menu] = await Promise.all([getChallengesFn(), getMenuFn()]);
+    return { mode, live, menu };
   },
   component: Challenges,
 });
@@ -26,6 +37,24 @@ interface ChallengeDraft {
 }
 
 function Challenges() {
+  const data = Route.useLoaderData();
+  if (data.mode === "live") {
+    return (
+      <main className="demo-hub page-width">
+        <PageHeader
+          eyebrow="Loyalty"
+          title="Visit challenges"
+          intro="A short sprint that pays bonus stamps or a reward. Guests see it on their card."
+        />
+        <LoyaltyTabs active="challenges" />
+        <LiveChallengesTab challenges={data.live} menu={data.menu} />
+      </main>
+    );
+  }
+  return <DemoChallenges />;
+}
+
+function DemoChallenges() {
   const state = useDemoState();
   const restaurant =
     state.restaurants.find((item) => item.id === state.session.restaurantId) ??

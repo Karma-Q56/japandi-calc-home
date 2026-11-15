@@ -11,6 +11,7 @@ import { Switch } from "@/components/patron/Switch";
 import { GuestShell } from "@/components/patron/GuestShell";
 import { FormField, PageHeader } from "@/components/patron/dash";
 import { enableBrowserPush, disableBrowserPush, showLocalPushTest } from "@/lib/web-push-client";
+import { PushOptIn } from "@/components/patron/PushOptIn";
 import { signOut } from "@/lib/sign-out";
 
 export const Route = createFileRoute("/me/settings")({
@@ -144,6 +145,9 @@ function GuestSettings() {
             </button>
           </section>
         )}
+        <section className="builder-panel">
+          <PushOptIn />
+        </section>
         <section className="builder-panel" id="messages">
           <h2>Messages</h2>
           <p className="gx-note">

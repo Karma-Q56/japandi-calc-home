@@ -1,0 +1,36 @@
+name: Scheduled sending
+
+# Calls the live cron routes every few minutes. The routes refuse any request
+# without the CRON_SECRET header, so this workflow needs the same secret.
+#
+# OFF until you switch it on: GitHub only runs scheduled workflows from the main branch, and a
+# run with no secrets set would fail every 5 minutes and email you each time. To turn it on, add the
+# repository secrets PATRON_APP_URL and CRON_SECRET (and SMS settings on the app), then add the
+# repository variable CRON_ENABLED with the value true (Settings, Secrets and variables, Actions).
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dispatch-and-settle:
+    if: ${{ vars.CRON_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    env:
+      APP_URL: ${{ secrets.PATRON_APP_URL }}
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+    steps:
+      - name: Dispatch queued messages
+        run: |
+          test -n "$APP_URL" && test -n "$CRON_SECRET" || { echo "Missing PATRON_APP_URL or CRON_SECRET"; exit 1; }
+          curl --fail --silent --show-error -X POST \
+            -H "x-cron-secret: $CRON_SECRET" \
+            "$APP_URL/api/cron/dispatch"
+      - name: Settle finished campaigns
+        run: |
+          curl --fail --silent --show-error -X POST \
+            -H "x-cron-secret: $CRON_SECRET" \
+            "$APP_URL/api/cron/settle"

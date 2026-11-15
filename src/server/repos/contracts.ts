@@ -42,6 +42,8 @@ export interface PublicPage {
   slug: string;
   name: string;
   suburb: string | null;
+  address?: string | null;
+  aboutText?: string | null;
   theme: Record<string, JsonValue>;
   hours: Record<string, JsonValue>;
   stampsRequired: number;
@@ -91,7 +93,17 @@ export interface JoinResult {
 }
 
 export interface CardView {
-  restaurant: { id: string; slug: string; name: string; stampsRequired: number; rewardDescription: string };
+  restaurant: {
+    id: string;
+    slug: string;
+    name: string;
+    stampsRequired: number;
+    rewardDescription: string;
+    rewardKind?: "free_item" | "percent_off" | "amount_off";
+    rewardPercentOff?: number | null;
+    rewardAmountOffCents?: number | null;
+    rewardValidDays?: number | null;
+  };
   customer: { id: string; name: string; qrToken: string };
   membership: {
     id: string;
@@ -101,7 +113,15 @@ export interface CardView {
     marketingSms: string | boolean;
   };
   stamps: { id: string; createdAt: string; status: string }[];
-  rewards: { id: string; description: string; status: string }[];
+  rewards: {
+    id: string;
+    description: string;
+    status: string;
+    kind?: "free_item" | "percent_off" | "amount_off";
+    percentOff?: number | null;
+    amountOffCents?: number | null;
+    expiresAt?: string | null;
+  }[];
   consents: { id: string; purpose: string; action: string; wordingVersion: string; wordingText: string }[];
 }
 

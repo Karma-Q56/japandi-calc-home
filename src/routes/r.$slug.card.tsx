@@ -18,7 +18,15 @@ import { PageHeader } from "@/components/patron/dash";
 import { MemberQr } from "@/components/patron/MemberQr";
 import { SpinWheel } from "@/components/patron/SpinWheel";
 import { ChallengeRow } from "@/components/patron/ChallengeRow";
-import { rewardEarned, rewardProgress } from "@/lib/reward-copy";
+import { GuestChallenges } from "@/components/patron/GuestChallenges";
+import { ReferralShare } from "@/components/patron/ReferralShare";
+import { getGuestExtrasFn } from "@/server/live-challenges-fns";
+import { getGuestSpecialsFn } from "@/server/live-specials-fns";
+import { getGuestSpinFn } from "@/server/live-wheel-fns";
+import { GuestSpin } from "@/components/patron/live/GuestSpin";
+import { GuestSpecials } from "@/components/patron/GuestSpecials";
+import type { GuestSpecial } from "@/server/live-specials";
+import { rewardEarned, rewardGuestLine, rewardProgress } from "@/lib/reward-copy";
 import { signInAsDemoAccount } from "@/lib/demo-signin";
 
 export const Route = createFileRoute("/r/$slug/card")({
@@ -27,7 +35,14 @@ export const Route = createFileRoute("/r/$slug/card")({
     const { mode } = await getDataModeFn();
     if (mode !== "live") return { mode, live: null };
     const { card } = await getCardFn({ data: { slug: params.slug } });
-    return { mode, live: card };
+    const [extras, specials, spin] = card
+      ? await Promise.all([
+          getGuestExtrasFn({ data: { slug: params.slug } }),
+          getGuestSpecialsFn({ data: { slug: params.slug } }),
+          getGuestSpinFn({ data: { slug: params.slug } }),
+        ])
+      : [null, null, null];
+    return { mode, live: card, extras, specials, spin };
   },
   beforeLoad: async () => {
     const { mode } = await getDataModeFn();
@@ -98,7 +113,16 @@ function GuestCard() {
     if (membershipId) api.member.markSeen(membershipId);
   }, [membershipId]);
 
-  if (loaderData.live) return <LiveGuestCard slug={slug} card={loaderData.live} />;
+  if (loaderData.live)
+    return (
+      <LiveGuestCard
+        slug={slug}
+        card={loaderData.live}
+        extras={loaderData.extras}
+        specials={loaderData.specials}
+        spin={loaderData.spin}
+      />
+    );
 
   if (!customerId) {
     return (
@@ -440,21 +464,54 @@ function BringAFriend({ slug, membershipId }: { slug: string; membershipId: stri
 
 type LiveCard = NonNullable<Awaited<ReturnType<typeof getCardFn>>["card"]>;
 
+/** Expiry label for a reward, in the restaurant's own time (Johannesburg). */
+function johannesburgDate(iso: string): string {
+  return new Intl.DateTimeFormat("en-ZA", {
+    dateStyle: "medium",
+    timeZone: "Africa/Johannesburg",
+  }).format(new Date(iso));
+}
+
 /** Live-mode guest card (DATA_MODE=live): RLS-scoped rows from Postgres through
  *  the getCard server function. Demo rendering above is unchanged. */
-function LiveGuestCard({ slug, card }: { slug: string; card: LiveCard }) {
+function LiveGuestCard({
+  slug,
+  card,
+  extras,
+  specials,
+  spin,
+}: {
+  slug: string;
+  card: LiveCard;
+  extras: Awaited<ReturnType<typeof getGuestExtrasFn>> | null | undefined;
+  specials: GuestSpecial[] | null | undefined;
+  spin: Awaited<ReturnType<typeof getGuestSpinFn>> | undefined;
+}) {
   const available = card.rewards.filter((r) => r.status === "available");
   return (
     <GuestShell back={{ to: "/me", label: "My cards" }}>
       <PageHeader
         eyebrow="Loyalty card"
         title={card.restaurant.name}
-        intro={`${card.membership.stampsCurrent} of ${card.restaurant.stampsRequired} stamps · ${card.restaurant.rewardDescription}`}
+        intro={`${card.membership.stampsCurrent} of ${card.restaurant.stampsRequired} stamps · ${rewardGuestLine({ kind: card.restaurant.rewardKind ?? "free_item", description: card.restaurant.rewardDescription, percentOff: card.restaurant.rewardPercentOff ?? null, amountOffCents: card.restaurant.rewardAmountOffCents ?? null })}`}
       />
       <section className="gx-panel">
         {available.length > 0 && (
           <p role="status">
-            <strong>Reward ready:</strong> {available.map((r) => r.description).join(", ")}
+            <strong>Reward ready:</strong>{" "}
+            {available
+              .map((r) =>
+                rewardGuestLine(
+                  {
+                    kind: r.kind ?? "free_item",
+                    description: r.description,
+                    percentOff: r.percentOff ?? null,
+                    amountOffCents: r.amountOffCents ?? null,
+                  },
+                  r.expiresAt ? johannesburgDate(r.expiresAt) : null,
+                ),
+              )
+              .join(", ")}
           </p>
         )}
         <div className="guest-section-heading">
@@ -480,6 +537,10 @@ function LiveGuestCard({ slug, card }: { slug: string; card: LiveCard }) {
           View menu &amp; specials
         </a>
       </section>
+      <GuestSpin slug={slug} state={spin ?? null} />
+      {specials && specials.length > 0 && <GuestSpecials specials={specials} />}
+      {extras && extras.challenges.length > 0 && <GuestChallenges challenges={extras.challenges} />}
+      {extras?.referralCode && <ReferralShare slug={slug} code={extras.referralCode} />}
     </GuestShell>
   );
 }

@@ -20,11 +20,17 @@ import { MISS_YOU_COOLDOWN_DAYS, MISS_YOU_MAX_AFTER_DAYS, MISS_YOU_MIN_AFTER_DAY
 import { WEEKDAYS } from "@/domain/tools";
 import type { SpinConfig, SpinMode, SpinSegment } from "@/data/types";
 import { useDemoState } from "@/data/useDemoState";
-import {
-  getDataModeFn,
-  getLoyaltySettingsFn,
-  updateLoyaltySettingsFn,
-} from "@/server/live";
+import { getDataModeFn, getLoyaltySettingsFn } from "@/server/live";
+import { getGuestTiersFn, getLoyaltyToolsFn } from "@/server/live-tools-fns";
+import { getOwnerPageFn } from "@/server/live-page-fns";
+import { getOwnerWheelFn } from "@/server/live-wheel-fns";
+import type { OwnerWheel } from "@/server/live-wheel";
+import type { OwnerPage } from "@/server/live-page";
+import type { LiveToolsSettings, LiveTiers } from "@/server/live-tools";
+import { LiveToolsTab } from "@/components/patron/live/LiveToolsTab";
+import { LiveStampCardTab } from "@/components/patron/live/LiveStampCardTab";
+import { LiveWheelTab } from "@/components/patron/live/LiveWheelTab";
+import { LiveTiersTab } from "@/components/patron/live/LiveTiersTab";
 import type { LiveLoyaltySettings } from "@/server/live-loyalty";
 
 export const Route = createFileRoute("/app/loyalty")({
@@ -43,7 +49,14 @@ export const Route = createFileRoute("/app/loyalty")({
   loader: async () => {
     const { mode } = await getDataModeFn();
     if (mode !== "live") return { mode, live: null };
-    return { mode, live: await getLoyaltySettingsFn() };
+    const [settings, tools, tiers, ownerPage, ownerWheel] = await Promise.all([
+      getLoyaltySettingsFn(),
+      getLoyaltyToolsFn(),
+      getGuestTiersFn(),
+      getOwnerPageFn(),
+      getOwnerWheelFn(),
+    ]);
+    return { mode, live: settings, liveTools: tools, liveTiers: tiers, livePage: ownerPage, liveWheel: ownerWheel };
   },
   component: Loyalty,
 });
@@ -62,7 +75,17 @@ function blankSegment(): SpinSegment {
 
 function Loyalty() {
   const data = Route.useLoaderData();
-  if (data.mode === "live") return <LiveLoyalty data={data.live} />;
+  if (data.mode === "live") {
+    return (
+      <LiveLoyalty
+        data={data.live}
+        tools={data.liveTools}
+        tiers={data.liveTiers}
+        page={data.livePage}
+        wheel={data.liveWheel}
+      />
+    );
+  }
   return <DemoLoyalty />;
 }
 
@@ -1119,15 +1142,25 @@ function DemoLoyalty() {
   );
 }
 
-function LiveLoyalty({ data }: { data: LiveLoyaltySettings | null }) {
-  const [stampsRequired, setStampsRequired] = useState(data?.stampsRequired ?? 8);
-  const [reward, setReward] = useState(data?.rewardDescription ?? "");
+function LiveLoyalty({
+  data,
+  tools,
+  tiers,
+  page,
+  wheel,
+}: {
+  data: LiveLoyaltySettings | null;
+  tools: LiveToolsSettings | null;
+  tiers: LiveTiers | null;
+  page: OwnerPage | null;
+  wheel: OwnerWheel | null;
+}) {
+  const search = Route.useSearch();
+  const [tab, setTab] = useState<Tab>(search.tab ?? "rewards");
   const [windowMinutes, setWindowMinutes] = useState(data?.visitWindowMinutes ?? 240);
   const [welcomeStamp, setWelcomeStamp] = useState(data?.welcomeStamp ?? false);
   const [marketingCap, setMarketingCap] = useState(data?.marketingWeeklyCap ?? 3);
   const [memberCap, setMemberCap] = useState(data?.memberWeeklyCap ?? 2);
-  const [notice, setNotice] = useState("");
-  const [busy, setBusy] = useState(false);
 
   if (!data) {
     return (
@@ -1141,113 +1174,25 @@ function LiveLoyalty({ data }: { data: LiveLoyaltySettings | null }) {
     );
   }
 
-  const save = async () => {
-    setBusy(true);
-    const result = await updateLoyaltySettingsFn({
-      data: {
-        stampsRequired,
-        rewardDescription: reward,
-        visitWindowMinutes: windowMinutes,
-        welcomeStamp,
-        marketingWeeklyCap: marketingCap,
-        memberWeeklyCap: memberCap,
-      },
-    });
-    setBusy(false);
-    if (!result.ok) {
-      setNotice(result.message);
-      return;
-    }
-    setStampsRequired(result.settings.stampsRequired);
-    setReward(result.settings.rewardDescription);
-    setWindowMinutes(result.settings.visitWindowMinutes);
-    setWelcomeStamp(result.settings.welcomeStamp);
-    setMarketingCap(result.settings.marketingWeeklyCap);
-    setMemberCap(result.settings.memberWeeklyCap);
-    setNotice("Saved. The live card uses these rules now.");
-  };
-
   return (
     <main className="demo-hub page-width">
       <PageHeader
         eyebrow={`Loyalty · ${data.restaurantName}`}
         title="Set the card rules."
         intro="These are the live rules your guests see. Saving here applies them immediately and writes an activity log entry."
-        actions={
-          <button className="builder-primary" type="button" disabled={busy} onClick={save}>
-            {busy ? "Saving…" : "Save rules"}
-          </button>
-        }
       />
-      <section className="builder-panel">
-        <h2>Reward</h2>
-        <div className="builder-fields">
-          <FormField label="Stamps needed" hint="Whole number from 2 to 30.">
-            <input
-              type="number"
-              min={2}
-              max={30}
-              value={stampsRequired}
-              onChange={(event) => setStampsRequired(Number(event.target.value))}
-            />
-          </FormField>
-          <FormField label="What the guest gets" hint="Keep it short and plain.">
-            <input
-              maxLength={120}
-              value={reward}
-              onChange={(event) => setReward(event.target.value)}
-            />
-          </FormField>
-          <FormField label="Minutes between visits" hint="Zero allows a stamp every time.">
-            <input
-              type="number"
-              min={0}
-              max={1440}
-              value={windowMinutes}
-              onChange={(event) => setWindowMinutes(Number(event.target.value))}
-            />
-          </FormField>
-        </div>
-        <Helper>
-          A guest can earn one stamp in this window. Keep it at 240 minutes for a normal cafe.
-        </Helper>
-      </section>
-      <section className="builder-panel">
-        <h2>Starting stamp</h2>
-        <Switch
-          checked={welcomeStamp}
-          onChange={setWelcomeStamp}
-          label="Give one welcome stamp at join"
-          hint="A small head start. It does not earn a reward on its own."
-        />
-      </section>
-      <section className="builder-panel">
-        <h2>Message limits</h2>
-        <div className="builder-fields">
-          <FormField label="Marketing SMS each week" hint="0 to 14 messages per guest.">
-            <input
-              type="number"
-              min={0}
-              max={14}
-              value={marketingCap}
-              onChange={(event) => setMarketingCap(Number(event.target.value))}
-            />
-          </FormField>
-          <FormField label="Card messages each week" hint="0 to 14 messages per guest.">
-            <input
-              type="number"
-              min={0}
-              max={14}
-              value={memberCap}
-              onChange={(event) => setMemberCap(Number(event.target.value))}
-            />
-          </FormField>
-        </div>
-      </section>
-      {notice && (
-        <p className="builder-hint" role="status">
-          {notice}
-        </p>
+      <LoyaltyTabs active={tab} onSelect={setTab} />
+
+      {tab === "rewards" && <LiveStampCardTab data={data} page={page} />}
+      {tab === "tools" && tools && <LiveToolsTab data={tools} />}
+      {tab === "tiers" && tiers && <LiveTiersTab data={tiers} />}
+      {tab === "wheel" && <LiveWheelTab wheel={wheel} />}
+
+      {tab !== "rewards" && tab !== "tools" && tab !== "tiers" && tab !== "wheel" && (
+        <section className="builder-panel" aria-label="Coming soon">
+          <h2>This part of Loyalty is being built</h2>
+          <Helper>The stamp card rules are live on the Rewards tab for now.</Helper>
+        </section>
       )}
     </main>
   );

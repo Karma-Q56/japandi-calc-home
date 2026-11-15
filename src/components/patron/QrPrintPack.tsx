@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { APP_URL } from "@/config/app";
 import { downloadQrPng, qrSvg } from "@/lib/qr";
-import { downloadBlob, qrPdf } from "@/lib/qr-pdf";
+import { downloadBlob, loadLogoJpeg, qrPdf } from "@/lib/qr-pdf";
 import { joinUrl } from "@/lib/qr-links";
 import type { Restaurant } from "@/data/types";
 
@@ -14,9 +14,21 @@ const LAYOUTS = [
 
 type LayoutId = (typeof LAYOUTS)[number]["id"];
 
-export function QrPrintPack({ restaurant }: { restaurant: Restaurant }) {
+export function QrPrintPack({
+  restaurant,
+  logoVersion = null,
+}: {
+  restaurant: Restaurant;
+  /** Live logo version. When set, the QR shows the logo unless the plain switch is on. */
+  logoVersion?: number | null;
+}) {
   const [layoutId, setLayoutId] = useState<LayoutId>("table-tent");
+  const [plain, setPlain] = useState(false);
   const [notice, setNotice] = useState("");
+  const logo =
+    logoVersion !== null && !plain
+      ? { href: `/r/${restaurant.slug}/logo?v=${logoVersion}` }
+      : undefined;
   const layout = LAYOUTS.find((item) => item.id === layoutId) ?? LAYOUTS[0];
   // Start with the configured address on both server and client, then use the
   // browser's own origin after mount. Reading window during the first render
@@ -44,7 +56,17 @@ export function QrPrintPack({ restaurant }: { restaurant: Restaurant }) {
     }
   };
 
-  const downloadPdf = () => {
+  const downloadPdf = async () => {
+    // The logo is optional on the PDF. If it cannot load, the PDF is made with the plain code.
+    let logoJpeg: Awaited<ReturnType<typeof loadLogoJpeg>> | undefined;
+    let logoFailed = false;
+    if (logo) {
+      try {
+        logoJpeg = await loadLogoJpeg(logo.href);
+      } catch {
+        logoFailed = true;
+      }
+    }
     downloadBlob(
       qrPdf({
         url,
@@ -53,10 +75,15 @@ export function QrPrintPack({ restaurant }: { restaurant: Restaurant }) {
         label: layout.label,
         foreground,
         background,
+        logo: logoJpeg,
       }),
       `${restaurant.slug}-${layout.id}.pdf`,
     );
-    setNotice("PDF downloaded at A4 size, ready to print.");
+    setNotice(
+      logoFailed
+        ? "PDF downloaded at A4 size with the plain code, because the logo could not load."
+        : "PDF downloaded at A4 size, ready to print.",
+    );
   };
 
   return (
@@ -72,6 +99,12 @@ export function QrPrintPack({ restaurant }: { restaurant: Restaurant }) {
             ))}
           </select>
         </label>
+        {logoVersion !== null && (
+          <label className="builder-field">
+            <input type="checkbox" checked={plain} onChange={(event) => setPlain(event.target.checked)} />
+            Use plain QR code
+          </label>
+        )}
         <button className="builder-secondary no-print" onClick={() => window.print()}>
           Print this layout
         </button>
@@ -102,7 +135,7 @@ export function QrPrintPack({ restaurant }: { restaurant: Restaurant }) {
         <div
           className="qr-code"
           style={{ background }}
-          dangerouslySetInnerHTML={{ __html: qrSvg(url, foreground, background) }}
+          dangerouslySetInnerHTML={{ __html: qrSvg(url, foreground, background, logo) }}
         />
         <div className="qr-copy">
           <span className="eyebrow" style={{ color: foreground }}>

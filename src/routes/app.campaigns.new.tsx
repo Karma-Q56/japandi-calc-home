@@ -1,6 +1,19 @@
-import { createFileRoute, redirect, useNavigate, useSearch } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate, useRouter, useSearch } from "@tanstack/react-router";
 import { countLabel } from "@/lib/count-label";
 import { useState } from "react";
+import { getDataModeFn } from "@/server/live";
+import { countRecipientsFn, createCampaignFn } from "@/server/live-campaign-create-fns";
+import {
+  CHANNEL_CHOICES,
+  CODE_PATTERN,
+  MESSAGE_MAX,
+  SEGMENT_SAMPLE_NAME,
+  formatRand,
+  heldCostCents,
+  reachFor,
+  type LiveChannel,
+  type ReachCounts,
+} from "@/lib/live-campaigns";
 import { api } from "@/api";
 import {
   checkCopy,
@@ -14,6 +27,7 @@ import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
 import { PreviewOnly, PublishSteps, PushPreview, SmsPreview } from "@/components/patron/preview";
 import { Switch } from "@/components/patron/Switch";
+import { FormField, PageHeader } from "@/components/patron/dash";
 import {
   applyFillIns,
   messageFillFacts,
@@ -24,9 +38,12 @@ import type { CampaignAudience, SegmentType } from "@/data/types";
 import { useDemoState } from "@/data/useDemoState";
 
 export const Route = createFileRoute("/app/campaigns/new")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode === "live") return;
     if (!requireRole("owner", "manager")(demoRepo.read().session)) throw redirect({ to: "/login" });
   },
+  loader: async () => getDataModeFn(),
   validateSearch: (search: Record<string, unknown>) => ({
     listId: typeof search["listId"] === "string" ? search["listId"] : undefined,
     segment:
@@ -44,8 +61,179 @@ export const Route = createFileRoute("/app/campaigns/new")({
         ? search["name"].slice(0, 80)
         : undefined,
   }),
-  component: ComposerPage,
+  component: NewCampaignPage,
 });
+
+function NewCampaignPage() {
+  const { mode } = Route.useLoaderData();
+  const search = useSearch({ from: "/app/campaigns/new" });
+  if (mode === "live") return <LiveCampaignComposer audience={search.segment} weekday={search.weekday} />;
+  return <ComposerPage />;
+}
+
+function LiveCampaignComposer({ audience, weekday }: { audience: SegmentType | undefined; weekday: number | undefined }) {
+  const router = useRouter();
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [name, setName] = useState("");
+  const [body, setBody] = useState("Hi {first_name}, we miss you! Pop by this week.");
+  const [code, setCode] = useState("");
+  const [segment, setSegment] = useState<SegmentType>(audience ?? "everyone");
+  const [day, setDay] = useState(weekday ?? 3);
+  const [channel, setChannel] = useState<LiveChannel>("sms");
+  const [counts, setCounts] = useState<ReachCounts | null>(null);
+  const [scheduledAt, setScheduledAt] = useState("");
+  const [notice, setNotice] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+
+  // Counted as the guest receives it: a long first name filled in and the STOP line added.
+  const segments = messageSegments(body, SEGMENT_SAMPLE_NAME);
+  const recipients = counts === null ? null : reachFor(channel, counts);
+  const cost = counts === null ? 0 : heldCostCents(channel, counts, segments);
+  const liveAudience = (): CampaignAudience => {
+    if (segment === "weekday") return { type: "weekday", weekday: day };
+    if (segment === "new") return { type: "new", days: 14 };
+    if (segment === "lapsed30") return { type: "lapsed30", days: 30 };
+    if (segment === "close_to_reward") return { type: "close_to_reward", remaining: 2 };
+    if (segment === "birthday_month") return { type: "birthday_month", month: new Date().getMonth() + 1 };
+    return { type: "everyone" };
+  };
+
+  const countNow = async () => {
+    setBusy(true);
+    const result = await countRecipientsFn({ data: { audience: liveAudience() as never } });
+    setBusy(false);
+    if (result.ok) setCounts(result.counts);
+    else setNotice(result.message);
+  };
+
+  const create = async () => {
+    setBusy(true);
+    const result = await createCampaignFn({
+      data: {
+        name,
+        body,
+        code: code.trim().toUpperCase(),
+        audience: liveAudience() as never,
+        scheduledAt: scheduledAt ? new Date(scheduledAt).toISOString() : new Date(Date.now() + 60_000).toISOString(),
+        segments,
+        channel,
+      },
+    });
+    setBusy(false);
+    if (result.ok) {
+      setDone(true);
+      setNotice("Campaign scheduled. Its cost is held from your credit until it is sent.");
+      await router.invalidate();
+    } else {
+      setNotice(result.message);
+    }
+  };
+
+  return (
+    <main className="demo-hub page-width">
+      <PageHeader
+        eyebrow="New campaign"
+        title="Send an offer to your guests."
+        intro="Offers go to guests who said yes to them. Texts end with a STOP line, and quiet hours move a send to 08:00."
+      />
+      <p className="demo-data-note">Step {step} of 3</p>
+      {step === 1 && (
+        <section className="builder-panel">
+          <h2>Offer and wording</h2>
+          <FormField label="Campaign name" hint="Only you see this name.">
+            <input value={name} maxLength={120} onChange={(event) => setName(event.target.value)} />
+          </FormField>
+          <FormField label="Message" hint={`${body.length} of ${MESSAGE_MAX} characters, ${segments} ${segments === 1 ? "text" : "texts"} each. The STOP line is added for you.`}>
+            <textarea value={body} maxLength={MESSAGE_MAX} onChange={(event) => setBody(event.target.value)} />
+          </FormField>
+          <FormField label="Campaign code" hint="3 to 12 letters or numbers. Guests show it at the till.">
+            <input value={code} maxLength={12} onChange={(event) => setCode(event.target.value.toUpperCase())} />
+          </FormField>
+          <button className="builder-primary" onClick={() => setStep(2)} disabled={name.trim() === "" || body.trim() === "" || !CODE_PATTERN.test(code.trim().toUpperCase())}>
+            Next: choose guests
+          </button>
+        </section>
+      )}
+      {step === 2 && (
+        <section className="builder-panel">
+          <h2>Who gets it</h2>
+          <FormField label="Audience">
+            <select value={segment} onChange={(event) => { setSegment(event.target.value as SegmentType); setCounts(null); }}>
+              {SEGMENT_CHOICES.filter((choice) => choice.type !== "saved_list").map((choice) => (
+                <option key={choice.type} value={choice.type}>{choice.title}</option>
+              ))}
+            </select>
+          </FormField>
+          {segment === "weekday" && (
+            <FormField label="Day">
+              <select value={day} onChange={(event) => { setDay(Number(event.target.value)); setCounts(null); }}>
+                {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((label, index) => (
+                  <option key={label} value={index}>{label}</option>
+                ))}
+              </select>
+            </FormField>
+          )}
+          <FormField label="How it goes out">
+            <div className="cmp-options" role="radiogroup" aria-label="How it goes out">
+              {CHANNEL_CHOICES.map((choice) => (
+                <button
+                  key={choice.channel}
+                  type="button"
+                  role="radio"
+                  aria-checked={channel === choice.channel}
+                  className={`cmp-option${channel === choice.channel ? " is-on" : ""}`}
+                  onClick={() => setChannel(choice.channel)}
+                >
+                  <b>{choice.title}</b>
+                  <span>{choice.hint}</span>
+                </button>
+              ))}
+            </div>
+          </FormField>
+          <p className="demo-data-note">
+            {counts === null || recipients === null
+              ? "Count the guests this audience reaches before you continue."
+              : channel === "both"
+                ? `${countLabel(recipients, "guest")} can be reached: ${counts.push} by push, and a text only if the push fails (${counts.sms} guests can get a text).`
+                : channel === "push"
+                  ? `${countLabel(recipients, "guest")} will get this push notification.`
+                  : `${countLabel(recipients, "guest")} will get this text.`}
+          </p>
+          <button className="builder-secondary" onClick={countNow} disabled={busy}>
+            Count guests
+          </button>{" "}
+          <button className="builder-primary" onClick={() => setStep(3)} disabled={recipients === null || recipients === 0}>
+            Next: review
+          </button>
+        </section>
+      )}
+      {step === 3 && !done && (
+        <section className="builder-panel">
+          <h2>Review and schedule</h2>
+          <FormField label="Send time" hint="Leave empty to send in about a minute. Times in quiet hours move to 08:00.">
+            <input type="datetime-local" value={scheduledAt} onChange={(event) => setScheduledAt(event.target.value)} />
+          </FormField>
+          <ul>
+            <li>Guests: {recipients ?? 0}</li>
+            {channel !== "push" && <li>Texts each: {segments}</li>}
+            <li>Cost held from credit: {formatRand(cost)}{channel === "push" ? " (push is free)" : ""}</li>
+          </ul>
+          <p className="demo-data-note">Only guests who said yes to offers are included. Guests who opted out or withdrew never get a text or a push.</p>
+          <button className="builder-primary" onClick={create} disabled={busy}>
+            Create campaign
+          </button>
+        </section>
+      )}
+      {done && <p className="demo-data-note" role="status"><a href="/app/campaigns">See your campaigns</a></p>}
+      {notice && (
+        <p className="cmp-warn" role="status">
+          {notice}
+        </p>
+      )}
+    </main>
+  );
+}
 
 const zar = (cents: number) => `R${(cents / 100).toFixed(2)}`;
 const SEGMENT_CHOICES: Array<{ type: SegmentType; title: string; hint: string }> = [

@@ -440,6 +440,10 @@ if (canRunLive) {
         const loyalty = await saveLoyaltySettings(ownerA(), {
           stampsRequired: 9,
           rewardDescription: "Safety reward",
+          rewardKind: "free_item",
+          rewardPercentOff: null,
+          rewardAmountOffCents: null,
+          rewardValidDays: null,
           visitWindowMinutes: 240,
           welcomeStamp: true,
           marketingWeeklyCap: 3,

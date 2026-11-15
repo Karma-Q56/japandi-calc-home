@@ -571,6 +571,30 @@ The older `.dev.vars` URLs were rejected by the server, so the run used the
 configured migration branch and the app role password from the local env file.
 No production database was contacted.
 
+## 25. Phase D12d: the live spin wheel (14 November 2026)
+The wheel has one kind per restaurant: a welcome spin (one when a guest joins, always gives something), earned spins
+(one every N visits, may land on a try again) or the reward decider (when a guest earns their card reward, the wheel
+picks which reward they get, and never one worth less than the smallest value the owner set). Up to 8 prizes, each with
+a chance weight. Prizes are a free item, percent off, rand off, 1 to 5 bonus stamps, or a try again.
+
+The server draws every result in SQL (`spin_wheel` in `0019_spin_wheel_dev.sql`) with the database's own random numbers.
+The browser only animates the prize it is given. One spin uses up one earned spin in the same transaction as the prize,
+and the table refuses `used > earned`. A spin id made by the browser pays once, so a retry returns the same result.
+A guest can only spin their own card, and the app role cannot write the wheel tables or `spin_result` directly.
+
+Choices made without asking:
+- Earned spins count visits from the day the wheel is switched on, never earlier visits. Bonus stamps do not count.
+- A stamp that is later undone does not take back a spin the guest already earned.
+- The reward decider only draws real rewards whose "worth" is at least the smallest value. If none qualifies, the guest
+  keeps the reward they earned. Each earned reward is decided once.
+- The welcome spin is open to any member who has not used it, not only new members.
+- Guests see equal slices and no weights. Owners see the odds in plain words and can test the wheel (a test uses nobody's
+  spin and creates no reward).
+- Not in this version: weekly prize limits or a budget. The wheel is limited by how many spins guests earn.
+- Spins, wheel saves and tests are rate limited per person per hour.
+- Bonus stamps can take a card past its goal. The reward is then given at the next recorded visit, the same as for
+  challenge bonus stamps.
+
 ## Pricing placeholders
 Starter, Growth and Pro, with placeholder monthly bands and a once-off setup band,
 live only in `src/lib/patron.ts` so names and prices change in one place.
@@ -578,3 +602,35 @@ The feature table and planner read the same arrays; everything stays marked prop
 
 ## Help from Patron
 Help mode is a time boxed session, not a role change. The demo keeps drafts and requests in browser storage; `0011_help_mode_dev.sql` adds the live tables and blocks operator writes once the window closes. Drafts carry a fixed label, and operators never see full guest numbers. The privacy wording for this feature needs a lawyer before it goes live.
+
+## "Try this dish" challenge (D12f)
+
+An owner can set a challenge that asks a guest to order one dish, or any dish in one section, a set number of times in a set number of days. Only orders made after the challenge starts count, and only the chosen dish or section counts. The owner picks from dishes that are on the menu now. A dish or section must belong to the same restaurant as the challenge; the database refuses anything else. The guest card shows "1 of 2 ordered". The reward is the same as the other challenges: bonus stamps, a free item, or a discount. Each guest can claim it once.
+
+## D21: Plans, billing and payments (migration 0032, applied to the dev database only)
+
+Plan limits and prices are data in `src/config/plans.ts` (`planBilling`). The pricing page and the owner billing screen read the same data. Money is always whole cents in rand. The server builds every amount; the browser never sends a plan or an amount that is trusted.
+
+- **Location limit.** A new location past the plan limit is refused by a trigger (`plan_limit_locations`). Limits live in the `plan_limit` table: starter 1, managed 3, partner 10, custom 50.
+- **D20 is not in this base.** D20 (branches) is not merged, so there is no `location_limit` table. The trigger and its function are created in 0032 instead. 0031 stays reserved for D20.
+- **Card payments (PayFast).** Hosted checkout only, no card data on our side. Monthly plans are subscriptions; top ups are one-off payments. The ITN webhook at `/api/webhooks/payments` checks the signature, the merchant id, the amount against the stored payment, then validates with PayFast before settling. Repeats are safe.
+- **One credit, one time.** A paid top up writes one `topup` ledger entry with reference `payment:<id>` in the same transaction that marks it paid. Failed and cancelled payments change nothing. Top ups are bounded R100 to R100 000.
+- **Refunds** are an operator action that writes a `refund` entry with a note. They are not built into the owner screen.
+- **Invoices.** The operator creates an invoice. The owner sees it with bank details. The operator marks it paid with a payment reference, once. Each step writes an audit row. Bank details come from the env variable `PATRON_BANK_DETAILS`, never from code.
+- **Pro plan** has no online price; it is invoiced only.
+- **Payment status** gained `paid`, `failed` and `cancelled` (the existing values stay).
+- **Ops invoice buttons are not wired.** The `ops.credit` and `ops.restaurants` screens are demo-only today. Live invoice actions exist on the server (`createLiveInvoice`), but no button was added there.
+
+Environment variables (set in the host, never in code): `PAYFAST_MERCHANT_ID`, `PAYFAST_MERCHANT_KEY`, `PAYFAST_PASSPHRASE`, `PAYFAST_MODE` (`sandbox` or `live`), `PATRON_BANK_DETAILS`. When the PayFast values are missing, checkout refuses with a clear message.
+
+Claude's review fixes (14 Nov):
+
+- **Only the webhook settles a payment.** `settle_card_payment` refuses any call made with a restaurant or guest context, so a signed-in owner or guest cannot settle a payment even if server code around it is wrong. It also refuses outcomes it does not know.
+- **No double billing.** A monthly payment names its plan (`payment.plan`). The first paid notice switches the restaurant to that plan. A second monthly payment is refused (`subscription_exists`) while one is paid, so changing or stopping a running monthly payment is something Patron does by hand (cancel it in the PayFast dashboard, then change the plan). A plan with fewer locations than the restaurant has open is refused.
+- **Invoices are read only for the app role.** Writes go through the operator functions only.
+- **PayFast details.** Signatures encode characters the way PHP does (brackets, apostrophes, `~`), compare in constant time, and a `PENDING` notice changes nothing. The validation call sends the notice without its signature, with an 8 second timeout. The checkout address (return, cancel and notify links) is read from the request on the server, never from the browser. Starting a payment is limited to 20 a hour per person.
+- **The screen only promises what exists.** Monthly SMS credit is not granted by anything, so the screen does not mention it (`includedSmsCredit` stays in the data for later).
+
+Still not built (tell Karma before real money): recurring monthly notices after the first one are ignored (already paid), so a failed renewal does nothing, and the 7 day grace and campaign pause described on the screen are not enforced yet; the operator invoice buttons; refunds; the PayFast sandbox test. The validation call format follows PayFast's published example and has not been run against the sandbox.
+
+Not in this phase: a real payment (tested later in PayFast sandbox), SARS tax invoices (D22).

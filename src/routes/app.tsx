@@ -24,6 +24,7 @@ import {
 } from "@/components/patron/OwnerNav";
 import { FormField, PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
 import { DemoHome } from "@/components/patron/DemoHome";
+import { LivePublishCard } from "@/components/patron/LivePublishCard";
 import { BackLink } from "@/components/patron/BackLink";
 import { markOutletComponent } from "@/lib/nested";
 import { signOut } from "@/lib/sign-out";
@@ -422,6 +423,7 @@ function Overview({
   if (live) {
     return (
       <>
+        <LivePublishCard />
         {published ? null : <NextSteps />}
         <OverviewBody data={live} />
       </>
@@ -493,7 +495,7 @@ function OverviewBody({ data }: { data: Overview }) {
           <>
             <p>No campaign planned.</p>
             <div className="page-actions">
-              <a className="builder-primary" href="/app/campaigns/new">
+              <a className="builder-secondary" href="/app/campaigns/new">
                 New campaign
               </a>
             </div>

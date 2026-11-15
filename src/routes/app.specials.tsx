@@ -15,15 +15,25 @@ import {
   StatGrid,
 } from "@/components/patron/dash";
 import { Tabs } from "@/components/patron/kit";
+import { getDataModeFn } from "@/server/live";
+import { getSpecialsFn } from "@/server/live-specials-fns";
+import { LiveSpecialsTab } from "@/components/patron/live/LiveSpecialsTab";
 
 export const Route = createFileRoute("/app/specials")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode === "live") return;
     if (!requireRole("owner", "manager")(demoRepo.read().session)) throw redirect({ to: "/login" });
+  },
+  loader: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode !== "live") return { mode, live: null };
+    return { mode, live: await getSpecialsFn() };
   },
   component: OffersPage,
 });
 
-type Tab = "offers" | "messages" | "credit";
+type Tab = "offers" | "messages" | "credit" | "specials";
 
 const zar = (cents: number) => `R${(cents / 100).toFixed(2)}`;
 const day = (iso: string | undefined) =>
@@ -59,8 +69,51 @@ function offerStatus(offer: Offer, campaign: Campaign | undefined) {
 type OfferRow = { offer: Offer; campaign: Campaign | undefined; history: boolean };
 
 function OffersPage() {
-  const state = useDemoState();
+  const data = Route.useLoaderData();
   const [tab, setTab] = useState<Tab>("offers");
+  if (data.mode === "live") return <LiveSpecialsPage specials={data.live} tab={tab} setTab={setTab} />;
+  return <DemoOffersPage tab={tab} setTab={setTab} />;
+}
+
+function LiveSpecialsPage({
+  specials,
+  tab,
+  setTab,
+}: {
+  specials: Awaited<ReturnType<typeof getSpecialsFn>>;
+  tab: Tab;
+  setTab: (tab: Tab) => void;
+}) {
+  const count = specials?.length ?? 0;
+  return (
+    <main className="demo-hub page-width">
+      <PageHeader
+        eyebrow="Campaigns"
+        title="Specials"
+        intro="A special is a deal a guest can use at the till. Public and members-only specials have one code. Targeted ones give each guest their own code."
+      />
+      <Tabs
+        label="Campaign sections"
+        value={tab}
+        onChange={setTab}
+        options={[
+          { value: "offers", label: "Campaigns" },
+          { value: "specials", label: `Specials (${count})` },
+        ]}
+      />
+      {tab === "specials" ? (
+        <LiveSpecialsTab specials={specials} />
+      ) : (
+        <p role="status" className="demo-data-note">
+          Live campaigns are not ready yet. Specials are live now.
+        </p>
+      )}
+    </main>
+  );
+}
+
+function DemoOffersPage({ tab, setTab }: { tab: Tab; setTab: (tab: Tab) => void }) {
+  const state = useDemoState();
   const restaurant =
     state.restaurants.find((item) => item.id === state.session.restaurantId) ??
     state.restaurants[0]!;

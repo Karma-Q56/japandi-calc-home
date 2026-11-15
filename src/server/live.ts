@@ -368,6 +368,10 @@ export const updateLoyaltySettingsFn = createServerFn({ method: "POST" })
     z.object({
       stampsRequired: z.number().int().min(2).max(30),
       rewardDescription: z.string().trim().min(1).max(120),
+      rewardKind: z.enum(["free_item", "percent_off", "amount_off"]),
+      rewardPercentOff: z.number().int().min(1).max(100).nullable(),
+      rewardAmountOffCents: z.number().int().min(1).nullable(),
+      rewardValidDays: z.number().int().min(1).max(365).nullable(),
       visitWindowMinutes: z.number().int().min(0).max(1440),
       welcomeStamp: z.boolean(),
       marketingWeeklyCap: z.number().int().min(0).max(14),
