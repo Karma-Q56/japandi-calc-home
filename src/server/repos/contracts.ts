@@ -54,6 +54,8 @@ export interface PublicPage {
   pageTemplate: string;
   menu: PublicMenuItem[];
   specials: PublicSpecial[];
+  /** Active branches, main first. Empty for a single-site venue with no branch rows. */
+  branches: Array<{ id: string; name: string; suburb: string | null; isMain: boolean }>;
 }
 
 export interface LeadInput {

@@ -4,6 +4,7 @@ import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
 import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
+import { branchLabel } from "@/lib/live-locations";
 import { getDataModeFn } from "@/server/live";
 import { LiveTeam } from "@/components/patron/LiveTeam";
 import { EmptyState, FormField, PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
@@ -38,7 +39,11 @@ function DemoTeam() {
   const [notice, setNotice] = useState("");
   const [shownPin, setShownPin] = useState<{ staff: string; pin: string } | null>(null);
   const [pairing, setPairing] = useState<string | null>(null);
+  const [pairingBranch, setPairingBranch] = useState("");
   const staff = state.staff.filter((s) => s.restaurantId === restaurant.id);
+  const branches = api.branch.list(restaurant.id).filter((b) => b.active);
+  const mainBranch = branches.find((b) => b.isMain) ?? branches[0];
+  const currentPairingBranch = pairingBranch || mainBranch?.id || "";
   const lastResult = api.team.lastStamps(restaurant.id);
   const lastStamps: Record<string, string | null> = lastResult.ok ? lastResult.data : {};
 
@@ -63,9 +68,30 @@ function DemoTeam() {
     setNotice("");
   };
 
+  const changeBranch = (staffId: string, value: string) => {
+    const actor = state.session.staffId ?? "owner";
+    const allBranches = value === "all";
+    const result = api.branch.setStaff(
+      restaurant.id,
+      staffId,
+      allBranches ? null : value,
+      allBranches,
+      actor,
+    );
+    if (!result.ok) {
+      setNotice(result.error.message);
+      return;
+    }
+    setNotice("");
+  };
+
   const createCode = async () => {
     const actor = state.session.staffId ?? "owner";
-    const result = await api.team.createPairingCode(restaurant.id, actor);
+    const result = await api.team.createPairingCode(
+      restaurant.id,
+      actor,
+      currentPairingBranch || null,
+    );
     if (!result.ok) {
       setNotice(result.error.message);
       return;
@@ -112,6 +138,20 @@ function DemoTeam() {
             </small>
           </span>
           <span className="row-actions">
+            <FormField label="Branch">
+              <select
+                value={member.allBranches ? "all" : (member.locationId ?? "")}
+                disabled={branches.length === 0}
+                onChange={(event) => changeBranch(member.id, event.target.value)}
+              >
+                <option value="all">All branches</option>
+                {branches.map((branch) => (
+                  <option key={branch.id} value={branch.id}>
+                    {branchLabel(branch.name, branch.isMain)}
+                  </option>
+                ))}
+              </select>
+            </FormField>
             <button
               className="builder-secondary"
               onClick={() => void issue(member.id, member.displayName)}
@@ -153,7 +193,24 @@ function DemoTeam() {
       <section className="builder-panel">
         <h2>Pair a till</h2>
         <p>Codes are 8 letters or numbers, valid for 10 minutes and can be used once.</p>
-        <button className="builder-secondary" onClick={() => void createCode()}>
+        <FormField label="Branch for this till">
+          <select
+            value={currentPairingBranch}
+            disabled={branches.length === 0}
+            onChange={(event) => setPairingBranch(event.target.value)}
+          >
+            {branches.map((branch) => (
+              <option key={branch.id} value={branch.id}>
+                {branchLabel(branch.name, branch.isMain)}
+              </option>
+            ))}
+          </select>
+        </FormField>
+        <button
+          className="builder-secondary"
+          disabled={!currentPairingBranch}
+          onClick={() => void createCode()}
+        >
           Generate pairing code
         </button>
         {pairing && (

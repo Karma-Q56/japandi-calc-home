@@ -755,6 +755,7 @@ export interface PairingCode {
   codeHash: string;
   expiresAt: number;
   usedAt?: number;
+  locationId?: string | null;
 }
 export interface OtpSendLogEntry {
   id: string;
@@ -792,6 +793,7 @@ export interface DemoSession {
   customerId?: string;
   staffId?: string;
   tillPairedRestaurantId?: string;
+  tillPairedLocationId?: string | null;
   staffExpiresAt?: number;
   /** Set while a Patron operator is helping in a restaurant. */
   helpMode?: { restaurantId: string; operator: string; until: string };

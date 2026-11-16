@@ -127,7 +127,11 @@ export function staffSessionValid(now = clock.now()): boolean {
 }
 
 /** Owner creates an 8-char pairing code, valid 10 minutes, single use. */
-export async function createPairingCode(restaurantId: string, actorId: string) {
+export async function createPairingCode(
+  restaurantId: string,
+  actorId: string,
+  locationId: string | null = null,
+) {
   const code = randomPairingCode();
   const codeHash = await hashPairingCode(code);
   const now = clock.now();
@@ -136,7 +140,7 @@ export async function createPairingCode(restaurantId: string, actorId: string) {
     ...current,
     pairingCodes: [
       ...current.pairingCodes,
-      { id, restaurantId, codeHash, expiresAt: now + PAIRING_CODE_MS },
+      { id, restaurantId, codeHash, expiresAt: now + PAIRING_CODE_MS, locationId },
     ],
   }));
   logAudit({ actor: actorId, action: "pairing", restaurantId, object: id });
@@ -158,6 +162,7 @@ export async function redeemPairingCode(code: string) {
     session: {
       ...current.session,
       tillPairedRestaurantId: entry.restaurantId,
+      tillPairedLocationId: entry.locationId ?? null,
     },
   }));
   logAudit({

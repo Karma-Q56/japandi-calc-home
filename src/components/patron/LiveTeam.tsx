@@ -6,7 +6,10 @@ import {
   resetStaffPinFn,
   setStaffActiveFn,
 } from "@/server/live";
+import { getBranchesFn, setStaffBranchFn } from "@/server/live-locations-fns";
+import type { BranchRow } from "@/server/live-locations";
 import type { LiveStaffRow } from "@/server/live-till";
+import { branchLabel } from "@/lib/live-locations";
 import { EmptyState, FormField, PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
 
 /**
@@ -21,6 +24,8 @@ export function LiveTeam() {
   const [pairing, setPairing] = useState<{ code: string; expiresAt: number } | null>(null);
   const [tick, setTick] = useState(Date.now());
   const [busy, setBusy] = useState(false);
+  const [branches, setBranches] = useState<BranchRow[]>([]);
+  const [pairingBranch, setPairingBranch] = useState("");
 
   const load = async () => {
     const result = await getTeamFn();
@@ -34,6 +39,11 @@ export function LiveTeam() {
 
   useEffect(() => {
     void load();
+    void getBranchesFn().then((state) => {
+      const active = (state?.branches ?? []).filter((branch) => branch.active);
+      setBranches(active);
+      setPairingBranch((current) => current || active.find((b) => b.isMain)?.id || active[0]?.id || "");
+    });
   }, []);
 
   useEffect(() => {
@@ -76,8 +86,29 @@ export function LiveTeam() {
     await load();
   };
 
+  const changeBranch = async (member: LiveStaffRow, value: string) => {
+    const allBranches = value === "all";
+    setBusy(true);
+    const result = await setStaffBranchFn({
+      data: {
+        staffId: member.id,
+        locationId: allBranches ? null : value,
+        allBranches,
+      },
+    });
+    setBusy(false);
+    if (!result.ok) {
+      setNotice(result.message);
+      return;
+    }
+    setNotice("");
+    await load();
+  };
+
   const createCode = async () => {
-    const result = await createTillPairingFn();
+    const result = await createTillPairingFn({
+      data: { locationId: pairingBranch || null },
+    });
     if (!result.ok) {
       setNotice(result.message);
       return;
@@ -126,6 +157,20 @@ export function LiveTeam() {
             </small>
           </span>
           <span className="row-actions">
+            <FormField label="Branch">
+              <select
+                value={member.allBranches ? "all" : (member.locationId ?? "")}
+                disabled={busy || branches.length === 0}
+                onChange={(event) => void changeBranch(member, event.target.value)}
+              >
+                <option value="all">All branches</option>
+                {branches.map((branch) => (
+                  <option key={branch.id} value={branch.id}>
+                    {branchLabel(branch.name, branch.isMain)}
+                  </option>
+                ))}
+              </select>
+            </FormField>
             <button
               className="builder-secondary"
               disabled={busy}
@@ -172,7 +217,24 @@ export function LiveTeam() {
       <section className="builder-panel">
         <h2>Pair a till</h2>
         <p>Codes are 8 letters or numbers, valid for 10 minutes and can be used once.</p>
-        <button className="builder-secondary" disabled={busy} onClick={() => void createCode()}>
+        <FormField label="Branch for this till">
+          <select
+            value={pairingBranch}
+            disabled={busy || branches.length === 0}
+            onChange={(event) => setPairingBranch(event.target.value)}
+          >
+            {branches.map((branch) => (
+              <option key={branch.id} value={branch.id}>
+                {branchLabel(branch.name, branch.isMain)}
+              </option>
+            ))}
+          </select>
+        </FormField>
+        <button
+          className="builder-secondary"
+          disabled={busy || !pairingBranch}
+          onClick={() => void createCode()}
+        >
           Generate pairing code
         </button>
         {pairing && (

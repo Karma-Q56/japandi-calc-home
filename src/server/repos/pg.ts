@@ -160,6 +160,10 @@ export function createPgRepos(ctx: Ctx): PatronRepos {
           tx,
           sql`select id, title, body, starts_at, ends_at, active, kind, code, min_tier from special where restaurant_id = ${r.id} and active = true order by created_at desc`,
         );
+        const branchRes = await q<{ id: string; name: string; suburb: string | null; is_main: boolean }>(
+          tx,
+          sql`select id, name, suburb, is_main from location where restaurant_id = ${r.id} and active = true order by is_main desc, name`,
+        );
         return {
           id: r.id,
           slug: r.slug,
@@ -196,6 +200,7 @@ export function createPgRepos(ctx: Ctx): PatronRepos {
             code: x.code,
             minTier: x.min_tier,
           })),
+          branches: branchRes.map((b) => ({ id: b.id, name: b.name, suburb: b.suburb, isMain: b.is_main })),
         };
       });
     },

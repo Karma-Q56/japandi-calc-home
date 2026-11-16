@@ -43,6 +43,8 @@ export type LiveStaffRow = {
   displayName: string;
   active: boolean;
   lastStampAt: string | null;
+  locationId: string | null;
+  allBranches: boolean;
 };
 
 export type LivePairingCode = {
@@ -55,6 +57,8 @@ export type TillRestaurant = {
   slug: string;
   name: string;
   stampsRequired: number;
+  /** Name of the branch this till is paired to, or the main branch for an older till. */
+  branchName: string | null;
 };
 
 export type TillState = {
@@ -324,6 +328,8 @@ export async function loadTeam(viewer: Viewer): Promise<{ staff: LiveStaffRow[] 
         display_name: string;
         active: boolean;
         last_stamp: string | null;
+        location_id: string | null;
+        all_branches: boolean;
       }>(
         transaction,
         sql`
@@ -331,6 +337,8 @@ export async function loadTeam(viewer: Viewer): Promise<{ staff: LiveStaffRow[] 
             s.id,
             s.display_name,
             s.active,
+            s.location_id,
+            s.all_branches,
             (
               select max(e.created_at) from stamp_event e
               where e.staff_id = s.id
@@ -348,6 +356,8 @@ export async function loadTeam(viewer: Viewer): Promise<{ staff: LiveStaffRow[] 
           displayName: row.display_name,
           active: row.active,
           lastStampAt: row.last_stamp ? new Date(row.last_stamp).toISOString() : null,
+          locationId: row.location_id,
+          allBranches: row.all_branches,
         })),
       };
     },
@@ -661,6 +671,18 @@ export async function loadTillState(): Promise<TillState> {
       );
       const restaurant = restaurants[0];
       if (!restaurant) return empty;
+      const branchRows = await q<{ name: string }>(
+        transaction,
+        sql`
+          select name from location
+          where restaurant_id = ${restaurantId}
+            and (
+              id = ${tillLocationId()}::uuid
+              or (${tillLocationId()}::uuid is null and is_main)
+            )
+          limit 1
+        `,
+      );
       const crewRows = await q<{ id: string; display_name: string }>(
         transaction,
         sql`
@@ -679,6 +701,7 @@ export async function loadTillState(): Promise<TillState> {
           slug: restaurant.slug,
           name: restaurant.name,
           stampsRequired: restaurant.stamps_required,
+          branchName: branchRows[0]?.name ?? null,
         },
         staff: signedIn ?? null,
         expiresAt: signedIn ? session!.expiresAt : null,
