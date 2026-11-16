@@ -634,3 +634,14 @@ Claude's review fixes (14 Nov):
 Still not built (tell Karma before real money): recurring monthly notices after the first one are ignored (already paid), so a failed renewal does nothing, and the 7 day grace and campaign pause described on the screen are not enforced yet; the operator invoice buttons; refunds; the PayFast sandbox test. The validation call format follows PayFast's published example and has not been run against the sandbox.
 
 Not in this phase: a real payment (tested later in PayFast sandbox), SARS tax invoices (D22).
+
+## 15. Branches: one loyalty card, one main branch, a plan limit
+
+- A restaurant can have several branches (locations). One branch is always the main one. The main branch cannot be turned off until another branch is made main.
+- A guest keeps one card for the whole restaurant. Stamps from every branch count on the same card.
+- The plan sets how many branches can be on at once: Starter 1, Managed 3, Partner 10, Custom 50 (demo restaurant is on Custom).
+- A till paired for a branch stamps at that branch. Staff can work at one branch, or at all branches when the owner ticks "All branches".
+- A staff member who works at another branch is refused at a till with: "This team member works at another branch." The message does not say which branch.
+- Branches are turned off, never deleted. Turning off keeps the history.
+- Demo mode stores branches in the demo state with seed branches Parkhurst (main) and Sandton.
+- Still to do: staff branch picker on the Team screen, branch filter on Insights, and branch names on the public page.

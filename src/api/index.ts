@@ -50,6 +50,15 @@ import {
 } from "@/domain/team";
 import { listAudit } from "@/domain/audit";
 import {
+  branchesFor,
+  createBranch,
+  makeMainBranch,
+  setStaffBranch,
+  turnOffBranch,
+  turnOnBranch,
+  updateBranch,
+} from "@/domain/locations";
+import {
   recordOrder,
   quickItems,
   searchMenu,
@@ -250,6 +259,15 @@ export const api = {
     pairThisDevice,
   },
   audit: { list: listAudit },
+  branch: {
+    list: branchesFor,
+    create: createBranch,
+    update: updateBranch,
+    makeMain: makeMainBranch,
+    turnOff: turnOffBranch,
+    turnOn: turnOnBranch,
+    setStaff: setStaffBranch,
+  },
   dash: { overview },
   special: {
     create: createSpecial,

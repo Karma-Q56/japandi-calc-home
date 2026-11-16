@@ -9,6 +9,8 @@ type DatabaseContext = {
   databaseUrl: string;
   restaurantId?: string | null;
   customerId?: string | null;
+  /** Branch the request works at. Read by the fill trigger for new rows. */
+  locationId?: string | null;
   isOperator?: boolean;
 };
 
@@ -27,6 +29,7 @@ export async function withContext<T>(
         select
           set_config('app.restaurant_id', ${context.restaurantId ?? ""}, true),
           set_config('app.customer_id', ${context.customerId ?? ""}, true),
+          set_config('app.location_id', ${context.locationId ?? ""}, true),
           set_config('app.is_operator', ${context.isOperator ? "true" : "false"}, true)
       `);
       return callback(transaction);

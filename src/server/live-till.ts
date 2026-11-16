@@ -219,17 +219,43 @@ function requestCookies(): Record<string, string> {
   }
 }
 
-function deviceRestaurantId(pepper: string): string | null {
+function deviceCookieFields(pepper: string): { r: string; l: string | null } | null {
   const raw = requestCookies()[TILL_DEVICE_COOKIE];
   if (!raw) return null;
   const payload = readTillValue(pepper, "device", raw);
   if (!payload) return null;
   try {
-    const parsed = JSON.parse(payload) as { r?: unknown };
-    return typeof parsed.r === "string" && parsed.r.length > 0 ? parsed.r : null;
+    const parsed = JSON.parse(payload) as { r?: unknown; l?: unknown };
+    if (typeof parsed.r !== "string" || parsed.r.length === 0) return null;
+    return { r: parsed.r, l: typeof parsed.l === "string" && parsed.l ? parsed.l : null };
   } catch {
     return null;
   }
+}
+
+function deviceRestaurantId(pepper: string): string | null {
+  return deviceCookieFields(pepper)?.r ?? null;
+}
+
+/** The branch this till was paired to, or null for a till paired before branches (main is used). */
+function deviceLocationId(pepper: string): string | null {
+  return deviceCookieFields(pepper)?.l ?? null;
+}
+
+/** Branch for every till database call. Read from the signed device cookie only. */
+function tillLocationId(): string | null {
+  const pepper = process.env["PIN_PEPPER"];
+  return (pepper && deviceLocationId(pepper)) || null;
+}
+
+/** Database context for a till call: the restaurant plus the branch the till is paired to. */
+function tillContext(restaurantId: string) {
+  return {
+    databaseUrl: databaseUrl(),
+    restaurantId,
+    isOperator: false,
+    locationId: tillLocationId() ?? null,
+  };
 }
 
 export function readTillSession(): TillSession | null {
@@ -252,8 +278,12 @@ export function readTillSession(): TillSession | null {
   }
 }
 
-function setDeviceCookie(pepper: string, restaurantId: string) {
-  const device = signTillValue(pepper, "device", JSON.stringify({ r: restaurantId }));
+function setDeviceCookie(pepper: string, restaurantId: string, locationId: string | null) {
+  const device = signTillValue(
+    pepper,
+    "device",
+    JSON.stringify({ r: restaurantId, l: locationId }),
+  );
   setCookie(TILL_DEVICE_COOKIE, device, {
     httpOnly: true,
     secure: true,
@@ -265,7 +295,8 @@ function setDeviceCookie(pepper: string, restaurantId: string) {
 
 function setSessionCookies(pepper: string, restaurantId: string, staffId: string): number {
   const expiresAt = Date.now() + TILL_SESSION_HOURS * 60 * 60 * 1000;
-  setDeviceCookie(pepper, restaurantId);
+  const locationId = deviceLocationId(pepper);
+  setDeviceCookie(pepper, restaurantId, locationId);
   const staff = signTillValue(
     pepper,
     "staff",
@@ -469,6 +500,7 @@ export async function resetStaffPin(
 
 export async function createPairingCode(
   viewer: Viewer,
+  locationId?: string | null,
 ): Promise<{ ok: true; code: string; expiresAt: string } | { ok: false; message: string }> {
   if (!isOwner(viewer)) return { ok: false, message: "Only the owner can pair a till." };
   const pepper = requirePinPepper();
@@ -477,11 +509,17 @@ export async function createPairingCode(
     { databaseUrl: databaseUrl(), restaurantId: viewer.restaurantId, isOperator: false },
     async (transaction) => {
       const restaurantId = viewer.restaurantId!;
+      // A code made for a branch pairs the till to that branch. A missing branch uses the main one.
       const rows = await q<{ id: string; expires_at: string }>(
         transaction,
         sql`
-          insert into one_time_code (kind, restaurant_id, code_hash, expires_at)
-          values ('till_pair', ${restaurantId}, ${pairingCodeHash(pepper, code)},
+          insert into one_time_code (kind, restaurant_id, location_id, code_hash, expires_at)
+          values ('till_pair', ${restaurantId},
+                  (select l.id from location l
+                    where l.restaurant_id = ${restaurantId} and l.active
+                      and (l.id::text = ${locationId ?? ""} or (${locationId ?? ""} = '' and l.is_main))
+                    limit 1),
+                  ${pairingCodeHash(pepper, code)},
                   now() + make_interval(mins => ${PAIR_CODE_MINUTES}))
           returning id, expires_at
         `,
@@ -535,7 +573,7 @@ export async function pairTill(
     }>(
       transaction,
       sql`
-        select id, code_hash, expires_at, used_at from one_time_code
+        select id, code_hash, expires_at, used_at, location_id from one_time_code
         where kind = 'till_pair' and code_hash = ${hash}
         limit 1
       `,
@@ -549,12 +587,12 @@ export async function pairTill(
       );
       return { status: "bad" } as const;
     }
-    const consumed = await q<{ restaurant_id: string | null }>(
+    const consumed = await q<{ restaurant_id: string | null; location_id: string | null }>(
       transaction,
       sql`
         update one_time_code set used_at = now()
         where id = ${row.id} and used_at is null and expires_at > now()
-        returning restaurant_id
+        returning restaurant_id, location_id
       `,
     );
     const restaurantId = consumed[0]?.restaurant_id;
@@ -565,7 +603,7 @@ export async function pairTill(
       );
       return { status: "bad" } as const;
     }
-    return { status: "ok", restaurantId } as const;
+    return { status: "ok", restaurantId, locationId: consumed[0]?.location_id ?? null } as const;
   });
   if (result.status === "limited") {
     return {
@@ -588,7 +626,7 @@ export async function pairTill(
       );
     },
   );
-  setDeviceCookie(pepper, result.restaurantId);
+  setDeviceCookie(pepper, result.restaurantId, result.locationId);
   deleteCookie(TILL_STAFF_COOKIE, { path: "/" });
   return { ok: true, restaurantId: result.restaurantId };
 }
@@ -607,7 +645,7 @@ export async function loadTillState(): Promise<TillState> {
   if (!restaurantId) return empty;
   const session = readTillSession();
   return withContext(
-    { databaseUrl: databaseUrl(), restaurantId, isOperator: false },
+    tillContext(restaurantId),
     async (transaction) => {
       const restaurants = await q<{
         id: string;
@@ -658,11 +696,13 @@ export async function signInTill(
   const restaurantId = deviceRestaurantId(pepper);
   if (!restaurantId) return { ok: false, message: "Pair this till first." };
   const outcome = await withContext(
-    { databaseUrl: databaseUrl(), restaurantId, isOperator: false },
+    tillContext(restaurantId),
     async (transaction) => {
       const rows = await q<{
         id: string;
         pin_hmac: string;
+        location_id: string | null;
+        all_branches: boolean;
         fails: number | string;
         last_fail: string | null;
       }>(
@@ -671,6 +711,8 @@ export async function signInTill(
           select
             s.id,
             s.pin_hmac,
+            s.location_id,
+            s.all_branches,
             (
               select count(*)::int from rate_limit_hit
               where bucket = 'pin' and key = ${staffId}
@@ -688,6 +730,11 @@ export async function signInTill(
       );
       const staff = rows[0];
       if (!staff) return { status: "no_staff" } as const;
+      // A team member who works at another branch cannot sign in here. The message never names that branch.
+      const tillBranch = tillLocationId() ?? null;
+      if (!staff.all_branches && staff.location_id && tillBranch && staff.location_id !== tillBranch) {
+        return { status: "other_branch" } as const;
+      }
       const fails = Number(staff.fails ?? 0);
       const lastFail = staff.last_fail ? Date.parse(staff.last_fail) : null;
       if (isPinLocked(fails, lastFail, Date.now())) return { status: "locked" } as const;
@@ -705,6 +752,9 @@ export async function signInTill(
     },
   );
   if (outcome.status === "no_staff") return { ok: false, message: "Pick your name and try again." };
+  if (outcome.status === "other_branch") {
+    return { ok: false, message: "This team member works at another branch." };
+  }
   if (outcome.status === "locked") {
     return { ok: false, message: "That sign-in is locked. Try again later." };
   }
@@ -769,7 +819,7 @@ export async function lookupGuest(rawCode: string): Promise<LiveLookup> {
   if (!raw) return { ok: false, message: "Enter a phone number or scan the card." };
   const digits = raw.replace(/\D/g, "");
   return withContext(
-    { databaseUrl: databaseUrl(), restaurantId: session.restaurantId, isOperator: false },
+    tillContext(session.restaurantId),
     async (transaction) => {
       const restaurants = await q<{ stamps_required: number; staff_ok: boolean }>(
         transaction,
@@ -858,7 +908,7 @@ export async function recordStampAtTill(
   const session = requireSession();
   if ("error" in session) return { ok: false, message: session.error };
   const outcome = await withContext(
-    { databaseUrl: databaseUrl(), restaurantId: session.restaurantId, isOperator: false },
+    tillContext(session.restaurantId),
     async (transaction) => {
       const member = await q<{ id: string; staff_ok: boolean }>(
         transaction,
@@ -925,9 +975,15 @@ export async function redeemRewardAs(input: {
   membershipId: string;
   rewardId: string;
   staffId: string;
+  locationId?: string | null;
 }): Promise<RedeemOutcome> {
   return withContext(
-    { databaseUrl: databaseUrl(), restaurantId: input.restaurantId, isOperator: false },
+    {
+      databaseUrl: databaseUrl(),
+      restaurantId: input.restaurantId,
+      isOperator: false,
+      locationId: input.locationId ?? null,
+    },
     async (transaction) => {
       const updated = await q<{
         id: string;
@@ -1007,6 +1063,7 @@ export async function redeemRewardAtTill(
     membershipId,
     rewardId,
     staffId: session.staffId,
+    locationId: tillLocationId(),
   });
 }
 
@@ -1016,7 +1073,7 @@ export async function undoRedeemAtTill(
   const session = requireSession();
   if ("error" in session) return { ok: false, message: session.error };
   return withContext(
-    { databaseUrl: databaseUrl(), restaurantId: session.restaurantId, isOperator: false },
+    tillContext(session.restaurantId),
     async (transaction) => {
       const updated = await q<{ id: string }>(
         transaction,

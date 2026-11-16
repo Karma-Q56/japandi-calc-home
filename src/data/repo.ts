@@ -251,6 +251,7 @@ function normalise(raw: unknown): DemoState | null {
     version: 2,
     restaurants,
     staff,
+    locations: parsed.locations ?? fresh.locations ?? [],
     customers,
     memberships,
     session,

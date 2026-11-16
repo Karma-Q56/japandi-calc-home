@@ -38,6 +38,7 @@ const SECTION_OF: Array<[prefix: string, to: string]> = [
   ["/app/team", "/app/settings"],
   ["/app/feedback", "/app/settings"],
   ["/app/audit", "/app/settings"],
+  ["/app/locations", "/app/settings"],
 ];
 
 function sectionFor(path: string): string | null {
@@ -154,6 +155,7 @@ const SECTION_TABS: Record<string, Array<{ to: string; label: string }>> = {
   "/app/settings": [
     { to: "/app/settings", label: "Details" },
     { to: "/app/team", label: "Team" },
+    { to: "/app/locations", label: "Branches" },
     { to: "/app/feedback", label: "Feedback" },
     { to: "/app/audit", label: "Activity log" },
   ],

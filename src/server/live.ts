@@ -498,15 +498,17 @@ export const resetStaffPinFn = createServerFn({ method: "POST" })
   });
 
 /** Create an 8 character pairing code, shown once. Owner only. */
-export const createTillPairingFn = createServerFn({ method: "POST" }).handler(async () => {
-  const [{ readViewer }, { createPairingCode }] = await Promise.all([
-    import("./auth-viewer"),
-    import("./live-till"),
-  ]);
-  const viewer = await readViewer();
-  if (!viewer) return { ok: false as const, message: "Sign in again." };
-  return createPairingCode(viewer);
-});
+export const createTillPairingFn = createServerFn({ method: "POST" })
+  .validator(z.object({ locationId: uuidSchema.nullable().optional() }).optional())
+  .handler(async ({ data }) => {
+    const [{ readViewer }, { createPairingCode }] = await Promise.all([
+      import("./auth-viewer"),
+      import("./live-till"),
+    ]);
+    const viewer = await readViewer();
+    if (!viewer) return { ok: false as const, message: "Sign in again." };
+    return createPairingCode(viewer, data?.locationId ?? null);
+  });
 
 /** Pair this browser as a till. Single use, rate limited per IP. */
 export const pairTillFn = createServerFn({ method: "POST" })
