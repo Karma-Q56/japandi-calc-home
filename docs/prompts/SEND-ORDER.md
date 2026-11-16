@@ -5,8 +5,8 @@ This file is the whole send order. Every message is ready to copy and paste. Sen
 ## How it works (read this once)
 
 1. Each message makes Freebuff start a new branch from the latest `claude/fix-regressions`, load the `patron-phase-builder` skill, read `AGENTS.md` and `docs/prompts/README.md`, then do one prompt from start to finish.
-2. Never have more than 2 Freebuff branches open at once. Neon makes a database branch for every pushed git branch and we keep 5 at most (production, `preview/claude/fix-regressions`, the dev branch `preview/freebuff/b8bfff...`, and 2 for Freebuff).
-3. Freebuff does not need any Neon branch or database. GitHub runs the database tests on every push. The dev Neon branch already has every migration up to 0030 (0027 and 0030 applied on 11 Nov). I apply each new migration to it after I merge.
+2. Never have more than 2 Freebuff branches open at once. Neon makes a database branch for every pushed git branch and we keep 5 at most (production, `preview/claude/fix-regressions`, the dev branch `preview/freebuff/b8bfff...`, and 2 for Freebuff). The old preview branches of finished Freebuff branches must be deleted before round 7 so the limit of 10 is never hit.
+3. Freebuff does not need any Neon branch or database. GitHub runs the database tests on every push. The dev Neon branch already has every migration up to 0035 except the reserved 0031 (D20), applied by Claude. I apply each new migration to it after I merge.
 4. When Freebuff finishes, send me the branch name and paste its handoff reply (use the "Message to Claude" at the end of this file). I then fetch the branch, test the database as the restricted app role, fix what is left, merge it into `claude/fix-regressions`, check that GitHub is green, and tell you the slot is free.
 5. When I say a slot is free, delete the finished branch on GitHub (Branches page, trash icon). My session is not allowed to delete git branches. I will remove the matching Neon preview branch myself if I am allowed, and I will tell you if I am not.
 6. If one prompt of a pair finishes early, you can send the next message as soon as I tell you its slot is free. You do not have to wait for the other one.
@@ -19,11 +19,15 @@ This file is the whole send order. Every message is ready to copy and paste. Sen
 | 2 | 2A D13c Till orders. 2B D13b Card design, logo, QR logo | D13c needs D13a. D13b is on the path to Find |
 | 3 | 3A D14 Insights. 3B D16 Sending | Done and merged 11 Nov |
 | 4 | 4B D12d Spin wheel. 4C D13b2 Finish card design and Your page. 4D D16b Finish sending (4A D19 is done) | Done: Claude built all three on 12 to 14 Nov while Freebuff was offline. Do not send them |
-| 5 | 5A D12f Try-this-dish (done 14 Nov). 5B D20 Branches | D12f needs D13c. D20 needs D14 and D19 |
-| 6 | 6A D21 Plans and payments (done 14 Nov) | Best after branches. Goes alone |
+| 5 and 6 | D12f Try-this-dish, D21 Plans and payments | Done (14 Nov). Do not send |
+| 7 | 7A D20 Branches (live and demo). 7B D23 Operator console live, part 1 | Independent of each other. D23 unlocks rounds 8 and 9 |
+| 8 | 8A D24 Operator console live, part 2. 8B D25 Billing finish | Both need D23 merged |
+| 9 | 9A D26 Venue pickers and page address. 9B D27 Small fixes | D26 needs D23 merged and touches Settings after D20 |
+| 10 | 10A D28 Look and feel | Alone: restyles shared CSS and components |
+| 11 | 11A D29 Test everything and write the findings | Alone, last: tests the finished product |
 | After | D22 launch checklist, the polish pass, production go-live | Claude and Karma, not Freebuff |
 
-Already built, so do not send them again (D12d, D13b2 and D16b were built by Claude and wait for the merge to the main line): D10, D11, D12a, D12b, D12c, D12e, D13a, D13b, D13c, D14, D15, D16, D17, D18, D19 (rounds 1, 2 and 3 are done as of 11 Nov). D13b and D16 were merged with some items missing, so two follow-up messages (4C and 4D) finish them. Start at round 5.
+Already built, so do not send them again (D12d, D13b2 and D16b were built by Claude and wait for the merge to the main line): D10, D11, D12a, D12b, D12c, D12e, D13a, D13b, D13c, D14, D15, D16, D17, D18, D19 (rounds 1, 2 and 3 are done as of 11 Nov). D13b and D16 were merged with some items missing, so two follow-up messages (4C and 4D) finish them. Rounds 5 and 6 are also done. Start at round 7.
 
 ## Always do this first
 
@@ -191,24 +195,19 @@ Paste this:
 
 ---
 
-## Round 5
+## Rounds 5 and 6 (done, do not send)
 
-Send after round 4 is merged (D12f needs D13c, D20 needs D14 and D19).
+D12f (try-this-dish) and D21 (plans and payments) were built by Freebuff and merged and hardened by Claude on 14 Nov. They are on `claude/fix-regressions`. Do not send them again.
 
-### Message 5A: D12f: the try-this-dish challenge
+## What changed on 15 and 16 Nov (read this once)
 
-Branch: `freebuff/dish-challenge`. Prompt: `docs/prompts/D12f-dish-challenge.md`.
+Claude walked the whole product and found work that was missing or only half there: the operator console only works in demo mode (nothing shows the "Talk to us" enquiries, feedback or ideas in live mode, and nobody can approve a campaign or confirm a credit top-up in live mode), the billing page cannot be reached from the menu, branches do not exist anywhere yet (not even in demo), owners cannot choose a venue type or a clear address, nobody can change a page address, three links lose the audience when they open the campaign composer, and several look-and-feel problems remain. Rounds 7 to 11 fix all of that and end with a test of every screen. Everything that needs your own accounts (PayFast, the SMS provider, the mail provider, the domain, the lawyer, the accountant, prices) stays with you and is not in these prompts. The marketing website redesign is yours.
 
-Paste this:
+## Round 7
 
-> Step 1: run `git fetch origin`, then create your branch from the latest main line: `git checkout -b freebuff/dish-challenge origin/claude/fix-regressions`. Never start from an older freebuff branch.
-> Step 2: load the skill `patron-phase-builder` (it is the file `.agents/skills/patron-phase-builder/SKILL.md`; if the skill command cannot find it, open that file and follow it). Then read `AGENTS.md` and `docs/prompts/README.md`.
-> Step 3: read `docs/prompts/D12f-dish-challenge.md` and do exactly what it says. Do the whole prompt in one run: do not stop to ask me questions you can answer yourself and do not wait for me to say "continue". If you have to choose, pick the simplest option that follows AGENTS.md and list it under "Decisions I made" in your handoff. Only stop for production, real money, real guests' data, or something that cannot be undone.
-> Step 4: follow the skill for how to build and test. Use the design skills only on the new screens you build and never restyle existing screens. Buttons must look like buttons and never change their label to "Saving" or "Saved".
-> Step 5: work only on `freebuff/dish-challenge`. Do not create other git branches, and do not create, change or delete anything in Neon or Vercel (you do not need a database, GitHub runs the database tests).
-> Step 6: when the code is done, push the branch, read the GitHub check result for it, fix any failure, and push again until the check is green. Then reply in the handoff format from the skill.
+Send after the previous work is merged (it is as of 15 Nov). Two at once.
 
-### Message 5B: D20: branches (several locations per restaurant)
+### Message 7A: D20: branches (several locations per restaurant, live and demo)
 
 Branch: `freebuff/branches`. Prompt: `docs/prompts/D20-branches.md`.
 
@@ -217,28 +216,126 @@ Paste this:
 > Step 1: run `git fetch origin`, then create your branch from the latest main line: `git checkout -b freebuff/branches origin/claude/fix-regressions`. Never start from an older freebuff branch.
 > Step 2: load the skill `patron-phase-builder` (it is the file `.agents/skills/patron-phase-builder/SKILL.md`; if the skill command cannot find it, open that file and follow it). Then read `AGENTS.md` and `docs/prompts/README.md`.
 > Step 3: read `docs/prompts/D20-branches.md` and do exactly what it says. Do the whole prompt in one run: do not stop to ask me questions you can answer yourself and do not wait for me to say "continue". If you have to choose, pick the simplest option that follows AGENTS.md and list it under "Decisions I made" in your handoff. Only stop for production, real money, real guests' data, or something that cannot be undone.
-> Step 4: follow the skill for how to build and test. Use the design skills only on the new screens you build and never restyle existing screens. Buttons must look like buttons and never change their label to "Saving" or "Saved".
+> Step 4: follow the skill for how to build and test. Use the design skills only on the new screens you build and never restyle existing screens. Buttons must look like buttons and never change their label to "Saving" or "Saved". Whatever you fix or build on a live screen, do on the demo version of that screen too.
 > Step 5: work only on `freebuff/branches`. Do not create other git branches, and do not create, change or delete anything in Neon or Vercel (you do not need a database, GitHub runs the database tests).
+> Step 6: when the code is done, push the branch, read the GitHub check result for it, fix any failure, and push again until the check is green. Then reply in the handoff format from the skill.
+
+### Message 7B: D23: operator console, live (part 1: restaurants, credit top-ups, invoices, refund record)
+
+Branch: `freebuff/operator-live-a`. Prompt: `docs/prompts/D23-operator-live-restaurants.md`.
+
+Paste this:
+
+> Step 1: run `git fetch origin`, then create your branch from the latest main line: `git checkout -b freebuff/operator-live-a origin/claude/fix-regressions`. Never start from an older freebuff branch.
+> Step 2: load the skill `patron-phase-builder` (it is the file `.agents/skills/patron-phase-builder/SKILL.md`; if the skill command cannot find it, open that file and follow it). Then read `AGENTS.md` and `docs/prompts/README.md`.
+> Step 3: read `docs/prompts/D23-operator-live-restaurants.md` and do exactly what it says. Do the whole prompt in one run: do not stop to ask me questions you can answer yourself and do not wait for me to say "continue". If you have to choose, pick the simplest option that follows AGENTS.md and list it under "Decisions I made" in your handoff. Only stop for production, real money, real guests' data, or something that cannot be undone.
+> Step 4: follow the skill for how to build and test. Use the design skills only on the new screens you build and never restyle existing screens. Buttons must look like buttons and never change their label to "Saving" or "Saved". Whatever you fix or build on a live screen, do on the demo version of that screen too.
+> Step 5: work only on `freebuff/operator-live-a`. Do not create other git branches, and do not create, change or delete anything in Neon or Vercel (you do not need a database, GitHub runs the database tests).
 > Step 6: when the code is done, push the branch, read the GitHub check result for it, fix any failure, and push again until the check is green. Then reply in the handoff format from the skill.
 
 
 ---
 
-## Round 6
+## Round 8
 
-Send after round 5 is merged. This one goes alone.
+Send after D23 is merged (both prompts use the operator pages D23 sets up). Two at once.
 
-### Message 6A: D21: plans and payments
+### Message 8A: D24: operator console, live (part 2: campaign approvals, enquiries, feedback, ideas, SMS outbox)
 
-Branch: `freebuff/billing`. Prompt: `docs/prompts/D21-payments-and-plans.md`.
+Branch: `freebuff/operator-live-b`. Prompt: `docs/prompts/D24-operator-live-inbox.md`.
 
 Paste this:
 
-> Step 1: run `git fetch origin`, then create your branch from the latest main line: `git checkout -b freebuff/billing origin/claude/fix-regressions`. Never start from an older freebuff branch.
+> Step 1: run `git fetch origin`, then create your branch from the latest main line: `git checkout -b freebuff/operator-live-b origin/claude/fix-regressions`. Never start from an older freebuff branch.
 > Step 2: load the skill `patron-phase-builder` (it is the file `.agents/skills/patron-phase-builder/SKILL.md`; if the skill command cannot find it, open that file and follow it). Then read `AGENTS.md` and `docs/prompts/README.md`.
-> Step 3: read `docs/prompts/D21-payments-and-plans.md` and do exactly what it says. Do the whole prompt in one run: do not stop to ask me questions you can answer yourself and do not wait for me to say "continue". If you have to choose, pick the simplest option that follows AGENTS.md and list it under "Decisions I made" in your handoff. Only stop for production, real money, real guests' data, or something that cannot be undone.
-> Step 4: follow the skill for how to build and test. Use the design skills only on the new screens you build and never restyle existing screens. Buttons must look like buttons and never change their label to "Saving" or "Saved".
-> Step 5: work only on `freebuff/billing`. Do not create other git branches, and do not create, change or delete anything in Neon or Vercel (you do not need a database, GitHub runs the database tests).
+> Step 3: read `docs/prompts/D24-operator-live-inbox.md` and do exactly what it says. Do the whole prompt in one run: do not stop to ask me questions you can answer yourself and do not wait for me to say "continue". If you have to choose, pick the simplest option that follows AGENTS.md and list it under "Decisions I made" in your handoff. Only stop for production, real money, real guests' data, or something that cannot be undone.
+> Step 4: follow the skill for how to build and test. Use the design skills only on the new screens you build and never restyle existing screens. Buttons must look like buttons and never change their label to "Saving" or "Saved". Whatever you fix or build on a live screen, do on the demo version of that screen too.
+> Step 5: work only on `freebuff/operator-live-b`. Do not create other git branches, and do not create, change or delete anything in Neon or Vercel (you do not need a database, GitHub runs the database tests).
+> Step 6: when the code is done, push the branch, read the GitHub check result for it, fix any failure, and push again until the check is green. Then reply in the handoff format from the skill.
+
+### Message 8B: D25: billing finish (monthly payment, failed payment grace, banner, reachable billing page)
+
+Branch: `freebuff/billing-finish`. Prompt: `docs/prompts/D25-billing-finish.md`.
+
+Paste this:
+
+> Step 1: run `git fetch origin`, then create your branch from the latest main line: `git checkout -b freebuff/billing-finish origin/claude/fix-regressions`. Never start from an older freebuff branch.
+> Step 2: load the skill `patron-phase-builder` (it is the file `.agents/skills/patron-phase-builder/SKILL.md`; if the skill command cannot find it, open that file and follow it). Then read `AGENTS.md` and `docs/prompts/README.md`.
+> Step 3: read `docs/prompts/D25-billing-finish.md` and do exactly what it says. Do the whole prompt in one run: do not stop to ask me questions you can answer yourself and do not wait for me to say "continue". If you have to choose, pick the simplest option that follows AGENTS.md and list it under "Decisions I made" in your handoff. Only stop for production, real money, real guests' data, or something that cannot be undone.
+> Step 4: follow the skill for how to build and test. Use the design skills only on the new screens you build and never restyle existing screens. Buttons must look like buttons and never change their label to "Saving" or "Saved". Whatever you fix or build on a live screen, do on the demo version of that screen too.
+> Step 5: work only on `freebuff/billing-finish`. Do not create other git branches, and do not create, change or delete anything in Neon or Vercel (you do not need a database, GitHub runs the database tests).
+> Step 6: when the code is done, push the branch, read the GitHub check result for it, fix any failure, and push again until the check is green. Then reply in the handoff format from the skill.
+
+
+---
+
+## Round 9
+
+Send after round 8 is merged (D26 needs D23, and both touch Settings after D20 added its tab). Two at once.
+
+### Message 9A: D26: venue type, address and suburb pickers, page address change with redirect
+
+Branch: `freebuff/owner-pickers`. Prompt: `docs/prompts/D26-owner-pickers-and-page-address.md`.
+
+Paste this:
+
+> Step 1: run `git fetch origin`, then create your branch from the latest main line: `git checkout -b freebuff/owner-pickers origin/claude/fix-regressions`. Never start from an older freebuff branch.
+> Step 2: load the skill `patron-phase-builder` (it is the file `.agents/skills/patron-phase-builder/SKILL.md`; if the skill command cannot find it, open that file and follow it). Then read `AGENTS.md` and `docs/prompts/README.md`.
+> Step 3: read `docs/prompts/D26-owner-pickers-and-page-address.md` and do exactly what it says. Do the whole prompt in one run: do not stop to ask me questions you can answer yourself and do not wait for me to say "continue". If you have to choose, pick the simplest option that follows AGENTS.md and list it under "Decisions I made" in your handoff. Only stop for production, real money, real guests' data, or something that cannot be undone.
+> Step 4: follow the skill for how to build and test. Use the design skills only on the new screens you build and never restyle existing screens. Buttons must look like buttons and never change their label to "Saving" or "Saved". Whatever you fix or build on a live screen, do on the demo version of that screen too.
+> Step 5: work only on `freebuff/owner-pickers`. Do not create other git branches, and do not create, change or delete anything in Neon or Vercel (you do not need a database, GitHub runs the database tests).
+> Step 6: when the code is done, push the branch, read the GitHub check result for it, fix any failure, and push again until the check is green. Then reply in the handoff format from the skill.
+
+### Message 9B: D27: small fixes (campaign links, visits today, demo dot, dead code)
+
+Branch: `freebuff/small-fixes`. Prompt: `docs/prompts/D27-small-fixes.md`.
+
+Paste this:
+
+> Step 1: run `git fetch origin`, then create your branch from the latest main line: `git checkout -b freebuff/small-fixes origin/claude/fix-regressions`. Never start from an older freebuff branch.
+> Step 2: load the skill `patron-phase-builder` (it is the file `.agents/skills/patron-phase-builder/SKILL.md`; if the skill command cannot find it, open that file and follow it). Then read `AGENTS.md` and `docs/prompts/README.md`.
+> Step 3: read `docs/prompts/D27-small-fixes.md` and do exactly what it says. Do the whole prompt in one run: do not stop to ask me questions you can answer yourself and do not wait for me to say "continue". If you have to choose, pick the simplest option that follows AGENTS.md and list it under "Decisions I made" in your handoff. Only stop for production, real money, real guests' data, or something that cannot be undone.
+> Step 4: follow the skill for how to build and test. Use the design skills only on the new screens you build and never restyle existing screens. Buttons must look like buttons and never change their label to "Saving" or "Saved". Whatever you fix or build on a live screen, do on the demo version of that screen too.
+> Step 5: work only on `freebuff/small-fixes`. Do not create other git branches, and do not create, change or delete anything in Neon or Vercel (you do not need a database, GitHub runs the database tests).
+> Step 6: when the code is done, push the branch, read the GitHub check result for it, fix any failure, and push again until the check is green. Then reply in the handoff format from the skill.
+
+
+---
+
+## Round 10
+
+Send after round 9 is merged. This one goes ALONE, because it restyles shared CSS and shared components.
+
+### Message 10A: D28: look and feel (buttons, one tab style, wheel labels, card colours, lint)
+
+Branch: `freebuff/look-and-feel`. Prompt: `docs/prompts/D28-look-and-feel.md`.
+
+Paste this:
+
+> Step 1: run `git fetch origin`, then create your branch from the latest main line: `git checkout -b freebuff/look-and-feel origin/claude/fix-regressions`. Never start from an older freebuff branch.
+> Step 2: load the skill `patron-phase-builder` (it is the file `.agents/skills/patron-phase-builder/SKILL.md`; if the skill command cannot find it, open that file and follow it). Then read `AGENTS.md` and `docs/prompts/README.md`.
+> Step 3: read `docs/prompts/D28-look-and-feel.md` and do exactly what it says. Do the whole prompt in one run: do not stop to ask me questions you can answer yourself and do not wait for me to say "continue". If you have to choose, pick the simplest option that follows AGENTS.md and list it under "Decisions I made" in your handoff. Only stop for production, real money, real guests' data, or something that cannot be undone.
+> Step 4: follow the skill for how to build and test. This one prompt IS allowed to restyle existing screens, but only in the ways its list says (button looks, one tab bar style, wheel labels, card colours, the till after the PIN, lint). Do not redesign anything else and do not touch the public marketing pages. Buttons must look like buttons and never change their label to "Saving" or "Saved". Fix live and demo together.
+> Step 5: work only on `freebuff/look-and-feel`. Do not create other git branches, and do not create, change or delete anything in Neon or Vercel (you do not need a database, GitHub runs the database tests).
+> Step 6: when the code is done, push the branch, read the GitHub check result for it, fix any failure, and push again until the check is green. Then reply in the handoff format from the skill.
+
+---
+
+## Round 11 (the last one)
+
+Send after round 10 is merged. This one goes ALONE. It tests the finished product and writes down everything it finds. It does not fix anything.
+
+### Message 11A: D29: test every screen, every control and every flow (demo and live) and write the findings file
+
+Branch: `freebuff/walkthrough-test`. Prompt: `docs/prompts/D29-full-walkthrough-test.md`.
+
+Paste this:
+
+> Step 1: run `git fetch origin`, then create your branch from the latest main line: `git checkout -b freebuff/walkthrough-test origin/claude/fix-regressions`. Never start from an older freebuff branch.
+> Step 2: load the skill `patron-phase-builder` (it is the file `.agents/skills/patron-phase-builder/SKILL.md`; if the skill command cannot find it, open that file and follow it). Then read `AGENTS.md` and `docs/prompts/README.md`.
+> Step 3: read `docs/prompts/D29-full-walkthrough-test.md` and do exactly what it says. Do the whole prompt in one run: do not stop to ask me questions you can answer yourself and do not wait for me to say "continue". If you have to choose, pick the simplest option that follows AGENTS.md and list it under "Decisions I made" in your handoff. Only stop for production, real money, real guests' data, or something that cannot be undone.
+> Step 4: follow the skill for how to build and test. You are a tester in this prompt: do not fix product bugs and do not edit anything under `src/`, `db/` or the existing `tests/e2e/`. Record every bug in the findings file and keep going. Test live and demo, and leave no option, text box, radio or button untouched.
+> Step 5: work only on `freebuff/walkthrough-test`. Do not create other git branches, and do not create, change or delete anything in Neon or Vercel (you do not need a database, GitHub runs the database tests).
 > Step 6: when the code is done, push the branch, read the GitHub check result for it, fix any failure, and push again until the check is green. Then reply in the handoff format from the skill.
 
 
@@ -288,9 +385,10 @@ Do not reply to Freebuff first. Tell me. I will check what was created and clean
 
 > Show me the GitHub check result for your branch (green or the first failing step). Do not say done until the check is green.
 
-## After round 6
+## After round 11
 
 - I write D22 with you (SMS credit and sender, payment provider account, domain and mail provider, lawyer, real contact details). Those only you can do.
-- I do the button look pass, the Log in button, the address guards, one tab style, and a browser walk-through of every new screen.
+- The button look pass, one tab style, the address pickers and the full browser walk-through are now prompts D26, D28 and D29 (rounds 9 to 11), so Freebuff does them and writes the findings file.
+- You go through every screen yourself after D29, with `docs/qa/walkthrough-findings.md` in hand. The marketing website redesign is yours.
 - If you want your design skills (Impeccable, Emil Kowalski, Taste, UI UX Pro Max) used on the finished product, I will write one separate polish prompt with strict "do not redesign" limits. We do not run those skills inside the build prompts.
 - Production is only touched with your clear yes, after the preview branch has everything and every check is green.
