@@ -634,3 +634,15 @@ Claude's review fixes (14 Nov):
 Still not built (tell Karma before real money): recurring monthly notices after the first one are ignored (already paid), so a failed renewal does nothing, and the 7 day grace and campaign pause described on the screen are not enforced yet; the operator invoice buttons; refunds; the PayFast sandbox test. The validation call format follows PayFast's published example and has not been run against the sandbox.
 
 Not in this phase: a real payment (tested later in PayFast sandbox), SARS tax invoices (D22).
+
+D23 operator live part 1 (restaurants, credit, top ups, invoices, refunds):
+
+- **Refunds are negative adjustments.** A top up refund writes a negative `adjustment` ledger row with reference `refund:<id>`, not a `refund` row, because `credit_ledger` requires refund amounts to be positive. This departs from the spec wording.
+- **Monthly payment refunds only record.** A refund on a monthly payment is written to the `refund` table and does not change the plan or credit.
+- **Rejecting a top up sets the payment to rejected.** `payment` has no reject reason column, so the reason lives in the audit row only.
+- **Operator refusal codes are separate.** `src/server/live-ops-restaurants.ts` has its own `opsRefusalCode`; the existing `refusalCode` in `live-ops.ts` is unchanged.
+- **Write limit.** Operators get 60 writes per hour, bucket `ops-write`, counted in `rate_limit_hit`.
+- **Invoice creation has its own guarded path.** `createInvoiceLive` is new; `createLiveInvoice` is unchanged.
+- **Refund table is locked down.** Row level security is enabled and forced, with no direct grants to `app_user`.
+- **Money features are live only.** EFT confirm, invoices and refunds have no demo version; demo mode is unchanged.
+- **Flagged, not changed.** `scoped()` in `src/domain/locations.ts` admits managers; `requireScope` in `src/domain/audit.ts` admits only owner and staff.

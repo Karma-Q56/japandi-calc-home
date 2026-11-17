@@ -7,15 +7,31 @@ import { formatRand } from "@/lib/money";
 import { useDemoState } from "@/data/useDemoState";
 import { Badge, DataTable, PageHeader } from "@/components/patron/dash";
 import type { Restaurant } from "@/data/types";
+import { getDataModeFn } from "@/server/live";
+import { listRestaurantsFn } from "@/server/live-ops-restaurants-fns";
+import { LiveOpsRestaurants } from "@/components/patron/live/ops/LiveOpsRestaurants";
 
 const RestaurantsPage = withChildren(RestaurantList);
 
 export const Route = createFileRoute("/ops/restaurants")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode === "live") return;
     if (!requireRole("operator")(demoRepo.read().session)) throw redirect({ to: "/login" });
   },
-  component: RestaurantsPage,
+  loader: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode !== "live") return { mode, live: null };
+    return { mode, live: await listRestaurantsFn({ data: { search: "", status: "", limit: 50, offset: 0 } }) };
+  },
+  component: LiveOrDemoRestaurants,
 });
+
+function LiveOrDemoRestaurants() {
+  const { mode, live } = Route.useLoaderData();
+  if (mode === "live" && live) return <LiveOpsRestaurants initial={live} />;
+  return <RestaurantsPage />;
+}
 
 type Row = {
   restaurant: Restaurant;

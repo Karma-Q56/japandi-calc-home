@@ -6,9 +6,12 @@ import { requireRole } from '@/data/session';
 import { ThemeEditor, ThemePreview } from '@/components/patron/ThemeEditor';
 import { APP_URL, DEFAULT_STAMPS_REQUIRED, DEFAULT_REWARD_DESCRIPTION, DEFAULT_VISIT_WINDOW_MINUTES } from '@/config/app';
 import { qrSvg } from '@/lib/qr';
+import { getDataModeFn } from '@/server/live';
+import { LiveOpsNewRestaurant } from '@/components/patron/live/ops/LiveOpsNewRestaurant';
 import type { Theme } from '@/data/types';
 
-export const Route = createFileRoute('/ops/restaurants/new')({ beforeLoad:()=>{if(!requireRole('operator')(demoRepo.read().session))throw redirect({to:'/demo'});},component:RestaurantWizard });
+export const Route = createFileRoute('/ops/restaurants/new')({ beforeLoad:async()=>{const {mode}=await getDataModeFn();if(mode==='live')return;if(!requireRole('operator')(demoRepo.read().session))throw redirect({to:'/demo'});},loader:async()=>{const {mode}=await getDataModeFn();return {mode};},component:LiveOrDemoWizard });
+function LiveOrDemoWizard(){const {mode}=Route.useLoaderData();if(mode==='live')return <main className="demo-hub page-width"><LiveOpsNewRestaurant/></main>;return <RestaurantWizard/>;}
 const steps=['Business details','Card rules','Look & feel','Starter pack','Review'];
 const defaultTheme=demoRepo.read().restaurants[0]!.theme;
 const weekdays=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'] as const;
