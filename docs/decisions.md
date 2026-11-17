@@ -660,3 +660,12 @@ D24 operator live part 2 (campaign approvals, enquiries, feedback, ideas, SMS ou
 - **Operator functions are locked down.** All ten new functions are revoked from public and granted only to `app_user`.
 - **Live routes keep demo.** Each route checks `getDataModeFn`; the demo component stays as the other branch, wrapped in `withChildren` so the Outlet marker survives.
 - **Helper copies, not imports.** `requireOperator`, `runAsOperator` and `rowsOf` are copied into the D24 server file; `live-ops.ts` is not edited.
+- **Monthly payment lookup by token.** A monthly notice is matched by `m_payment_id` first, then by the PayFast `token` field when the id is missing or unknown. The lookup runs before settle, not as a retry, because a failed statement aborts the Postgres transaction.
+- **Unknown notices get a 200.** A notice that can never match returns HTTP 200 with body `unknown_notice`, so PayFast stops retrying it.
+- **One-off payments unchanged.** `settle_card_payment` keeps the 0032 rules for one-off payments; renewal and failure logic applies only to `kind = 'subscription'`.
+- **Seven day grace, then pause.** A failed monthly payment gets 7 days. After that, campaigns pause through `billing_paused`, checked in `create_campaign` and `claim_due_campaigns`. A cancelled plan pauses past its due date, and an invoice pauses campaigns when more than 7 days overdue.
+- **Till and loyalty keep working.** Pausing only stops campaign sending and creation; the till and loyalty card are never blocked.
+- **Plain date wording.** Owner dates use `plainDate` (en-ZA, Africa/Johannesburg), for example "19 November".
+- **Demo billing uses fixed examples.** `DemoBilling.tsx` shows fixed values from `planBilling`; demo plan `managed` maps to Growth, `partner` to Pro, and anything else to Starter.
+- **Operator buttons need a reason.** "Mark monthly payment missed" and "Mark monthly payment received" both need a reason of at least 3 characters, and both go through `operator_set_subscription_state`.
+- **Monthly notice format is unverified.** Whether a monthly notice reuses the same `m_payment_id`, and what the `token` looks like, must be checked in the PayFast sandbox before launch.

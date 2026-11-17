@@ -39,6 +39,7 @@ const REFUSAL_CODES = [
   "slug_taken",
   "slug_reserved",
   "already_paid",
+  "billing_paused",
 ] as const;
 
 /** Map a database refusal code to plain words. Read the code from the cause chain, never the message. */
@@ -144,6 +145,13 @@ export type RestaurantDetail = {
   invoices: Array<{ id: string; amount_cents: number; description: string; due_date: string; status: string; created_at: string }>;
   payments: Array<{ id: string; kind: string; amount_cents: number; status: string; reference: string | null; refunded_cents: number; created_at: string }>;
   pending_topups: Array<{ id: string; amount_cents: number; reference: string | null; created_at: string }>;
+  /** The monthly plan, or null when the restaurant has none. */
+  subscription: {
+    state: "active" | "past_due" | "cancelled";
+    amount_cents: number;
+    next_due_at: string | null;
+    grace_ends_at: string | null;
+  } | null;
 };
 
 export type InvoiceRow = {
@@ -256,6 +264,22 @@ export async function recordRefundLive(
       sql`select operator_record_refund(${viewer.userId}, ${input.paymentId}::uuid, ${input.amountCents}, ${input.reason})`,
     );
     return { ok: true as const, message: "Refund recorded." };
+  });
+  return result as RestaurantsResult;
+}
+
+/** Set a monthly plan to active, past due or cancelled, with a note. Operator only, rate limited. */
+export async function setSubscriptionStateLive(
+  viewer: Viewer,
+  input: { restaurantId: string; state: "active" | "past_due" | "cancelled"; note: string },
+): Promise<RestaurantsResult> {
+  const denied = await guardWrite(viewer);
+  if (denied) return denied;
+  const result = await runAsOperator(async (tx) => {
+    await tx.execute(
+      sql`select operator_set_subscription_state(${viewer.userId}, ${input.restaurantId}::uuid, ${input.state}, ${input.note})`,
+    );
+    return { ok: true as const, message: "Monthly plan updated." };
   });
   return result as RestaurantsResult;
 }

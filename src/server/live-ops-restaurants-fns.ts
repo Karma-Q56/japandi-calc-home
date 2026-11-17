@@ -135,6 +135,25 @@ export const createInvoiceFn = createServerFn({ method: "POST" })
     return createInvoiceLive(viewer, data);
   });
 
+/** Set a restaurant's monthly plan to active, past due or cancelled. The note is required. */
+export const setSubscriptionStateFn = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      restaurantId: uuid,
+      state: z.enum(["active", "past_due", "cancelled"]),
+      note: reason,
+    }),
+  )
+  .handler(async ({ data }) => {
+    const [{ readViewer }, { setSubscriptionStateLive }] = await Promise.all([
+      import("./auth-viewer"),
+      import("./live-ops-restaurants"),
+    ]);
+    const viewer = await readViewer();
+    if (!viewer) return { ok: false as const, message: "Sign in again." };
+    return setSubscriptionStateLive(viewer, data);
+  });
+
 /** Mark an open invoice paid with the money's reference. */
 export const markInvoicePaidFn = createServerFn({ method: "POST" })
   .validator(z.object({ invoiceId: uuid, reference: z.string().trim().min(4).max(80), reason }))

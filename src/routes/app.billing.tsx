@@ -10,9 +10,11 @@ import { planBilling } from "@/config/plans";
 import {
   FAILED_PAYMENT_RULES,
   invoiceStatusLabel,
+  monthlyPaymentLine,
   paymentStatusLabel,
   randsToCentsOrNull,
 } from "@/lib/live-billing";
+import { DemoBilling } from "@/components/patron/DemoBilling";
 import { formatRand } from "@/lib/live-campaigns";
 
 export const Route = createFileRoute("/app/billing")({
@@ -32,19 +34,7 @@ export const Route = createFileRoute("/app/billing")({
 function BillingPage() {
   const data = Route.useLoaderData();
   if (data.mode === "live") return <LiveBillingPage billing={data.live} />;
-  return (
-    <main className="demo-hub page-width">
-      <PageHeader
-        eyebrow="Owner"
-        title="Plan and billing"
-        intro="Your plan, payments and invoices. This screen is not ready in the demo yet."
-      />
-      <EmptyState
-        title="Not ready in the demo"
-        hint="Plan, payment and invoice details show here once your restaurant is live."
-      />
-    </main>
-  );
+  return <DemoBilling />;
 }
 
 function LiveBillingPage({ billing }: { billing: LiveBilling | null }) {
@@ -106,6 +96,13 @@ function LiveBillingPage({ billing }: { billing: LiveBilling | null }) {
         <StatCard label="SMS credit balance" value={formatRand(billing.creditBalanceCents)} />
         <StatCard label="Locations used" value={`${billing.activeLocations} of ${planLimit}`} />
       </StatGrid>
+
+      {billing.paymentsOn || billing.subscription ? (
+        <section>
+          <h2>Monthly payment</h2>
+          <p>{monthlyPaymentLine(billing.subscription, billing.campaignsPaused)}</p>
+        </section>
+      ) : null}
 
       <section>
         <h2>What your plan includes</h2>

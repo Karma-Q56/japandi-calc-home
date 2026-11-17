@@ -16,6 +16,8 @@ import {
   getOwnerOverviewFn,
   getViewerFn,
 } from "@/server/live";
+import { getBillingBannerFn } from "@/server/live-billing-fns";
+import { BillingBanner } from "@/components/patron/BillingBanner";
 import {
   OwnerSideNav,
   OwnerMobileNav,
@@ -59,12 +61,16 @@ export const Route = createFileRoute("/app")({
   },
   loader: async () => {
     const { mode } = await getDataModeFn();
-    if (mode !== "live") return { mode, live: null, needsSetup: false, published: true };
+    if (mode !== "live") return { mode, live: null, needsSetup: false, published: true, banner: null };
     const viewer = await getViewerFn();
     const needsSetup = viewer?.role === "guest" && viewer.restaurantId === null;
-    if (needsSetup) return { mode, live: null, needsSetup, published: false };
-    const [live, mine] = await Promise.all([getOwnerOverviewFn(), getMyRestaurantFn()]);
-    return { mode, live, needsSetup, published: mine?.published ?? false };
+    if (needsSetup) return { mode, live: null, needsSetup, published: false, banner: null };
+    const [live, mine, banner] = await Promise.all([
+      getOwnerOverviewFn(),
+      getMyRestaurantFn(),
+      getBillingBannerFn(),
+    ]);
+    return { mode, live, needsSetup, published: mine?.published ?? false, banner };
   },
   component: markOutletComponent(OwnerShell),
 });
@@ -152,6 +158,9 @@ function OwnerShell() {
         <header className="ox-top">{brand}</header>
         <OwnerMobileNav venueSwitcher={venuePicker} />
         <OwnerSectionTabs />
+        {isLive && data.banner && data.banner.kind !== "none" ? (
+          <BillingBanner kind={data.banner.kind} graceEndsAt={data.banner.graceEndsAt} />
+        ) : null}
         {setupNeeded ? (
           <RestaurantSetup />
         ) : children.length > 0 ? (

@@ -3,6 +3,7 @@ import { Badge, DataTable, EmptyState, FormField, PageHeader } from "@/component
 import { formatRandFromCents, isLowCredit, ledgerTypeLabel, planLabel, statusLabel } from "@/lib/live-ops-restaurants";
 import { LiveOpsMoneyActions } from "@/components/patron/live/ops/LiveOpsMoneyActions";
 import { setRestaurantStatusFn, setRestaurantPlanFn } from "@/server/live-ops-fns";
+import { setSubscriptionStateFn } from "@/server/live-ops-restaurants-fns";
 
 import type { RestaurantDetail as Detail } from "@/server/live-ops-restaurants";
 
@@ -120,6 +121,36 @@ export function LiveOpsRestaurantDetail(props: { detail: Detail }) {
             { key: "note", header: "Note", cell: (row) => row.note ?? "" },
           ]}
         />
+      )}
+
+      <h2>Monthly payment</h2>
+      {detail.subscription ? (
+        <>
+          <p>
+            {formatRandFromCents(detail.subscription.amount_cents)} a month. Status: {statusLabel(detail.subscription.state)}.
+            {detail.subscription.next_due_at ? ` Next payment due ${dateLabel(detail.subscription.next_due_at)}.` : ""}
+            {detail.subscription.grace_ends_at ? ` Grace ends ${dateLabel(detail.subscription.grace_ends_at)}.` : ""}
+          </p>
+          <p>
+            Use these only when the bank or PayFast says something different from the app. Each one is recorded in the activity log.
+          </p>
+          <button
+            className="builder-secondary"
+            disabled={busy || !reasonOk}
+            onClick={() => run(() => setSubscriptionStateFn({ data: { restaurantId: id, state: "past_due", note: reason } }))}
+          >
+            Mark monthly payment missed
+          </button>
+          <button
+            className="builder-secondary"
+            disabled={busy || !reasonOk}
+            onClick={() => run(() => setSubscriptionStateFn({ data: { restaurantId: id, state: "active", note: reason } }))}
+          >
+            Mark monthly payment received
+          </button>
+        </>
+      ) : (
+        <EmptyState title="No monthly plan" hint="This restaurant does not pay monthly by card." />
       )}
 
       <LiveOpsMoneyActions restaurantId={id} pendingTopups={detail.pending_topups} invoices={detail.invoices} payments={detail.payments} />
