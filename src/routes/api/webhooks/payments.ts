@@ -38,12 +38,32 @@ export const Route = createFileRoute("/api/webhooks/payments")({
           const result = await withContext(
             { databaseUrl: requireDatabaseUrl(), restaurantId: null, isOperator: false },
             async (transaction) => {
-              const rowRes = await transaction.execute<{ result: string }>(sql`
-                select settle_card_payment(
-                  ${event.paymentId}::uuid, ${event.amountCents}::int,
-                  ${event.providerRef}, ${event.outcome}
-                ) as result
-              `);
+              // Look up by m_payment_id first. If it is missing or unknown and the notice has a
+              // PayFast token, find the monthly payment by that token instead. This fallback stays
+              // until the sandbox check shows what a renewal notice really carries.
+              const settle = (paymentId: string) =>
+                transaction.execute<{ result: string }>(sql`
+                  select settle_card_payment(
+                    ${paymentId}::uuid, ${event.amountCents}::int,
+                    ${event.providerRef}, ${event.outcome}, ${event.token}
+                  ) as result
+                `);
+              const findByToken = async () => {
+                const found = await transaction.execute<{ id: string | null }>(sql`
+                  select find_subscription_payment(${event.token}) as id
+                `);
+                return found.rows[0]?.id ?? null;
+              };
+
+              // A failed statement aborts the transaction, so the token lookup runs first and
+              // settle runs once. An id we cannot find is used only when the token finds nothing.
+              let paymentId = event.paymentId;
+              if (event.token) {
+                const byToken = await findByToken();
+                if (byToken) paymentId = byToken;
+              }
+              if (!paymentId) return "unknown_notice";
+              const rowRes = await settle(paymentId);
               return rowRes.rows[0]?.result ?? "ignored";
             },
           );

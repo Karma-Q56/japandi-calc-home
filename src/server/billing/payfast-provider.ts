@@ -55,10 +55,13 @@ export function createPayFastProvider(config: PayFastConfig): PaymentProvider {
 
     parseEvent(body: string): ItnEvent | null {
       const map = new Map(parseItnBody(body));
-      const paymentId = map.get("m_payment_id") ?? "";
+      const rawPaymentId = map.get("m_payment_id") ?? "";
+      const paymentId = UUID.test(rawPaymentId) ? rawPaymentId : null;
+      const token = map.get("token") || null;
       const providerRef = map.get("pf_payment_id") ?? "";
       const gross = Number(map.get("amount_gross"));
-      if (!UUID.test(paymentId) || !providerRef || !Number.isFinite(gross)) return null;
+      // Without a usable payment id, a token is needed to find the payment.
+      if ((!paymentId && !token) || !providerRef || !Number.isFinite(gross)) return null;
       const status = map.get("payment_status");
       const outcome =
         status === "COMPLETE"
@@ -71,6 +74,7 @@ export function createPayFastProvider(config: PayFastConfig): PaymentProvider {
       return {
         paymentId,
         providerRef,
+        token,
         amountCents: Math.round(gross * 100),
         outcome,
       };

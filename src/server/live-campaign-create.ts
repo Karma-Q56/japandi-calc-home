@@ -56,6 +56,8 @@ export type Outcome<T = Record<string, never>> = ({ ok: true } & T) | { ok: fals
 
 const REFUSALS: Record<string, string> = {
   not_enough_credit: "There is not enough credit for this campaign. Add a top-up first.",
+  billing_paused:
+    "Campaigns are paused until your monthly payment or overdue invoice is sorted out. Your till and loyalty card still work.",
   duplicate_code: "That campaign code is already used. Pick another.",
   time_in_past: "Pick a time in the future.",
   invalid_message: "The message must be between 1 and 600 characters.",

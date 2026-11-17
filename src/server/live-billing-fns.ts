@@ -16,6 +16,23 @@ export const getBillingFn = createServerFn({ method: "GET" }).handler(async () =
   return getLiveBilling(viewer);
 });
 
+/** The banner every owner screen shows: nothing, the grace warning, or campaigns paused. */
+export const getBillingBannerFn = createServerFn({ method: "GET" }).handler(async () => {
+  const [{ readViewer }, { getLiveBilling }, { billingBannerKind }] = await Promise.all([
+    import("./auth-viewer"),
+    import("./live-billing"),
+    import("../lib/live-billing"),
+  ]);
+  const viewer = await readViewer();
+  if (!viewer) return { kind: "none" as const, graceEndsAt: null };
+  const billing = await getLiveBilling(viewer);
+  if (!billing) return { kind: "none" as const, graceEndsAt: null };
+  return {
+    kind: billingBannerKind(billing.subscription, billing.campaignsPaused),
+    graceEndsAt: billing.subscription?.state === "past_due" ? billing.subscription.graceEndsAt : null,
+  };
+});
+
 /** The public address of this site, read from the request on the server (never from the browser). */
 function requestOrigin(): string | null {
   const host = getRequestHeaders().get("host")?.trim();

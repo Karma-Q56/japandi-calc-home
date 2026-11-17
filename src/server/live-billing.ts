@@ -7,6 +7,7 @@ import { planBilling } from "../config/plans";
 import { readPayFastConfig } from "./billing/payfast";
 import { createPayFastProvider } from "./billing/payfast-provider";
 import { refusalCode } from "./live-ops";
+import { isBillingPaused, type SubscriptionView } from "../lib/live-billing";
 
 // Live plans, billing and payments (phase D21). Demo mode never imports this file.
 //
@@ -52,6 +53,10 @@ export type LiveBilling = {
   payments: BillingPayment[];
   invoices: BillingInvoice[];
   bankingDetails: string | null;
+  /** The monthly card payment state. Null when the restaurant has never paid monthly by card. */
+  subscription: SubscriptionView | null;
+  /** True when campaign sending is paused (see isBillingPaused). */
+  campaignsPaused: boolean;
 };
 
 const planKey = (plan: string) => (plan === "managed" ? "Growth" : plan === "partner" ? "Pro" : "Starter");
@@ -96,10 +101,34 @@ export async function getLiveBilling(viewer: Viewer): Promise<LiveBilling | null
         from invoice where restaurant_id = ${restaurantId}
         order by created_at desc limit 50
       `);
+      const subRes = await transaction.execute<{
+        state: "active" | "past_due" | "cancelled";
+        grace_ends_at: Date | string | null;
+        next_due_at: Date | string | null;
+      }>(sql`
+        select state, grace_ends_at, next_due_at from subscription where restaurant_id = ${restaurantId}
+      `);
+      const subRow = subRes.rows[0];
+      const subscription: SubscriptionView | null = subRow
+        ? {
+            state: subRow.state,
+            graceEndsAt: subRow.grace_ends_at ? iso(subRow.grace_ends_at) : null,
+            nextDueAt: subRow.next_due_at ? iso(subRow.next_due_at) : null,
+          }
+        : null;
+      const overdueRes = await transaction.execute<{ due_date: string }>(sql`
+        select due_date::text as due_date from invoice
+        where restaurant_id = ${restaurantId} and status = 'open'
+      `);
       const planCode = restaurantRes.rows[0]?.plan ?? "starter";
       const name = planKey(planCode);
       const limits = planBilling[name]!;
       return {
+        subscription,
+        campaignsPaused: isBillingPaused(
+          subscription,
+          overdueRes.rows.map((row) => row.due_date),
+        ),
         planName: name,
         planCode,
         monthlyCents: limits.monthlyCents,

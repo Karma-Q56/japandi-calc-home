@@ -46,6 +46,7 @@ describe("PayFast signature", () => {
       providerRef: "1234567",
       amountCents: 150000,
       outcome: "paid",
+      token: null,
     });
   });
 

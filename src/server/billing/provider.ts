@@ -17,9 +17,12 @@ export type CheckoutRequest = {
 export type CheckoutResult = { url: string; fields: Array<[string, string]> };
 
 export type ItnEvent = {
-  paymentId: string;
+  /** Null when m_payment_id is missing or not a payment id. The webhook then looks up by token. */
+  paymentId: string | null;
   amountCents: number;
   providerRef: string;
+  /** PayFast subscription token (the `token` field). Empty for a one-off payment. */
+  token: string | null;
   /** "pending" means PayFast has not decided yet. The webhook changes nothing for it. */
   outcome: "paid" | "failed" | "cancelled" | "pending";
 };

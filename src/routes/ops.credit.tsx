@@ -7,15 +7,52 @@ import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
 import { useDemoState } from "@/data/useDemoState";
 import { Badge, EmptyState, FormField, PageHeader } from "@/components/patron/dash";
+import { getDataModeFn } from "@/server/live";
+import { listRestaurantsFn, pendingTopupsFn } from "@/server/live-ops-restaurants-fns";
+import { LiveOpsCredit } from "@/components/patron/live/ops/LiveOpsCredit";
 
 const OpsCreditPage = withChildren(OpsCredit);
 
 export const Route = createFileRoute("/ops/credit")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode === "live") return;
     if (!requireRole("operator")(demoRepo.read().session)) throw redirect({ to: "/login" });
   },
-  component: OpsCreditPage,
+  loader: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode !== "live") return { mode, live: null };
+    const [pending, restaurants] = await Promise.all([
+      pendingTopupsFn(),
+      listRestaurantsFn({ data: { search: "", status: "", limit: 100, offset: 0 } }),
+    ]);
+    return { mode, live: { pending, restaurants } };
+  },
+  component: LiveOrDemoCredit,
 });
+
+function LiveOrDemoCredit() {
+  const { mode, live } = Route.useLoaderData();
+  if (mode !== "live" || !live) return <OpsCreditPage />;
+  const { pending, restaurants } = live;
+  if (!pending.ok) return <main className="demo-hub page-width"><p role="status">{pending.message}</p></main>;
+  if (!restaurants.ok) return <main className="demo-hub page-width"><p role="status">{restaurants.message}</p></main>;
+  return (
+    <main className="demo-hub page-width">
+      <LiveOpsCredit
+        pending={pending.rows.map((row) => ({
+          id: String(row.payment_id),
+          restaurant_id: String(row.restaurant_id),
+          restaurant_name: String(row.restaurant_name),
+          amount_cents: Number(row.amount_cents),
+          reference: row.reference == null ? null : String(row.reference),
+          created_at: String(row.created_at),
+        }))}
+        restaurants={restaurants.rows.map((row) => ({ id: String(row.id), name: String(row.name) }))}
+      />
+    </main>
+  );
+}
 
 const zar = (cents: number) => `R${(cents / 100).toFixed(2)}`;
 

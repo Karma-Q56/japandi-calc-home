@@ -1,3 +1,4 @@
+import { failureMessage } from "@/lib/live-ops-inbox";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { api } from "@/api";
@@ -18,14 +19,34 @@ import {
 } from "@/domain/feedback";
 import { EmptyState, PageHeader } from "@/components/patron/dash";
 
+import { withChildren } from "@/lib/nested";
+import { getDataModeFn } from "@/server/live";
+import { listFeedbackFn } from "@/server/live-ops-inbox-fns";
+import { LiveOpsFeedback } from "@/components/patron/live/ops/LiveOpsFeedback";
+
+const OpsFeedbackPage = withChildren(OpsFeedback);
 export const Route = createFileRoute("/ops/feedback")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode === "live") return;
     if (!requireRole("operator")(demoRepo.read().session)) {
       throw redirect({ to: "/login" });
     }
   },
-  component: OpsFeedback,
+  loader: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode !== "live") return { mode, live: null };
+    return { mode, live: await listFeedbackFn({ data: { status: "", limit: 50, offset: 0 } }) };
+  },
+  component: withChildren(LiveOrDemoFeedback),
 });
+
+function LiveOrDemoFeedback() {
+  const { mode, live } = Route.useLoaderData();
+  if (mode === "live" && live?.ok) return <LiveOpsFeedback initial={live.rows} />;
+  if (mode === "live") return <p className="demo-data-note">{failureMessage(live) ?? "Could not load feedback."}</p>;
+  return <OpsFeedbackPage />;
+}
 
 function OpsFeedback() {
   const state = useDemoState();

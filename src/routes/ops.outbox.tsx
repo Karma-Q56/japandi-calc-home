@@ -1,3 +1,4 @@
+import { failureMessage } from "@/lib/live-ops-inbox";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { api } from "@/api";
@@ -8,13 +9,38 @@ import { fakeSmsProvider } from "@/domain/sms";
 import { Badge, EmptyState, FormField, PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
 import { formatRand } from "@/lib/money";
 import type { Message, MessageStatus } from "@/data/types";
+import { withChildren } from "@/lib/nested";
+import { getDataModeFn } from "@/server/live";
+import { listOutboxFn, outboxSummaryFn } from "@/server/live-ops-inbox-fns";
+import { LiveOpsOutbox } from "@/components/patron/live/ops/LiveOpsOutbox";
 
+const OpsOutboxPage = withChildren(OpsOutbox);
 export const Route = createFileRoute("/ops/outbox")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode === "live") return;
     if (!requireRole("operator")(demoRepo.read().session)) throw redirect({ to: "/login" });
   },
-  component: OpsOutbox,
+  loader: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode !== "live") return { mode, live: null, summary: null };
+    const [live, summary] = await Promise.all([
+      listOutboxFn({ data: { status: "", limit: 50, offset: 0 } }),
+      outboxSummaryFn(),
+    ]);
+    return { mode, live, summary };
+  },
+  component: withChildren(LiveOrDemoOutbox),
 });
+
+function LiveOrDemoOutbox() {
+  const { mode, live, summary } = Route.useLoaderData();
+  if (mode === "live" && live?.ok && summary?.ok) {
+    return <LiveOpsOutbox initial={live.rows} summary={summary.rows} />;
+  }
+  if (mode === "live") return <p className="demo-data-note">{failureMessage(live) ?? failureMessage(summary) ?? "Could not load the outbox."}</p>;
+  return <OpsOutboxPage />;
+}
 
 const STATUS_LABELS: Record<MessageStatus, string> = {
   queued: "Queued",

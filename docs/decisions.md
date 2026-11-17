@@ -645,3 +645,37 @@ Not in this phase: a real payment (tested later in PayFast sandbox), SARS tax in
 - Branches are turned off, never deleted. Turning off keeps the history.
 - Demo mode stores branches in the demo state with seed branches Parkhurst (main) and Sandton.
 - Still to do: staff branch picker on the Team screen, branch filter on Insights, and branch names on the public page.
+D23 operator live part 1 (restaurants, credit, top ups, invoices, refunds):
+
+- **Refunds are negative adjustments.** A top up refund writes a negative `adjustment` ledger row with reference `refund:<id>`, not a `refund` row, because `credit_ledger` requires refund amounts to be positive. This departs from the spec wording.
+- **Monthly payment refunds only record.** A refund on a monthly payment is written to the `refund` table and does not change the plan or credit.
+- **Rejecting a top up sets the payment to rejected.** `payment` has no reject reason column, so the reason lives in the audit row only.
+- **Operator refusal codes are separate.** `src/server/live-ops-restaurants.ts` has its own `opsRefusalCode`; the existing `refusalCode` in `live-ops.ts` is unchanged.
+- **Write limit.** Operators get 60 writes per hour, bucket `ops-write`, counted in `rate_limit_hit`.
+- **Invoice creation has its own guarded path.** `createInvoiceLive` is new; `createLiveInvoice` is unchanged.
+- **Refund table is locked down.** Row level security is enabled and forced, with no direct grants to `app_user`.
+- **Money features are live only.** EFT confirm, invoices and refunds have no demo version; demo mode is unchanged.
+- **Flagged, not changed.** `scoped()` in `src/domain/locations.ts` admits managers; `requireScope` in `src/domain/audit.ts` admits only owner and staff.
+
+D24 operator live part 2 (campaign approvals, enquiries, feedback, ideas, SMS outbox):
+
+- **Campaign approvals reuse the existing decision.** Approve and reject call the exported `decideCampaign` in `live-ops.ts` after the write limit; its SQL is not copied.
+- **Own inbox refusal codes.** `src/server/live-ops-inbox.ts` has its own `inboxRefusalCode`, walking the cause chain five levels with exact matches. New codes: `lead_not_found`, `feedback_not_found`, `idea_not_found`, `invalid_value`.
+- **Write limit.** Every D24 write is rate limited like `withinPaymentLimit`: 60 per operator per hour, bucket `ops-write`.
+- **Outbox phones are masked twice.** The database returns the country code plus the last three digits, and the browser helper `maskPhone` masks again.
+- **Feedback contact only when allowed.** The contact is returned only when `contact_ok` is true.
+- **Feedback screenshots load on demand.** The live list omits the picture; a "Show picture" button fetches it via `feedbackScreenshotFn`, and the picture is never in the list read.
+- **Feedback has a reference.** A `reference` column (`FB-YYYY-NNN`) with a unique index is backfilled from a sequence.
+- **Lead status gap.** The inbox handles all seven statuses (`new`, `replied`, `closed`, `contacted`, `demo_booked`, `won`, `lost`); the D24 prompt lists only five. `demo_booked` is added to `lead_status` in the migration.
+- **Operator functions are locked down.** All ten new functions are revoked from public and granted only to `app_user`.
+- **Live routes keep demo.** Each route checks `getDataModeFn`; the demo component stays as the other branch, wrapped in `withChildren` so the Outlet marker survives.
+- **Helper copies, not imports.** `requireOperator`, `runAsOperator` and `rowsOf` are copied into the D24 server file; `live-ops.ts` is not edited.
+- **Monthly payment lookup by token.** A monthly notice is matched by `m_payment_id` first, then by the PayFast `token` field when the id is missing or unknown. The lookup runs before settle, not as a retry, because a failed statement aborts the Postgres transaction.
+- **Unknown notices get a 200.** A notice that can never match returns HTTP 200 with body `unknown_notice`, so PayFast stops retrying it.
+- **One-off payments unchanged.** `settle_card_payment` keeps the 0032 rules for one-off payments; renewal and failure logic applies only to `kind = 'subscription'`.
+- **Seven day grace, then pause.** A failed monthly payment gets 7 days. After that, campaigns pause through `billing_paused`, checked in `create_campaign` and `claim_due_campaigns`. A cancelled plan pauses past its due date, and an invoice pauses campaigns when more than 7 days overdue.
+- **Till and loyalty keep working.** Pausing only stops campaign sending and creation; the till and loyalty card are never blocked.
+- **Plain date wording.** Owner dates use `plainDate` (en-ZA, Africa/Johannesburg), for example "19 November".
+- **Demo billing uses fixed examples.** `DemoBilling.tsx` shows fixed values from `planBilling`; demo plan `managed` maps to Growth, `partner` to Pro, and anything else to Starter.
+- **Operator buttons need a reason.** "Mark monthly payment missed" and "Mark monthly payment received" both need a reason of at least 3 characters, and both go through `operator_set_subscription_state`.
+- **Monthly notice format is unverified.** Whether a monthly notice reuses the same `m_payment_id`, and what the `token` looks like, must be checked in the PayFast sandbox before launch.

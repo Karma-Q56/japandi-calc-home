@@ -1,3 +1,4 @@
+import { failureMessage } from "@/lib/live-ops-inbox";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { api } from "@/api";
@@ -6,13 +7,32 @@ import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
 import { Badge, EmptyState, FormField, PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
 import type { Lead, LeadKind, LeadStatus } from "@/data/types";
+import { withChildren } from "@/lib/nested";
+import { getDataModeFn } from "@/server/live";
+import { listLeadsFn } from "@/server/live-ops-inbox-fns";
+import { LiveOpsLeads } from "@/components/patron/live/ops/LiveOpsLeads";
 
+const OpsLeadsPage = withChildren(OpsLeads);
 export const Route = createFileRoute("/ops/leads")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode === "live") return;
     if (!requireRole("operator")(demoRepo.read().session)) throw redirect({ to: "/login" });
   },
-  component: OpsLeads,
+  loader: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode !== "live") return { mode, live: null };
+    return { mode, live: await listLeadsFn({ data: { status: "", search: "", limit: 50, offset: 0 } }) };
+  },
+  component: withChildren(LiveOrDemoLeads),
 });
+
+function LiveOrDemoLeads() {
+  const { mode, live } = Route.useLoaderData();
+  if (mode === "live" && live?.ok) return <LiveOpsLeads initial={live.rows} />;
+  if (mode === "live") return <p className="demo-data-note">{failureMessage(live) ?? "Could not load enquiries."}</p>;
+  return <OpsLeadsPage />;
+}
 
 const KIND_LABELS: Record<LeadKind, string> = {
   owner: "Restaurant owner",
