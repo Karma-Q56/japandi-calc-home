@@ -286,6 +286,21 @@ export interface StaffMember {
   displayName: string;
   active: boolean;
   pinHash: string | null;
+  /** The branch this person works at. Null when they work at all branches. (D20) */
+  locationId?: string | null;
+  allBranches?: boolean;
+}
+
+/** A branch of a restaurant. The main branch is the one that is never turned off. (D20) */
+export interface Location {
+  id: string;
+  restaurantId: string;
+  name: string;
+  address: string;
+  suburb: string;
+  city: string;
+  isMain: boolean;
+  active: boolean;
 }
 export interface MenuSection {
   id: string;
@@ -740,6 +755,7 @@ export interface PairingCode {
   codeHash: string;
   expiresAt: number;
   usedAt?: number;
+  locationId?: string | null;
 }
 export interface OtpSendLogEntry {
   id: string;
@@ -777,6 +793,7 @@ export interface DemoSession {
   customerId?: string;
   staffId?: string;
   tillPairedRestaurantId?: string;
+  tillPairedLocationId?: string | null;
   staffExpiresAt?: number;
   /** Set while a Patron operator is helping in a restaurant. */
   helpMode?: { restaurantId: string; operator: string; until: string };
@@ -809,6 +826,8 @@ export interface DemoState {
   session: DemoSession;
   restaurants: Restaurant[];
   staff: StaffMember[];
+  /** Branches. Optional so saves made before D20 still load. (D20) */
+  locations?: Location[];
   sections: MenuSection[];
   items: MenuItem[];
   specials: Special[];

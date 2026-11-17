@@ -60,6 +60,10 @@ export function createDemoRepos(): PatronRepos {
         pageTemplate: r.pageTemplate ?? "classic",
         menu,
         specials,
+        branches: (s.locations ?? [])
+          .filter((l) => l.restaurantId === r.id && l.active)
+          .sort((a, b) => Number(b.isMain) - Number(a.isMain) || a.name.localeCompare(b.name))
+          .map((l) => ({ id: l.id, name: l.name, suburb: l.suburb ?? null, isMain: l.isMain })),
       };
     },
 

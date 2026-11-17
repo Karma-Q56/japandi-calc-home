@@ -298,7 +298,9 @@ export function LiveTill() {
   return (
     <main className="demo-hub page-width">
       <PageHeader
-        eyebrow={`Till · ${state.staff.displayName}`}
+        eyebrow={["Till", state.restaurant?.branchName, state.staff.displayName]
+          .filter(Boolean)
+          .join(" · ")}
         title={state.restaurant?.name ?? ""}
         intro="Look up a guest, add a stamp and send them off with their reward."
       />

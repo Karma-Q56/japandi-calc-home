@@ -143,6 +143,20 @@ function LivePublicPage({ page, slug }: { page: PublicPage; slug: string }) {
           Join our card
         </a>
       </section>
+      {page.branches.length > 1 ? (
+        <section className="guest-section">
+          <h2>Our branches</h2>
+          <ul>
+            {page.branches.map((branch) => (
+              <li key={branch.id}>
+                {branch.name}
+                {branch.suburb ? `, ${branch.suburb}` : ""}
+                {branch.isMain ? " (main)" : ""}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
       {[...sections.values()].map((group) => (
         <section className="guest-section" key={group.name}>
           <h2>{group.name}</h2>

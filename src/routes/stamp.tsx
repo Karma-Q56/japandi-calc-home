@@ -48,6 +48,15 @@ function Till() {
   return mode === "live" ? <LiveTill /> : <DemoTill />;
 }
 
+/** Branch name for the demo till header. Older pairings have no branch, so the main branch is used. */
+function pairedBranchName(restaurantId: string, locationId: string | null | undefined) {
+  const branches = api.branch.list(restaurantId).filter((b) => b.active);
+  const branch = locationId
+    ? branches.find((b) => b.id === locationId)
+    : branches.find((b) => b.isMain);
+  return branch ? branch.name : null;
+}
+
 function DemoTill() {
   const { mode } = Route.useLoaderData();
   const state = useDemoState();
@@ -539,7 +548,13 @@ function DemoTill() {
   return (
     <StaffShell restaurant={restaurant}>
       <PageHeader
-        eyebrow={`Till · ${signedInStaff?.displayName ?? "Staff"}`}
+        eyebrow={[
+          "Till",
+          pairedBranchName(restaurant.id, session.tillPairedLocationId),
+          signedInStaff?.displayName ?? "Staff",
+        ]
+          .filter(Boolean)
+          .join(" · ")}
         title={restaurant.name}
         intro="Look up a guest, add a stamp and send them off with their reward."
         actions={

@@ -45,7 +45,13 @@ export type AuditAction =
   | "help_draft_used"
   | "help_draft_discarded"
   | "help_request"
-  | "help_reply";
+  | "help_reply"
+  | "branch_add"
+  | "branch_edit"
+  | "branch_main"
+  | "branch_off"
+  | "branch_on"
+  | "staff_branch";
 
 /** Never pass PINs or full phone numbers, ids only. */
 export function logAudit(input: {

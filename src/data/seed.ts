@@ -542,11 +542,39 @@ export function createSeed(now = Date.now()): DemoState {
     now,
     session: { role: "operator" },
     restaurants,
+    locations: [
+      {
+        id: "loc-daily-grind-main",
+        restaurantId: "rest-daily-grind",
+        name: "Parkhurst",
+        address: "4th Avenue, Parkhurst",
+        suburb: "Parkhurst",
+        city: "Johannesburg",
+        isMain: true,
+        active: true,
+      },
+      {
+        id: "loc-daily-grind-sandton",
+        restaurantId: "rest-daily-grind",
+        name: "Sandton",
+        address: "Rivonia Road, Sandton",
+        suburb: "Sandton",
+        city: "Johannesburg",
+        isMain: false,
+        active: true,
+      },
+    ],
     staff: restaurants.map((r, i) => ({
       id: `staff-${i + 1}`,
       restaurantId: r.id,
       displayName: ["Mia", "Thabo", "Zanele"][i]!,
       active: true,
+      ...(r.id === "rest-daily-grind"
+        ? {
+            locationId: i === 1 ? null : "loc-daily-grind-main",
+            allBranches: i === 1,
+          }
+        : {}),
       // Demo PINs: 1234 / 2345 / 3456 (HMAC-SHA256, see src/lib/pin.ts).
       pinHash: [
         "d3c06b557b557cceab0d8d1bf86080c2fe52c54fcad30d2c71ecd1185f48c470",
