@@ -51,31 +51,27 @@ describe.skipIf(!dbTestsEnabled)("operator restaurants, top ups and refunds (rea
     expect(String(error)).toMatch(/not_operator/);
   });
 
-  it("confirms a top up once and refuses a repeat", async () => {
+  it("confirms a top up once and refuses a repeat in the same transaction", async () => {
     const { operatorId, paymentId } = await setup(5000);
-    await asApp(db.app, { operator: true }, (tx) =>
-      tx`select operator_confirm_topup(${operatorId}, ${paymentId}::uuid)`,
-    );
-    const again = await asApp(db.app, { operator: true }, (tx) =>
-      tx`select operator_confirm_topup(${operatorId}, ${paymentId}::uuid)`.then(
+    const error = await asApp(db.app, { operator: true }, async (tx) => {
+      await tx`select operator_confirm_topup(${operatorId}, ${paymentId}::uuid)`;
+      return tx`select operator_confirm_topup(${operatorId}, ${paymentId}::uuid)`.then(
         () => null,
         (e: unknown) => e,
-      ),
-    );
-    expect(String(again)).toMatch(/not_pending/);
+      );
+    });
+    expect(String(error)).toMatch(/not_pending/);
   });
 
   it("refuses a refund larger than the amount paid", async () => {
     const { operatorId, paymentId } = await setup(2000);
-    await asApp(db.app, { operator: true }, (tx) =>
-      tx`select operator_confirm_topup(${operatorId}, ${paymentId}::uuid)`,
-    );
-    const error = await asApp(db.app, { operator: true }, (tx) =>
-      tx`select operator_record_refund(${operatorId}, ${paymentId}::uuid, 999999, 'test')`.then(
+    const error = await asApp(db.app, { operator: true }, async (tx) => {
+      await tx`select operator_confirm_topup(${operatorId}, ${paymentId}::uuid)`;
+      return tx`select operator_record_refund(${operatorId}, ${paymentId}::uuid, 999999, 'test')`.then(
         () => null,
         (e: unknown) => e,
-      ),
-    );
+      );
+    });
     expect(String(error)).toMatch(/amount_too_large/);
   });
 

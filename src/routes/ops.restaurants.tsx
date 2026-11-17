@@ -24,7 +24,7 @@ export const Route = createFileRoute("/ops/restaurants")({
     if (mode !== "live") return { mode, live: null };
     return { mode, live: await listRestaurantsFn({ data: { search: "", status: "", limit: 50, offset: 0 } }) };
   },
-  component: LiveOrDemoRestaurants,
+  component: withChildren(LiveOrDemoRestaurants),
 });
 
 function LiveOrDemoRestaurants() {

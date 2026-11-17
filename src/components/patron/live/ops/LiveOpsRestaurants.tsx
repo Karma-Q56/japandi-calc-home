@@ -54,7 +54,7 @@ export function LiveOpsRestaurants(props: { initial: { ok: true; rows: Row[] } |
         }
       />
       <div>
-        <FormField label="Search by name, slug or owner email">
+        <FormField label="Search by name, web address or owner email">
           <input value={search} onChange={(e) => setSearch(e.target.value)} />
         </FormField>
         <FormField label="Status">
