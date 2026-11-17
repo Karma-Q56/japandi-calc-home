@@ -41,7 +41,7 @@ export function LiveOpsOutbox({ initial, summary }: { initial: OutboxRow[]; summ
 
       <StatGrid>
         <StatCard value={counts.queued} label="Waiting to send" hint="Waiting for the dispatcher." />
-        <StatCard value={counts.sent} label="Sent" hint="Handed to the SMS provider." />
+        <StatCard value={counts.sent} label="Sent" hint="Sent to the phone network." />
         <StatCard value={counts.failed} label="Failed" hint="Credit can be refunded after settle." />
         <StatCard value={counts.skipped} label="Skipped" hint="Guests who opted out are never messaged." />
       </StatGrid>
