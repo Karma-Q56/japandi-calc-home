@@ -75,11 +75,14 @@ describe.skipIf(!dbTestsEnabled)("operator restaurants, top ups and refunds (rea
     expect(String(error)).toMatch(/amount_too_large/);
   });
 
-  it("hides refund rows from a restaurant that did not make them", async () => {
+  it("blocks a direct read of the refund table from the app role", async () => {
     const { restaurantId } = await setup(1000);
-    const rows = await asApp(db.app, { restaurantId }, (tx) =>
-      tx<{ n: number }[]>`select count(*)::int as n from refund`,
+    const error = await asApp(db.app, { restaurantId }, (tx) =>
+      tx`select count(*)::int as n from refund`.then(
+        () => null,
+        (e: unknown) => e,
+      ),
     );
-    expect(rows[0]?.n).toBe(0);
+    expect(String(error)).toMatch(/permission denied for table refund/);
   });
 });
