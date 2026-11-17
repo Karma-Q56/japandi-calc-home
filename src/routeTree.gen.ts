@@ -48,6 +48,7 @@ import { Route as AppFeedbackRouteImport } from './routes/app.feedback'
 import { Route as AppIdeasRouteImport } from './routes/app.ideas'
 import { Route as AppInsightsRouteImport } from './routes/app.insights'
 import { Route as AppListsRouteImport } from './routes/app.lists'
+import { Route as AppLocationsRouteImport } from './routes/app.locations'
 import { Route as AppLoyaltyRouteImport } from './routes/app.loyalty'
 import { Route as AppMenuRouteImport } from './routes/app.menu'
 import { Route as AppOnboardingRouteImport } from './routes/app.onboarding'
@@ -290,6 +291,11 @@ const AppInsightsRoute = AppInsightsRouteImport.update({
 const AppListsRoute = AppListsRouteImport.update({
   id: '/lists',
   path: '/lists',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppLocationsRoute = AppLocationsRouteImport.update({
+  id: '/locations',
+  path: '/locations',
   getParentRoute: () => AppRoute,
 } as any)
 const AppLoyaltyRoute = AppLoyaltyRouteImport.update({
@@ -573,6 +579,7 @@ export interface FileRoutesByFullPath {
   '/app/ideas': typeof AppIdeasRoute
   '/app/insights': typeof AppInsightsRoute
   '/app/lists': typeof AppListsRoute
+  '/app/locations': typeof AppLocationsRoute
   '/app/loyalty': typeof AppLoyaltyRoute
   '/app/menu': typeof AppMenuRoute
   '/app/onboarding': typeof AppOnboardingRoute
@@ -662,6 +669,7 @@ export interface FileRoutesByTo {
   '/app/ideas': typeof AppIdeasRoute
   '/app/insights': typeof AppInsightsRoute
   '/app/lists': typeof AppListsRoute
+  '/app/locations': typeof AppLocationsRoute
   '/app/loyalty': typeof AppLoyaltyRoute
   '/app/menu': typeof AppMenuRoute
   '/app/onboarding': typeof AppOnboardingRoute
@@ -752,6 +760,7 @@ export interface FileRoutesById {
   '/app/ideas': typeof AppIdeasRoute
   '/app/insights': typeof AppInsightsRoute
   '/app/lists': typeof AppListsRoute
+  '/app/locations': typeof AppLocationsRoute
   '/app/loyalty': typeof AppLoyaltyRoute
   '/app/menu': typeof AppMenuRoute
   '/app/onboarding': typeof AppOnboardingRoute
@@ -843,6 +852,7 @@ export interface FileRouteTypes {
     | '/app/ideas'
     | '/app/insights'
     | '/app/lists'
+    | '/app/locations'
     | '/app/loyalty'
     | '/app/menu'
     | '/app/onboarding'
@@ -932,6 +942,7 @@ export interface FileRouteTypes {
     | '/app/ideas'
     | '/app/insights'
     | '/app/lists'
+    | '/app/locations'
     | '/app/loyalty'
     | '/app/menu'
     | '/app/onboarding'
@@ -1021,6 +1032,7 @@ export interface FileRouteTypes {
     | '/app/ideas'
     | '/app/insights'
     | '/app/lists'
+    | '/app/locations'
     | '/app/loyalty'
     | '/app/menu'
     | '/app/onboarding'
@@ -1390,6 +1402,13 @@ declare module '@tanstack/react-router' {
       path: '/lists'
       fullPath: '/app/lists'
       preLoaderRoute: typeof AppListsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/locations': {
+      id: '/app/locations'
+      path: '/locations'
+      fullPath: '/app/locations'
+      preLoaderRoute: typeof AppLocationsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/loyalty': {
@@ -1769,6 +1788,7 @@ interface AppRouteChildren {
   AppIdeasRoute: typeof AppIdeasRoute
   AppInsightsRoute: typeof AppInsightsRoute
   AppListsRoute: typeof AppListsRoute
+  AppLocationsRoute: typeof AppLocationsRoute
   AppLoyaltyRoute: typeof AppLoyaltyRoute
   AppMenuRoute: typeof AppMenuRoute
   AppOnboardingRoute: typeof AppOnboardingRoute
@@ -1793,6 +1813,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppIdeasRoute: AppIdeasRoute,
   AppInsightsRoute: AppInsightsRoute,
   AppListsRoute: AppListsRoute,
+  AppLocationsRoute: AppLocationsRoute,
   AppLoyaltyRoute: AppLoyaltyRoute,
   AppMenuRoute: AppMenuRoute,
   AppOnboardingRoute: AppOnboardingRoute,
