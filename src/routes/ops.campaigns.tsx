@@ -1,3 +1,4 @@
+import { failureMessage } from "@/lib/live-ops-inbox";
 import { withChildren } from "@/lib/nested";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
@@ -6,14 +7,31 @@ import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
 import { useDemoState } from "@/data/useDemoState";
 import { Badge, FormField, PageHeader, PreviewBanner } from "@/components/patron/dash";
+import { getDataModeFn } from "@/server/live";
+import { listPendingCampaignsFn } from "@/server/live-ops-inbox-fns";
+import { LiveOpsCampaigns } from "@/components/patron/live/ops/LiveOpsCampaigns";
 
 const OpsCampaignsPage = withChildren(OpsCampaigns);
 export const Route = createFileRoute("/ops/campaigns")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode === "live") return;
     if (!requireRole("operator")(demoRepo.read().session)) throw redirect({ to: "/login" });
   },
-  component: OpsCampaignsPage,
+  loader: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode !== "live") return { mode, live: null };
+    return { mode, live: await listPendingCampaignsFn() };
+  },
+  component: withChildren(LiveOrDemoCampaigns),
 });
+
+function LiveOrDemoCampaigns() {
+  const { mode, live } = Route.useLoaderData();
+  if (mode === "live" && live?.ok) return <LiveOpsCampaigns initial={live.rows} />;
+  if (mode === "live") return <p className="demo-data-note">{failureMessage(live) ?? "Could not load campaigns."}</p>;
+  return <OpsCampaignsPage />;
+}
 
 function OpsCampaigns() {
   const state = useDemoState();

@@ -1,3 +1,4 @@
+import { failureMessage } from "@/lib/live-ops-inbox";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { api } from "@/api";
@@ -8,15 +9,35 @@ import { Badge, EmptyState, FormField, PageHeader, StatCard, StatGrid } from "@/
 import { IDEA_STATUSES, IDEA_STATUS_LABELS, type IdeaFilters } from "@/domain/ideas";
 import type { Idea, IdeaStatus } from "@/data/types";
 
+import { withChildren } from "@/lib/nested";
+import { getDataModeFn } from "@/server/live";
+import { listIdeasFn } from "@/server/live-ops-inbox-fns";
+import { LiveOpsIdeas } from "@/components/patron/live/ops/LiveOpsIdeas";
+
+const OpsIdeasPage = withChildren(OpsIdeas);
 export const Route = createFileRoute("/ops/ideas")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode === "live") return;
     if (!requireRole("operator")(demoRepo.read().session)) throw redirect({ to: "/login" });
+  },
+  loader: async () => {
+    const { mode } = await getDataModeFn();
+    if (mode !== "live") return { mode, live: null };
+    return { mode, live: await listIdeasFn({ data: { status: "", limit: 50, offset: 0 } }) };
   },
   head: () => ({
     meta: [{ title: "Ideas inbox | Patron" }],
   }),
-  component: OpsIdeas,
+  component: withChildren(LiveOrDemoIdeas),
 });
+
+function LiveOrDemoIdeas() {
+  const { mode, live } = Route.useLoaderData();
+  if (mode === "live" && live?.ok) return <LiveOpsIdeas initial={live.rows} />;
+  if (mode === "live") return <p className="demo-data-note">{failureMessage(live) ?? "Could not load ideas."}</p>;
+  return <OpsIdeasPage />;
+}
 
 function OpsIdeas() {
   const state = useDemoState();
