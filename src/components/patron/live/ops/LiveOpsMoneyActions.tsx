@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useRouter } from "@tanstack/react-router";
 import { DataTable, EmptyState, FormField } from "@/components/patron/dash";
 import {
   formatRandFromCents,
   invoiceStatusText,
+  isRefundablePayment,
   paymentKindLabel,
   refundWording,
   validateInvoiceInput,
@@ -32,6 +34,7 @@ export function LiveOpsMoneyActions(props: {
   invoices: Invoice[];
   payments: Payment[];
 }) {
+  const router = useRouter({ warn: false });
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [reason, setReason] = useState("");
@@ -47,7 +50,8 @@ export function LiveOpsMoneyActions(props: {
     const result = await action();
     setMessage(result.message ?? (result.ok ? "Done." : "Nothing changed."));
     setBusy(false);
-    if (result.ok && typeof window !== "undefined") window.location.reload();
+    // Reload the page data in place so the message stays on screen.
+    if (result.ok) await router?.invalidate();
   }
 
   const reasonOk = reason.trim().length >= 3;
@@ -84,7 +88,7 @@ export function LiveOpsMoneyActions(props: {
               header: "Actions",
               cell: (row) => (
                 <span>
-                  <button className="builder-primary" disabled={busy || !reasonOk} onClick={() => run(() => confirmTopupFn({ data: { paymentId: row.id } }))}>
+                  <button className="builder-primary" disabled={busy} onClick={() => run(() => confirmTopupFn({ data: { paymentId: row.id } }))}>
                     Money received, add credit
                   </button>{" "}
                   <button className="builder-secondary" disabled={busy || !reasonOk} onClick={() => run(() => rejectTopupFn({ data: { paymentId: row.id, reason } }))}>
@@ -170,7 +174,7 @@ export function LiveOpsMoneyActions(props: {
               key: "actions",
               header: "Refund",
               cell: (row) =>
-                row.kind === "topup" && row.status === "confirmed" ? (
+                isRefundablePayment(row.kind, row.status) && row.amount_cents - row.refunded_cents > 0 ? (
                   <span>
                     <input
                       aria-label="Refund amount in rand"
@@ -194,8 +198,10 @@ export function LiveOpsMoneyActions(props: {
                       Record refund
                     </button>
                   </span>
+                ) : row.refunded_cents >= row.amount_cents && row.amount_cents > 0 ? (
+                  "Fully refunded"
                 ) : (
-                  "Not refundable here"
+                  "Not refundable"
                 ),
             },
           ]}

@@ -1,5 +1,6 @@
 // Pure helpers for the live operator restaurant, credit, top up, invoice and refund screens (D23).
 // Browser-safe: no database or server imports.
+import { planBilling } from "@/config/plans";
 
 /** Rand amount for display. Never shows cents: R1 250 with a space as thousands separator. */
 export function formatRandFromCents(cents: number): string {
@@ -25,20 +26,37 @@ export function statusLabel(status: string): string {
   }
 }
 
-/** Plain words for a plan. */
+/**
+ * Plain words for a plan, the same names an owner sees on their billing page. The database keeps
+ * the older tier names: starter is Starter, managed is Growth, partner is Pro.
+ */
 export function planLabel(plan: string): string {
   switch (plan) {
     case "starter":
       return "Starter";
     case "managed":
-      return "Managed";
+      return "Growth";
     case "partner":
-      return "Partner";
+      return "Pro";
     case "custom":
       return "Custom";
     default:
       return plan;
   }
+}
+
+/** The monthly card price in cents for a plan tier, or null when the plan is invoiced (Pro, custom). */
+export function monthlyCentsForPlan(plan: string): number | null {
+  const found = Object.values(planBilling).find((item) => item.tier === plan);
+  return found?.monthlyCents ?? null;
+}
+
+/**
+ * True when a payment can have a refund recorded: money was actually received (a card payment is
+ * "paid", a checked EFT top up is "confirmed") and it was a top up or a monthly plan payment.
+ */
+export function isRefundablePayment(kind: string, status: string): boolean {
+  return (kind === "topup" || kind === "subscription") && (status === "paid" || status === "confirmed");
 }
 
 /** Plain words for a ledger row type. */
@@ -135,4 +153,12 @@ export function invoiceStatusText(status: string): string {
 export const LOW_CREDIT_CENTS = 10000;
 export function isLowCredit(balanceCents: number): boolean {
   return balanceCents < LOW_CREDIT_CENTS;
+}
+
+/** Plain words for the state of a monthly card plan. */
+export function subscriptionStateLabel(state: string): string {
+  if (state === "active") return "Active";
+  if (state === "past_due") return "Payment missed, in the 7 day grace period";
+  if (state === "cancelled") return "Cancelled";
+  return state;
 }

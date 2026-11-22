@@ -40,6 +40,8 @@ const REFUSAL_CODES = [
   "slug_reserved",
   "already_paid",
   "billing_paused",
+  "bad_state",
+  "bad_note",
 ] as const;
 
 /** Map a database refusal code to plain words. Read the code from the cause chain, never the message. */
@@ -64,7 +66,9 @@ export const RESTAURANT_MESSAGES: Record<string, string> = {
   not_pending: "That top up is no longer waiting. Nothing changed.",
   not_open: "Only an open invoice can be voided. Nothing changed.",
   already_paid: "That invoice is already paid or cancelled. Nothing changed.",
-  not_refundable: "Only a confirmed payment can be refunded.",
+  not_refundable: "Only a top up or monthly payment that was received can be refunded.",
+  bad_state: "Choose paid or cancelled.",
+  bad_note: "Write a short note (3 to 300 characters).",
   amount_too_large: "That refund is more than the amount left to refund.",
   credit_already_used: "That restaurant has already used this credit. Nothing changed.",
   bad_reference: "That payment was not found.",
@@ -148,9 +152,11 @@ export type RestaurantDetail = {
   /** The monthly plan, or null when the restaurant has none. */
   subscription: {
     state: "active" | "past_due" | "cancelled";
-    amount_cents: number;
+    plan: string;
+    last_paid_at: string | null;
     next_due_at: string | null;
     grace_ends_at: string | null;
+    paused: boolean;
   } | null;
 };
 
@@ -268,10 +274,10 @@ export async function recordRefundLive(
   return result as RestaurantsResult;
 }
 
-/** Set a monthly plan to active, past due or cancelled, with a note. Operator only, rate limited. */
+/** Set a monthly plan to active (money received) or cancelled, with a note. Operator only, rate limited. */
 export async function setSubscriptionStateLive(
   viewer: Viewer,
-  input: { restaurantId: string; state: "active" | "past_due" | "cancelled"; note: string },
+  input: { restaurantId: string; state: "active" | "cancelled"; note: string },
 ): Promise<RestaurantsResult> {
   const denied = await guardWrite(viewer);
   if (denied) return denied;

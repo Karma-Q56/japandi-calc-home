@@ -7,7 +7,12 @@ import { planBilling } from "../config/plans";
 import { readPayFastConfig } from "./billing/payfast";
 import { createPayFastProvider } from "./billing/payfast-provider";
 import { refusalCode } from "./live-ops";
-import { isBillingPaused, type SubscriptionView } from "../lib/live-billing";
+import {
+  billingBannerKind,
+  isBillingPaused,
+  type BillingBannerKind,
+  type SubscriptionView,
+} from "../lib/live-billing";
 
 // Live plans, billing and payments (phase D21). Demo mode never imports this file.
 //
@@ -60,6 +65,57 @@ export type LiveBilling = {
 };
 
 const planKey = (plan: string) => (plan === "managed" ? "Growth" : plan === "partner" ? "Pro" : "Starter");
+
+/**
+ * The banner every owner screen shows. It runs on every page load, so it reads only the two things
+ * it needs (the monthly payment row and the open invoice dates) and none of the payment history.
+ * It never stops a page from loading: if the read fails the banner is simply not shown. Sending is
+ * paused by the database itself (billing_paused), so a missing banner never lets a paused
+ * restaurant send.
+ */
+export async function getLiveBillingBanner(
+  viewer: Viewer,
+): Promise<{ kind: BillingBannerKind; graceEndsAt: string | null }> {
+  const none = { kind: "none" as const, graceEndsAt: null };
+  if (getDataMode() !== "live" || !canManage(viewer)) return none;
+  const restaurantId = viewer.restaurantId;
+  try {
+    return await withContext(
+      { databaseUrl: requireDatabaseUrl(), restaurantId, isOperator: false },
+      async (transaction) => {
+        const subRes = await transaction.execute<{
+          state: "active" | "past_due" | "cancelled";
+          grace_ends_at: Date | string | null;
+          next_due_at: Date | string | null;
+        }>(sql`
+          select state, grace_ends_at, next_due_at from subscription where restaurant_id = ${restaurantId}
+        `);
+        const overdueRes = await transaction.execute<{ due_date: string }>(sql`
+          select due_date::text as due_date from invoice
+          where restaurant_id = ${restaurantId} and status = 'open'
+        `);
+        const row = subRes.rows[0];
+        const subscription: SubscriptionView | null = row
+          ? {
+              state: row.state,
+              graceEndsAt: row.grace_ends_at ? iso(row.grace_ends_at) : null,
+              nextDueAt: row.next_due_at ? iso(row.next_due_at) : null,
+            }
+          : null;
+        const paused = isBillingPaused(
+          subscription,
+          overdueRes.rows.map((item) => item.due_date),
+        );
+        return {
+          kind: billingBannerKind(subscription, paused),
+          graceEndsAt: subscription?.state === "past_due" ? subscription.graceEndsAt : null,
+        };
+      },
+    );
+  } catch {
+    return none;
+  }
+}
 
 /** Everything the "Plan and billing" screen shows, for the signed-in owner's restaurant. */
 export async function getLiveBilling(viewer: Viewer): Promise<LiveBilling | null> {

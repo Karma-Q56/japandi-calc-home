@@ -11,7 +11,7 @@
 create table refund (
   id             uuid primary key default gen_random_uuid(),
   payment_id     uuid not null references payment(id),
-  restaurant_id  uuid not null references restaurant(id),
+  restaurant_id  uuid not null references restaurant(id) on delete cascade,
   amount_cents   integer not null check (amount_cents > 0),
   reason         text not null check (char_length(reason) between 3 and 300),
   created_by     text not null,
@@ -269,7 +269,7 @@ begin
     raise exception 'not_pending';
   end if;
 
-  update payment set status = 'rejected' where id = p.id;
+  update payment set status = 'rejected', confirmed_by = p_operator_id, confirmed_at = now() where id = p.id;
 
   insert into audit_event (actor_type, actor_id, restaurant_id, action, object_type, object_id, meta)
     values ('operator', p_operator_id, p.restaurant_id, 'topup_rejected', 'payment',
@@ -323,7 +323,8 @@ grant execute on function operator_void_invoice(text, uuid, text) to app_user;
 
 -- ---------------------------------------------------------------- write: record a refund
 -- The money is returned by hand. This records it.
--- A confirmed top up refund takes the same amount of credit away (negative adjustment row).
+-- A top up refund takes the same amount of credit away (a negative adjustment row: the ledger
+-- check only allows a positive amount for the type 'refund', so adjustment is the right type).
 -- A monthly payment refund is recorded only; it does not touch credit.
 -- Refusals: not_operator, bad_reference, not_refundable, amount_too_large, credit_already_used,
 --           bad_reason.
@@ -356,7 +357,8 @@ begin
   if not found then
     raise exception 'bad_reference';
   end if;
-  if p.status <> 'confirmed' then
+  -- Card payments settle as 'paid', manual EFT top ups as 'confirmed'. Nothing else was ever received.
+  if p.status not in ('paid', 'confirmed') or p.kind not in ('topup', 'subscription') then
     raise exception 'not_refundable';
   end if;
   if p_amount_cents is null or p_amount_cents <= 0 then

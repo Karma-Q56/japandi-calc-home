@@ -37,6 +37,15 @@ describe("isBillingPaused", () => {
     expect(isBillingPaused(null, ["2026-11-01T00:00:00Z"], now)).toBe(true);
     expect(isBillingPaused(null, ["2026-11-12T00:00:00Z"], now)).toBe(false);
   });
+
+  it("counts whole days like the database: exactly 7 days late is not paused, 8 days is", () => {
+    // now is 17 November. Due 10 November is 7 days late; due 9 November is 8 days late.
+    expect(isBillingPaused(null, ["2026-11-10"], now)).toBe(false);
+    expect(isBillingPaused(null, ["2026-11-09"], now)).toBe(true);
+    // The hour of the day does not change the answer.
+    expect(isBillingPaused(null, ["2026-11-10"], new Date("2026-11-17T23:59:00Z"))).toBe(false);
+    expect(isBillingPaused(null, ["2026-11-09"], new Date("2026-11-17T00:01:00Z"))).toBe(true);
+  });
 });
 
 describe("billingBannerKind", () => {

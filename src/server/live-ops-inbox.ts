@@ -138,11 +138,18 @@ export async function decideCampaignInbox(
 }
 
 export type LeadRow = {
-  id: string; reference: string | null; kind: string; restaurant_name: string; suburb: string | null;
-  plan_interest: string | null; status: string; created_at: string; replied_at: string | null; closed_at: string | null;
+  id: string; reference: string | null; kind: string; restaurant_name: string; contact_name: string;
+  phone: string; email: string | null; role: string | null; venue_type: string | null; suburb: string | null;
+  quiet_time: string | null; weekly_guests: string | null; plan_interest: string | null;
+  visit_wanted: boolean | null; preferred_day: string | null; consent_at: string | null;
+  calculator: Record<string, string | number | boolean | null> | null; status: string; admin_notes: string | null;
+  created_at: string; replied_at: string | null; closed_at: string | null;
 };
 
-/** Enquiries for the operator. Contact name and phone are not returned. */
+/**
+ * Enquiries for the operator. An enquiry is a prospect asking to be contacted, so the contact
+ * details they gave are shown. Guest data is not in this table.
+ */
 export async function listLeadsLive(
   viewer: Viewer,
   input: { status: string; search: string; limit: number; offset: number },
@@ -157,13 +164,13 @@ export async function listLeadsLive(
   })) as InboxReadResult<LeadRow[]>;
 }
 
-/** Move an enquiry to a new status. */
-export async function setLeadStatusLive(viewer: Viewer, leadId: string, status: string): Promise<InboxResult> {
+/** Move an enquiry to a new status and save the private note. The note is never shown to the sender. */
+export async function updateLeadLive(viewer: Viewer, leadId: string, status: string, notes: string): Promise<InboxResult> {
   const denied = await guardWrite(viewer);
   if (denied) return denied;
   return (await runAsOperator(async (tx) => {
-    await tx.execute(sql`select operator_set_lead_status(${viewer.userId}, ${leadId}::uuid, ${status})`);
-    return { ok: true as const, message: "Enquiry updated." };
+    await tx.execute(sql`select operator_update_lead(${viewer.userId}, ${leadId}::uuid, ${status}, ${notes})`);
+    return { ok: true as const, message: "Saved." };
   })) as InboxResult;
 }
 

@@ -48,7 +48,7 @@ function LiveOrDemoCredit() {
           reference: row.reference == null ? null : String(row.reference),
           created_at: String(row.created_at),
         }))}
-        restaurants={restaurants.rows.map((row) => ({ id: String(row.id), name: String(row.name) }))}
+        restaurants={restaurants.rows.map((row) => ({ id: String(row.id), name: String(row.name), credit_cents: Number(row.credit_cents) }))}
       />
     </main>
   );

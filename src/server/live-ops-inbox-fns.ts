@@ -59,22 +59,23 @@ export const listLeadsFn = createServerFn({ method: "GET" })
     return listLeadsLive(viewer, data);
   });
 
-/** Move an enquiry to a new status. */
-export const setLeadStatusFn = createServerFn({ method: "POST" })
+/** Move an enquiry to a new status and save the private note. */
+export const updateLeadFn = createServerFn({ method: "POST" })
   .validator(
     z.object({
       leadId: uuid,
       status: z.enum(["new", "replied", "closed", "contacted", "demo_booked", "won", "lost"]),
+      notes: z.string().trim().max(1000).default(""),
     }),
   )
   .handler(async ({ data }) => {
-    const [{ readViewer }, { setLeadStatusLive }] = await Promise.all([
+    const [{ readViewer }, { updateLeadLive }] = await Promise.all([
       import("./auth-viewer"),
       import("./live-ops-inbox"),
     ]);
     const viewer = await readViewer();
     if (!viewer) return { ok: false as const, message: "Sign in again." };
-    return setLeadStatusLive(viewer, data.leadId, data.status);
+    return updateLeadLive(viewer, data.leadId, data.status, data.notes);
   });
 
 /** Feedback, with a status filter. The screenshot is never in this list. */

@@ -12,7 +12,7 @@ describe("0037 operator inbox", () => {
     for (const name of [
       "operator_list_pending_campaigns",
       "operator_list_leads",
-      "operator_set_lead_status",
+      "operator_update_lead",
       "operator_list_feedback",
       "operator_feedback_screenshot",
       "operator_set_feedback",
@@ -35,7 +35,7 @@ describe("0037 operator inbox", () => {
     expect(sql).toMatch(/create unique index/i);
   });
 
-  it("never returns a guest name or full phone number from the outbox or leads reads", () => {
+  it("never returns a guest name or full phone number from the outbox read", () => {
     expect(sql).toMatch(/left\(cu\.phone_e164, 3\) \|\| '\*\*\*' \|\| right\(cu\.phone_e164, 3\) as phone_masked/);
   });
 

@@ -135,12 +135,12 @@ export const createInvoiceFn = createServerFn({ method: "POST" })
     return createInvoiceLive(viewer, data);
   });
 
-/** Set a restaurant's monthly plan to active, past due or cancelled. The note is required. */
+/** Set a restaurant's monthly plan to active (money received) or cancelled. The note is required. */
 export const setSubscriptionStateFn = createServerFn({ method: "POST" })
   .validator(
     z.object({
       restaurantId: uuid,
-      state: z.enum(["active", "past_due", "cancelled"]),
+      state: z.enum(["active", "cancelled"]),
       note: reason,
     }),
   )

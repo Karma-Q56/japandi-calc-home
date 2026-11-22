@@ -2,9 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   formatRandFromCents,
   isLowCredit,
+  isRefundablePayment,
+  monthlyCentsForPlan,
   planLabel,
   refundWording,
   statusLabel,
+  subscriptionStateLabel,
   validateInvoiceInput,
   validateRefundInput,
 } from "./live-ops-restaurants";
@@ -27,8 +30,38 @@ describe("labels", () => {
     expect(statusLabel("active")).toBe("Live");
     expect(statusLabel("paused")).toBe("Paused");
     expect(statusLabel("weird")).toBe("weird");
-    expect(planLabel("managed")).toBe("Managed");
+    // The names an owner sees on their billing page, not the older database tier names.
+    expect(planLabel("starter")).toBe("Starter");
+    expect(planLabel("managed")).toBe("Growth");
+    expect(planLabel("partner")).toBe("Pro");
+    expect(planLabel("custom")).toBe("Custom");
     expect(planLabel("weird")).toBe("weird");
+  });
+
+  it("gives the monthly card price of a plan, and nothing for a plan that is invoiced", () => {
+    expect(monthlyCentsForPlan("starter")).toBe(39900);
+    expect(monthlyCentsForPlan("managed")).toBe(120000);
+    expect(monthlyCentsForPlan("partner")).toBeNull();
+    expect(monthlyCentsForPlan("custom")).toBeNull();
+    expect(monthlyCentsForPlan("weird")).toBeNull();
+  });
+
+  it("says which payments can have a refund recorded", () => {
+    // A card payment settles as paid and a checked EFT top up as confirmed. Both were received.
+    expect(isRefundablePayment("topup", "paid")).toBe(true);
+    expect(isRefundablePayment("topup", "confirmed")).toBe(true);
+    expect(isRefundablePayment("subscription", "paid")).toBe(true);
+    expect(isRefundablePayment("topup", "pending")).toBe(false);
+    expect(isRefundablePayment("topup", "failed")).toBe(false);
+    expect(isRefundablePayment("topup", "rejected")).toBe(false);
+    expect(isRefundablePayment("setup", "paid")).toBe(false);
+  });
+
+  it("describes the state of a monthly plan in plain words", () => {
+    expect(subscriptionStateLabel("active")).toBe("Active");
+    expect(subscriptionStateLabel("past_due")).toBe("Payment missed, in the 7 day grace period");
+    expect(subscriptionStateLabel("cancelled")).toBe("Cancelled");
+    expect(subscriptionStateLabel("weird")).toBe("weird");
   });
 
   it("describes refunds in plain words", () => {

@@ -1,4 +1,4 @@
--- 0037_operator_inbox_dev.sql - DEV BRANCH ONLY. NOT APPLIED to any database.
+-- 0037_operator_inbox_dev.sql - DEV BRANCH ONLY. Not applied to production.
 -- Live operator console, part 2 (phase D24): campaign approvals, enquiries,
 -- feedback, ideas and the SMS outbox. Functions only, plus a small reference
 -- column for feedback. Every function checks the operator role again through
@@ -60,9 +60,13 @@ begin
 end;
 $$;
 
--- Move an enquiry to a new status. Refusals: not_operator, lead_not_found, invalid_value.
-create or replace function operator_set_lead_status(
-  p_operator_id text, p_lead_id uuid, p_status text
+-- Move an enquiry to a new status and save the private note.
+-- replied_at is set the first time the status leaves 'new'. closed_at is set when the status
+-- becomes closed, won or lost, and cleared when it goes back to an open status.
+-- The audit row records the old and new status, never the note text.
+-- Refusals: not_operator, lead_not_found, invalid_value.
+create or replace function operator_update_lead(
+  p_operator_id text, p_lead_id uuid, p_status text, p_notes text
 ) returns void
 language plpgsql
 security definer
@@ -70,22 +74,30 @@ set search_path = public, pg_temp
 as $$
 declare
   prior_operator text := current_setting('app.is_operator', true);
-  found_id uuid;
+  l lead%rowtype;
+  clean_notes text := btrim(coalesce(p_notes, ''));
 begin
   perform set_config('app.is_operator', 'true', true);
   perform assert_operator(p_operator_id);
-  if p_status not in ('new', 'replied', 'closed', 'contacted', 'demo_booked', 'won', 'lost') then
+  if p_status is null or p_status not in ('new', 'replied', 'closed', 'contacted', 'demo_booked', 'won', 'lost') then
     raise exception 'invalid_value';
+  end if;
+  if char_length(clean_notes) > 1000 then
+    raise exception 'invalid_value';
+  end if;
+  select * into l from lead where id = p_lead_id for update;
+  if not found then
+    raise exception 'lead_not_found';
   end if;
   update lead
     set status = p_status::lead_status,
-        replied_at = case when p_status = 'replied' then now() else replied_at end,
-        closed_at = case when p_status in ('closed', 'won', 'lost') then now() else null end
-    where id = p_lead_id
-    returning id into found_id;
-  if found_id is null then
-    raise exception 'lead_not_found';
-  end if;
+        admin_notes = nullif(clean_notes, ''),
+        replied_at = case when p_status <> 'new' and replied_at is null then now() else replied_at end,
+        closed_at = case when p_status in ('closed', 'won', 'lost') then coalesce(closed_at, now()) else null end
+    where id = l.id;
+  insert into audit_event (actor_type, actor_id, action, object_type, object_id, meta)
+    values ('operator', p_operator_id, 'lead_updated', 'lead', l.id::text,
+            jsonb_build_object('from', l.status::text, 'to', p_status));
   perform set_config('app.is_operator', coalesce(prior_operator, ''), true);
 end;
 $$;
@@ -106,7 +118,7 @@ declare
 begin
   perform set_config('app.is_operator', 'true', true);
   perform assert_operator(p_operator_id);
-  if p_status not in ('', 'new', 'seen', 'planned', 'done', 'not_now') then
+  if coalesce(p_status, '') not in ('', 'new', 'seen', 'planned', 'done', 'not_now') then
     raise exception 'invalid_value';
   end if;
   select coalesce(jsonb_agg(row_to_json(x)), '[]'::jsonb) into result
@@ -117,9 +129,9 @@ begin
       f.contact_ok, f.status, f.note, f.screenshot_name is not null as has_screenshot,
       f.created_at
     from feedback f left join restaurant r on r.id = f.restaurant_id
-    where (p_status = '' or f.status::text = p_status)
+    where (coalesce(p_status, '') = '' or f.status::text = p_status)
     order by f.created_at desc
-    limit least(greatest(p_limit, 1), 200) offset greatest(p_offset, 0)
+    limit least(greatest(coalesce(p_limit, 50), 1), 200) offset greatest(coalesce(p_offset, 0), 0)
   ) x;
   perform set_config('app.is_operator', coalesce(prior_operator, ''), true);
   return result;
@@ -174,6 +186,9 @@ begin
   if found_id is null then
     raise exception 'feedback_not_found';
   end if;
+  insert into audit_event (actor_type, actor_id, restaurant_id, action, object_type, object_id, meta)
+    values ('operator', p_operator_id, (select restaurant_id from feedback where id = found_id),
+            'feedback_updated', 'feedback', found_id, jsonb_build_object('status', p_status));
   perform set_config('app.is_operator', coalesce(prior_operator, ''), true);
 end;
 $$;
@@ -192,16 +207,16 @@ declare
 begin
   perform set_config('app.is_operator', 'true', true);
   perform assert_operator(p_operator_id);
-  if p_status not in ('', 'new', 'exploring', 'added') then
+  if coalesce(p_status, '') not in ('', 'new', 'exploring', 'added') then
     raise exception 'invalid_value';
   end if;
   select coalesce(jsonb_agg(row_to_json(x)), '[]'::jsonb) into result
   from (
     select i.id, i.place, i.suburb, i.asks, i.note, i.status, i.admin_notes, i.created_at
     from idea i
-    where (p_status = '' or i.status::text = p_status)
+    where (coalesce(p_status, '') = '' or i.status::text = p_status)
     order by i.asks desc, i.created_at desc
-    limit least(greatest(p_limit, 1), 200) offset greatest(p_offset, 0)
+    limit least(greatest(coalesce(p_limit, 50), 1), 200) offset greatest(coalesce(p_offset, 0), 0)
   ) x;
   perform set_config('app.is_operator', coalesce(prior_operator, ''), true);
   return result;
@@ -234,6 +249,9 @@ begin
   if found_id is null then
     raise exception 'idea_not_found';
   end if;
+  insert into audit_event (actor_type, actor_id, action, object_type, object_id, meta)
+    values ('operator', p_operator_id, 'idea_updated', 'idea', found_id,
+            jsonb_build_object('status', p_status));
   perform set_config('app.is_operator', coalesce(prior_operator, ''), true);
 end;
 $$;
@@ -253,7 +271,7 @@ declare
 begin
   perform set_config('app.is_operator', 'true', true);
   perform assert_operator(p_operator_id);
-  if p_status not in ('', 'queued', 'sending', 'sent', 'delivered', 'failed', 'skipped') then
+  if coalesce(p_status, '') not in ('', 'queued', 'sending', 'sent', 'delivered', 'failed', 'skipped') then
     raise exception 'invalid_value';
   end if;
   select coalesce(jsonb_agg(row_to_json(x)), '[]'::jsonb) into result
@@ -266,9 +284,9 @@ begin
     join restaurant r on r.id = m.restaurant_id
     join membership ms on ms.id = m.membership_id
     join customer cu on cu.id = ms.customer_id
-    where (p_status = '' or m.status::text = p_status)
+    where (coalesce(p_status, '') = '' or m.status::text = p_status)
     order by m.queued_at desc
-    limit least(greatest(p_limit, 1), 200) offset greatest(p_offset, 0)
+    limit least(greatest(coalesce(p_limit, 50), 1), 200) offset greatest(coalesce(p_offset, 0), 0)
   ) x;
   perform set_config('app.is_operator', coalesce(prior_operator, ''), true);
   return result;
@@ -299,7 +317,10 @@ begin
 end;
 $$;
 
--- Enquiry (lead) list for the operator. Contact name and phone are NOT returned.
+-- Enquiry (lead) list for the operator. An enquiry is a prospect (a restaurant owner or a diner)
+-- asking to be contacted, so the operator sees the contact details they gave. Search matches the
+-- reference, restaurant, contact name, phone or email; the search text is escaped so a % or _
+-- is matched as itself.
 create or replace function operator_list_leads(
   p_operator_id text, p_status text, p_search text, p_limit integer, p_offset integer
 ) returns jsonb
@@ -310,19 +331,30 @@ as $$
 declare
   prior_operator text := current_setting('app.is_operator', true);
   result jsonb;
+  status_filter text := coalesce(p_status, '');
+  needle text := '%' || replace(replace(replace(btrim(coalesce(p_search, '')), '\', '\\'), '%', '\%'), '_', '\_') || '%';
 begin
   perform set_config('app.is_operator', 'true', true);
   perform assert_operator(p_operator_id);
-  select coalesce(jsonb_agg(row_to_json(x)), '[]'::jsonb) into result
+  if status_filter not in ('', 'new', 'replied', 'closed', 'contacted', 'demo_booked', 'won', 'lost') then
+    raise exception 'invalid_value';
+  end if;
+  select coalesce(jsonb_agg(row_to_json(x) order by x.created_at desc), '[]'::jsonb) into result
   from (
-    select l.id, l.reference, l.kind, l.restaurant_name, l.suburb, l.plan_interest,
-      l.status, l.created_at, l.replied_at, l.closed_at
+    select l.id, l.reference, l.kind, l.restaurant_name, l.contact_name, l.phone, l.email, l.role,
+      l.venue_type, l.suburb, l.quiet_time, l.weekly_guests, l.plan_interest, l.visit_wanted,
+      l.preferred_day, l.consent_at, l.calculator, l.status, l.admin_notes, l.created_at,
+      l.replied_at, l.closed_at
     from lead l
-    where (p_status = '' or l.status::text = p_status)
-      and (p_search = '' or l.restaurant_name ilike '%' || p_search || '%'
-           or l.reference ilike '%' || p_search || '%')
+    where (status_filter = '' or l.status::text = status_filter)
+      and (btrim(coalesce(p_search, '')) = ''
+           or l.restaurant_name ilike needle escape '\'
+           or l.reference ilike needle escape '\'
+           or l.contact_name ilike needle escape '\'
+           or l.phone ilike needle escape '\'
+           or coalesce(l.email, '') ilike needle escape '\')
     order by l.created_at desc
-    limit least(greatest(p_limit, 1), 200) offset greatest(p_offset, 0)
+    limit least(greatest(coalesce(p_limit, 50), 1), 200) offset greatest(coalesce(p_offset, 0), 0)
   ) x;
   perform set_config('app.is_operator', coalesce(prior_operator, ''), true);
   return result;
@@ -332,7 +364,7 @@ $$;
 -- Lock the operator functions down: no public execute, app role only.
 revoke all on function operator_list_pending_campaigns(text) from public;
 revoke all on function operator_list_leads(text, text, text, integer, integer) from public;
-revoke all on function operator_set_lead_status(text, uuid, text) from public;
+revoke all on function operator_update_lead(text, uuid, text, text) from public;
 revoke all on function operator_list_feedback(text, text, integer, integer) from public;
 revoke all on function operator_feedback_screenshot(text, text) from public;
 revoke all on function operator_set_feedback(text, text, text, text) from public;
@@ -343,7 +375,7 @@ revoke all on function operator_outbox_summary(text) from public;
 
 grant execute on function operator_list_pending_campaigns(text) to app_user;
 grant execute on function operator_list_leads(text, text, text, integer, integer) to app_user;
-grant execute on function operator_set_lead_status(text, uuid, text) to app_user;
+grant execute on function operator_update_lead(text, uuid, text, text) to app_user;
 grant execute on function operator_list_feedback(text, text, integer, integer) to app_user;
 grant execute on function operator_feedback_screenshot(text, text) to app_user;
 grant execute on function operator_set_feedback(text, text, text, text) to app_user;

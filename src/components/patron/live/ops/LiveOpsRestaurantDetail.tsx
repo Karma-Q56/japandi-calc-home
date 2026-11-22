@@ -1,6 +1,15 @@
 import { useState } from "react";
+import { useRouter } from "@tanstack/react-router";
 import { Badge, DataTable, EmptyState, FormField, PageHeader } from "@/components/patron/dash";
-import { formatRandFromCents, isLowCredit, ledgerTypeLabel, planLabel, statusLabel } from "@/lib/live-ops-restaurants";
+import {
+  formatRandFromCents,
+  isLowCredit,
+  ledgerTypeLabel,
+  monthlyCentsForPlan,
+  planLabel,
+  statusLabel,
+  subscriptionStateLabel,
+} from "@/lib/live-ops-restaurants";
 import { LiveOpsMoneyActions } from "@/components/patron/live/ops/LiveOpsMoneyActions";
 import { setRestaurantStatusFn, setRestaurantPlanFn } from "@/server/live-ops-fns";
 import { setSubscriptionStateFn } from "@/server/live-ops-restaurants-fns";
@@ -13,6 +22,7 @@ const dateLabel = (iso: string) => new Intl.DateTimeFormat("en-ZA", { dateStyle:
 /** Live restaurant detail. Shows no guest names or phone numbers. */
 export function LiveOpsRestaurantDetail(props: { detail: Detail }) {
   const { detail } = props;
+  const router = useRouter({ warn: false });
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState(detail.restaurant.status);
@@ -25,6 +35,7 @@ export function LiveOpsRestaurantDetail(props: { detail: Detail }) {
     const result = await action();
     setMessage(result.message ?? (result.ok ? "Saved." : "Nothing changed."));
     setBusy(false);
+    if (result.ok) await router?.invalidate();
   }
 
   const id = detail.restaurant.id;
@@ -127,26 +138,31 @@ export function LiveOpsRestaurantDetail(props: { detail: Detail }) {
       {detail.subscription ? (
         <>
           <p>
-            {formatRandFromCents(detail.subscription.amount_cents)} a month. Status: {statusLabel(detail.subscription.state)}.
+            {monthlyCentsForPlan(detail.subscription.plan) == null
+              ? `${planLabel(detail.subscription.plan)} plan, paid by invoice.`
+              : `${planLabel(detail.subscription.plan)} plan, ${formatRandFromCents(monthlyCentsForPlan(detail.subscription.plan)!)} a month.`}{" "}
+            Status: {subscriptionStateLabel(detail.subscription.state)}.
             {detail.subscription.next_due_at ? ` Next payment due ${dateLabel(detail.subscription.next_due_at)}.` : ""}
             {detail.subscription.grace_ends_at ? ` Grace ends ${dateLabel(detail.subscription.grace_ends_at)}.` : ""}
+            {detail.subscription.paused ? " Campaigns are paused." : ""}
           </p>
           <p>
-            Use these only when the bank or PayFast says something different from the app. Each one is recorded in the activity log.
+            Use these only when the bank or PayFast says something different from the app, for example money that
+            came in by EFT. Each one is recorded in the activity log. Write the reason in the box above first.
           </p>
-          <button
-            className="builder-secondary"
-            disabled={busy || !reasonOk}
-            onClick={() => run(() => setSubscriptionStateFn({ data: { restaurantId: id, state: "past_due", note: reason } }))}
-          >
-            Mark monthly payment missed
-          </button>
           <button
             className="builder-secondary"
             disabled={busy || !reasonOk}
             onClick={() => run(() => setSubscriptionStateFn({ data: { restaurantId: id, state: "active", note: reason } }))}
           >
-            Mark monthly payment received
+            Mark as paid (money received)
+          </button>{" "}
+          <button
+            className="builder-secondary"
+            disabled={busy || !reasonOk}
+            onClick={() => run(() => setSubscriptionStateFn({ data: { restaurantId: id, state: "cancelled", note: reason } }))}
+          >
+            Mark as cancelled
           </button>
         </>
       ) : (

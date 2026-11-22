@@ -53,10 +53,12 @@ export function isBillingPaused(
   if (subscription?.state === "cancelled" && subscription.nextDueAt) {
     if (new Date(subscription.nextDueAt).getTime() < now.getTime()) return true;
   }
+  // The database counts whole days: an invoice due on the 1st is paused from the 9th, the 8th day
+  // after its due date (billing_paused, migration 0038). The same rule here keeps the banner and
+  // the sending block from disagreeing for a day.
   const sevenDays = 7 * 24 * 60 * 60 * 1000;
-  return overdueInvoiceDueDates.some(
-    (due) => new Date(due).getTime() + sevenDays < now.getTime(),
-  );
+  const startOfToday = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  return overdueInvoiceDueDates.some((due) => Date.parse(due.slice(0, 10)) + sevenDays < startOfToday);
 }
 
 export type BillingBannerKind = "none" | "grace" | "paused";

@@ -1,14 +1,19 @@
 import { useState } from "react";
+import { useRouter } from "@tanstack/react-router";
 import { DataTable, EmptyState, FormField, PageHeader } from "@/components/patron/dash";
-import { formatRandFromCents } from "@/lib/live-ops-restaurants";
+import { formatRandFromCents, isLowCredit } from "@/lib/live-ops-restaurants";
 import { addCreditFn } from "@/server/live-ops-fns";
+import { confirmTopupFn, rejectTopupFn } from "@/server/live-ops-restaurants-fns";
 
 type Pending = { id: string; restaurant_id: string; restaurant_name: string; amount_cents: number; reference: string | null; created_at: string };
 
 const dateLabel = (iso: string) => new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium" }).format(new Date(iso));
 
 /** Live credit screen: top ups waiting, plus adding credit by hand. Live data only. */
-export function LiveOpsCredit(props: { pending: Pending[]; restaurants: Array<{ id: string; name: string }> }) {
+export function LiveOpsCredit(props: { pending: Pending[]; restaurants: Array<{ id: string; name: string; credit_cents: number }> }) {
+  const router = useRouter({ warn: false });
+  const [onlyLow, setOnlyLow] = useState(false);
+  const [rejectReasons, setRejectReasons] = useState<Record<string, string>>({});
   const [restaurantId, setRestaurantId] = useState(props.restaurants[0]?.id ?? "");
   const [kind, setKind] = useState<"topup" | "adjustment">("topup");
   const [rands, setRands] = useState("");
@@ -28,8 +33,19 @@ export function LiveOpsCredit(props: { pending: Pending[]; restaurants: Array<{ 
     });
     setMessage(result.ok ? "Credit added." : result.message);
     setBusy(false);
-    if (result.ok) window.location.reload();
+    if (result.ok) await router?.invalidate();
   }
+
+  async function decide(action: () => Promise<{ ok: boolean; message?: string }>) {
+    setBusy(true);
+    setMessage(null);
+    const result = await action();
+    setMessage(result.message ?? (result.ok ? "Done." : "Nothing changed."));
+    setBusy(false);
+    if (result.ok) await router?.invalidate();
+  }
+
+  const shownBalances = props.restaurants.filter((item) => !onlyLow || isLowCredit(item.credit_cents));
 
   return (
     <main className="demo-hub page-width">
@@ -48,6 +64,62 @@ export function LiveOpsCredit(props: { pending: Pending[]; restaurants: Array<{ 
             { key: "amount", header: "Amount", cell: (row) => formatRandFromCents(row.amount_cents) },
             { key: "ref", header: "Reference", cell: (row) => row.reference ?? "" },
             { key: "when", header: "Sent", cell: (row) => dateLabel(row.created_at) },
+            {
+              key: "actions",
+              header: "Check",
+              cell: (row) => (
+                <span>
+                  <button
+                    className="builder-primary"
+                    disabled={busy}
+                    onClick={() => void decide(() => confirmTopupFn({ data: { paymentId: row.id } }))}
+                  >
+                    Money received, add credit
+                  </button>{" "}
+                  <input
+                    aria-label={`Reason if not received (${row.restaurant_name})`}
+                    placeholder="Reason if not received"
+                    value={rejectReasons[row.id] ?? ""}
+                    onChange={(e) => setRejectReasons({ ...rejectReasons, [row.id]: e.target.value })}
+                  />{" "}
+                  <button
+                    className="builder-secondary"
+                    disabled={busy || (rejectReasons[row.id] ?? "").trim().length < 3}
+                    onClick={() =>
+                      void decide(() => rejectTopupFn({ data: { paymentId: row.id, reason: (rejectReasons[row.id] ?? "").trim() } }))
+                    }
+                  >
+                    Not received, reject
+                  </button>
+                </span>
+              ),
+            },
+          ]}
+        />
+      )}
+
+      <h2>Credit balances</h2>
+      <label>
+        <input type="checkbox" checked={onlyLow} onChange={(e) => setOnlyLow(e.target.checked)} /> Only restaurants with low credit (under R100)
+      </label>
+      {shownBalances.length === 0 ? (
+        <EmptyState title={onlyLow ? "No restaurant has low credit." : "No restaurants yet."} />
+      ) : (
+        <DataTable
+          caption="SMS credit balance for each restaurant"
+          rows={shownBalances}
+          columns={[
+            { key: "restaurant", header: "Restaurant", cell: (row) => <a href={`/ops/restaurants/${row.id}`}>{row.name}</a> },
+            {
+              key: "credit",
+              header: "Balance",
+              cell: (row) => (
+                <>
+                  {formatRandFromCents(row.credit_cents)}
+                  {isLowCredit(row.credit_cents) ? <small> Low</small> : null}
+                </>
+              ),
+            },
           ]}
         />
       )}

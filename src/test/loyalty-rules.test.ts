@@ -29,7 +29,11 @@ describe("loyalty rule changes", () => {
     updateDemo((current) => ({
       ...current,
       restaurants: current.restaurants.map((r) =>
-        r.id === "rest-daily-grind" ? { ...r, stampsRequired: 6 } : r,
+        // A double stamp day or a birthday week would add a bonus stamp depending on the date the
+        // test runs, so both are turned off. The answer is then the same on any day or hour.
+        r.id === "rest-daily-grind"
+          ? { ...r, stampsRequired: 6, doubleStamp: { enabled: false, weekday: 0 }, birthdayReward: false }
+          : r,
       ),
       memberships: current.memberships.map((m) =>
         m.id === membership.id ? { ...m, stampsCurrent: 7 } : m,
