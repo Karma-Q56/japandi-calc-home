@@ -102,6 +102,69 @@ export function percentChange(current: number, previous: number): number | null 
   return Math.round(((current - previous) / previous) * 100);
 }
 
+/**
+ * How many timestamps fall from `dayStart` up to `atTime`, both ends included.
+ * Pass yesterday's start and the same clock time as now to compare a day so far with yesterday so far.
+ */
+export function countUpTo(timestamps: string[], dayStart: Date, atTime: Date): number {
+  const from = dayStart.getTime();
+  const to = atTime.getTime();
+  let count = 0;
+  for (const timestamp of timestamps) {
+    const t = new Date(timestamp).getTime();
+    if (t >= from && t <= to) count += 1;
+  }
+  return count;
+}
+
+export interface SoFar {
+  visits: number;
+  unique: number;
+  newMembers: number;
+}
+
+/** One SAST day's counts from its start up to `offset` ms into the day. */
+function countsSoFar(stamps: StampLike[], memberships: MembershipLike[], dayStart: number, offset: number): SoFar {
+  const start = new Date(dayStart);
+  const at = new Date(dayStart + offset);
+  const visitTimes: string[] = [];
+  const firstVisit = new Map<string, string>();
+  for (const stamp of stamps) {
+    if (stamp.status !== "valid") continue;
+    visitTimes.push(stamp.createdAt);
+    const t = new Date(stamp.createdAt).getTime();
+    if (t < dayStart || t >= dayStart + DAY) continue;
+    const seen = firstVisit.get(stamp.membershipId);
+    if (seen === undefined || stamp.createdAt < seen) firstVisit.set(stamp.membershipId, stamp.createdAt);
+  }
+  return {
+    visits: countUpTo(visitTimes, start, at),
+    unique: countUpTo([...firstVisit.values()], start, at),
+    newMembers: countUpTo(memberships.map((m) => m.joinedAt), start, at),
+  };
+}
+
+/** Today so far, and yesterday up to the same clock time, so the two are fair to compare. */
+export function todayAgainstYesterday(
+  stamps: StampLike[],
+  memberships: MembershipLike[],
+  now: number,
+): { today: SoFar; yesterday: SoFar } {
+  const todayStart = sastDayStart(now);
+  const offset = now - todayStart;
+  return {
+    today: countsSoFar(stamps, memberships, todayStart, offset),
+    yesterday: countsSoFar(stamps, memberships, todayStart - DAY, offset),
+  };
+}
+
+/** Plain words for today so far against yesterday so far. Never a percent for a zero base or below minus 100. */
+export function sameTimeChangeLabel(todaySoFar: number, yesterdaySoFar: number): string {
+  if (yesterdaySoFar === 0) return todaySoFar === 0 ? "Nothing yet today" : "More than yesterday so far";
+  const pct = Math.max(-100, percentChange(todaySoFar, yesterdaySoFar) ?? 0);
+  return `${pct >= 0 ? "+" : ""}${pct}% vs yesterday so far`;
+}
+
 export interface HourBucket {
   hour: number;
   visits: number;

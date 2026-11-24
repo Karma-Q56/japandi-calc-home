@@ -5099,3 +5099,23 @@ details.preset-rule > summary + * {
   margin: 8px 0 16px;
   padding-left: 18px;
 }
+
+/* D27: the demo pill sits after the page content instead of floating over it, so it can never cover a number or a button. */
+.demo-control {
+  position: static;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: fit-content;
+  max-width: calc(100% - 24px);
+  z-index: auto;
+  margin: 12px 12px calc(96px + env(safe-area-inset-bottom));
+}
+.demo-control-panel {
+  margin: 8px 0 0;
+}
+@media (min-width: 861px) {
+  .demo-control {
+    margin-bottom: 16px;
+  }
+}

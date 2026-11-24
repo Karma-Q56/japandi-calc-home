@@ -9,8 +9,9 @@ import {
   dailySeries,
   metricValue,
   peakHour,
-  percentChange,
+  sameTimeChangeLabel,
   sumMetric,
+  todayAgainstYesterday,
   type HomeMetric,
   type HomeRange,
 } from "@/lib/home-metrics";
@@ -55,9 +56,7 @@ export function DemoHome({ restaurantId }: { restaurantId: string }) {
   };
 
   const series = dailySeries(stamps, memberships, now, range);
-  const twoDays = dailySeries(stamps, memberships, now, 2);
-  const today = twoDays[1]!;
-  const yesterday = twoDays[0]!;
+  const { today, yesterday } = todayAgainstYesterday(stamps, memberships, now);
   const total = sumMetric(series, metric);
   const max = Math.max(1, ...series.map((p) => metricValue(p, metric)));
   const hours = busiestHours(stamps, now);
@@ -82,10 +81,7 @@ export function DemoHome({ restaurantId }: { restaurantId: string }) {
     .filter((s) => s.status === "valid" && now - new Date(s.createdAt).getTime() < DAY)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, 5);
-  const change = (current: number, previous: number) => {
-    const pct = percentChange(current, previous);
-    return pct === null ? "No visits yesterday" : `${pct >= 0 ? "+" : ""}${pct}% vs yesterday`;
-  };
+  const change = sameTimeChangeLabel;
   const totalDisplay = metric === "sales" ? rand(total) : total.toLocaleString("en-ZA");
 
   return (

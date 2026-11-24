@@ -1,3 +1,4 @@
+import { composerHref, type AudienceType } from "@/lib/live-campaigns";
 import { useNavigate } from "@tanstack/react-router";
 import { DataTable, EmptyState, Helper, PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
 import { TrendChart } from "@/components/patron/TrendChart";
@@ -49,7 +50,7 @@ export function LiveInsights({
   }
 
   const { guests, performance } = result;
-  const campaignHref = (audience: string) => `/app/campaigns/new?audience=${audience}`;
+  const campaignHref = (segment: AudienceType) => composerHref({ segment });
 
   return (
     <main className="demo-hub page-width">

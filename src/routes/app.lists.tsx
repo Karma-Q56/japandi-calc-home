@@ -1,3 +1,4 @@
+import { composerHref } from "@/lib/live-campaigns";
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useState, useSyncExternalStore } from "react";
 import { api } from "@/api";
@@ -121,7 +122,7 @@ function LiveListsPage({ lists }: { lists: LiveList[] | null }) {
             )}
             {renaming !== list.id && (
               <span className="row-actions">
-                <a className="row-action is-primary" href="/app/campaigns/new">
+                <a className="row-action is-primary" href={composerHref({ segment: "saved_list", listId: list.id })}>
                   Send to this list
                 </a>
                 <button
@@ -229,7 +230,7 @@ function DemoListsPage() {
                 )}
               </span>
               <span className="row-actions">
-                <a className="row-action is-primary" href="/app/campaigns/new">
+                <a className="row-action is-primary" href={composerHref({ segment: "saved_list", listId: list.id })}>
                   Send to this list
                 </a>
                 <button

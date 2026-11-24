@@ -1,8 +1,9 @@
 import { createFileRoute, redirect, useNavigate, useRouter, useSearch } from "@tanstack/react-router";
 import { countLabel } from "@/lib/count-label";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getDataModeFn } from "@/server/live";
 import { countRecipientsFn, createCampaignFn } from "@/server/live-campaign-create-fns";
+import { getListsFn } from "@/server/live-lists-fns";
 import {
   CHANNEL_CHOICES,
   CODE_PATTERN,
@@ -10,6 +11,9 @@ import {
   SEGMENT_SAMPLE_NAME,
   formatRand,
   heldCostCents,
+  initialComposerSegment,
+  parseComposerSearch,
+  type ComposerSearch,
   reachFor,
   type LiveChannel,
   type ReachCounts,
@@ -44,41 +48,28 @@ export const Route = createFileRoute("/app/campaigns/new")({
     if (!requireRole("owner", "manager")(demoRepo.read().session)) throw redirect({ to: "/login" });
   },
   loader: async () => getDataModeFn(),
-  validateSearch: (search: Record<string, unknown>) => ({
-    listId: typeof search["listId"] === "string" ? search["listId"] : undefined,
-    segment:
-      typeof search["segment"] === "string" &&
-      ["everyone", "new", "lapsed30", "close_to_reward", "weekday", "birthday_month", "saved_list"].includes(search["segment"])
-        ? (search["segment"] as SegmentType)
-        : undefined,
-    weekday: typeof search["weekday"] === "string" && /^\d$/.test(search["weekday"]) ? Number(search["weekday"]) : undefined,
-    body:
-      typeof search["body"] === "string" && search["body"].trim()
-        ? search["body"].slice(0, 600)
-        : undefined,
-    name:
-      typeof search["name"] === "string" && search["name"].trim()
-        ? search["name"].slice(0, 80)
-        : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>) => parseComposerSearch(search),
   component: NewCampaignPage,
 });
 
 function NewCampaignPage() {
   const { mode } = Route.useLoaderData();
   const search = useSearch({ from: "/app/campaigns/new" });
-  if (mode === "live") return <LiveCampaignComposer audience={search.segment} weekday={search.weekday} />;
+  if (mode === "live") return <LiveCampaignComposer search={search} />;
   return <ComposerPage />;
 }
 
-function LiveCampaignComposer({ audience, weekday }: { audience: SegmentType | undefined; weekday: number | undefined }) {
+function LiveCampaignComposer({ search }: { search: ComposerSearch }) {
   const router = useRouter();
+  const start = initialComposerSegment(search);
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [name, setName] = useState("");
-  const [body, setBody] = useState("Hi {first_name}, we miss you! Pop by this week.");
+  const [name, setName] = useState(search.name ?? "");
+  const [body, setBody] = useState(search.body ?? "Hi {first_name}, we miss you! Pop by this week.");
   const [code, setCode] = useState("");
-  const [segment, setSegment] = useState<SegmentType>(audience ?? "everyone");
-  const [day, setDay] = useState(weekday ?? 3);
+  const [segment, setSegment] = useState<SegmentType>(start.segment);
+  const [listId] = useState<string | undefined>(start.listId);
+  const [listName, setListName] = useState<string | null>(null);
+  const [day, setDay] = useState(search.weekday ?? 3);
   const [channel, setChannel] = useState<LiveChannel>("sms");
   const [counts, setCounts] = useState<ReachCounts | null>(null);
   const [scheduledAt, setScheduledAt] = useState("");
@@ -96,8 +87,21 @@ function LiveCampaignComposer({ audience, weekday }: { audience: SegmentType | u
     if (segment === "lapsed30") return { type: "lapsed30", days: 30 };
     if (segment === "close_to_reward") return { type: "close_to_reward", remaining: 2 };
     if (segment === "birthday_month") return { type: "birthday_month", month: new Date().getMonth() + 1 };
+    if (segment === "saved_list" && listId) return { type: "saved_list", listId };
     return { type: "everyone" };
   };
+
+  useEffect(() => {
+    if (!listId) return;
+    let cancelled = false;
+    void getListsFn().then((lists) => {
+      if (cancelled) return;
+      setListName(lists?.find((list) => list.id === listId)?.name ?? null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [listId]);
 
   const countNow = async () => {
     setBusy(true);
@@ -160,11 +164,14 @@ function LiveCampaignComposer({ audience, weekday }: { audience: SegmentType | u
           <h2>Who gets it</h2>
           <FormField label="Audience">
             <select value={segment} onChange={(event) => { setSegment(event.target.value as SegmentType); setCounts(null); }}>
-              {SEGMENT_CHOICES.filter((choice) => choice.type !== "saved_list").map((choice) => (
-                <option key={choice.type} value={choice.type}>{choice.title}</option>
+              {SEGMENT_CHOICES.filter((choice) => choice.type !== "saved_list" || (choice.type === "saved_list" && listId)).map((choice) => (
+                <option key={choice.type} value={choice.type}>
+                  {choice.type === "saved_list" ? `Your list${listName ? `: ${listName}` : ""}` : choice.title}
+                </option>
               ))}
             </select>
           </FormField>
+          {segment === "saved_list" && listName && <p className="demo-data-note">Your list: {listName}</p>}
           {segment === "weekday" && (
             <FormField label="Day">
               <select value={day} onChange={(event) => { setDay(Number(event.target.value)); setCounts(null); }}>

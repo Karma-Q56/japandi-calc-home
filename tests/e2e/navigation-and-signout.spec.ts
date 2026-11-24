@@ -86,18 +86,20 @@ test("login offers account and password links in demo mode", async ({ page }) =>
   await expect(page.getByRole("link", { name: "Forgot password?" })).toBeVisible();
 });
 
-test("the demo pill starts small at the bottom right and stays out of the page flow", async ({
+test("the demo pill starts small and sits after the page content instead of floating over it", async ({
   page,
 }) => {
   await page.goto("/?demo=1");
   await page.waitForTimeout(800);
   const pill = page.locator("[data-demo-pill]");
+  await expect(pill).toBeAttached();
+  await pill.scrollIntoViewIfNeeded();
   await expect(pill).toBeVisible();
+  const position = await pill.evaluate((node) => getComputedStyle(node).position);
+  expect(position).not.toBe("fixed");
   const box = await pill.boundingBox();
-  const viewport = page.viewportSize()!;
   expect(box).not.toBeNull();
-  expect(box!.x + box!.width).toBeGreaterThan(viewport.width - 80);
-  expect(box!.y + box!.height).toBeGreaterThan(viewport.height - 130);
+  expect(box!.width).toBeLessThan(260);
   const toggle = pill.locator(".demo-control-toggle");
   await expect(toggle).toHaveAttribute("aria-expanded", "false");
   await toggle.click();
