@@ -1,6 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { api } from "@/api";
-import { campaignBadge, Badge, DataTable, EmptyState, PageHeader } from "@/components/patron/dash";
+import { Badge, DataTable, EmptyState, PageHeader } from "@/components/patron/dash";
+import { campaignBadge } from "@/components/patron/campaign-badge";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
 import { getCampaignListFn, getDataModeFn } from "@/server/live";

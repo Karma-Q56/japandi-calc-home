@@ -5,15 +5,8 @@ import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
 import type { Campaign, Offer } from "@/data/types";
 import { useDemoState } from "@/data/useDemoState";
-import {
-  Badge,
-  campaignBadge,
-  DataTable,
-  EmptyState,
-  PageHeader,
-  StatCard,
-  StatGrid,
-} from "@/components/patron/dash";
+import { Badge, DataTable, EmptyState, PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
+import { campaignBadge } from "@/components/patron/campaign-badge";
 import { Tabs } from "@/components/patron/kit";
 import { getDataModeFn } from "@/server/live";
 import { getSpecialsFn } from "@/server/live-specials-fns";

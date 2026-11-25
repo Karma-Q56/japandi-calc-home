@@ -1,4 +1,4 @@
-import { contrastRatio } from "@/theme";
+import { contrastRatio } from "@/theme/contrast";
 
 /** Text on the card must reach WCAG AA contrast (4.5:1) against its background. */
 export const MIN_CARD_TEXT_CONTRAST = 4.5;

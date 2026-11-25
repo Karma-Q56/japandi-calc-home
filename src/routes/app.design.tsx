@@ -9,7 +9,7 @@ import { ConfirmDialog, PageHeader } from "@/components/patron/dash";
 import { LoyaltyCard } from "@/components/patron/LoyaltyCard";
 import { PhoneFrame, PreviewOnly, PublishSteps } from "@/components/patron/preview";
 import { ThemeEditor } from "@/components/patron/ThemeEditor";
-import { themeHasAccessibleContrast } from "@/theme";
+import { themeHasAccessibleContrast } from "@/theme/contrast";
 import { getDataModeFn } from "@/server/live";
 
 export const Route = createFileRoute("/app/design")({

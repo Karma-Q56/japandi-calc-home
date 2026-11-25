@@ -1,28 +1,7 @@
-import { useState, type ComponentType, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import {
-  LayoutDashboard,
-  Users,
-  Gift,
-  Megaphone,
-  Ellipsis,
-  Globe,
-  ChartNoAxesColumn,
-  Settings,
-} from "lucide-react";
-
-type Item = { to: string; label: string; icon: ComponentType; end?: boolean };
-
-/** The seven owner sections. Older tools keep their URLs and light up their section here. */
-export const OWNER_NAV: Item[] = [
-  { to: "/app", label: "Home", icon: LayoutDashboard, end: true },
-  { to: "/app/customers", label: "Guests", icon: Users },
-  { to: "/app/loyalty", label: "Loyalty", icon: Gift },
-  { to: "/app/specials", label: "Campaigns", icon: Megaphone },
-  { to: "/app/page", label: "Your page", icon: Globe },
-  { to: "/app/insights", label: "Insights", icon: ChartNoAxesColumn },
-  { to: "/app/settings", label: "Settings", icon: Settings },
-];
+import { Ellipsis } from "lucide-react";
+import { OWNER_NAV, type Item } from "./owner-nav-sections";
 
 /** Tool URL prefix -> the section it belongs to. Longest prefix wins. */
 const SECTION_OF: Array<[prefix: string, to: string]> = [

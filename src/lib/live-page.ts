@@ -4,7 +4,7 @@
 import { validateAddress, validateSuburb, validateVenueType } from "@/lib/venue-fields";
 
 import { STAMP_SHAPES, type Theme } from "@/data/types";
-import { themeHasAccessibleContrast } from "@/theme";
+import { themeHasAccessibleContrast } from "@/theme/contrast";
 
 export const PAGE_DAYS = [
   "Monday",

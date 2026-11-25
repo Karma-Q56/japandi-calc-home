@@ -6,7 +6,7 @@ import {
   refuseUnreadableColours,
 } from "@/lib/card-palettes";
 import { canPublish, goTo, markEdited, publish, startFlow, startPublished } from "@/domain/publish";
-import { contrastRatio } from "@/theme";
+import { contrastRatio } from "@/theme/contrast";
 
 describe("card palettes", () => {
   it("offers twelve presets", () => {
