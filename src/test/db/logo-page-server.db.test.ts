@@ -90,6 +90,7 @@ describe.skipIf(!dbTestsEnabled)("live page server functions (real database)", (
     tagline: "Slow mornings, good coffee",
     about: "Roasted next door.",
     suburb: "Melville",
+    venueType: "cafe",
     address: "7 Seventh Street",
     hours: {
       ...fullWeek({}),

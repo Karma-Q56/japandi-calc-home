@@ -5,6 +5,7 @@ const TYPE_LABELS: Record<NonNullable<Restaurant["venueType"]>, string> = {
   bakery: "Bakery",
   restaurant: "Restaurant",
   takeaway: "Takeaway",
+  other: "Other",
 };
 
 /** Friendly labels for the four venue kinds. */

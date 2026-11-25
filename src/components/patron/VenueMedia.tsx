@@ -7,6 +7,7 @@ const VENUE_ICONS = {
   bakery: Wheat,
   restaurant: UtensilsCrossed,
   takeaway: ShoppingBag,
+  other: UtensilsCrossed,
 } as const;
 
 /**

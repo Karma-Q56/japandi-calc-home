@@ -16,6 +16,7 @@ const good: SettingsInput = {
   phone: "021 555 0100",
   address: "12 Main Road",
   suburb: "Observatory",
+  venueType: "cafe",
   city: "Cape Town",
   enquiryEmail: "hello@example.com",
   offersAlerts: true,
@@ -115,5 +116,36 @@ describe("activity wording and errors", () => {
     expect(adminErrorMessage("not_allowed")).toContain("owner or a manager");
     expect(adminErrorMessage("rate_limited")).toContain("Try again tomorrow");
     expect(adminErrorMessage(null)).toBe("Something went wrong. Please try again.");
+  });
+});
+
+describe("checkSettings venue details (D26)", () => {
+  it("normalises a listed neighbourhood to its official spelling", () => {
+    const result = checkSettings({ ...good, suburb: "  rosebank " });
+    expect(result.ok && result.value.suburb).toBe("Rosebank");
+  });
+
+  it("refuses an address that is a web link, an email or a phone number", () => {
+    for (const address of ["www.mysite.co.za", "me@x.co 12", "0821234567", "Oxford Road"]) {
+      const result = checkSettings({ ...good, address });
+      expect(result.ok, address).toBe(false);
+      if (!result.ok) expect(result.field).toBe("address");
+    }
+  });
+
+  it("allows an empty address", () => {
+    expect(checkSettings({ ...good, address: "" }).ok).toBe(true);
+  });
+
+  it("refuses a neighbourhood with odd characters", () => {
+    const result = checkSettings({ ...good, suburb: "Rose<bank" });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.field).toBe("suburb");
+  });
+
+  it("refuses a venue type that is not one of the five", () => {
+    const result = checkSettings({ ...good, venueType: "pub" });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.field).toBe("venueType");
   });
 });

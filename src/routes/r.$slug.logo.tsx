@@ -14,7 +14,16 @@ export const Route = createFileRoute("/r/$slug/logo")({
         if (!slug.success) return new Response("Not found", { status: 404 });
         const { readPublicLogo } = await import("@/server/live-logo");
         const logo = await readPublicLogo(slug.data);
-        if (!logo) return new Response("Not found", { status: 404 });
+        if (!logo) {
+          // An old address goes to the new one, so a logo link printed or saved earlier still works.
+          const { resolveSlugRedirect } = await import("@/server/live-slug");
+          const next = await resolveSlugRedirect(slug.data).catch(() => null);
+          if (next) {
+            const search = new URL(request.url).search;
+            return new Response(null, { status: 301, headers: { Location: `/r/${next}/logo${search}` } });
+          }
+          return new Response("Not found", { status: 404 });
+        }
         const version = new URL(request.url).searchParams.get("v");
         const cache =
           version !== null && version === String(logo.version)

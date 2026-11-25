@@ -42,6 +42,8 @@ const REFUSAL_CODES = [
   "billing_paused",
   "bad_state",
   "bad_note",
+  "same_slug",
+  "not_found",
 ] as const;
 
 /** Map a database refusal code to plain words. Read the code from the cause chain, never the message. */
@@ -79,7 +81,9 @@ export const RESTAURANT_MESSAGES: Record<string, string> = {
   bad_email: "Enter a valid owner email.",
   bad_location: "The suburb or city is too long.",
   slug_taken: "That web address is already in use.",
-  slug_reserved: "That web address is reserved. Try another.",
+  slug_reserved: "That web address is reserved or used to belong to another restaurant. Try another.",
+  same_slug: "That is already this restaurant's page address.",
+  not_found: "That restaurant was not found.",
 };
 
 export function restaurantMessageForRefusal(code: string | null): string {
@@ -270,6 +274,26 @@ export async function recordRefundLive(
       sql`select operator_record_refund(${viewer.userId}, ${input.paymentId}::uuid, ${input.amountCents}, ${input.reason})`,
     );
     return { ok: true as const, message: "Refund recorded." };
+  });
+  return result as RestaurantsResult;
+}
+
+/**
+ * Change a restaurant's page address. Operator only, rate limited. The old address keeps working: it redirects to
+ * the new one, so printed QR codes are safe.
+ */
+export async function changeSlugLive(
+  viewer: Viewer,
+  input: { restaurantId: string; newSlug: string; reason: string },
+): Promise<RestaurantsResult> {
+  const denied = await guardWrite(viewer);
+  if (denied) return denied;
+  const result = await runAsOperator(async (tx) => {
+    const res = await tx.execute<{ slug: string }>(
+      sql`select operator_change_slug(${viewer.userId}, ${input.restaurantId}::uuid, ${input.newSlug}, ${input.reason}) as slug`,
+    );
+    const slug = rowsOf<{ slug: string }>(res)[0]?.slug ?? input.newSlug;
+    return { ok: true as const, message: `Page address changed to /r/${slug}. The old address now points to it.` };
   });
   return result as RestaurantsResult;
 }

@@ -2,6 +2,7 @@ import { demoRepo, updateDemo } from "@/data/repo";
 import type { PageEdit, PageVersion, Restaurant } from "@/data/types";
 import { publishedBy } from "./actor";
 import { failure, success, type ApiResult } from "./demo";
+import { validateAddress, validateSuburb } from "@/lib/venue-fields";
 
 /** Days shown on the page editor, in the same order the page prints them. */
 export const PAGE_DAYS = [
@@ -51,9 +52,15 @@ export function validatePageEdit(edit: PageEdit): string[] {
   }
   if (edit.address.trim().length > 120) {
     problems.push("Keep the street address to 120 characters or fewer.");
+  } else {
+    const addressProblem = validateAddress(edit.address, 120);
+    if (addressProblem) problems.push(addressProblem);
   }
   if (edit.suburb.trim().length < 2 || edit.suburb.trim().length > 60) {
     problems.push("Add a suburb of 2 to 60 characters.");
+  } else {
+    const suburbProblem = validateSuburb(edit.suburb);
+    if (suburbProblem) problems.push(suburbProblem);
   }
   let openDays = 0;
   for (const day of PAGE_DAYS) {

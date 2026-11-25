@@ -21,6 +21,7 @@ const page = (overrides: Record<string, unknown> = {}) => ({
   tagline: "Good coffee",
   about: "",
   suburb: "Melville",
+  venueType: "cafe",
   address: "",
   hours: open(),
   ...overrides,
@@ -110,5 +111,24 @@ describe("migration 0034 text", () => {
   });
   it("uses no em or en dashes", () => {
     expect(sql).not.toMatch(/[\u2013\u2014]/);
+  });
+});
+
+describe("validatePage venue details (D26)", () => {
+  it("refuses a venue type that is not one of the five", () => {
+    expect(validatePage(page({ venueType: "pub" }))).toMatch(/kind of place/);
+  });
+  it("refuses a neighbourhood with odd characters", () => {
+    expect(validatePage(page({ suburb: "Mel<ville" }))).toMatch(/2 to 60 letters/);
+  });
+  it("refuses an address that is a link, an email or a phone number, and accepts a street address", () => {
+    for (const address of ["www.mysite.co.za", "me@x.co 12", "0821234567", "Main Road"]) {
+      expect(validatePage(page({ address })), address).toMatch(/street address/);
+    }
+    expect(validatePage(page({ address: "12 Oxford Road" }))).toBeNull();
+    expect(validatePage(page({ address: "" }))).toBeNull();
+  });
+  it("keeps the page's 120 character address cap", () => {
+    expect(validatePage(page({ address: `1 ${"a".repeat(130)}` }))).toMatch(/120/);
   });
 });

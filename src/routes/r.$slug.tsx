@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, isRedirect } from "@tanstack/react-router";
+import { followSlugRedirect } from "@/server/live-slug-fns";
 import { useDemoState } from "@/data/useDemoState";
 import { getDataModeFn, getPublicPageFn } from "@/server/live";
 import type { PublicPage } from "@/server/repos/contracts";
@@ -26,15 +27,28 @@ export const Route = createFileRoute("/r/$slug")({
     if (location.pathname === `/r/${params.slug}/card`) {
       return { mode, live: null as PublicPage | null, failed: false };
     }
+    let page: PublicPage | null;
     try {
-      const { page } = await getPublicPageFn({ data: { slug: params.slug } });
-      return { mode, live: page, failed: false };
+      ({ page } = await getPublicPageFn({ data: { slug: params.slug } }));
     } catch {
       // A live read can fail (schema drift, an outage). The card and join pages
       // under /r/$slug carry their own data, so a failed venue read must not
       // take them down with it. The child renders through the outlet instead.
       return { mode, live: null as PublicPage | null, failed: true };
     }
+    if (!page) {
+      // An old address (a page address an operator changed) goes to the new one, so printed QR codes keep working.
+      const rest = location.pathname.slice(`/r/${params.slug}`.length);
+      const target = rest === "/join" ? "/r/$slug/join" : rest === "" || rest === "/" ? "/r/$slug" : null;
+      if (target) {
+        try {
+          await followSlugRedirect(params.slug, target);
+        } catch (thrown) {
+          if (isRedirect(thrown)) throw thrown;
+        }
+      }
+    }
+    return { mode, live: page, failed: false };
   },
   component: PublicRestaurantPageWithChildren,
 });

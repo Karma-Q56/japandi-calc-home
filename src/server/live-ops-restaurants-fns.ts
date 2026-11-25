@@ -115,6 +115,19 @@ export const recordRefundFn = createServerFn({ method: "POST" })
     return recordRefundLive(viewer, { paymentId: data.paymentId, amountCents: data.amountCents, reason: data.reason });
   });
 
+/** Change a restaurant's page address. The old address keeps working as a redirect. */
+export const changeSlugFn = createServerFn({ method: "POST" })
+  .validator(z.object({ restaurantId: uuid, newSlug: z.string().trim().max(60), reason }))
+  .handler(async ({ data }) => {
+    const [{ readViewer }, { changeSlugLive }] = await Promise.all([
+      import("./auth-viewer"),
+      import("./live-ops-restaurants"),
+    ]);
+    const viewer = await readViewer();
+    if (!viewer) return { ok: false as const, message: "Sign in again." };
+    return changeSlugLive(viewer, { restaurantId: data.restaurantId, newSlug: data.newSlug, reason: data.reason });
+  });
+
 /** Create an invoice for a restaurant (amount in cents; the screen converts from rand). */
 export const createInvoiceFn = createServerFn({ method: "POST" })
   .validator(

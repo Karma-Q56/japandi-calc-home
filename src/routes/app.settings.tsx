@@ -1,3 +1,5 @@
+import { VenueDetailsFields } from "@/components/patron/VenueDetailsFields";
+import { validateAddress } from "@/lib/venue-fields";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { api } from "@/api";
@@ -48,6 +50,7 @@ function Settings() {
 function LiveSettings({ initial }: { initial: OwnerSettings | null }) {
   const [form, setForm] = useState<SettingsInput | null>(initial);
   const [notice, setNotice] = useState("");
+  const [addressMessage, setAddressMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [helpOn, setHelpOn] = useState<boolean>(initial?.helpOn ?? false);
   const [helpDays, setHelpDays] = useState<number>(HELP_DEFAULT_DAYS);
@@ -99,6 +102,12 @@ function LiveSettings({ initial }: { initial: OwnerSettings | null }) {
   }
   async function save() {
     if (!form) return;
+    const addressProblem = validateAddress(form.address);
+    setAddressMessage(addressProblem);
+    if (addressProblem) {
+      setNotice(addressProblem);
+      return;
+    }
     setSaving(true);
     setNotice("");
     try {
@@ -127,11 +136,27 @@ function LiveSettings({ initial }: { initial: OwnerSettings | null }) {
             <input value={form.phone} disabled={!canEdit} onChange={(e) => set("phone", e.target.value)} />
           </FormField>
           <FormField label="Address">
-            <input value={form.address} disabled={!canEdit} onChange={(e) => set("address", e.target.value)} />
+            <input
+              value={form.address}
+              disabled={!canEdit}
+              onChange={(e) => set("address", e.target.value)}
+              onBlur={() => setAddressMessage(validateAddress(form.address))}
+            />
           </FormField>
-          <FormField label="Suburb">
-            <input value={form.suburb} disabled={!canEdit} onChange={(e) => set("suburb", e.target.value)} />
-          </FormField>
+          {addressMessage ? (
+            <p className="field-error" role="alert">
+              {addressMessage}
+            </p>
+          ) : null}
+          <VenueDetailsFields
+            suburb={form.suburb}
+            venueType={form.venueType}
+            disabled={!canEdit}
+            onChange={(next) => {
+              set("suburb", next.suburb);
+              set("venueType", next.venueType);
+            }}
+          />
           <FormField label="City">
             <input value={form.city} disabled={!canEdit} onChange={(e) => set("city", e.target.value)} />
           </FormField>
@@ -243,13 +268,25 @@ function LiveSettings({ initial }: { initial: OwnerSettings | null }) {
   );
 }
 
+/**
+ * The first render uses the fixed seed and only then switches to the stored demo data, so the form is keyed
+ * on the signed-in restaurant: it starts over with the stored values instead of keeping the seed's.
+ */
 function DemoSettings() {
+  const state = useDemoState();
+  return <DemoSettingsForm key={state.session.restaurantId ?? "seed"} />;
+}
+
+function DemoSettingsForm() {
   const state = useDemoState();
   const restaurant =
     state.restaurants.find((item) => item.id === state.session.restaurantId) ??
     state.restaurants[0]!;
   const [name, setName] = useState(restaurant.name);
   const [suburb, setSuburb] = useState(restaurant.suburb);
+  const [venueType, setVenueType] = useState<string>(restaurant.venueType ?? "other");
+  const [address, setAddress] = useState(restaurant.address ?? "");
+  const [addressMessage, setAddressMessage] = useState<string | null>(null);
   const [sender, setSender] = useState(restaurant.senderName);
   const [capRestaurant, setCapRestaurant] = useState(restaurant.smsCapRestaurant);
   const [capMember, setCapMember] = useState(restaurant.smsCapMember);
@@ -275,6 +312,12 @@ function DemoSettings() {
   const [helpDays, setHelpDays] = useState(HELP_DEFAULT_DAYS);
 
   const save = () => {
+    const addressProblem = validateAddress(address);
+    setAddressMessage(addressProblem);
+    if (addressProblem) {
+      setNotice(addressProblem);
+      return;
+    }
     if (!/^[A-Za-z0-9 ]{1,11}$/.test(sender)) {
       setNotice("Sender name: up to 11 letters and numbers.");
       return;
@@ -282,6 +325,8 @@ function DemoSettings() {
     const result = api.restaurant.update(restaurant.id, {
       name: name.trim() || restaurant.name,
       suburb: suburb.trim() || restaurant.suburb,
+      venueType: venueType as NonNullable<typeof restaurant.venueType>,
+      address: address.trim(),
       senderName: sender,
       smsCapRestaurant: Math.max(1, capRestaurant),
       smsCapMember: Math.max(1, capMember),
@@ -337,9 +382,26 @@ function DemoSettings() {
           <FormField label="Business name">
             <input value={name} onChange={(event) => setName(event.target.value)} />
           </FormField>
-          <FormField label="Suburb">
-            <input value={suburb} onChange={(event) => setSuburb(event.target.value)} />
+          <FormField label="Address">
+            <input
+              value={address}
+              onChange={(event) => setAddress(event.target.value)}
+              onBlur={() => setAddressMessage(validateAddress(address))}
+            />
           </FormField>
+          {addressMessage ? (
+            <p className="field-error" role="alert">
+              {addressMessage}
+            </p>
+          ) : null}
+          <VenueDetailsFields
+            suburb={suburb}
+            venueType={venueType}
+            onChange={(next) => {
+              setSuburb(next.suburb);
+              setVenueType(next.venueType);
+            }}
+          />
           <FormField label="Contact shown on the public page">
             <input value={contact} onChange={(event) => setContact(event.target.value)} />
           </FormField>

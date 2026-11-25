@@ -9,6 +9,7 @@ const settingsSchema = z.object({
   phone: z.string().max(200),
   address: z.string().max(400),
   suburb: z.string().max(200),
+  venueType: z.string().max(40),
   city: z.string().max(200),
   enquiryEmail: z.string().max(300),
   offersAlerts: z.boolean(),

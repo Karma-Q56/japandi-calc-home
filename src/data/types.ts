@@ -92,7 +92,7 @@ export interface Restaurant {
   plan: Plan;
   suburb: string;
   /** Shown on the find page and used for filtering. */
-  venueType?: "cafe" | "bakery" | "restaurant" | "takeaway";
+  venueType?: "cafe" | "bakery" | "restaurant" | "takeaway" | "other";
   address?: string;
   /** Public phone number with country code, used for calls and WhatsApp. */
   phoneE164?: string;

@@ -68,6 +68,7 @@ export async function getOwnerSettings(viewer: Viewer | null): Promise<OwnerSett
       phone: string | null;
       address: string | null;
       suburb: string | null;
+      venue_type: string;
       city: string;
       enquiry_email: string | null;
       offers_alerts: boolean;
@@ -79,7 +80,7 @@ export async function getOwnerSettings(viewer: Viewer | null): Promise<OwnerSett
     }>(
       tx,
       sql`
-        select r.name, r.phone, r.address, r.suburb, r.city, r.enquiry_email,
+        select r.name, r.phone, r.address, r.suburb, r.venue_type, r.city, r.enquiry_email,
                r.offers_alerts, r.orders_at_till, r.marketing_weekly_cap, r.member_weekly_cap,
                r.patron_help_enabled, r.patron_help_expires_at
         from restaurant r
@@ -95,6 +96,7 @@ export async function getOwnerSettings(viewer: Viewer | null): Promise<OwnerSett
       phone: row.phone ?? "",
       address: row.address ?? "",
       suburb: row.suburb ?? "",
+      venueType: row.venue_type,
       city: row.city,
       enquiryEmail: row.enquiry_email ?? "",
       offersAlerts: row.offers_alerts,
@@ -125,7 +127,7 @@ export async function saveOwnerSettings(viewer: Viewer | null, input: SettingsIn
         tx,
         sql`select save_owner_settings(${userId}, ${v.name}, ${v.phone || null}, ${v.address || null},
           ${v.suburb || null}, ${v.city}, ${v.enquiryEmail || null}, ${v.offersAlerts}, ${v.ordersAtTill},
-          ${v.marketingWeeklyCap}, ${v.memberWeeklyCap})`,
+          ${v.marketingWeeklyCap}, ${v.memberWeeklyCap}, ${v.venueType})`,
       );
     });
     return { ok: true, value: null };

@@ -1,5 +1,6 @@
 // Plain wording, validation and error messages for the owner admin screens (phase D13a).
 // Browser-safe: no database or server imports.
+import { normaliseSuburb, validateAddress, validateSuburb, validateVenueType } from "@/lib/venue-fields";
 
 export const ADMIN_REFUSAL_CODES = ["not_allowed", "invalid_value", "rate_limited"] as const;
 export type AdminRefusalCode = (typeof ADMIN_REFUSAL_CODES)[number];
@@ -79,6 +80,7 @@ export type SettingsInput = {
   phone: string;
   address: string;
   suburb: string;
+  venueType: string;
   city: string;
   enquiryEmail: string;
   offersAlerts: boolean;
@@ -98,7 +100,8 @@ export function checkSettings(input: SettingsInput): SettingsCheck {
     name: input.name.trim(),
     phone: input.phone.trim(),
     address: input.address.trim(),
-    suburb: input.suburb.trim(),
+    suburb: normaliseSuburb(input.suburb),
+    venueType: input.venueType.trim(),
     city: input.city.trim(),
     enquiryEmail: input.enquiryEmail.trim(),
     offersAlerts: input.offersAlerts,
@@ -124,6 +127,12 @@ export function checkSettings(input: SettingsInput): SettingsCheck {
   if (value.address.length > 160) {
     return { ok: false, field: "address", message: "Keep the address under 160 characters." };
   }
+  const addressProblem = validateAddress(value.address);
+  if (addressProblem) return { ok: false, field: "address", message: addressProblem };
+  const suburbProblem = value.suburb === "" ? null : validateSuburb(value.suburb);
+  if (suburbProblem) return { ok: false, field: "suburb", message: suburbProblem };
+  const typeProblem = validateVenueType(value.venueType);
+  if (typeProblem) return { ok: false, field: "venueType", message: typeProblem };
   if (value.enquiryEmail && (value.enquiryEmail.length > 120 || !EMAIL.test(value.enquiryEmail))) {
     return { ok: false, field: "enquiryEmail", message: "Use an email address like name@example.com." };
   }

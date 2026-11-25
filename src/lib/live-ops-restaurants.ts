@@ -162,3 +162,25 @@ export function subscriptionStateLabel(state: string): string {
   if (state === "cancelled") return "Cancelled";
   return state;
 }
+
+/** The page address rule, as the database applies it: lowercase letters and numbers with single dashes, 3 to 40 characters. */
+export const PAGE_ADDRESS_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+export const CHANGE_ADDRESS_WARNING =
+  "Old links and printed QR codes keep working. The old address will always point to the new one.";
+
+/** Check a page address change before it is sent. The database checks again. */
+export function checkAddressChange(
+  currentSlug: string,
+  input: string,
+  reason: string,
+): { ok: true; slug: string; reason: string } | { ok: false; message: string } {
+  const slug = input.trim().toLowerCase();
+  const why = reason.trim();
+  if (slug.length < 3 || slug.length > 40 || !PAGE_ADDRESS_PATTERN.test(slug)) {
+    return { ok: false, message: "Use 3 to 40 lowercase letters or numbers, with single dashes between words." };
+  }
+  if (slug === currentSlug) return { ok: false, message: "That is already this restaurant's page address." };
+  if (why.length < 3 || why.length > 300) return { ok: false, message: "Write a short reason (3 to 300 characters)." };
+  return { ok: true, slug, reason: why };
+}

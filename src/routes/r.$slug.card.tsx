@@ -1,6 +1,8 @@
+import { followSlugRedirect } from "@/server/live-slug-fns";
 import {
   createFileRoute,
   redirect,
+  isRedirect,
   type ErrorComponentProps,
 } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -31,10 +33,18 @@ import { signInAsDemoAccount } from "@/lib/demo-signin";
 
 export const Route = createFileRoute("/r/$slug/card")({
   validateSearch: (search) => cardSearchSchema.parse(search),
-  loader: async ({ params }) => {
+  loader: async ({ params, location }) => {
     const { mode } = await getDataModeFn();
     if (mode !== "live") return { mode, live: null };
     const { card } = await getCardFn({ data: { slug: params.slug } });
+    if (!card) {
+      // An old address (one an operator changed) goes to the new one, so printed QR codes keep working.
+      try {
+        await followSlugRedirect(params.slug, "/r/$slug/card", location.search as Record<string, unknown>);
+      } catch (thrown) {
+        if (isRedirect(thrown)) throw thrown;
+      }
+    }
     const [extras, specials, spin] = card
       ? await Promise.all([
           getGuestExtrasFn({ data: { slug: params.slug } }),

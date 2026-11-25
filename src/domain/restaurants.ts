@@ -4,6 +4,7 @@ import { createSeed } from '@/data/seed';
 import { demoRepo, updateDemo } from '@/data/repo';
 import type { MenuItem, Restaurant, Special } from '@/data/types';
 import { failure, success } from './demo';
+import { normaliseSuburb, validateAddress, validateSuburb, validateVenueType } from '@/lib/venue-fields';
 
 export const slugify = (name: string) => name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 export function checkSlug(slug: string, exceptId?: string) {
@@ -38,6 +39,19 @@ export function updateRestaurant(id: string, patch: Partial<Restaurant>) {
   const exists = demoRepo.read().restaurants.some(item => item.id === id);
   if (!exists) return failure('NOT_FOUND', 'Restaurant not found.');
   if (patch.slug) { const slugCheck = checkSlug(patch.slug, id); if (!slugCheck.available) return failure('INVALID', slugCheck.reason); patch = { ...patch, slug: slugCheck.normalized }; }
+  if (patch.suburb !== undefined) {
+    const problem = validateSuburb(patch.suburb);
+    if (problem) return failure('INVALID', problem);
+    patch = { ...patch, suburb: normaliseSuburb(patch.suburb) };
+  }
+  if (patch.venueType !== undefined) {
+    const problem = validateVenueType(patch.venueType);
+    if (problem) return failure('INVALID', problem);
+  }
+  if (patch.address !== undefined) {
+    const problem = validateAddress(patch.address);
+    if (problem) return failure('INVALID', problem);
+  }
   if (patch.stampsRequired !== undefined && (patch.stampsRequired < 2 || patch.stampsRequired > 30)) return failure('INVALID', 'Stamps required must be between 2 and 30.');
   updateDemo(state => ({ ...state, restaurants: state.restaurants.map(item => item.id === id ? { ...item, ...patch } : item) }));
   return success(demoRepo.read().restaurants.find(item => item.id === id)!);

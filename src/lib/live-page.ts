@@ -1,6 +1,7 @@
 // Checks for the live "Your page" and card design saves. They run in the browser (so the owner
 // sees a plain message at once) and again on the server (so nothing odd is ever stored). The
 // database repeats the shape checks in db/migrations/0034.
+import { validateAddress, validateSuburb, validateVenueType } from "@/lib/venue-fields";
 
 import { STAMP_SHAPES, type Theme } from "@/data/types";
 import { themeHasAccessibleContrast } from "@/theme";
@@ -27,6 +28,7 @@ export type PageInput = {
   tagline: string;
   about: string;
   suburb: string;
+  venueType: string;
   address: string;
   hours: Hours;
 };
@@ -59,7 +61,13 @@ export function validatePage(input: PageInput): string | null {
   if (input.about.trim().length > ABOUT_LIMIT) return `Keep your story to ${ABOUT_LIMIT} characters.`;
   const suburb = input.suburb.trim();
   if (suburb.length < 2 || suburb.length > SUBURB_LIMIT) return "Add the suburb guests will find you in.";
+  const suburbProblem = validateSuburb(suburb);
+  if (suburbProblem) return suburbProblem;
   if (input.address.trim().length > ADDRESS_LIMIT) return `Keep the address to ${ADDRESS_LIMIT} characters.`;
+  const addressProblem = validateAddress(input.address, ADDRESS_LIMIT);
+  if (addressProblem) return addressProblem;
+  const typeProblem = validateVenueType(input.venueType);
+  if (typeProblem) return typeProblem;
   let open = 0;
   for (const day of PAGE_DAYS) {
     const span = input.hours[day] ?? null;

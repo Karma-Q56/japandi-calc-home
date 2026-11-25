@@ -10,6 +10,7 @@ import {
   statusLabel,
   subscriptionStateLabel,
 } from "@/lib/live-ops-restaurants";
+import { LiveOpsPageAddress } from "@/components/patron/live/ops/LiveOpsPageAddress";
 import { LiveOpsMoneyActions } from "@/components/patron/live/ops/LiveOpsMoneyActions";
 import { setRestaurantStatusFn, setRestaurantPlanFn } from "@/server/live-ops-fns";
 import { setSubscriptionStateFn } from "@/server/live-ops-restaurants-fns";
@@ -67,6 +68,8 @@ export function LiveOpsRestaurantDetail(props: { detail: Detail }) {
           ]}
         />
       )}
+
+      <LiveOpsPageAddress restaurantId={id} slug={detail.restaurant.slug} />
 
       <h2>SMS credit</h2>
       <p>

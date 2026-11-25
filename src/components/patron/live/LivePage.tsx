@@ -3,13 +3,14 @@ import { FormField, Helper, PageHeader } from "@/components/patron/dash";
 import { TimeEditor } from "@/components/patron/TimeEditor";
 import { useLogoPreview } from "@/components/patron/live/use-logo-preview";
 import { PageIdentity } from "@/components/patron/live/PageIdentity";
+import { VenueDetailsFields } from "@/components/patron/VenueDetailsFields";
+import { validateAddress } from "@/lib/venue-fields";
 import { saveOwnerPageFn } from "@/server/live-page-fns";
 import type { OwnerPage } from "@/server/live-page";
 import {
   ABOUT_LIMIT,
   ADDRESS_LIMIT,
   PAGE_DAYS,
-  SUBURB_LIMIT,
   TAGLINE_LIMIT,
   validatePage,
   type Hours,
@@ -35,16 +36,20 @@ function LivePageEditor({ page }: { page: OwnerPage }) {
   const [tagline, setTagline] = useState(page.tagline);
   const [about, setAbout] = useState(page.about);
   const [suburb, setSuburb] = useState(page.suburb);
+  const [venueType, setVenueType] = useState(page.venueType);
+  const [addressMessage, setAddressMessage] = useState<string | null>(null);
   const [address, setAddress] = useState(page.address);
   const [hours, setHours] = useState<Hours>(page.hours);
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const input = { tagline, about, suburb, address, hours };
+  const input = { tagline, about, suburb, venueType, address, hours };
   const problem = validatePage(input);
   const [logoUrl] = useLogoPreview(page.logoVersion !== null);
 
   const save = async () => {
+    const addressProblem = validateAddress(address, ADDRESS_LIMIT);
+    setAddressMessage(addressProblem);
     if (problem) {
       setNotice(problem);
       return;
@@ -96,20 +101,27 @@ function LivePageEditor({ page }: { page: OwnerPage }) {
                   onChange={(event) => setAbout(event.target.value)}
                 />
               </FormField>
-              <FormField label="Suburb">
-                <input
-                  value={suburb}
-                  maxLength={SUBURB_LIMIT}
-                  onChange={(event) => setSuburb(event.target.value)}
-                />
-              </FormField>
+              <VenueDetailsFields
+                suburb={suburb}
+                venueType={venueType}
+                onChange={(next) => {
+                  setSuburb(next.suburb);
+                  setVenueType(next.venueType);
+                }}
+              />
               <FormField label="Street address" hint="Optional.">
                 <input
                   value={address}
                   maxLength={ADDRESS_LIMIT}
                   onChange={(event) => setAddress(event.target.value)}
+                  onBlur={() => setAddressMessage(validateAddress(address, ADDRESS_LIMIT))}
                 />
               </FormField>
+              {addressMessage ? (
+                <p className="field-error" role="alert">
+                  {addressMessage}
+                </p>
+              ) : null}
             </div>
             {about.length >= ABOUT_LIMIT - 20 && (
               <Helper>{ABOUT_LIMIT - about.length} characters left on your story.</Helper>

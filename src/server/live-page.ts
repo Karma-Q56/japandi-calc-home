@@ -23,6 +23,7 @@ export type OwnerPage = {
   tagline: string;
   about: string;
   suburb: string;
+  venueType: string;
   address: string;
   hours: Hours;
   theme: Theme;
@@ -59,6 +60,7 @@ type PageRow = {
   slug: string;
   status: string;
   suburb: string | null;
+  venue_type: string;
   address: string | null;
   about_text: string | null;
   hours: Record<string, unknown> | null;
@@ -73,7 +75,7 @@ export async function loadOwnerPage(viewer: Viewer | null): Promise<OwnerPage | 
     { databaseUrl: databaseUrl(), restaurantId: viewer.restaurantId, isOperator: false },
     async (transaction) => {
       const result = await transaction.execute<PageRow>(sql`
-        select r.name, r.slug, r.status, r.suburb, r.address, r.about_text, r.hours, r.theme,
+        select r.name, r.slug, r.status, r.suburb, r.venue_type, r.address, r.about_text, r.hours, r.theme,
                (select l.version from restaurant_logo l where l.restaurant_id = r.id) as logo_version
         from restaurant r
         where r.id = ${viewer.restaurantId}
@@ -90,6 +92,7 @@ export async function loadOwnerPage(viewer: Viewer | null): Promise<OwnerPage | 
         tagline: theme.tagline,
         about: row.about_text ?? "",
         suburb: row.suburb ?? "",
+        venueType: row.venue_type,
         address: row.address ?? "",
         hours: fullWeek(row.hours),
         theme,
@@ -114,7 +117,8 @@ export async function saveOwnerPage(viewer: Viewer | null, input: PageInput): Pr
       async (transaction) => {
         await transaction.execute(sql`
           select save_owner_page(${viewer.userId}, ${input.tagline}, ${input.about},
-            ${input.suburb}, ${input.address}, ${JSON.stringify(fullWeek(input.hours))}::jsonb)
+            ${input.suburb}, ${input.address}, ${JSON.stringify(fullWeek(input.hours))}::jsonb,
+            ${input.venueType})
         `);
       },
     );

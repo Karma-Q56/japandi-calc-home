@@ -1,3 +1,5 @@
+import { VenueDetailsFields } from "@/components/patron/VenueDetailsFields";
+import { validateAddress } from "@/lib/venue-fields";
 import { Link, createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { api } from "@/api";
@@ -43,6 +45,8 @@ function PageWordsEditor() {
     state.restaurants.find((item) => item.id === state.session.restaurantId) ??
     state.restaurants[0]!;
   const [edit, setEdit] = useState<PageEdit>(() => api.page.editFor(restaurant));
+  const [venueType, setVenueType] = useState<string>(restaurant.venueType ?? "other");
+  const [addressMessage, setAddressMessage] = useState<string | null>(null);
   const [step, setStep] = useState(1);
   const [notice, setNotice] = useState("");
   const [published, setPublished] = useState(false);
@@ -69,6 +73,13 @@ function PageWordsEditor() {
     const result = api.page.publish(restaurant.id, edit);
     if (!result.ok) {
       setNotice(result.error.message);
+      return;
+    }
+    const typed = api.restaurant.update(restaurant.id, {
+      venueType: venueType as NonNullable<typeof restaurant.venueType>,
+    });
+    if (!typed.ok) {
+      setNotice(typed.error.message);
       return;
     }
     setNotice("");
@@ -133,12 +144,26 @@ function PageWordsEditor() {
                   onChange={(event) => set({ about: event.target.value })}
                 />
               </FormField>
-              <FormField label="Suburb">
-                <input value={edit.suburb} onChange={(event) => set({ suburb: event.target.value })} />
-              </FormField>
+              <VenueDetailsFields
+                suburb={edit.suburb}
+                venueType={venueType}
+                onChange={(next) => {
+                  set({ suburb: next.suburb });
+                  setVenueType(next.venueType);
+                }}
+              />
               <FormField label="Street address · optional">
-                <input value={edit.address} onChange={(event) => set({ address: event.target.value })} />
+                <input
+                  value={edit.address}
+                  onChange={(event) => set({ address: event.target.value })}
+                  onBlur={() => setAddressMessage(validateAddress(edit.address))}
+                />
               </FormField>
+              {addressMessage ? (
+                <p className="field-error" role="alert">
+                  {addressMessage}
+                </p>
+              ) : null}
             </div>
             {edit.about.length >= ABOUT_LIMIT - 20 && (
               <p className="te-help">{ABOUT_LIMIT - edit.about.length} letters left on your story.</p>
