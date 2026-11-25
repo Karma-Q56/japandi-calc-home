@@ -43,14 +43,14 @@ A wave can start as soon as everything it depends on has been merged into `claud
 | 3 | D19 Find directory | `freebuff/find-live` | 0030 | D10, D13b | Done (merged 11 Nov) |
 | 4 | D13b2 Finish card design, Your page, scan proof | `freebuff/card-design-finish` | 0034 | D13b | Built by Claude 13 Nov (Freebuff was offline), on `claude/fix-regressions` once merged |
 | 4 | D16b Finish sending: push, alerts, Worker cron, STOP reply, tests | `freebuff/sending-finish` | 0033 | D16 | Built by Claude 12 Nov (Freebuff was offline), on `claude/fix-regressions` once merged |
-| 7 | D20 Branches (live and demo, nothing existed before) | `freebuff/branches` | 0031 | D11, D21 | To do |
+| 7 | D20 Branches (live and demo, nothing existed before) | `freebuff/branches` | 0031 | D11, D21 | Done: built by Freebuff, reviewed, fixed and merged by Claude on 23 Nov. |
 | 4 | D21 Plans and payments | `freebuff/billing` | 0032 | D18 (best after D20) | Done: built by Freebuff, merged and hardened by Claude on 14 Nov. Needs one PayFast sandbox test before real money (waits for the merge to the main line) |
-| 7 | D23 Operator console live, part 1 (restaurants, credit, invoices, refund record) | `freebuff/operator-live-a` | 0036 | D18, D21 | To do |
-| 8 | D24 Operator console live, part 2 (campaign approvals, enquiries, feedback, ideas, outbox) | `freebuff/operator-live-b` | 0037 | D23 | To do |
-| 8 | D25 Billing finish (renewals, failed payments, grace, banner, reachable billing page) | `freebuff/billing-finish` | 0038 | D21, D23 | To do |
-| 9 | D26 Owner pickers and page address change | `freebuff/owner-pickers` | 0039 | D19, D23 | To do |
-| 9 | D27 Small fixes (campaign links, visits today, demo dot, dead code) | `freebuff/small-fixes` | none | none | To do |
-| 10 | D28 Look and feel (buttons, one tab style, wheel, card colours, lint). Alone | `freebuff/look-and-feel` | none | D20 to D27 | To do |
+| 7 | D23 Operator console live, part 1 (restaurants, credit, invoices, refund record) | `freebuff/operator-live-a` | 0036 | D18, D21 | Done: built by Freebuff, reviewed, fixed and merged by Claude on 23 Nov. |
+| 8 | D24 Operator console live, part 2 (campaign approvals, enquiries, feedback, ideas, outbox) | `freebuff/operator-live-b` | 0037 | D23 | Done: built by Freebuff, reviewed, fixed and merged by Claude on 23 Nov. |
+| 8 | D25 Billing finish (renewals, failed payments, grace, banner, reachable billing page) | `freebuff/billing-finish` | 0038 | D21, D23 | Done: built by Freebuff, reviewed, fixed and merged by Claude on 23 Nov. |
+| 9 | D26 Owner pickers and page address change | `freebuff/owner-pickers` | 0039 | D19, D23 | Done: built by Freebuff, reviewed, fixed and merged by Claude on 23 Nov. |
+| 9 | D27 Small fixes (campaign links, visits today, demo dot, dead code) | `freebuff/small-fixes` | none | none | Done: built by Claude (Freebuff offline) on 24 to 25 Nov. |
+| 10 | D28 Look and feel (buttons, one tab style, wheel, card colours, lint). Alone | `freebuff/look-and-feel` | none | D20 to D27 | Done: built by Claude (Freebuff offline) on 24 to 25 Nov. |
 | 11 | D29 Test every screen and flow, demo and live, write the findings file. Alone, last | `freebuff/walkthrough-test` | none | D20 to D28 | To do |
 | end | D22 Launch checklist | none | none | everything | At the end |
 
