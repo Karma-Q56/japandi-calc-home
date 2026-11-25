@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { Theme } from "@/data/types";
+import { readableOnAccent } from "@/theme/contrast";
 import cafePhoto from "@/assets/cafe-hero.jpg";
 import { GiftGlyph, StampGlyph } from "./StampIcon";
 
@@ -74,6 +75,7 @@ export function LoyaltyCard({
     "--c-ink": theme.ink,
     "--c-paper": theme.paper,
     "--c-accent": theme.accent,
+    "--c-accent-ink": readableOnAccent(theme.accent, theme.ink, theme.paper),
     "--c-soft": theme.accentSoft,
     "--c-on": theme.stampFilled,
     "--c-off": theme.stampEmpty,

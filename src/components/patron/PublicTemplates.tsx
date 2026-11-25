@@ -1,3 +1,4 @@
+import { darkenForWhiteText } from "@/theme/contrast";
 import type { MenuItem, PageTemplate, Restaurant, Special } from "@/data/types";
 import { APP_NAME } from "@/config/app";
 import { BackLink } from "@/components/patron/BackLink";
@@ -207,7 +208,7 @@ export function PublicTemplate({
         ["--pt-hero-ink" as string]: restaurant.theme.ink,
       }
     : {
-        ["--pt-hero-accent" as string]: restaurant.theme.accent,
+        ["--pt-hero-accent" as string]: darkenForWhiteText(restaurant.theme.accent),
         ["--pt-hero-paper" as string]: restaurant.theme.paper,
       };
 

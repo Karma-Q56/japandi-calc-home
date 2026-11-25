@@ -2,9 +2,14 @@ import { useState } from "react";
 import { createSeed } from "@/data/seed";
 import type { PageTemplate, Theme } from "@/data/types";
 import { LOGO_STAMP_GRIDS, buildLogoStamp, validateLogoFile } from "@/lib/logo-stamp";
-import { CARD_PALETTES, cardTextIsReadable } from "@/lib/card-palettes";
+import {
+  CARD_PALETTES,
+  refuseUnreadableColours,
+  suggestReadableInk,
+  suggestReadablePaper,
+} from "@/lib/card-palettes";
 import { ThemeProvider } from "@/theme";
-import { themeHasAccessibleContrast } from "@/theme/contrast";
+import { darkenForWhiteText, themeHasAccessibleContrast } from "@/theme/contrast";
 import cafePhoto from "@/assets/cafe-hero.jpg";
 import { LoyaltyCard } from "./LoyaltyCard";
 import { StampGlyph } from "./StampIcon";
@@ -81,7 +86,7 @@ export function ThemePreview({
                 className={`vp-hero${theme.coverPhoto ? " has-uploaded-photo" : ""}`}
                 style={theme.coverPhoto
                   ? { ["--vp-photo" as string]: `url(${theme.coverPhoto})` }
-                  : { ["--vp-hero-accent" as string]: theme.accent, ["--vp-hero-paper" as string]: theme.paper }}
+                  : { ["--vp-hero-accent" as string]: darkenForWhiteText(theme.accent), ["--vp-hero-paper" as string]: theme.paper }}
               >
                 <p>Johannesburg</p>
                 <h2>{name}</h2>
@@ -136,7 +141,8 @@ export function ThemeEditor({
   const [pendingLogo, setPendingLogo] = useState<File | null>(null);
   const [coverError, setCoverError] = useState("");
   const [coverBusy, setCoverBusy] = useState(false);
-  const [colourRefusal, setColourRefusal] = useState("");
+  // The colour the owner picked last stays; the readable fix changes the other one.
+  const [lastPicked, setLastPicked] = useState<"ink" | "paper">("paper");
   const set = <K extends keyof Theme>(key: K, value: Theme[K]) => onChange({ ...theme, [key]: value });
   const color = (label: string, key: keyof Theme) => (
     <label className="builder-field theme-color-field">
@@ -146,15 +152,8 @@ export function ThemeEditor({
         value={theme[key] as string}
         onChange={(event) => {
           const next = event.target.value;
-          // Keep the pick so the owner sees it, but flag an unreadable pair.
-          // The Design page refuses to preview or publish while it is unreadable.
-          const ink = key === "ink" ? next : theme.ink;
-          const paper = key === "paper" ? next : theme.paper;
-          setColourRefusal(
-            (key === "ink" || key === "paper") && !cardTextIsReadable(ink, paper)
-              ? "Text and background are too close to read comfortably. Darken the text or lighten the background."
-              : "",
-          );
+          // Keep the pick so the owner sees it. Saving stays refused while it cannot be read.
+          if (key === "ink" || key === "paper") setLastPicked(key);
           set(key, next as never);
         }}
       />
@@ -293,16 +292,25 @@ export function ThemeEditor({
             {color("Stamp", "stampFilled")}
             {color("Empty stamp", "stampEmpty")}
           </div>
-          {colourRefusal && (
-            <p className="theme-warning" role="alert">
-              {colourRefusal}
-            </p>
-          )}
           {!themeHasAccessibleContrast(theme) && (
-            <p className="theme-warning" role="alert">
-              Text and background are too close to read comfortably. Make the text darker or the
-              background lighter.
-            </p>
+            <div className="theme-fix">
+              <p className="theme-warning" role="alert">
+                {refuseUnreadableColours(theme.ink, theme.paper)}
+              </p>
+              <button
+                type="button"
+                className="builder-secondary"
+                onClick={() =>
+                  onChange(
+                    lastPicked === "ink"
+                      ? { ...theme, paper: suggestReadablePaper(theme.ink) }
+                      : { ...theme, ink: suggestReadableInk(theme.paper) },
+                  )
+                }
+              >
+                Use a readable colour
+              </button>
+            </div>
           )}
         </section>
 

@@ -8,6 +8,7 @@ import {
 import { Check, ChevronLeft, Gift, Stamp, X } from "lucide-react";
 import type { Theme } from "@/data/types";
 import { BackLink } from "../BackLink";
+import { readableOnAccent } from "@/theme/contrast";
 import { SectionTabs } from "./SectionTabs";
 
 export { BackLink };
@@ -427,13 +428,13 @@ export function VenueMark({
   size = "md",
 }: {
   name: string;
-  theme?: Pick<Theme, "accent" | "paper" | "logo">;
+  theme?: Pick<Theme, "accent" | "ink" | "paper" | "logo">;
   size?: "sm" | "md";
 }) {
   const style = theme
     ? {
         background: theme.accent,
-        color: theme.paper,
+        color: readableOnAccent(theme.accent, theme.ink, theme.paper),
       }
     : undefined;
   return (

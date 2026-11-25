@@ -27,6 +27,10 @@ export const CARD_PALETTES: readonly CardPalette[] = [
   { id: "ink", name: "Ink", ink: "#1b1b1f", paper: "#f7f6f2", accent: "#3f3f46" },
 ];
 
+export function isHexColour(value: string): boolean {
+  return /^#[0-9a-fA-F]{6}$/.test(value);
+}
+
 /** True when the card text is readable on its background. */
 export function cardTextIsReadable(ink: string, paper: string): boolean {
   return contrastRatio(ink, paper) >= MIN_CARD_TEXT_CONTRAST;
@@ -34,7 +38,35 @@ export function cardTextIsReadable(ink: string, paper: string): boolean {
 
 /** Only readable colour pairs may be saved. Returns a reason when a pick is refused. */
 export function refuseUnreadableColours(ink: string, paper: string): string | null {
+  if (!isHexColour(ink) || !isHexColour(paper)) return "One of the colours is not valid. Pick it again.";
   return cardTextIsReadable(ink, paper)
     ? null
     : "That text colour is too close to the background to read. Pick a darker text or a lighter background.";
+}
+
+const DARKS = [...CARD_PALETTES.map((palette) => palette.ink), "#000000"];
+const LIGHTS = [...CARD_PALETTES.map((palette) => palette.paper), "#ffffff"];
+
+/**
+ * The palette colour furthest from the given one: the darkest dark on a light colour,
+ * the lightest light on a dark one. Pure black or white backs it up, and one of those
+ * two reaches 4.5:1 against any colour.
+ */
+function readablePartner(colour: string, candidates: string[]): string {
+  const base = isHexColour(colour) ? colour : "#ffffff";
+  const byContrast = (list: string[]) =>
+    [...list].sort((a, b) => contrastRatio(b, base) - contrastRatio(a, base));
+  const fromPalette = byContrast(candidates.filter((item) => item !== "#000000" && item !== "#ffffff"))[0]!;
+  if (cardTextIsReadable(fromPalette, base)) return fromPalette;
+  return byContrast(["#000000", "#ffffff"])[0]!;
+}
+
+/** A text colour that can be read on this background. */
+export function suggestReadableInk(paper: string): string {
+  return readablePartner(paper, [...DARKS, ...LIGHTS]);
+}
+
+/** A background colour on which this text colour can be read. */
+export function suggestReadablePaper(ink: string): string {
+  return readablePartner(ink, [...LIGHTS, ...DARKS]);
 }

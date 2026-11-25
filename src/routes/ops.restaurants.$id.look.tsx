@@ -1,3 +1,4 @@
+import { refuseUnreadableColours } from "@/lib/card-palettes";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { demoRepo } from "@/data/repo";
@@ -123,6 +124,11 @@ function LookEditor() {
   };
 
   const save = () => {
+    const refusal = refuseUnreadableColours(currentTheme.ink, currentTheme.paper);
+    if (refusal) {
+      setNotice(refusal);
+      return;
+    }
     const result = api.restaurant.update(restaurant.id, {
       theme: currentTheme,
       pageConfig: currentBlocks,
