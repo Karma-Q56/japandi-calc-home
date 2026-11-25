@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { SectionTabs, type SectionTab } from "@/components/patron/kit/SectionTabs";
 import { LOYALTY_TAB_LABELS, type LoyaltyPageTab, type LoyaltyTabId } from "@/lib/loyalty-tabs";
 
 /**
@@ -14,51 +14,19 @@ export function LoyaltyTabs({
   active: LoyaltyTabId;
   onSelect?: (tab: LoyaltyPageTab) => void;
 }) {
+  const tabs: Array<SectionTab<LoyaltyTabId>> = LOYALTY_TAB_LABELS.map((item) => {
+    if (item.id === "challenges") return { ...item, href: "/app/challenges" };
+    if (item.id === "referrals") return { ...item, href: "/app/referrals" };
+    if (onSelect) return { ...item };
+    return { ...item, href: "/app/loyalty", search: { tab: item.id } };
+  });
   return (
-    <nav className="loyalty-tabs" aria-label="Loyalty sections">
-      {LOYALTY_TAB_LABELS.map((item) => {
-        const className = `loyalty-tab${active === item.id ? " is-active" : ""}`;
-        const current = active === item.id ? ("page" as const) : undefined;
-        if (item.id === "challenges") {
-          return (
-            <Link key={item.id} to="/app/challenges" className={className} aria-current={current}>
-              {item.label}
-            </Link>
-          );
-        }
-        if (item.id === "referrals") {
-          return (
-            <Link key={item.id} to="/app/referrals" className={className} aria-current={current}>
-              {item.label}
-            </Link>
-          );
-        }
-        const pageTab = item.id;
-        if (onSelect) {
-          return (
-            <button
-              key={item.id}
-              type="button"
-              className={className}
-              aria-current={current}
-              onClick={() => onSelect(pageTab)}
-            >
-              {item.label}
-            </button>
-          );
-        }
-        return (
-          <Link
-            key={item.id}
-            to="/app/loyalty"
-            search={{ tab: pageTab }}
-            className={className}
-            aria-current={current}
-          >
-            {item.label}
-          </Link>
-        );
-      })}
-    </nav>
+    <SectionTabs
+      tabs={tabs}
+      active={active}
+      label="Loyalty sections"
+      className="section-tabs--inline"
+      onSelect={(id) => onSelect?.(id as LoyaltyPageTab)}
+    />
   );
 }

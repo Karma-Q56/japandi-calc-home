@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Ellipsis } from "lucide-react";
 import { OWNER_NAV, type Item } from "./owner-nav-sections";
+import { SectionTabs } from "./kit/SectionTabs";
 
 /** Tool URL prefix -> the section it belongs to. Longest prefix wins. */
 const SECTION_OF: Array<[prefix: string, to: string]> = [
@@ -155,17 +156,11 @@ export function OwnerSectionTabs() {
   const tabs = section ? SECTION_TABS[section] : undefined;
   if (!tabs) return null;
   return (
-    <nav className="ox-subtabs" aria-label="In this section">
-      {tabs.map((tab) => (
-        <Link
-          key={tab.to}
-          to={tab.to}
-          className={`ox-subtab${clean === tab.to ? " is-active" : ""}`}
-          aria-current={clean === tab.to ? "page" : undefined}
-        >
-          {tab.label}
-        </Link>
-      ))}
-    </nav>
+    <SectionTabs
+      tabs={tabs.map((tab) => ({ id: tab.to, href: tab.to, label: tab.label }))}
+      active={clean}
+      label="In this section"
+      className="section-tabs--page"
+    />
   );
 }

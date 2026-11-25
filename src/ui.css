@@ -4741,30 +4741,6 @@ input[type="range"] {
   }
 }
 
-/* Loyalty sections: four short tabs instead of one very long page. */
-.loyalty-tabs {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding: 4px 0 2px;
-  margin: 14px 0 4px;
-}
-.loyalty-tab {
-  flex: 0 0 auto;
-  min-height: 42px;
-  padding: 0 16px;
-  border: 1.5px solid var(--border);
-  border-radius: 999px;
-  background: var(--card);
-  color: var(--foreground);
-  font: 650 14px var(--font-sans);
-  cursor: pointer;
-}
-.loyalty-tab.is-active {
-  border-color: var(--primary);
-  background: var(--primary);
-  color: var(--primary-foreground);
-}
 details.preset-rule > summary {
   cursor: pointer;
   font: 600 17px var(--font-display);
@@ -4852,12 +4828,7 @@ details.preset-rule > summary + * {
   width: auto;
 }
 
-/* On phones the four loyalty tabs wrap instead of running off the screen. */
 @media (max-width: 700px) {
-  .loyalty-tabs {
-    flex-wrap: wrap;
-    overflow-x: visible;
-  }
   /* Keep the spin wheel tab near 2,500px: the prize list scrolls inside its panel. */
   .spin-segments {
     max-height: 520px;

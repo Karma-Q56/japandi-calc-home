@@ -4215,13 +4215,6 @@ input:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
-.guest-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 12px 0;
-}
-.guest-tabs button,
 .guest-chips button {
   border: 1px solid var(--border);
   background: var(--card);
@@ -4231,7 +4224,6 @@ input:focus-visible {
   font: inherit;
   cursor: pointer;
 }
-.guest-tabs button[aria-selected="true"],
 .guest-chips button[aria-pressed="true"] {
   background: var(--primary);
   border-color: var(--primary);

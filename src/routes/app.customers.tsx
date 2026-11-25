@@ -1,3 +1,4 @@
+import { SectionTabs } from "@/components/patron/kit/SectionTabs";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { api } from "@/api";
@@ -189,24 +190,17 @@ function DemoCustomers() {
           </button>
         }
       />
-      <div className="guest-tabs" role="tablist" aria-label="Guest views">
-        {GUEST_TABS.map((item) => (
-          <button
-            key={item}
-            type="button"
-            role="tab"
-            aria-selected={tab === item}
-            className={tab === item ? "is-active" : undefined}
-            onClick={() => {
-              setTab(item);
-              setFilter(item === "Birthdays" ? "birthdays" : "all");
-              setPage(1);
-            }}
-          >
-            {item}
-          </button>
-        ))}
-      </div>
+      <SectionTabs
+        tabs={GUEST_TABS.map((item) => ({ id: item, label: item }))}
+        active={tab}
+        onSelect={(item) => {
+          setTab(item);
+          setFilter(item === "Birthdays" ? "birthdays" : "all");
+          setPage(1);
+        }}
+        label="Guest views"
+        className="section-tabs--inline"
+      />
       <StatGrid>
         <StatCard value={totalGuests} label="Guests" />
         <StatCard value={countFor("regulars")} label="Regulars" />

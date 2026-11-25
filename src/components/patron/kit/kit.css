@@ -200,8 +200,7 @@
 .builder-secondary:focus-visible,
 .pk-input:focus-visible,
 .pk-select:focus-visible,
-.pk-filter:focus-visible,
-.pk-tab:focus-visible {
+.pk-filter:focus-visible {
   outline: 3px solid oklch(0.528 0.139 36 / 0.28);
   outline-offset: 2px;
 }
@@ -297,39 +296,74 @@
   }
 }
 
-/* Tabs */
-.pk-tabs {
+/* The one tab bar (components/patron/kit/SectionTabs.tsx). It scrolls sideways on a narrow screen. */
+.section-tabs {
   display: flex;
-  gap: 0.25rem;
+  gap: 8px;
+  max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
-  padding: 0.25rem;
-  border: 1px solid var(--pk-border);
-  border-radius: var(--pk-radius-pill);
-  background: var(--pk-cream-deep);
+  padding: 5px;
   scrollbar-width: none;
 }
 
-.pk-tabs::-webkit-scrollbar {
+.section-tabs::-webkit-scrollbar {
   display: none;
 }
 
-.pk-tab {
-  min-height: 38px;
-  padding: 0 0.9rem;
-  border: 0;
-  border-radius: var(--pk-radius-pill);
-  background: transparent;
-  color: var(--pk-ink-soft);
-  font: 650 0.8125rem / 1 var(--pk-font-body);
+.section-tabs--inline {
+  margin: 9px -5px 3px;
+}
+
+.section-tabs--page {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto var(--pk-space-3);
+  padding: var(--pk-space-3) 48px var(--pk-space-1);
+}
+
+.section-tabs .section-tab {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--foreground);
+  font: 650 14px / 1 var(--font-sans);
+  text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
 }
 
-.pk-tab[aria-selected="true"],
-.pk-tab[aria-current="page"] {
-  background: var(--pk-card);
-  color: var(--pk-ink);
-  box-shadow: 0 1px 5px oklch(0.3 0.04 50 / 0.12);
+.section-tabs .section-tab:hover {
+  border-color: var(--primary);
+}
+
+.section-tabs .section-tab.is-active {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.section-tabs .section-tab:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@media (max-width: 1100px) {
+  .section-tabs--page {
+    padding-inline: 32px;
+  }
+}
+
+@media (max-width: 860px) {
+  .section-tabs--page {
+    padding-inline: 0.9rem;
+  }
 }
 
 /* Badges and pills */
@@ -2251,248 +2285,7 @@
   }
 }
 
-/* Tabs for pages that belong to one owner section (Your page, Settings, Insights, Loyalty). */
-.ox-subtabs {
-  display: flex;
-  gap: var(--pk-space-2);
-  max-width: 1200px;
-  margin: 0 auto var(--pk-space-3);
-  padding: var(--pk-space-3) 48px var(--pk-space-1);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.ox-subtabs::-webkit-scrollbar {
-  display: none;
-}
-
-.ox-subtab {
-  flex: none;
-  min-height: 2.5rem;
-  display: inline-flex;
-  align-items: center;
-  padding: 0 var(--pk-space-4);
-  border: 1px solid var(--pk-border);
-  border-radius: 999px;
-  background: var(--pk-card);
-  color: var(--pk-ink);
-  font: 600 0.875rem var(--pk-font-body);
-  text-decoration: none;
-}
-
-.ox-subtab.is-active {
-  background: var(--pk-ink);
-  border-color: var(--pk-ink);
-  color: var(--pk-accent-ink);
-}
-
-@media (max-width: 1100px) {
-  .ox-subtabs {
-    padding-inline: 32px;
-  }
-}
-
-@media (max-width: 860px) {
-  .ox-subtabs {
-    padding-inline: 0.9rem;
-  }
-}
-
-/* Restaurant cards inside the narrow diner column stack to fit. */
-.restaurant-list .fd-grid {
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
-}
-
-/* Guests list: left aligned, compact rows. */
-.customer-table {
-  gap: var(--pk-space-2);
-}
-
-.customer-row {
-  grid-template-columns: minmax(0, 1fr);
-  align-items: center;
-  gap: var(--pk-space-2);
-  padding: 0.7rem 1rem;
-  border-radius: var(--pk-radius-md, 0.875rem);
-  background: var(--pk-card);
-}
-
-.customer-row:has(.customer-select) {
-  grid-template-columns: auto minmax(0, 1fr);
-}
-
-.customer-row-main {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.15rem 0.75rem;
-  width: 100%;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.customer-row-main > span:first-child {
-  grid-column: 1;
-  grid-row: 1;
-  display: grid;
-  gap: 0.1rem;
-}
-
-.customer-row-main > span:first-child small {
-  margin-left: 0;
-  color: var(--pk-ink-soft);
-}
-
-.customer-row-main > .customer-row-meta {
-  grid-column: 2;
-  grid-row: 1;
-}
-
-.customer-row-main > small {
-  grid-column: 1 / -1;
-  grid-row: 2;
-  color: var(--pk-ink-soft);
-}
-
-@media (min-width: 561px) {
-  .customer-row-main > span:first-child strong + small {
-    margin-left: 0;
-  }
-}
-
-.customer-row-main > b {
-  grid-column: 2;
-  grid-row: 2;
-  justify-self: end;
-  align-self: center;
-  color: var(--pk-ink-soft);
-}
-
-/* The demo pill must never sit on top of content. On phones it shrinks to a dot above the tab bar. */
-@media (max-width: 860px) {
-  .demo-control {
-    left: auto;
-    right: 0.75rem;
-    bottom: calc(5.25rem + env(safe-area-inset-bottom));
-  }
-
-  .demo-control-toggle {
-    width: 2.25rem;
-    height: 2.25rem;
-    opacity: 0.85;
-    min-height: 0;
-    padding: 0;
-    justify-content: center;
-    overflow: hidden;
-    font-size: 0;
-    gap: 0;
-  }
-}
-
-/* Trend chart (owner Home) */
-.trend-chart {
-  display: block;
-  width: 100%;
-  height: auto;
-  margin-top: var(--pk-space-3);
-}
-
-.trend-grid {
-  stroke: var(--pk-border);
-  stroke-width: 1;
-}
-
-.trend-axis {
-  fill: var(--pk-ink-soft);
-  font: 500 11px var(--pk-font-body);
-}
-
-.trend-line {
-  stroke: var(--pk-accent);
-  stroke-width: 2.5;
-  stroke-linejoin: round;
-  stroke-linecap: round;
-}
-
-.trend-dot {
-  fill: var(--pk-card);
-  stroke: var(--pk-accent);
-  stroke-width: 2;
-}
-
-/* Hour labels under the busiest hours bars */
-.hour-labels {
-  display: flex;
-  gap: 8px;
-  margin-top: 6px;
-}
-
-.hour-labels span {
-  flex: 1;
-  text-align: center;
-  color: var(--pk-ink-soft);
-  font: 500 0.6875rem var(--pk-font-body);
-}
-
-.restaurant-list .fd-card-media {
-  aspect-ratio: 16 / 8;
-}
-
-
-/* ---- Polish pass: shared fixes ---- */
-
-/* The demo pill stays bottom right so it never sits on the Help bubble. */
-.demo-control {
-  left: auto;
-  right: 14px;
-}
-
-/* Legal pages: real headings and a readable line length. */
-.legal-page h2 {
-  margin-top: var(--pk-space-7);
-  margin-bottom: var(--pk-space-2);
-  font: 700 clamp(1.25rem, 2.5vw, 1.5rem) / 1.25 var(--pk-font-heading);
-  color: var(--pk-ink);
-}
-
-.legal-page p {
-  max-width: 68ch;
-  color: var(--pk-ink);
-  line-height: 1.65;
-}
-
-.legal-page .legal-toc h2 {
-  margin-top: 0;
-  font: 700 0.75rem / 1.3 var(--pk-font-body);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--pk-ink-soft);
-}
-
-.legal-more {
-  max-width: 1200px;
-  margin: var(--pk-space-6) auto var(--pk-space-8);
-  padding-inline: 48px;
-}
-
-@media (max-width: 1100px) {
-  .legal-more {
-    padding-inline: 32px;
-  }
-}
-
-@media (max-width: 860px) {
-  .legal-more {
-    padding-inline: 24px;
-  }
-}
-
-/* Loyalty page text and tabs. */
+/* Loyalty page text. */
 .what-happens-when ul {
   list-style: disc;
   padding-left: 1.25rem;
@@ -2504,16 +2297,6 @@
 .what-happens-when h3 {
   font: 700 0.9375rem / 1.3 var(--pk-font-heading);
   margin: 0 0 var(--pk-space-1);
-}
-
-.loyalty-tab {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 2.625rem;
-  min-height: 0;
-  line-height: 1;
-  white-space: nowrap;
 }
 
 /* Insights layout and small visuals. */
@@ -2723,7 +2506,3 @@
   }
 }
 
-/* Challenges and Referrals tabs are links: no underline, same look as the button tabs. */
-a.loyalty-tab {
-  text-decoration: none;
-}

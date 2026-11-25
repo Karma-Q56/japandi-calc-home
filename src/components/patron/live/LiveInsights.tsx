@@ -1,3 +1,4 @@
+import { SectionTabs } from "@/components/patron/kit/SectionTabs";
 import { composerHref, type AudienceType } from "@/lib/live-campaigns";
 import { useNavigate } from "@tanstack/react-router";
 import { DataTable, EmptyState, Helper, PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
@@ -77,20 +78,16 @@ export function LiveInsights({
           </button>
         ))}
       </div>
-      <div className="pk-tabs" role="tablist" aria-label="Insights sections">
-        {(["guests", "performance"] as const).map((value) => (
-          <button
-            key={value}
-            type="button"
-            role="tab"
-            aria-selected={tab === value}
-            className={`pk-tab${tab === value ? " is-active" : ""}`}
-            onClick={() => onTab(value)}
-          >
-            {value === "guests" ? "Guests" : "Performance"}
-          </button>
-        ))}
-      </div>
+      <SectionTabs
+        tabs={[
+          { id: "guests", label: "Guests" },
+          { id: "performance", label: "Performance" },
+        ]}
+        active={tab}
+        onSelect={onTab}
+        label="Insights sections"
+        className="section-tabs--inline"
+      />
 
       {tab === "guests" ? (
         <section aria-label="Guests">

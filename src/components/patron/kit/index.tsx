@@ -8,6 +8,7 @@ import {
 import { Check, ChevronLeft, Gift, Stamp, X } from "lucide-react";
 import type { Theme } from "@/data/types";
 import { BackLink } from "../BackLink";
+import { SectionTabs } from "./SectionTabs";
 
 export { BackLink };
 
@@ -166,20 +167,13 @@ export function Tabs<T extends string>({
   label: string;
 }) {
   return (
-    <div className="pk-tabs" role="tablist" aria-label={label}>
-      {options.map((option) => (
-        <button
-          key={option.value}
-          type="button"
-          role="tab"
-          className="pk-tab"
-          aria-selected={value === option.value}
-          onClick={() => onChange(option.value)}
-        >
-          {option.label}
-        </button>
-      ))}
-    </div>
+    <SectionTabs
+      tabs={options.map((option) => ({ id: option.value, label: option.label }))}
+      active={value}
+      onSelect={onChange}
+      label={label}
+      className="section-tabs--inline"
+    />
   );
 }
 
