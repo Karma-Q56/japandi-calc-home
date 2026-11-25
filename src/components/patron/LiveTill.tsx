@@ -3,6 +3,8 @@ import { CardScanner } from "@/components/patron/CardScanner";
 import { TillOrderStep } from "@/components/patron/live/TillOrderStep";
 import { FormField, PageHeader } from "@/components/patron/dash";
 import { signOut } from "@/lib/sign-out";
+import { TillAction, TillStaffBar } from "@/components/patron/till/TillParts";
+import { useTillFeedback } from "@/lib/till-feedback";
 import { rewardGiveLine } from "@/lib/reward-copy";
 import { SIGNED_OUT_MESSAGE, UNLOCK_FIRST_MESSAGE } from "@/lib/till-messages";
 import {
@@ -18,8 +20,6 @@ import {
 } from "@/server/live";
 import type { LiveLookup, TillState } from "@/server/live-till";
 
-type Feedback = { kind: "ok" | "error"; text: string } | null;
-
 /**
  * Live till. Pairing, PIN sign in, stamping and redemption all go through the
  * server, which checks the paired device cookie and the staff session.
@@ -32,7 +32,7 @@ export function LiveTill() {
   const [lookupCode, setLookupCode] = useState("");
   const [lookup, setLookup] = useState<LiveLookup | null>(null);
   const [scanning, setScanning] = useState(false);
-  const [feedback, setFeedback] = useState<Feedback>(null);
+  const { feedback, show, clear, clearIfRead } = useTillFeedback();
   const [busy, setBusy] = useState(false);
   const [orderFor, setOrderFor] = useState<string | null>(null);
   const [lastRedeem, setLastRedeem] = useState<{ rewardId: string; canUndoUntil: number } | null>(
@@ -44,7 +44,7 @@ export function LiveTill() {
   };
 
   const say = (kind: "ok" | "error", text: string) => {
-    setFeedback({ kind, text });
+    show(kind, text);
     // The server clears a dead sign in, so reloading puts the PIN screen back.
     if (kind === "error" && (text === SIGNED_OUT_MESSAGE || text === UNLOCK_FIRST_MESSAGE)) {
       void load();
@@ -64,7 +64,6 @@ export function LiveTill() {
       return;
     }
     setPairingCode("");
-    setFeedback(null);
     say("ok", "Till paired.");
     await load();
   };
@@ -78,7 +77,7 @@ export function LiveTill() {
       say("error", result.message);
       return;
     }
-    setFeedback(null);
+    clear();
     await load();
   };
 
@@ -95,7 +94,7 @@ export function LiveTill() {
       say("error", result.message);
       return;
     }
-    setFeedback(null);
+    clearIfRead();
     setLookup(result);
   };
 
@@ -171,7 +170,20 @@ export function LiveTill() {
     setLookup(null);
     setPin("");
     setStaffId("");
-    setFeedback(null);
+    clear();
+    await load();
+  };
+
+  /** Ends this staff member's sign in and goes back to the PIN screen. The till stays paired. */
+  const staffSignOut = async () => {
+    await tillSignOutFn();
+    setLookup(null);
+    setLookupCode("");
+    setLastRedeem(null);
+    setOrderFor(null);
+    setPin("");
+    setStaffId("");
+    clear();
     await load();
   };
 
@@ -285,7 +297,10 @@ export function LiveTill() {
             Unlock till
           </button>
           {feedback && (
-            <p role={feedback.kind === "error" ? "alert" : "status"} className="field-error">
+            <p
+              role={feedback.kind === "error" ? "alert" : "status"}
+              className={feedback.kind === "error" ? "field-error" : "till-toast is-ok"}
+            >
               {feedback.text}
             </p>
           )}
@@ -295,14 +310,21 @@ export function LiveTill() {
     );
   }
 
+  const guest = lookup?.ok ? lookup : null;
+
   return (
     <main className="demo-hub page-width">
+      <TillStaffBar
+        name={state.staff.displayName}
+        onSignOut={() => void staffSignOut()}
+        feedback={feedback}
+      />
       <PageHeader
-        eyebrow={["Till", state.restaurant?.branchName, state.staff.displayName]
+        eyebrow={["Till", state.restaurant?.name, state.restaurant?.branchName]
           .filter(Boolean)
           .join(" · ")}
-        title={state.restaurant?.name ?? ""}
-        intro="Look up a guest, add a stamp and send them off with their reward."
+        title={`${state.staff.displayName}, you're on the till.`}
+        intro="Find the guest by scanning their card or typing their code. Then pick what to do below."
       />
       <section className="guest-panel">
         <form
@@ -321,7 +343,11 @@ export function LiveTill() {
               autoCapitalize="characters"
             />
           </FormField>
-          <button className="builder-primary" type="submit" disabled={busy}>
+          <button
+            className={guest ? "builder-secondary" : "builder-primary"}
+            type="submit"
+            disabled={busy}
+          >
             Look up
           </button>
           <button className="builder-secondary" type="button" onClick={() => setScanning(true)}>
@@ -342,21 +368,16 @@ export function LiveTill() {
           onClose={() => setScanning(false)}
         />
       )}
-      {feedback && (
-        <p role={feedback.kind === "error" ? "alert" : "status"} className="till-toast is-error">
-          {feedback.text}
-        </p>
-      )}
-      {lookup?.ok && (
-        <section className="guest-panel">
+      {guest && (
+        <section className="guest-panel" aria-label="Guest">
           <div className="till-member">
             <h2>
-              {lookup.firstName}
-              {lookup.lastInitial ? ` ${lookup.lastInitial}.` : ""}
+              {guest.firstName}
+              {guest.lastInitial ? ` ${guest.lastInitial}.` : ""}
             </h2>
             <strong>
-              {lookup.stampsCurrent}
-              <i> / {lookup.stampsRequired}</i>
+              {guest.stampsCurrent}
+              <i> / {guest.stampsRequired}</i>
             </strong>
           </div>
           <div className="till-bar-track" aria-hidden>
@@ -364,34 +385,56 @@ export function LiveTill() {
               style={{
                 width: `${Math.min(
                   100,
-                  Math.round((lookup.stampsCurrent / Math.max(1, lookup.stampsRequired)) * 100),
+                  Math.round((guest.stampsCurrent / Math.max(1, guest.stampsRequired)) * 100),
                 )}%`,
               }}
             />
           </div>
-          <button className="builder-primary" disabled={busy} onClick={() => void addStamp()}>
-            Add stamp
-          </button>
-          {lookup.rewards.map((reward) => (
-            <button
-              key={reward.id}
-              className="builder-secondary"
-              disabled={busy}
-              onClick={() => void redeem(reward.id)}
-            >
-              Redeem: {rewardGiveLine(reward)}
-            </button>
-          ))}
-          {lastRedeem && (
-            <button className="builder-secondary" disabled={busy} onClick={() => void undoRedeem()}>
-              Undo redemption (10 minutes)
-            </button>
-          )}
         </section>
       )}
-      {lookup?.ok && orderFor === lookup.membershipId && (
+      <TillAction title="Add a stamp" help="Use this when the guest buys something." waiting={!guest}>
+        <button
+          className={guest ? "builder-primary" : "builder-secondary"}
+          disabled={busy || !guest}
+          onClick={() => void addStamp()}
+        >
+          Add stamp
+        </button>
+      </TillAction>
+      {guest && orderFor === guest.membershipId && (
         <TillOrderStep membershipId={orderFor} onDone={() => setOrderFor(null)} />
       )}
+      <TillAction
+        title="Redeem a reward"
+        help="Use this when the guest wants a reward they have earned."
+        waiting={!guest}
+      >
+        {guest && guest.rewards.length === 0 && (
+          <p className="till-waiting">No rewards waiting for this guest.</p>
+        )}
+        {guest?.rewards.map((reward) => (
+          <button
+            key={reward.id}
+            className="builder-secondary"
+            disabled={busy}
+            onClick={() => void redeem(reward.id)}
+          >
+            Redeem: {rewardGiveLine(reward)}
+          </button>
+        ))}
+        {guest && lastRedeem && (
+          <button className="builder-secondary" disabled={busy} onClick={() => void undoRedeem()}>
+            Undo redemption (10 minutes)
+          </button>
+        )}
+      </TillAction>
+      <TillAction
+        title="Redeem an offer code"
+        help="Offer codes cannot be checked on this till yet. Ask the owner what to do."
+        waiting={false}
+      >
+        {null}
+      </TillAction>
       <TillAccountActions paired onUnpair={() => void unpair()} onLogOut={() => void leave()} />
     </main>
   );

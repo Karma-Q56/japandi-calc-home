@@ -5126,3 +5126,51 @@ details.preset-rule > summary + * {
   justify-items: start;
   gap: 8px;
 }
+
+/* Till after the PIN: who is signed in stays on screen with the latest result. */
+.till-staffbar {
+  position: sticky;
+  top: 0;
+  z-index: 25;
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+}
+.staff-page .till-staffbar {
+  top: 66px;
+}
+.till-staffbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font: 500 15px var(--font-sans);
+}
+.till-staffbar-row span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.till-staffbar .till-toast {
+  margin: 0;
+}
+.till-action {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+.till-action h2,
+.till-help,
+.till-waiting {
+  margin: 0;
+}
+.till-help {
+  font: 500 15px var(--font-sans);
+}
+.till-waiting {
+  color: var(--muted-foreground);
+  font-size: 14px;
+}

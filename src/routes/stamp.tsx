@@ -12,6 +12,8 @@ import { LiveTill } from "@/components/patron/LiveTill";
 import { Badge, FormField, PageHeader } from "@/components/patron/dash";
 import type { StampResult } from "@/domain/stamps";
 import { signOut } from "@/lib/sign-out";
+import { TillAction, TillStaffBar } from "@/components/patron/till/TillParts";
+import { useTillFeedback } from "@/lib/till-feedback";
 
 export const Route = createFileRoute("/stamp")({
   loader: async () => {
@@ -74,10 +76,7 @@ function DemoTill() {
   const [pinError, setPinError] = useState("");
   const [code, setCode] = useState("");
   const [lookup, setLookup] = useState<Lookup | null>(null);
-  const [feedback, setFeedback] = useState<{
-    kind: "ok" | "error";
-    text: string;
-  } | null>(null);
+  const { feedback, show, clear, clearIfRead } = useTillFeedback();
   const [lastStampId, setLastStampId] = useState<string | null>(null);
   const [pairingCode, setPairingCode] = useState("");
   const [redeemCode, setRedeemCode] = useState("");
@@ -95,7 +94,7 @@ function DemoTill() {
   const [billRand, setBillRand] = useState("");
 
   const say = (kind: "ok" | "error", text: string) => {
-    setFeedback({ kind, text });
+    show(kind, text);
     if (kind === "ok" && "vibrate" in navigator) {
       try {
         navigator.vibrate(30);
@@ -113,10 +112,12 @@ function DemoTill() {
       return;
     }
     setPin("");
+    clear();
   };
 
   const runLookup = (value: string) => {
     if (!value.trim()) return;
+    clearIfRead();
     setCode(value.toUpperCase());
     const result = api.stamp.lookup({
       restaurantId: restaurant.id,
@@ -326,6 +327,10 @@ function DemoTill() {
     });
     if (special.ok) {
       say("ok", `${special.special.title} redeemed.`);
+      setLookup({
+        ...lookup,
+        offers: lookup.offers.filter((offer) => offer.id !== special.special.id),
+      });
       setRedeemCode("");
       return;
     }
@@ -419,6 +424,11 @@ function DemoTill() {
     }));
     setLookup(null);
     setPin("");
+    setCode("");
+    setRedeemCode("");
+    setLastStampId(null);
+    setOrderSheet(null);
+    clear();
   };
 
   const unpair = () => {
@@ -432,7 +442,7 @@ function DemoTill() {
     setLookup(null);
     setPin("");
     setPinName("");
-    setFeedback(null);
+    clear();
   };
 
   const leave = () => void signOut(mode);
@@ -545,23 +555,18 @@ function DemoTill() {
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, 8);
 
+  const guest = lookup?.ok ? lookup : null;
+  const staffName = signedInStaff?.displayName ?? "Staff";
+
   return (
     <StaffShell restaurant={restaurant}>
+      <TillStaffBar name={staffName} onSignOut={swap} feedback={feedback} />
       <PageHeader
-        eyebrow={[
-          "Till",
-          pairedBranchName(restaurant.id, session.tillPairedLocationId),
-          signedInStaff?.displayName ?? "Staff",
-        ]
+        eyebrow={["Till", restaurant.name, pairedBranchName(restaurant.id, session.tillPairedLocationId)]
           .filter(Boolean)
           .join(" · ")}
-        title={restaurant.name}
-        intro="Look up a guest, add a stamp and send them off with their reward."
-        actions={
-          <button className="builder-secondary" onClick={swap}>
-            Swap staff
-          </button>
-        }
+        title={`${staffName}, you're on the till.`}
+        intro="Find the guest by scanning their card or typing their code. Then pick what to do below."
       />
       <section className="guest-panel">
         <form
@@ -580,7 +585,7 @@ function DemoTill() {
               autoCapitalize="characters"
             />
           </FormField>
-          <button className="builder-primary" type="submit">
+          <button className={guest ? "builder-secondary" : "builder-primary"} type="submit">
             Look up
           </button>
           <button className="builder-secondary" type="button" onClick={() => setScanning(true)}>
@@ -602,72 +607,52 @@ function DemoTill() {
           {lookup.message}
         </p>
       )}
-      {lookup?.ok && (
-        <section className="guest-panel">
+      {guest && (
+        <section className="guest-panel" aria-label="Guest">
           <div className="till-member">
             <h2>
-              {lookup.firstName}
-              {lookup.lastInitial ? ` ${lookup.lastInitial}.` : ""}
+              {guest.firstName}
+              {guest.lastInitial ? ` ${guest.lastInitial}.` : ""}
             </h2>
             <strong>
-              {lookup.stampsCurrent}
-              <i> / {lookup.stampsRequired}</i>
+              {guest.stampsCurrent}
+              <i> / {guest.stampsRequired}</i>
             </strong>
           </div>
           <div className="till-bar-track" aria-hidden>
             <span
               style={{
-                width: `${Math.min(100, Math.round((lookup.stampsCurrent / lookup.stampsRequired) * 100))}%`,
+                width: `${Math.min(100, Math.round((guest.stampsCurrent / guest.stampsRequired) * 100))}%`,
               }}
             />
           </div>
-          {lookup.doubleStampToday && (
+          {guest.doubleStampToday && (
             <p className="demo-data-note">Double stamp day: this visit earns one extra stamp.</p>
           )}
-          {lookup.rewards.length > 0 && (
+          {guest.rewards.length > 0 && (
             <p>
               <Badge tone="active">
-                {lookup.rewards.length} reward
-                {lookup.rewards.length === 1 ? "" : "s"} waiting
+                {guest.rewards.length} reward
+                {guest.rewards.length === 1 ? "" : "s"} waiting
               </Badge>
             </p>
           )}
-          <button className="builder-primary" onClick={addStamp}>
-            Add stamp
-          </button>
-          {lookup.rewards.map((reward) => (
-            <button key={reward.id} className="builder-secondary" onClick={() => redeem(reward.id)}>
-              Redeem: {reward.key?.startsWith("birthday-item:") ? "Birthday treat, " : ""}
-              {reward.description}
-            </button>
-          ))}
-          {lookup.offers.map((offer) => (
-            <button
-              key={offer.id}
-              className="builder-secondary"
-              onClick={() => redeemItem(offer.title, offer.code)}
-            >
-              Redeem: {offer.title} ({offer.code})
-            </button>
-          ))}
-          {lastStampId && (
-            <button className="builder-secondary" onClick={undo}>
-              Undo last stamp (10 minutes)
-            </button>
-          )}
-          <FormField label="Offer code" hint="Campaign codes and specials use this one field.">
-            <input
-              value={redeemCode}
-              onChange={(event) => setRedeemCode(event.target.value)}
-              placeholder="TUESDAY"
-              autoComplete="off"
-            />
-          </FormField>
-          <button className="builder-secondary" onClick={redeemOffer}>
-            Redeem offer
-          </button>
         </section>
       )}
+      <TillAction title="Add a stamp" help="Use this when the guest buys something." waiting={!guest}>
+        <button
+          className={guest ? "builder-primary" : "builder-secondary"}
+          disabled={!guest}
+          onClick={addStamp}
+        >
+          Add stamp
+        </button>
+        {guest && lastStampId && (
+          <button className="builder-secondary" onClick={undo}>
+            Undo last stamp (10 minutes)
+          </button>
+        )}
+      </TillAction>
       {orderSheet && (
         <OrderSheet
           quickItems={api.orders.quickItems(restaurant.id)}
@@ -682,11 +667,48 @@ function DemoTill() {
           onSkip={skipOrder}
         />
       )}
-      {feedback && (
-        <p role="status" className={`till-toast ${feedback.kind === "ok" ? "is-ok" : "is-error"}`}>
-          {feedback.text}
-        </p>
-      )}
+      <TillAction
+        title="Redeem a reward"
+        help="Use this when the guest wants a reward they have earned."
+        waiting={!guest}
+      >
+        {guest && guest.rewards.length === 0 && (
+          <p className="till-waiting">No rewards waiting for this guest.</p>
+        )}
+        {guest?.rewards.map((reward) => (
+          <button key={reward.id} className="builder-secondary" onClick={() => redeem(reward.id)}>
+            Redeem: {reward.key?.startsWith("birthday-item:") ? "Birthday treat, " : ""}
+            {reward.description}
+          </button>
+        ))}
+      </TillAction>
+      <TillAction
+        title="Redeem an offer code"
+        help="Use this when the guest shows a campaign or special code."
+        waiting={!guest}
+      >
+        {guest?.offers.map((offer) => (
+          <button
+            key={offer.id}
+            className="builder-secondary"
+            onClick={() => redeemItem(offer.title, offer.code)}
+          >
+            Redeem: {offer.title} ({offer.code})
+          </button>
+        ))}
+        <FormField label="Offer code" hint="Campaign codes and specials use this one field.">
+          <input
+            value={redeemCode}
+            onChange={(event) => setRedeemCode(event.target.value)}
+            placeholder="TUESDAY"
+            autoComplete="off"
+            disabled={!guest}
+          />
+        </FormField>
+        <button className="builder-secondary" disabled={!guest} onClick={redeemOffer}>
+          Redeem offer
+        </button>
+      </TillAction>
       <section className="gx-panel">
         <h2>Stamped today</h2>
         {recent.length === 0 && <p>No stamps yet this demo.</p>}
