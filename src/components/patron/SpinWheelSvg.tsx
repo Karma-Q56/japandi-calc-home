@@ -1,13 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { prefersReducedMotion } from "@/components/patron/motion";
 import type { SpinSegment } from "@/data/types";
-import { wheelArcs, wheelLabelLines, type WheelArc } from "@/lib/wheel";
+import { WHEEL_LINE_HEIGHT, wheelArcs, wheelLabel, type WheelArc } from "@/lib/wheel";
 
 /** Dark ink reads well on every colour in the wheel palette (all light tints). */
 const LABEL_INK = "#2b2118";
 const RADIUS = 100;
 const SLOW_STOP_MS = 4200;
-const LABEL_LINE_HEIGHT = 10;
+/** Middle of the room a name has, between the hub and the rim. */
+const LABEL_RADIUS = 58;
 
 function point(angle: number, radius: number) {
   const rad = (angle * Math.PI) / 180;
@@ -42,6 +43,7 @@ export function SpinWheelSvg({
   onSettled?: (() => void) | undefined;
 }) {
   const arcs = wheelArcs(segments);
+  const listId = useId();
   const [rotation, setRotation] = useState(0);
   const [animating, setAnimating] = useState(false);
 
@@ -91,25 +93,32 @@ export function SpinWheelSvg({
         >
           {arcs.map((arc) => {
             const mid = (arc.start + arc.end) / 2;
-            const label = point(mid, RADIUS * 0.6);
-            const lines = wheelLabelLines(arc.segment.label, arcs.length);
-            const startY = label.y - ((lines.length - 1) * LABEL_LINE_HEIGHT) / 2;
+            const spot = point(mid, LABEL_RADIUS);
+            const { lines, fontSize } = wheelLabel(
+              arc.segment.label,
+              arcs.length,
+              arc.end - arc.start,
+            );
+            const lineHeight = fontSize * WHEEL_LINE_HEIGHT;
+            const startY = spot.y - ((lines.length - 1) * lineHeight) / 2;
+            // Names read along the spoke. The left half is turned round so it is never upside down.
+            const turn = mid % 360 < 180 ? mid - 90 : mid + 90;
             return (
               <g key={arc.segment.id}>
                 <title>{arc.segment.label}</title>
                 <path d={arcPath(arc)} fill={arc.color} stroke="var(--card)" strokeWidth="1.5" />
                 <text
-                  x={label.x}
+                  x={spot.x}
                   y={startY}
                   fill={LABEL_INK}
-                  fontSize="9"
+                  fontSize={fontSize}
                   fontWeight="650"
                   textAnchor="middle"
                   dominantBaseline="middle"
-                  transform={`rotate(${mid} ${label.x} ${label.y})`}
+                  transform={`rotate(${turn} ${spot.x} ${spot.y})`}
                 >
                   {lines.map((line, index) => (
-                    <tspan key={line} x={label.x} dy={index === 0 ? 0 : LABEL_LINE_HEIGHT}>
+                    <tspan key={`${index}-${line}`} x={spot.x} dy={index === 0 ? 0 : lineHeight}>
                       {line}
                     </tspan>
                   ))}
@@ -119,6 +128,17 @@ export function SpinWheelSvg({
           })}
           <circle r="16" fill="var(--card)" stroke="var(--border)" strokeWidth="1" />
         </svg>
+      </div>
+      <div className="pv-wheel-prizes">
+        <h4 id={listId}>Prizes on this wheel</h4>
+        <ul aria-labelledby={listId}>
+          {arcs.map((arc) => (
+            <li key={arc.segment.id}>
+              <span aria-hidden="true" style={{ background: arc.color }} />
+              {arc.segment.label}
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );

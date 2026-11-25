@@ -3923,6 +3923,35 @@ input[type="range"] {
     inset 0 0 0 1px var(--border);
   display: block;
 }
+.pv-wheel-prizes {
+  justify-self: stretch;
+  width: 100%;
+  min-width: 0;
+}
+.pv-wheel-prizes h4 {
+  margin: 12px 0 6px;
+  font: 700 14px var(--font-sans);
+}
+.pv-wheel-prizes ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.pv-wheel-prizes li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.pv-wheel-prizes li span {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
 .spin-odds {
   display: block;
   font-size: 11px;

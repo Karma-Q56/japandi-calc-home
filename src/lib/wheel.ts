@@ -65,61 +65,89 @@ export function weightWarning(segments: ReadonlyArray<SpinSegment>): string | nu
   return null;
 }
 
-/** Shortens a long prize name for the wheel; the full name stays in the result card. */
-export function shortWheelLabel(label: string, max = 14): string {
-  const clean = label.trim();
-  if (clean.length <= max) return clean;
-  const words = clean.split(/\s+/);
-  let out = "";
-  for (const word of words) {
-    if ((out + " " + word).trim().length > max - 1) break;
-    out = (out + " " + word).trim();
-  }
-  return `${out || clean.slice(0, max - 1)}…`;
+/** Wheel label sizes, in SVG units. The wheel has a radius of 100. */
+export const WHEEL_FONT_MAX = 9;
+export const WHEEL_FONT_MIN = 7;
+export const WHEEL_MAX_LINES = 3;
+export const WHEEL_LINE_HEIGHT = 1.12;
+/** From this many prizes the whole wheel uses the small font. */
+export const WHEEL_CROWDED_AT = 8;
+/** Prize names run from the hub to the rim, so this is the room one line has. */
+export const WHEEL_TEXT_LENGTH = 73;
+/** Rough width of one letter as a share of the font size, on the safe side. */
+const LETTER_WIDTH = 0.57;
+/** How far from the middle the room across a slice is measured. */
+const NARROW_RADIUS = 45;
+
+export interface WheelLabel {
+  lines: string[];
+  fontSize: number;
+  /** True when the name did not fit and ends in "...". The full name is listed under the wheel. */
+  cut: boolean;
 }
 
-/** Longest line a wheel label may take, so two lines still fit a slice. */
-export const WHEEL_LINE_MAX = 14;
+export function wheelLineChars(fontSize: number): number {
+  return Math.floor(WHEEL_TEXT_LENGTH / (fontSize * LETTER_WIDTH));
+}
+
+/** Puts whole words onto lines no longer than max. A longer word gets a line of its own. */
+function wrapWords(words: string[], max: number): string[] {
+  const lines: string[] = [];
+  for (const word of words) {
+    const last = lines[lines.length - 1];
+    if (last !== undefined && `${last} ${word}`.length <= max) {
+      lines[lines.length - 1] = `${last} ${word}`;
+    } else lines.push(word);
+  }
+  return lines;
+}
+
+function cutLines(lines: string[], maxLines: number, max: number): string[] {
+  const kept: string[] = [];
+  for (let index = 0; index < lines.length && kept.length < maxLines; index += 1) {
+    const line = lines[index]!;
+    const isLast = kept.length === maxLines - 1 || line.length > max;
+    if (!isLast) {
+      kept.push(line);
+      continue;
+    }
+    // Drop whole words until "..." fits. One very long word has to be cut inside.
+    let text = line;
+    while (text.length > max - 3 && text.includes(" ")) {
+      text = text.slice(0, text.lastIndexOf(" "));
+    }
+    kept.push(`${text.slice(0, max - 3).trimEnd()}...`);
+    break;
+  }
+  return kept;
+}
 
 /**
- * A prize name on the wheel wraps onto at most two lines, split at a space
- * near the middle and each line no longer than WHEEL_LINE_MAX. Only a name
- * that still does not fit in two lines is cut with "...". The segment count
- * is passed in so a crowded wheel can reuse the same helper.
+ * Fits a prize name into its slice: up to three lines, shrinking the font down to
+ * WHEEL_FONT_MIN, and only then cutting at a word with "...". A slice too thin for
+ * even one line gets no words on the wheel (the list under the wheel names it).
  */
-export function wheelLabelLines(label: string, segmentCount: number): string[] {
-  void segmentCount;
+export function wheelLabel(label: string, segmentCount: number, spanDegrees: number): WheelLabel {
   const clean = label.trim().replace(/\s+/g, " ");
-  if (!clean) return [];
-  if (clean.length <= WHEEL_LINE_MAX) return [clean];
+  const start = segmentCount >= WHEEL_CROWDED_AT ? WHEEL_FONT_MIN : WHEEL_FONT_MAX;
+  if (!clean) return { lines: [], fontSize: start, cut: false };
+  const across = 2 * NARROW_RADIUS * Math.sin((Math.min(spanDegrees, 180) * Math.PI) / 360);
+  const linesFor = (fontSize: number) =>
+    Math.min(WHEEL_MAX_LINES, Math.floor(across / (fontSize * WHEEL_LINE_HEIGHT)));
   const words = clean.split(" ");
-  let best: [string, string] | null = null;
-  let bestGap = Number.POSITIVE_INFINITY;
-  for (let index = 1; index < words.length; index += 1) {
-    const left = words.slice(0, index).join(" ");
-    const right = words.slice(index).join(" ");
-    if (left.length > WHEEL_LINE_MAX || right.length > WHEEL_LINE_MAX) continue;
-    const gap = Math.abs(left.length - right.length);
-    if (gap < bestGap) {
-      bestGap = gap;
-      best = [left, right];
+  for (let fontSize = start; fontSize >= WHEEL_FONT_MIN; fontSize -= 0.5) {
+    const max = wheelLineChars(fontSize);
+    const lines = wrapWords(words, max);
+    if (lines.length <= linesFor(fontSize) && lines.every((line) => line.length <= max)) {
+      return { lines, fontSize, cut: false };
     }
   }
-  if (best) return best;
-  const firstWords: string[] = [];
-  for (const word of words) {
-    if ([...firstWords, word].join(" ").length > WHEEL_LINE_MAX) break;
-    firstWords.push(word);
-  }
-  const first =
-    firstWords.length > 0 ? firstWords.join(" ") : clean.slice(0, WHEEL_LINE_MAX);
-  const rest =
-    firstWords.length > 0
-      ? words.slice(firstWords.length).join(" ")
-      : clean.slice(WHEEL_LINE_MAX);
-  if (rest.length <= WHEEL_LINE_MAX) return [first, rest];
-  const cut = rest.slice(0, WHEEL_LINE_MAX - 3);
-  const atSpace = cut.lastIndexOf(" ");
-  const trimmed = atSpace > 0 ? cut.slice(0, atSpace) : cut;
-  return [first, `${trimmed.trimEnd()}...`];
+  const max = wheelLineChars(WHEEL_FONT_MIN);
+  const room = linesFor(WHEEL_FONT_MIN);
+  if (room < 1) return { lines: [], fontSize: WHEEL_FONT_MIN, cut: true };
+  return {
+    lines: cutLines(wrapWords(words, max), room, max),
+    fontSize: WHEEL_FONT_MIN,
+    cut: true,
+  };
 }

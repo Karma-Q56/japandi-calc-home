@@ -2,8 +2,9 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { WheelPreview } from "@/components/patron/preview";
+import { SpinWheelSvg } from "@/components/patron/SpinWheelSvg";
 import { demoRepo } from "@/data/repo";
-import { arcShare, oddsInWords, shortWheelLabel, wheelArcs, wheelLabelLines, weightWarning } from "@/lib/wheel";
+import { arcShare, oddsInWords, wheelArcs, weightWarning } from "@/lib/wheel";
 import type { SpinSegment } from "@/data/types";
 
 const segments: SpinSegment[] = [
@@ -77,24 +78,42 @@ describe("wheel odds and warnings", () => {
     expect(weightWarning(segments)).toMatch(/has no name/);
     expect(weightWarning([{ id: "y", label: "Coffee", weight: 5, valueCents: 0 }])).toBeNull();
   });
+});
 
-  it("shortens long prize names without cutting words in the middle", () => {
-    expect(shortWheelLabel("Free coffee")).toBe("Free coffee");
-    expect(shortWheelLabel("Free coffee and a slice of cake")).toBe("Free coffee…");
+describe("wheel prize names", () => {
+  const long = "Free coffee with any meal and a slice of cake for you and one friend today";
+
+  it("lists the full name under the wheel and keeps it in the slice title", () => {
+    const { container } = render(
+      <SpinWheelSvg
+        segments={[
+          { id: "a", label: long, weight: 1, valueCents: 0 },
+          { id: "b", label: "R20 off", weight: 1, valueCents: 2000 },
+        ]}
+      />,
+    );
+    const list = screen.getByRole("list", { name: "Prizes on this wheel" });
+    expect(list.textContent).toContain(long);
+    expect(container.querySelector("title")!.textContent).toBe(long);
   });
 
-  it("keeps a short wheel name on one line", () => {
-    expect(wheelLabelLines("Free coffee", 4)).toEqual(["Free coffee"]);
-  });
-
-  it("splits a longer wheel name at a space near the middle", () => {
-    expect(wheelLabelLines("Free filter coffee", 4)).toEqual(["Free filter", "coffee"]);
-  });
-
-  it("cuts a wheel name that still does not fit in two lines", () => {
-    const lines = wheelLabelLines("Complimentary signature breakfast platter for two", 8);
-    expect(lines).toHaveLength(2);
-    expect(lines.every((line) => line.length <= 14)).toBe(true);
-    expect(lines[1]!.endsWith("...")).toBe(true);
-  });
+  it.each([2, 6, 12])(
+    "draws %i prizes with at most three lines at a readable size",
+    (count) => {
+      const many = Array.from({ length: count }, (_, index) => ({
+        id: `s${index}`,
+        label: index === 0 ? long : `Free coffee with any meal ${index}`,
+        weight: 1,
+        valueCents: 0,
+      }));
+      const { container } = render(<SpinWheelSvg segments={many} />);
+      const texts = Array.from(container.querySelectorAll("svg text"));
+      expect(texts).toHaveLength(count);
+      for (const text of texts) {
+        expect(text.querySelectorAll("tspan").length).toBeLessThanOrEqual(3);
+        expect(Number(text.getAttribute("font-size"))).toBeGreaterThanOrEqual(7);
+      }
+      expect(screen.getAllByRole("listitem")).toHaveLength(count);
+    },
+  );
 });
