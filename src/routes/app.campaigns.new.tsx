@@ -499,7 +499,7 @@ function ComposerPage() {
           {warnings.map((warning) => (
             <p className="cmp-warn" key={warning.kind}>
               {warning.message}{" "}
-              {warning.fixable && <button onClick={() => setBody(fixCopy(body))}>Fix it for me</button>}
+              {warning.fixable && <button className="row-action" onClick={() => setBody(fixCopy(body))}>Fix it for me</button>}
             </p>
           ))}
           <div className="cmp-row">

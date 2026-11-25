@@ -144,16 +144,16 @@ export function LiveSpecialsTab({ specials }: { specials: LiveSpecial[] | null }
               header: "Change",
               cell: (special) => (
                 <>
-                  <button type="button" disabled={busy} onClick={() => edit(special)}>
+                  <button className="row-action" type="button" disabled={busy} onClick={() => edit(special)}>
                     Edit {special.title}
                   </button>{" "}
                   {special.status !== "ended" && (
-                    <button type="button" disabled={busy} onClick={() => toggle(special)}>
+                    <button className="row-action" type="button" disabled={busy} onClick={() => toggle(special)}>
                       {special.active ? `Pause ${special.title}` : `Restart ${special.title}`}
                     </button>
                   )}{" "}
                   {special.status !== "ended" && (
-                    <button type="button" disabled={busy} onClick={() => end(special)}>
+                    <button className="row-action" type="button" disabled={busy} onClick={() => end(special)}>
                       End {special.title}
                     </button>
                   )}

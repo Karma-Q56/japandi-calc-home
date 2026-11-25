@@ -255,12 +255,12 @@ export function ThemeEditor({
           <h3>Start from a look</h3>
           <div className="te-presets">
             {presets.map((preset) => (
-              <button key={preset.name} type="button" onClick={() => onChange({ ...preset.theme })}>
+              <button className="te-preset" key={preset.name} type="button" onClick={() => onChange({ ...preset.theme })}>
                 <i style={{ background: preset.theme.accent }} />
                 {preset.name}
               </button>
             ))}
-            <button type="button" onClick={() => onChange({ ...blankTheme })}>
+            <button className="te-preset" type="button" onClick={() => onChange({ ...blankTheme })}>
               <i style={{ background: blankTheme.accent }} />
               Blank
             </button>
@@ -272,7 +272,7 @@ export function ThemeEditor({
           <h3>Colours</h3>
           <div className="te-presets">
             {CARD_PALETTES.map((palette) => (
-              <button
+              <button className="te-preset"
                 key={palette.id}
                 type="button"
                 onClick={() =>
@@ -318,7 +318,7 @@ export function ThemeEditor({
           <h3>Stamp</h3>
           <div className="te-shapes">
             {SHAPES.map((shape) => (
-              <button
+              <button className="te-shape"
                 key={shape.id}
                 type="button"
                 aria-pressed={theme.stampShape === shape.id}
@@ -335,7 +335,7 @@ export function ThemeEditor({
           <h3>Card</h3>
           <div className="te-presets">
             {BACKGROUNDS.filter((item) => !live || item.id !== "photo").map((item) => (
-              <button
+              <button className="te-preset"
                 key={item.id}
                 type="button"
                 aria-pressed={theme.cardBackground === item.id}
@@ -414,7 +414,7 @@ export function ThemeEditor({
               </figure>
               <button
                 type="button"
-                className="builder-secondary"
+                className="builder-secondary is-danger"
                 onClick={() => {
                   const { logoStamp: _stamp, ...rest } = theme;
                   setPendingLogo(null);
@@ -437,7 +437,7 @@ export function ThemeEditor({
                 ["menu-first", "Menu first"],
                 ["minimal", "Minimal"],
               ] as const).map(([id, label]) => (
-                <button
+                <button className="te-preset"
                   key={id}
                   type="button"
                   aria-pressed={template === id}
@@ -465,7 +465,7 @@ export function ThemeEditor({
           </label>
           {coverBusy && <p className="te-help">Resizing photo…</p>}
           {coverError && <p className="theme-warning" role="alert">{coverError}</p>}
-          {theme.coverPhoto && <button type="button" className="builder-secondary" onClick={removeCover}>Remove cover photo</button>}
+          {theme.coverPhoto && <button type="button" className="builder-secondary is-danger" onClick={removeCover}>Remove cover photo</button>}
         </section>
         )}
 
@@ -502,7 +502,7 @@ export function ThemeEditor({
             Stamp logo · optional · up to 300 KB
             <input type="file" accept="image/png,image/jpeg,image/svg+xml" onChange={(event) => uploadLogo(event.target.files?.[0])} />
             {theme.logo && (
-              <button type="button" className="builder-secondary" onClick={removeLogo}>
+              <button type="button" className="builder-secondary is-danger" onClick={removeLogo}>
                 Remove logo
               </button>
             )}
@@ -514,10 +514,10 @@ export function ThemeEditor({
       <aside className="te-preview" aria-label="Live preview">
         {!live && (
         <div className="te-tabs" role="group" aria-label="Preview">
-          <button type="button" aria-pressed={view === "card"} onClick={() => setView("card")}>
+          <button className="te-tab" type="button" aria-pressed={view === "card"} onClick={() => setView("card")}>
             Guest card
           </button>
-          <button type="button" aria-pressed={view === "page"} onClick={() => setView("page")}>
+          <button className="te-tab" type="button" aria-pressed={view === "page"} onClick={() => setView("page")}>
             Public page
           </button>
         </div>

@@ -54,7 +54,7 @@ export function LiveOpsCampaigns({ initial }: { initial: PendingCampaignRow[] })
               <button className="builder-primary" disabled={busy} onClick={() => decide(row.id, "approve")}>
                 Approve
               </button>
-              <button className="builder-secondary" disabled={busy} onClick={() => decide(row.id, "reject")}>
+              <button className="builder-secondary is-danger" disabled={busy} onClick={() => decide(row.id, "reject")}>
                 Reject
               </button>
             </div>

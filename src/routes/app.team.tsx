@@ -159,7 +159,7 @@ function DemoTeam() {
               {member.pinHash ? "Reset PIN" : "Set PIN"}
             </button>
             <button
-              className="builder-secondary"
+              className={`builder-secondary${member.active ? " is-danger" : ""}`}
               onClick={() => {
                 api.team.setActive(member.id, !member.active);
               }}

@@ -1,6 +1,22 @@
 /*
  * The Patron design kit. Loaded after styles.css and ui.css so these shared
  * tokens and components are the last word. Keep product surfaces on this file.
+ *
+ * Buttons: everything that can be pressed must look like it can be pressed.
+ * tests/e2e/look-audit.spec.ts checks this on every screen. The allowed looks:
+ *   Primary    builder-primary or pk-button (primary). The main action on a screen.
+ *              Filled with the main colour, light text, at least 44px high, rounded.
+ *   Secondary  builder-secondary or pk-button (secondary). A visible 1.5px border
+ *              and readable text, at least 44px high.
+ *   Row action row-action. Small actions in tables and lists. A visible border or
+ *              background, at least 32px high. Add is-icon for a symbol only button
+ *              (it then needs an aria-label and gets a 44px square).
+ *   Danger     is-danger on a secondary or row action: red border and red text,
+ *              together with a confirm step. There is no fourth family.
+ * Chips and pickers (pill-button, te-preset, te-shape, section-tab, pin keys)
+ * keep a visible border or fill and are at least 32px high.
+ * A link that opens another page may look like a link. A link that performs an
+ * action must be a button. A button's words never change while it is saving.
  */
 :root {
   /* Colour */
@@ -2285,6 +2301,200 @@
   }
 }
 
+/* Restaurant cards inside the narrow diner column stack to fit. */
+.restaurant-list .fd-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+}
+
+/* Guests list: left aligned, compact rows. */
+.customer-table {
+  gap: var(--pk-space-2);
+}
+
+.customer-row {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: var(--pk-space-2);
+  padding: 0.7rem 1rem;
+  border-radius: var(--pk-radius-md, 0.875rem);
+  background: var(--pk-card);
+}
+
+.customer-row:has(.customer-select) {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.customer-row-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.15rem 0.75rem;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.customer-row-main > span:first-child {
+  grid-column: 1;
+  grid-row: 1;
+  display: grid;
+  gap: 0.1rem;
+}
+
+.customer-row-main > span:first-child small {
+  margin-left: 0;
+  color: var(--pk-ink-soft);
+}
+
+.customer-row-main > .customer-row-meta {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.customer-row-main > small {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  color: var(--pk-ink-soft);
+}
+
+@media (min-width: 561px) {
+  .customer-row-main > span:first-child strong + small {
+    margin-left: 0;
+  }
+}
+
+.customer-row-main > b {
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: end;
+  align-self: center;
+  color: var(--pk-ink-soft);
+}
+
+/* The demo pill must never sit on top of content. On phones it shrinks to a dot above the tab bar. */
+@media (max-width: 860px) {
+  .demo-control {
+    left: auto;
+    right: 0.75rem;
+    bottom: calc(5.25rem + env(safe-area-inset-bottom));
+  }
+
+  .demo-control-toggle {
+    width: 2.25rem;
+    height: 2.25rem;
+    opacity: 0.85;
+    min-height: 0;
+    padding: 0;
+    justify-content: center;
+    overflow: hidden;
+    font-size: 0;
+    gap: 0;
+  }
+}
+
+/* Trend chart (owner Home) */
+.trend-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: var(--pk-space-3);
+}
+
+.trend-grid {
+  stroke: var(--pk-border);
+  stroke-width: 1;
+}
+
+.trend-axis {
+  fill: var(--pk-ink-soft);
+  font: 500 11px var(--pk-font-body);
+}
+
+.trend-line {
+  stroke: var(--pk-accent);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.trend-dot {
+  fill: var(--pk-card);
+  stroke: var(--pk-accent);
+  stroke-width: 2;
+}
+
+/* Hour labels under the busiest hours bars */
+.hour-labels {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.hour-labels span {
+  flex: 1;
+  text-align: center;
+  color: var(--pk-ink-soft);
+  font: 500 0.6875rem var(--pk-font-body);
+}
+
+.restaurant-list .fd-card-media {
+  aspect-ratio: 16 / 8;
+}
+
+
+/* ---- Polish pass: shared fixes ---- */
+
+/* The demo pill stays bottom right so it never sits on the Help bubble. */
+.demo-control {
+  left: auto;
+  right: 14px;
+}
+
+/* Legal pages: real headings and a readable line length. */
+.legal-page h2 {
+  margin-top: var(--pk-space-7);
+  margin-bottom: var(--pk-space-2);
+  font: 700 clamp(1.25rem, 2.5vw, 1.5rem) / 1.25 var(--pk-font-heading);
+  color: var(--pk-ink);
+}
+
+.legal-page p {
+  max-width: 68ch;
+  color: var(--pk-ink);
+  line-height: 1.65;
+}
+
+.legal-page .legal-toc h2 {
+  margin-top: 0;
+  font: 700 0.75rem / 1.3 var(--pk-font-body);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pk-ink-soft);
+}
+
+.legal-more {
+  max-width: 1200px;
+  margin: var(--pk-space-6) auto var(--pk-space-8);
+  padding-inline: 48px;
+}
+
+@media (max-width: 1100px) {
+  .legal-more {
+    padding-inline: 32px;
+  }
+}
+
+@media (max-width: 860px) {
+  .legal-more {
+    padding-inline: 24px;
+  }
+}
+
 /* Loyalty page text. */
 .what-happens-when ul {
   list-style: disc;
@@ -2506,3 +2716,70 @@
   }
 }
 
+
+/* D28 button rules. See the comment at the top of this file. Kept last so they win. */
+:root .builder-primary,
+:root .builder-secondary,
+:root .pk-button--primary,
+:root .pk-button--secondary {
+  min-height: 44px;
+}
+
+.row-action,
+.pill-button {
+  min-height: 34px;
+  cursor: pointer;
+}
+
+.row-action.is-icon {
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+:root .builder-secondary.is-danger,
+.row-action.is-danger {
+  border-color: var(--pk-danger);
+  color: var(--pk-danger);
+}
+
+.inbox-row {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+}
+
+/* A guest row that opens: the button fills the card, so the whole box is clearly the button. */
+.customer-table .customer-row:has(> button.customer-row-main) {
+  padding: 0;
+  overflow: hidden;
+}
+
+button.customer-row-main {
+  min-height: 44px;
+  padding: 0.7rem 1rem;
+  background: var(--card);
+}
+
+button.customer-row-main:hover {
+  background: var(--pk-cream-deep);
+}
+
+button.customer-row-main:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: -3px;
+}
+
+.customer-row > .customer-select {
+  align-self: center;
+  padding-left: 1rem;
+}
+
+.te-tabs .te-tab {
+  border: 1.5px solid var(--line);
+}
+
+.header-inner > button {
+  min-width: 44px;
+  min-height: 44px;
+}

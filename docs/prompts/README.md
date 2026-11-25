@@ -50,7 +50,7 @@ A wave can start as soon as everything it depends on has been merged into `claud
 | 8 | D25 Billing finish (renewals, failed payments, grace, banner, reachable billing page) | `freebuff/billing-finish` | 0038 | D21, D23 | Done: built by Freebuff, reviewed, fixed and merged by Claude on 23 Nov. |
 | 9 | D26 Owner pickers and page address change | `freebuff/owner-pickers` | 0039 | D19, D23 | Done: built by Freebuff, reviewed, fixed and merged by Claude on 23 Nov. |
 | 9 | D27 Small fixes (campaign links, visits today, demo dot, dead code) | `freebuff/small-fixes` | none | none | Done: built by Claude (Freebuff offline) on 24 to 25 Nov. |
-| 10 | D28 Look and feel (buttons, one tab style, wheel, card colours, lint). Alone | `freebuff/look-and-feel` | none | D20 to D27 | Done: built by Claude (Freebuff offline) on 24 to 25 Nov. |
+| 10 | D28 Look and feel (buttons, one tab style, wheel, card colours, lint). Alone | `freebuff/look-and-feel` | none | D20 to D27 | Done: built by Claude (Freebuff offline) on branch claude/fix-regressions, 25 to 26 Nov. |
 | 11 | D29 Test every screen and flow, demo and live, write the findings file. Alone, last | `freebuff/walkthrough-test` | none | D20 to D28 | To do |
 | end | D22 Launch checklist | none | none | everything | At the end |
 
@@ -60,7 +60,7 @@ Status as of 11 Nov (wave 3: D14, D16 core and D19 merged and reviewed; the unfi
 
 ## If Freebuff can only do a few at a time
 
-Rounds 1 to 6 are done (D12d, D13b2 and D16b were built by Claude while Freebuff was offline, D12f and D21 were built by Freebuff and hardened by Claude). Freebuff's own `freebuff/spin-wheel` branch is superseded, do not merge it. Its per-prize weekly limit was ported on top of the merged wheel (0035); its money budget was left out on purpose. What is left is rounds 7 to 11: D20 and D23, then D24 and D25, then D26 and D27, then D28 alone, then D29 alone, then D22 with Karma. See SEND-ORDER.md for the exact messages. Never more than 2 open at once. D28 restyles shared CSS and D29 tests the finished product, so both go alone.
+Rounds 1 to 6 are done (D12d, D13b2 and D16b were built by Claude while Freebuff was offline, D12f and D21 were built by Freebuff and hardened by Claude). Freebuff's own `freebuff/spin-wheel` branch is superseded, do not merge it. Its per-prize weekly limit was ported on top of the merged wheel (0035); its money budget was left out on purpose. Rounds 7 to 10 (D20 and D23 to D28) are done too. What is left is D29 alone, then D22 with Karma. See SEND-ORDER.md for the exact messages. Never more than 2 open at once. D28 restyles shared CSS and D29 tests the finished product, so both go alone.
 
 ## How the parallel work stays clean
 

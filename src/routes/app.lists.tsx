@@ -139,7 +139,7 @@ function LiveListsPage({ lists }: { lists: LiveList[] | null }) {
                   label="Delete"
                   question="Delete this list? Only the list goes. The guests and their consent stay."
                   confirmLabel="Delete list"
-                  buttonClass="row-action"
+                  buttonClass="row-action is-danger"
                   onConfirm={() => remove(list.id)}
                 />
               </span>
@@ -235,7 +235,7 @@ function DemoListsPage() {
                 </a>
                 <button
                   type="button"
-                  className="row-action"
+                  className="row-action is-danger"
                   onClick={() => api.audience.deleteList({ id: list.id, restaurantId: restaurant.id })}
                 >
                   Delete

@@ -1009,7 +1009,7 @@ function DemoLoyalty() {
                 </label>
                 <button
                   type="button"
-                  className="builder-secondary"
+                  className="builder-secondary is-danger"
                   onClick={() =>
                     setSpin({
                       ...spin,

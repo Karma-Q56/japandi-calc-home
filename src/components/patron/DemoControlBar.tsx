@@ -98,14 +98,14 @@ export function DemoControlBar() {
               [604800000, "+7 days"],
               [2592000000, "+30 days"],
             ].map(([ms, label]) => (
-              <button key={label} onClick={() => clock.advance(Number(ms))}>
+              <button className="row-action" key={label} onClick={() => clock.advance(Number(ms))}>
                 {label}
               </button>
             ))}
-            <button onClick={() => clock.reset()}>Reset clock</button>
+            <button className="row-action" onClick={() => clock.reset()}>Reset clock</button>
           </div>
           <div className="demo-control-actions">
-            <button
+            <button className="builder-secondary"
               onClick={() => {
                 demoRepo.reset();
                 window.location.assign("/");

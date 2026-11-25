@@ -152,7 +152,7 @@ function LookEditor() {
             publish, send messages or spend credit. Guest phone numbers stay masked. Help ends on{" "}
             {helpDate(mode.until ?? "")}.
           </p>
-          <button onClick={closeHelp}>Stop helping</button>
+          <button className="row-action" onClick={closeHelp}>Stop helping</button>
         </div>
       )}
       {help.active && !helpingHere && (
@@ -326,10 +326,10 @@ function LookEditor() {
                   {block.type}
                 </label>
                 <div>
-                  <button aria-label={`Move ${block.type} up`} onClick={() => move(index, -1)}>
+                  <button className="row-action is-icon" aria-label={`Move ${block.type} up`} onClick={() => move(index, -1)}>
                     ↑
                   </button>
-                  <button aria-label={`Move ${block.type} down`} onClick={() => move(index, 1)}>
+                  <button className="row-action is-icon" aria-label={`Move ${block.type} down`} onClick={() => move(index, 1)}>
                     ↓
                   </button>
                 </div>

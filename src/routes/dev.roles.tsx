@@ -98,7 +98,7 @@ function DeveloperRoles() {
       </p>
       <div className="dev-role-grid">
         {DEMO_ACCOUNTS.map((account) => (
-          <button
+          <button className="account-card"
             key={account.id}
             type="button"
             onClick={() => {

@@ -520,9 +520,10 @@ function DemoTill() {
           </FormField>
           <div className="pin-pad">
             {["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "⌫"].map((key) => (
-              <button
+              <button className="pin-key"
                 key={key || "empty"}
                 disabled={!key}
+                aria-label={key === "⌫" ? "Delete last digit" : undefined}
                 onClick={() => {
                   if (key === "⌫") setPin((p) => p.slice(0, -1));
                   else setPin((p) => (p + key).slice(0, 4));

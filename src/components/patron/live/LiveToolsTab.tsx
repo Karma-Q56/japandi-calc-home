@@ -170,7 +170,7 @@ export function LiveToolsTab({ data }: { data: LiveToolsSettings }) {
         </div>
         <div className="builder-actions">
           <button className="builder-primary" type="button" disabled={busy} onClick={save}>
-            {busy ? "Saving…" : "Publish these loyalty tools"}
+            Publish these loyalty tools
           </button>
         </div>
         {notice && (

@@ -178,7 +178,7 @@ export function LiveTeam() {
             >
               Reset PIN
             </button>
-            <button className="builder-secondary" disabled={busy} onClick={() => void toggle(member)}>
+            <button className={`builder-secondary${member.active ? " is-danger" : ""}`} disabled={busy} onClick={() => void toggle(member)}>
               {member.active ? "Deactivate" : "Activate"}
             </button>
           </span>

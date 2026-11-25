@@ -180,11 +180,11 @@ export function BranchesView({
             maxLength={200}
           />
         </FormField>
-        <button type="submit" disabled={busy || (!editingId && atLimit)}>
+        <button className="builder-primary" type="submit" disabled={busy || (!editingId && atLimit)}>
           {editingId ? "Save branch" : "Add branch"}
         </button>
         {editingId ? (
-          <button
+          <button className="row-action"
             type="button"
             onClick={() => {
               setEditingId(null);
@@ -228,21 +228,21 @@ export function BranchesView({
                 <td>{[row.address, row.suburb, row.city].filter(Boolean).join(", ")}</td>
                 <td>{row.staffCount} on the team</td>
                 <td>
-                  <button type="button" onClick={() => startEdit(row)} disabled={busy}>
+                  <button className="row-action" type="button" onClick={() => startEdit(row)} disabled={busy}>
                     Edit {row.name}
                   </button>
                   {row.active && !row.isMain ? (
-                    <button type="button" onClick={() => act(row, "main")} disabled={busy}>
+                    <button className="row-action" type="button" onClick={() => act(row, "main")} disabled={busy}>
                       Make {row.name} the main branch
                     </button>
                   ) : null}
                   {row.active && !row.isMain ? (
-                    <button type="button" onClick={() => act(row, "off")} disabled={busy}>
+                    <button className="row-action is-danger" type="button" onClick={() => act(row, "off")} disabled={busy}>
                       Turn off {row.name}
                     </button>
                   ) : null}
                   {!row.active ? (
-                    <button type="button" onClick={() => act(row, "on")} disabled={busy}>
+                    <button className="row-action" type="button" onClick={() => act(row, "on")} disabled={busy}>
                       Turn on {row.name}
                     </button>
                   ) : null}

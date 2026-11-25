@@ -844,7 +844,7 @@ button:focus-visible {
   color: var(--muted-foreground);
 }
 .gx-row button {
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 16px;
   border-radius: 999px;
   border: 1.5px solid var(--primary);
@@ -1145,7 +1145,7 @@ button:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 14px;
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -1207,9 +1207,8 @@ button:focus-visible {
 .gx .consent-history-row small {
   color: var(--muted-foreground);
 }
-.gx .guest-list-item button,
-.gx .guest-panel .builder-primary {
-  min-height: 40px;
+.gx .guest-list-item button {
+  min-height: 44px;
   padding: 0 16px;
   border-radius: 999px;
   border: 1.5px solid var(--primary);
@@ -1974,12 +1973,10 @@ input[type="range"] {
 }
 .guest-back {
   min-height: 44px;
-  border: 0;
-  background: none;
-  color: var(--muted-foreground);
+  border: 1.5px solid var(--line);
+  background: var(--card);
+  color: var(--foreground);
   font: 600 14px var(--font-sans);
-  text-decoration: underline;
-  text-underline-offset: 3px;
 }
 .guest-consent {
   display: grid;

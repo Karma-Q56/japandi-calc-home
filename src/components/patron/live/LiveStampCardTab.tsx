@@ -71,7 +71,7 @@ function LogoPanel({ initialVersion }: { initialVersion: number | null }) {
       {version !== null && (
         <div className="logo-panel-current">
           {shown && <img src={shown} alt="Your current logo" width={96} height={96} />}
-          <button className="builder-secondary" type="button" disabled={logoBusy} onClick={remove}>
+          <button className="builder-secondary is-danger" type="button" disabled={logoBusy} onClick={remove}>
             Remove logo
           </button>
         </div>

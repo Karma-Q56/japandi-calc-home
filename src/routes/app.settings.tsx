@@ -228,11 +228,11 @@ function LiveSettings({ initial }: { initial: OwnerSettings | null }) {
         <p className="demo-data-note">{helpOn ? "On now." : "Off. Patron cannot open this restaurant in help mode."}</p>
         {canEdit ? (
           <div className="page-actions">
-            <button type="button" onClick={() => setHelp(true)} disabled={helpBusy}>
+            <button className="builder-secondary" type="button" onClick={() => setHelp(true)} disabled={helpBusy}>
               Turn on help
             </button>
             {helpOn ? (
-              <button type="button" onClick={() => setHelp(false)} disabled={helpBusy}>
+              <button className="builder-secondary" type="button" onClick={() => setHelp(false)} disabled={helpBusy}>
                 Turn help off
               </button>
             ) : null}
@@ -249,7 +249,7 @@ function LiveSettings({ initial }: { initial: OwnerSettings | null }) {
             <FormField label="What should the campaign say?" hint="Between 10 and 500 characters.">
               <textarea value={campaignNote} maxLength={500} onChange={(e) => setCampaignNote(e.target.value)} />
             </FormField>
-            <button type="button" onClick={requestCampaign}>
+            <button className="builder-secondary" type="button" onClick={requestCampaign}>
               Send campaign request
             </button>
           </>
@@ -257,7 +257,7 @@ function LiveSettings({ initial }: { initial: OwnerSettings | null }) {
         {campaignNotice ? <p role="status">{campaignNotice}</p> : null}
       </section>
       {canEdit ? (
-        <button type="button" onClick={save} disabled={saving}>
+        <button className="builder-secondary" type="button" onClick={save} disabled={saving}>
           Save settings
         </button>
       ) : (
@@ -564,7 +564,7 @@ function DemoSettingsForm() {
             Save help setting
           </button>
           {help.enabled ? (
-            <button onClick={() => saveHelp(false)}>Stop help now</button>
+            <button className="builder-secondary" onClick={() => saveHelp(false)}>Stop help now</button>
           ) : null}
         </div>
       </section>

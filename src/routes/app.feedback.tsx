@@ -332,7 +332,7 @@ function DemoFeedback() {
             {askPhotos.map((photo) => (
               <figure key={photo.dataUrl.slice(-32)}>
                 <img src={photo.dataUrl} alt={photo.name} />
-                <button
+                <button className="row-action is-danger"
                   type="button"
                   onClick={() => setAskPhotos((current) => current.filter((item) => item !== photo))}
                 >
@@ -391,7 +391,7 @@ function DemoFeedback() {
                           <button className="builder-primary" onClick={() => applyDraft(draft.id)}>
                             Use these words
                           </button>
-                          <button onClick={() => dropDraft(draft.id)}>Throw away</button>
+                          <button className="row-action is-danger" onClick={() => dropDraft(draft.id)}>Throw away</button>
                         </div>
                       </div>
                     )}

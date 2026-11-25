@@ -125,7 +125,7 @@ function InsightsPage() {
       />
       <div role="group" aria-label="Date range" className="home-pills">
         {RANGE_OPTIONS.map((days) => (
-          <button
+          <button className="pill-button"
             key={days}
             type="button"
             aria-pressed={range === days}

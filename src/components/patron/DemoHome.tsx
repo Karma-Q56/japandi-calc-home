@@ -130,7 +130,7 @@ export function DemoHome({ restaurantId }: { restaurantId: string }) {
           <h2>Trading</h2>
           <div role="group" aria-label="Range" className="home-pills">
             {RANGES.map((r) => (
-              <button key={r} type="button" aria-pressed={range === r} onClick={() => setRange(r)}>
+              <button className="pill-button" key={r} type="button" aria-pressed={range === r} onClick={() => setRange(r)}>
                 {r} days
               </button>
             ))}
@@ -138,7 +138,7 @@ export function DemoHome({ restaurantId }: { restaurantId: string }) {
         </div>
         <div role="group" aria-label="Metric" className="home-pills">
           {METRICS.map((m) => (
-            <button
+            <button className="pill-button"
               key={m.key}
               type="button"
               aria-pressed={metric === m.key}

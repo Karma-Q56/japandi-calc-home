@@ -224,7 +224,7 @@ function PageWordsEditor() {
                       </small>
                     </div>
                     <div className="menu-row-actions">
-                      <button onClick={() => restore(version)}>Restore</button>
+                      <button className="row-action" onClick={() => restore(version)}>Restore</button>
                     </div>
                   </article>
                 ))}

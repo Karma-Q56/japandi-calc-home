@@ -330,17 +330,17 @@ function DemoMenuEditor() {
                       </small>
                     </div>
                     <div className="menu-row-actions">
-                      <button aria-label={`Move ${value.name} up`} onClick={() => move(value.id, -1)}>
+                      <button className="row-action is-icon" aria-label={`Move ${value.name} up`} onClick={() => move(value.id, -1)}>
                         ↑
                       </button>
-                      <button
+                      <button className="row-action is-icon"
                         aria-label={`Move ${value.name} down`}
                         onClick={() => move(value.id, 1)}
                       >
                         ↓
                       </button>
-                      <button onClick={() => setItem(value)}>Edit</button>
-                      <button onClick={() => api.menu.hideItem(value.id, value.available)}>
+                      <button className="row-action" onClick={() => setItem(value)}>Edit</button>
+                      <button className="row-action" onClick={() => api.menu.hideItem(value.id, value.available)}>
                         {value.available ? "Hide" : "Show"}
                       </button>
                     </div>
@@ -408,7 +408,7 @@ function DemoMenuEditor() {
                       <small>{version.summary}</small>
                     </div>
                     <div className="menu-row-actions">
-                      <button onClick={() => setRestoring(version)}>Restore</button>
+                      <button className="row-action" onClick={() => setRestoring(version)}>Restore</button>
                     </div>
                   </article>
                 ))}

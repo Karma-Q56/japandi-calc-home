@@ -114,7 +114,7 @@ function SignUpPage() {
                 required
               />
               <button className="builder-primary login-continue" type="submit" disabled={busy}>
-                {busy ? "Saving..." : "Save and continue"}
+                Save and continue
               </button>
             </form>
             {status && <p className="login-status" role="alert">{status}</p>}
@@ -177,7 +177,7 @@ function SignUpPage() {
             />
             <p className="demo-data-note">Use at least 10 letters or numbers.</p>
             <button className="builder-primary login-continue" type="submit" disabled={busy}>
-              {busy ? "Creating..." : "Create my account"}
+              Create my account
             </button>
           </form>
           <p className="login-new">

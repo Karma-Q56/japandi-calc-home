@@ -156,6 +156,7 @@ function DemoResultsPage() {
               </button>
               <ConfirmDialog
                 label="Cancel"
+                buttonClass="builder-secondary is-danger"
                 question="Cancel this campaign? Guests still waiting will not get it."
                 confirmLabel="Cancel it"
                 onConfirm={cancel}
@@ -390,6 +391,7 @@ function LiveCampaignResults({ data }: { data: LiveCampaignResults | null }) {
             {canCancelLiveCampaign(status) && (
               <ConfirmDialog
                 label="Cancel"
+                buttonClass="builder-secondary is-danger"
                 question="Cancel this scheduled campaign and release its SMS reservation?"
                 confirmLabel="Yes, cancel it"
                 onConfirm={() => {

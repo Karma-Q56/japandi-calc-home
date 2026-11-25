@@ -41,7 +41,7 @@ export function TimeEditor({
             }
           />
         </FormField>
-        <button onClick={() => onChange(closed ? { open: "07:00", close: "16:00" } : null)}>
+        <button className="row-action" onClick={() => onChange(closed ? { open: "07:00", close: "16:00" } : null)}>
           {closed ? "Set hours" : "Closed that day"}
         </button>
       </div>

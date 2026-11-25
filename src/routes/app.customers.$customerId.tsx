@@ -130,7 +130,7 @@ function DemoCustomerProfile() {
           label="Remove from my list"
           question="Remove this guest from marketing? Their visit history is kept."
           confirmLabel="Yes, remove"
-          buttonClass="destructive-link"
+          buttonClass="builder-secondary is-danger"
           onConfirm={() => {
             const removed = api.customers.remove({
               membershipId: profile.membership.id,

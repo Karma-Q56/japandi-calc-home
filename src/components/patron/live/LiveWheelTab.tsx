@@ -389,7 +389,7 @@ function PrizeRow({
         )}
         {limitLine(prize) && <p className="builder-hint">{limitLine(prize)}</p>}
       </div>
-      <button type="button" className="builder-secondary" onClick={onRemove}>
+      <button type="button" className="builder-secondary is-danger" onClick={onRemove}>
         Remove prize {index + 1}
       </button>
     </fieldset>

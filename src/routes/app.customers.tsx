@@ -325,10 +325,10 @@ function DemoCustomers() {
         />
       )}
       <div className="demo-control-actions">
-        <button disabled={page <= 1} onClick={() => setPage(page - 1)}>
+        <button className="builder-secondary" disabled={page <= 1} onClick={() => setPage(page - 1)}>
           Previous
         </button>
-        <button disabled={page >= pages} onClick={() => setPage(page + 1)}>
+        <button className="builder-secondary" disabled={page >= pages} onClick={() => setPage(page + 1)}>
           Next
         </button>
       </div>
@@ -347,7 +347,7 @@ function DemoCustomers() {
                 <strong>{guest.name}</strong>
                 <small>Member since {new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium" }).format(new Date(guest.joinedAt))}</small>
               </div>
-              <button type="button" onClick={() => { setOpenId(null); setRevealed(null); }}>Close</button>
+              <button className="row-action" type="button" onClick={() => { setOpenId(null); setRevealed(null); }}>Close</button>
             </div>
             <dl className="guest-drawer-facts">
               <div><dt>Phone</dt><dd>{revealed === guest.customerId ? revealedPhone : guest.maskedPhone}</dd></div>
@@ -358,7 +358,7 @@ function DemoCustomers() {
             </dl>
             <div className="guest-drawer-actions">
               {revealed !== guest.customerId ? (
-                <button
+                <button className="row-action"
                   type="button"
                   onClick={() => {
                     const phone = revealPhoneFor(guest.customerId);
@@ -369,11 +369,11 @@ function DemoCustomers() {
                   Show phone
                 </button>
               ) : (
-                <button type="button" onClick={() => setRevealed(null)}>Hide phone</button>
+                <button className="row-action" type="button" onClick={() => setRevealed(null)}>Hide phone</button>
               )}
               <a href={`/app/customers/${guest.customerId}`}>Open full profile</a>
               {guest.smsOptedIn && (
-                <button
+                <button className="row-action"
                   type="button"
                   onClick={() => {
                     const withdrawn = api.customers.remove({
@@ -511,10 +511,10 @@ function LiveCustomers({ data }: { data: LiveCustomerList | null }) {
         />
       )}
       <div className="demo-control-actions">
-        <button disabled={current <= 1} onClick={() => setPage(current - 1)}>
+        <button className="builder-secondary" disabled={current <= 1} onClick={() => setPage(current - 1)}>
           Previous
         </button>
-        <button disabled={current >= pages} onClick={() => setPage(current + 1)}>
+        <button className="builder-secondary" disabled={current >= pages} onClick={() => setPage(current + 1)}>
           Next
         </button>
       </div>

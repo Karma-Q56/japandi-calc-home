@@ -56,7 +56,7 @@ export function LiveTiersTab({ data }: { data: LiveTiers }) {
       </Helper>
       <div className="builder-actions">
         <button className="builder-primary" type="button" disabled={busy} onClick={save}>
-          {busy ? "Saving…" : "Publish these tiers"}
+          Publish these tiers
         </button>
       </div>
       {notice && (

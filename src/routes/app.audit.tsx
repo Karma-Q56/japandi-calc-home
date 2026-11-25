@@ -111,8 +111,8 @@ function LiveAudit({ initial }: { initial: OwnerActivityItem[] }) {
       )}
       {failed ? <p role="alert">We could not load older activity. Try again.</p> : null}
       {!done && rows.length > 0 ? (
-        <button type="button" onClick={showOlder} disabled={busy}>
-          {busy ? "Loading" : "Show older"}
+        <button className="builder-secondary" type="button" onClick={showOlder} disabled={busy}>
+          Show older
         </button>
       ) : null}
     </main>

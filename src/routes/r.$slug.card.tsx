@@ -85,7 +85,7 @@ function CardError({ error }: ErrorComponentProps) {
           safe, this is a display problem, not a lost visit.
         </p>
         <div className="card-error-actions">
-          <button
+          <button className="builder-secondary"
             type="button"
             onClick={() => {
               demoRepo.reset();
@@ -293,7 +293,7 @@ function GuestCard() {
                     }).format(new Date(reward.earnedAt))}
                   </small>
                 </span>
-                <button onClick={() => setRewardOpen(reward.id)}>Show to staff</button>
+                <button className="builder-secondary" onClick={() => setRewardOpen(reward.id)}>Show to staff</button>
               </article>
             ))
           ) : (
@@ -322,7 +322,7 @@ function GuestCard() {
                   · Code {code?.code ?? special.code ?? "not set"}
                 </small>
               </span>
-              <button
+              <button className="builder-secondary"
                 onClick={() =>
                   setNotice(
                     redeemed
@@ -349,7 +349,7 @@ function GuestCard() {
                   )}
                 </small>
               </span>
-              <button onClick={() => setNotice(`Show code ${offer.code} to the team.`)}>
+              <button className="builder-secondary" onClick={() => setNotice(`Show code ${offer.code} to the team.`)}>
                 Show to staff
               </button>
             </article>

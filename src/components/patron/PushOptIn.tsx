@@ -111,8 +111,8 @@ export function PushOptIn() {
       {phase === "off" && (
         <div>
           <p>Get a message when a restaurant you visit has a new offer or a reward ready.</p>
-          <button type="button" className="btn" onClick={turnOn} disabled={busy}>
-            {busy ? "Turning on..." : "Turn on notifications"}
+          <button type="button" className="builder-secondary" onClick={turnOn} disabled={busy}>
+            Turn on notifications
           </button>
         </div>
       )}
@@ -120,8 +120,8 @@ export function PushOptIn() {
       {phase === "on" && (
         <div>
           <p>Notifications are on for this device.</p>
-          <button type="button" className="btn" onClick={turnOff} disabled={busy}>
-            {busy ? "Turning off..." : "Turn off notifications"}
+          <button type="button" className="builder-secondary" onClick={turnOff} disabled={busy}>
+            Turn off notifications
           </button>
         </div>
       )}

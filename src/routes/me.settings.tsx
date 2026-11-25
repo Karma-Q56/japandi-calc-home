@@ -255,7 +255,7 @@ function GuestSettings() {
               Download my data
             </button>
             <button
-              className="danger-button"
+              className="builder-secondary is-danger"
               disabled={customer.deleted}
               onClick={() => {
                 const result = api.member.requestDeletion(customerId);

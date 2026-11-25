@@ -123,7 +123,7 @@ function LoginPage() {
                   required
                 />
                 <button type="submit" className="builder-primary login-continue" disabled={busy}>
-                  {busy ? "Signing in..." : "Sign in"} <ArrowRight size={16} />
+                  Sign in <ArrowRight size={16} />
                 </button>
               </form>
             </>
@@ -166,7 +166,7 @@ function LoginPage() {
                 <summary>Demo accounts</summary>
                 <div className="login-demo-list">
                   {DEMO_ACCOUNTS.map((account) => (
-                    <button
+                    <button className="account-card"
                       key={account.id}
                       type="button"
                       onClick={() =>
