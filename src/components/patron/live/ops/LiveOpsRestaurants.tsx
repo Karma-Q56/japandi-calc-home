@@ -18,7 +18,7 @@ type Row = {
 };
 
 const dateLabel = (iso: string | null) =>
-  iso ? new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium" }).format(new Date(iso)) : "not set";
+  iso ? new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", dateStyle: "medium" }).format(new Date(iso)) : "not set";
 
 const STATUSES = ["all", "draft", "active", "paused", "closed"] as const;
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
 import { api } from "@/api";
+import { getDataModeFn } from "@/server/live";
 import { can } from "@/clients/registry";
 import { ThemeEditor } from "@/components/patron/ThemeEditor";
 import { Badge, EmptyState, FormField, Helper, PageHeader } from "@/components/patron/dash";
@@ -18,7 +19,11 @@ import type { PageTemplate, Restaurant } from "@/data/types";
 import { useDemoState } from "@/data/useDemoState";
 
 export const Route = createFileRoute("/ops/restaurants/$id/look")({
-  beforeLoad: () => {
+  beforeLoad: async ({ params }) => {
+    // This editor works on demo data only. Live operators stay on the live restaurant page.
+    if ((await getDataModeFn()).mode === "live") {
+      throw redirect({ to: "/ops/restaurants/$id", params: { id: params.id } });
+    }
     if (!requireRole("operator")(demoRepo.read().session)) throw redirect({ to: "/login" });
   },
   component: LookEditor,

@@ -82,16 +82,11 @@ function OwnerShell() {
   const state = useDemoState();
   const children = useChildMatches();
   const location = useLocation();
-  const parts = location.pathname.replace(/\/$/, "").split("/");
-  const liveChild =
-    parts[1] === "app" &&
-    (((parts[2] === "loyalty" || parts[2] === "menu") && parts.length === 3) ||
-      ((parts[2] === "customers" || parts[2] === "campaigns") &&
-        (parts.length === 3 || (parts.length === 4 && parts[3] !== "new"))));
   const restaurant =
     state.restaurants.find((item) => item.id === state.session.restaurantId) ??
     state.restaurants[0]!;
-  const restaurantName = live?.restaurantName ?? restaurant.name;
+  // Live screens never borrow the demo venue's name or colours.
+  const restaurantName = isLive ? (live?.restaurantName ?? "Your restaurant") : restaurant.name;
   const switchVenue = (id: string) => {
     updateDemo((current) => {
       const session = { ...current.session, restaurantId: id };
@@ -102,13 +97,18 @@ function OwnerShell() {
   };
   const showVenueSwitcher = !isLive && state.restaurants.length > 1;
   const back = ownerBackFor(location.pathname);
-  const signedInName = state.session.staffId
+  const signedInName = !isLive && state.session.staffId
     ? state.staff.find((item) => item.id === state.session.staffId)?.displayName
     : undefined;
-  const viewerName = signedInName ?? (state.session.role === "manager" ? "Manager" : "Owner");
+  const viewerName =
+    signedInName ?? (!isLive && state.session.role === "manager" ? "Manager" : "Owner");
   const brand = (
     <div className="ox-brand">
-      <VenueMark name={restaurantName} theme={restaurant.theme} size="sm" />
+      <VenueMark
+        name={restaurantName}
+        {...(isLive ? {} : { theme: restaurant.theme })}
+        size="sm"
+      />
       <span className="ox-brand-copy">
         <strong>{restaurantName}</strong>
         <span className="ox-owner-tag">OWNER</span>
@@ -157,22 +157,14 @@ function OwnerShell() {
         )}
         <header className="ox-top">{brand}</header>
         <OwnerMobileNav venueSwitcher={venuePicker} />
-        <OwnerSectionTabs />
+        <OwnerSectionTabs live={isLive} />
         {isLive && data.banner && data.banner.kind !== "none" ? (
           <BillingBanner kind={data.banner.kind} graceEndsAt={data.banner.graceEndsAt} />
         ) : null}
         {setupNeeded ? (
           <RestaurantSetup />
         ) : children.length > 0 ? (
-          isLive ? (
-            liveChild ? (
-              <Outlet />
-            ) : (
-              <LiveToolsNotice />
-            )
-          ) : (
-            <Outlet />
-          )
+          <Outlet />
         ) : isLive && !live ? (
           data.needsSetup ? (
             <RestaurantSetup />
@@ -225,30 +217,6 @@ function OwnerAccount({
         </div>
       </details>
     </div>
-  );
-}
-
-function LiveToolsNotice() {
-  return (
-    <main className="demo-hub page-width">
-      <PageHeader
-        eyebrow="Live mode"
-        title="This owner tool is not live yet."
-        intro="Your overview, guest list, guest profiles, campaign list and results, loyalty card rules and menu are connected to your restaurant. This screen still uses demo data, so it is switched off while live."
-      />
-      <section className="builder-panel">
-        <h2>What is live today</h2>
-        <p>
-          Use the owner menu for real stamps, guests, rewards, campaigns, card rules and menu items.
-        </p>
-        <p className="demo-data-note">The remaining builders follow in a later phase.</p>
-        <div className="page-actions">
-          <a className="builder-primary" href="/app">
-            Back to the live overview
-          </a>
-        </div>
-      </section>
-    </main>
   );
 }
 

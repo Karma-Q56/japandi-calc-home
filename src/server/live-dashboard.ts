@@ -249,7 +249,7 @@ type CampaignListRow = {
   status: string;
   channel: string;
   recipients: number;
-  estimated_cost_cents: number | null;
+  est_cost_cents: number | null;
   actual_cost_cents: number;
   sent_at: string | Date | null;
   created_at: string | Date;
@@ -349,7 +349,7 @@ export async function loadCampaignList(viewer: Viewer): Promise<LiveCampaignList
           status: row.status,
           channel: row.channel,
           recipients: Number(row.recipients),
-          estimatedCostCents: row.estimated_cost_cents === null ? null : Number(row.estimated_cost_cents),
+          estimatedCostCents: row.est_cost_cents === null ? null : Number(row.est_cost_cents),
           actualCostCents: Number(row.actual_cost_cents),
           sentAt: iso(row.sent_at),
           createdAt: new Date(row.created_at).toISOString(),

@@ -130,7 +130,7 @@ function DemoTeam() {
             <small>
               {member.active ? "Active" : "Deactivated"} · Last stamp:{" "}
               {lastStamps[member.id]
-                ? new Intl.DateTimeFormat("en-ZA", {
+                ? new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg",
                     dateStyle: "medium",
                     timeStyle: "short",
                   }).format(new Date(lastStamps[member.id]!))

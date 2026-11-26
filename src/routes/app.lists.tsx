@@ -213,7 +213,7 @@ function DemoListsPage() {
                 state.customers.find((c: Customer) => c.id === m.customerId)?.name ?? "A guest",
               ),
             );
-          const updated = new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium" }).format(
+          const updated = new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", dateStyle: "medium" }).format(
             new Date(list.updatedAt),
           );
           return (

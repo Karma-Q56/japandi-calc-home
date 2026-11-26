@@ -170,8 +170,9 @@ export function daysUntilBirthday(month: number, day: number, now: number): numb
   }).format(now);
   const [year, currentMonth, currentDay] = parts.split("-");
   const nowNoon = Date.UTC(Number(year), Number(currentMonth) - 1, Number(currentDay), 12);
-  const target = Date.UTC(Number(year), month - 1, day, 12);
-  if (target < nowNoon) return null;
+  let target = Date.UTC(Number(year), month - 1, day, 12);
+  // A birthday already past this year comes round again next year (late December).
+  if (target < nowNoon) target = Date.UTC(Number(year) + 1, month - 1, day, 12);
   const diff = (target - nowNoon) / DAY;
   if (diff > 35) return null;
   return Math.round(diff);

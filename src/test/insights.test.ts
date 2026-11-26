@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { clock } from "@/lib/clock";
 import { demoRepo, updateDemo } from "@/data/repo";
-import { ownerInsights } from "@/domain/insights";
+import { daysUntilBirthday, ownerInsights } from "@/domain/insights";
 
 beforeEach(() => {
   demoRepo.reset();
@@ -73,12 +73,20 @@ describe("owner insights", () => {
   });
 
   it("lists birthdays coming up within the month and new guests this week", () => {
+    // The sample birthdays this month run up to the 25th, so look from the 10th.
+    const today = new Date(clock.now());
+    clock.advance(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 10, 8) - clock.now());
     const data = insights();
     expect(data.birthdaysUpcoming.length).toBeGreaterThan(0);
     const oldest = data.birthdaysUpcoming[data.birthdaysUpcoming.length - 1];
     expect(oldest?.inDays).toBeGreaterThanOrEqual(0);
     expect(data.newGuests.length).toBe(0);
     expect(data.newGuests.every((row) => row.name.length > 0)).toBe(true);
+  });
+
+  it("counts a January birthday from late December", () => {
+    expect(daysUntilBirthday(1, 5, Date.UTC(2026, 11, 28, 8))).toBe(8);
+    expect(daysUntilBirthday(12, 1, Date.UTC(2026, 11, 28, 8))).toBeNull();
   });
 
   it("keeps other restaurants out", () => {

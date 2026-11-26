@@ -173,7 +173,7 @@ function LiveBillingPage({ billing }: { billing: LiveBilling | null }) {
           <ul>
             {billing.payments.map((payment) => (
               <li key={payment.id}>
-                {new Date(payment.createdAt).toLocaleDateString("en-ZA")} · {formatRand(payment.amountCents)} ·{" "}
+                {new Date(payment.createdAt).toLocaleDateString("en-ZA", { timeZone: "Africa/Johannesburg" })} · {formatRand(payment.amountCents)} ·{" "}
                 <Badge>{paymentStatusLabel(payment.status)}</Badge>
               </li>
             ))}

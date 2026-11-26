@@ -15,7 +15,7 @@ import * as schema from "./auth-schema";
  */
 
 type Auth = ReturnType<typeof betterAuth>;
-let cached: Auth | null = null;
+type AuthDatabase = Parameters<typeof drizzleAdapter>[0];
 
 function required(name: string): string {
   const value = process.env[name];
@@ -64,20 +64,17 @@ async function logAuthEvent(
   }
 }
 
-export function getAuth(): Auth {
-  if (cached) return cached as Auth;
-  const databaseUrl = required("DATABASE_URL");
+/** The sign-in setup on a given database. Exported so tests run the real settings. */
+export function createAuth(database: AuthDatabase): Auth {
   const secret = required("BETTER_AUTH_SECRET");
   const baseURL =
     process.env["BETTER_AUTH_URL"] ??
     process.env["APP_URL"] ??
     "http://localhost:5173";
-  const pool = new Pool({ connectionString: databaseUrl, max: 1 });
-  const database = drizzle(pool, { schema });
   const googleId = process.env["GOOGLE_CLIENT_ID"];
   const googleSecret = process.env["GOOGLE_CLIENT_SECRET"];
 
-  cached = betterAuth({
+  return betterAuth({
     appName: "Patron",
     baseURL,
     secret,
@@ -97,6 +94,8 @@ export function getAuth(): Auth {
       enabled: true,
       minPasswordLength: 10,
       maxPasswordLength: 128,
+      // A new password signs out every other device that was still logged in.
+      revokeSessionsOnPasswordReset: true,
       sendResetPassword: async ({ user, url }) => {
         await sendAuthEmail({
           to: user.email,
@@ -155,5 +154,17 @@ export function getAuth(): Auth {
     },
     plugins: [tanstackStartCookies()],
   }) as unknown as Auth;
-  return cached;
+}
+
+/**
+ * Run one piece of sign-in work with its own database connection, then close it. A Worker
+ * may not reuse a connection that another request opened: doing so hangs the request.
+ */
+export async function withAuth<T>(work: (auth: Auth) => Promise<T>): Promise<T> {
+  const pool = new Pool({ connectionString: required("DATABASE_URL"), max: 1 });
+  try {
+    return await work(createAuth(drizzle(pool, { schema })));
+  } finally {
+    await pool.end();
+  }
 }

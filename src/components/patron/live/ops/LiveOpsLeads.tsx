@@ -12,7 +12,7 @@ const STATUSES = ["new", "replied", "contacted", "demo_booked", "won", "lost", "
 type Status = (typeof STATUSES)[number];
 
 const dateLabel = (iso: string | null) =>
-  iso ? new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium", timeStyle: "short" }).format(new Date(iso)) : "not yet";
+  iso ? new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", dateStyle: "medium", timeStyle: "short" }).format(new Date(iso)) : "not yet";
 
 function Answer({ label, value }: { label: string; value: string | null | undefined }) {
   if (!value) return null;

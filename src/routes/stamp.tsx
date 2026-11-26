@@ -232,7 +232,7 @@ function DemoTill() {
     if (data.result === "too_soon") {
       say(
         "error",
-        `Too soon, next stamp ${new Intl.DateTimeFormat("en-ZA", {
+        `Too soon, next stamp ${new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg",
           timeStyle: "short",
         }).format(new Date(data.nextAllowedAt))}.`,
       );
@@ -716,7 +716,7 @@ function DemoTill() {
         {recent.map((stamp) => (
           <p className="visit-row" key={stamp.id}>
             <span>
-              {new Intl.DateTimeFormat("en-ZA", {
+              {new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg",
                 dateStyle: "medium",
                 timeStyle: "short",
               }).format(new Date(stamp.createdAt))}

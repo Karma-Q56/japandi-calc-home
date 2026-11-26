@@ -220,7 +220,7 @@ function DemoCustomerProfile() {
               <dd>
                 {know.data.lastMessage === null
                   ? "No messages sent yet"
-                  : `${new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium" }).format(new Date(know.data.lastMessage.sentAt))}, ${know.data.lastMessage.worked ? "delivered" : "did not go through"}. "${know.data.lastMessage.body}"`}
+                  : `${new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", dateStyle: "medium" }).format(new Date(know.data.lastMessage.sentAt))}, ${know.data.lastMessage.worked ? "delivered" : "did not go through"}. "${know.data.lastMessage.body}"`}
               </dd>
             </div>
           </dl>
@@ -232,7 +232,7 @@ function DemoCustomerProfile() {
         {profile.visits.map((visit) => (
           <p className="visit-row" key={visit.id}>
             <span>
-              {new Intl.DateTimeFormat("en-ZA", {
+              {new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg",
                 dateStyle: "medium",
                 timeStyle: "short",
               }).format(new Date(visit.createdAt))}
@@ -287,7 +287,7 @@ function DemoCustomerProfile() {
             </strong>
             <small>
               {event.source} ·{" "}
-              {new Intl.DateTimeFormat("en-ZA", {
+              {new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg",
                 dateStyle: "medium",
               }).format(new Date(event.createdAt))}
             </small>
@@ -335,7 +335,7 @@ function LiveCustomerProfile({ data }: { data: LiveCustomerProfile | null }) {
       <PageHeader
         eyebrow={`Customer · ${data.restaurantName}`}
         title={data.name}
-        intro="Read from the live guest record. Editing, manual stamps and phone reveal come next."
+        intro="Their stamps, rewards and visits at your restaurant."
       />
       <StatGrid dense>
         <StatCard

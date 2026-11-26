@@ -97,9 +97,24 @@ function LiveSpecialsPage({
       {tab === "specials" ? (
         <LiveSpecialsTab specials={specials} />
       ) : (
-        <p role="status" className="demo-data-note">
-          Live campaigns are not ready yet. Specials are live now.
-        </p>
+        <section className="builder-panel" aria-label="Campaigns">
+          <h2>Messages to your guests</h2>
+          <p>Write a campaign, choose who gets it and see how it went.</p>
+          <div className="page-actions">
+            <a className="builder-primary" href="/app/campaigns/new">
+              New campaign
+            </a>
+            <a className="builder-secondary" href="/app/campaigns">
+              See your campaigns
+            </a>
+            <a className="builder-secondary" href="/app/lists">
+              Guest lists
+            </a>
+            <a className="builder-secondary" href="/app/credit">
+              Message credit
+            </a>
+          </div>
+        </section>
       )}
     </main>
   );

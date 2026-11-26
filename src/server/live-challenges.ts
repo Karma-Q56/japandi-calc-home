@@ -183,6 +183,10 @@ export async function saveChallenge(
   const valid = validateChallenge(input);
   if (!valid.ok) return { ok: false, message: valid.message };
   const v = valid.value;
+  // The query builder spreads a JavaScript list into separate values, so send it as JSON.
+  const weekdays = sql`array(
+    select jsonb_array_elements_text(${JSON.stringify(v.weekdays)}::text::jsonb)::smallint
+  )`;
   return withContext(
     { databaseUrl: databaseUrl(), restaurantId: viewer.restaurantId, isOperator: false },
     async (transaction) => {
@@ -190,7 +194,7 @@ export async function saveChallenge(
         const updated = await transaction.execute<{ id: string }>(sql`
           update challenge
           set title = ${v.title}, kind = ${v.kind}, visits = ${v.visits}, window_days = ${v.windowDays},
-              weekdays = ${v.weekdays}::smallint[], start_hour = ${v.startHour}, end_hour = ${v.endHour},
+              weekdays = ${weekdays}, start_hour = ${v.startHour}, end_hour = ${v.endHour},
               menu_item_id = ${v.menuItemId}, menu_section_id = ${v.menuSectionId},
               reward_type = ${v.rewardType}, bonus_stamps = ${v.bonusStamps}, reward_item = ${v.rewardItem || null},
               reward_percent_off = ${v.percentOff}, reward_amount_off_cents = ${v.amountOffCents},
@@ -206,7 +210,7 @@ export async function saveChallenge(
                                reward_type, bonus_stamps, reward_item, reward_percent_off,
                                reward_amount_off_cents, reward_valid_days, active, menu_item_id, menu_section_id)
         values (${viewer.restaurantId}, ${v.title}, ${v.kind}, ${v.visits}, ${v.windowDays},
-                ${v.weekdays}::smallint[], ${v.startHour}, ${v.endHour}, ${v.rewardType}, ${v.bonusStamps},
+                ${weekdays}, ${v.startHour}, ${v.endHour}, ${v.rewardType}, ${v.bonusStamps},
                 ${v.rewardItem || null}, ${v.percentOff}, ${v.amountOffCents}, ${v.validDays}, ${v.active},
                 ${v.menuItemId}, ${v.menuSectionId})
       `);

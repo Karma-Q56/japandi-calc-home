@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { MarketingShell } from "@/components/patron/MarketingShell";
 import { authClient } from "@/lib/auth-client";
 import { landingForRole } from "@/lib/auth-rules";
+import { PHONE_TAKEN_MESSAGE } from "@/lib/phone";
+import { signOut } from "@/lib/sign-out";
 import { completePhoneFn, getDataModeFn, getViewerFn } from "@/server/live";
 
 export const Route = createFileRoute("/signup")({
@@ -34,8 +36,10 @@ function SignUpPage() {
     if (mode !== "live") return;
     void getViewerFn().then((viewer) => {
       if (!viewer) return;
-      if (viewer.needsPhone) setNeedsPhone(true);
-      else if (viewer.role !== "guest" || viewer.customerId) {
+      if (viewer.needsPhone) {
+        setNeedsPhone(true);
+        if (viewer.phoneTaken) setStatus(PHONE_TAKEN_MESSAGE);
+      } else if (viewer.role !== "guest" || viewer.customerId) {
         void navigate({ to: landingForRole(viewer.role) });
       }
     });
@@ -57,6 +61,12 @@ function SignUpPage() {
     const viewer = await getViewerFn();
     if (!viewer) {
       setStatus("Your account was made, but the session did not start. Try signing in.");
+      setBusy(false);
+      return;
+    }
+    if (viewer.needsPhone) {
+      setNeedsPhone(true);
+      if (viewer.phoneTaken) setStatus(PHONE_TAKEN_MESSAGE);
       setBusy(false);
       return;
     }
@@ -118,6 +128,11 @@ function SignUpPage() {
               </button>
             </form>
             {status && <p className="login-status" role="alert">{status}</p>}
+            <p className="login-new">
+              <button className="text-link" type="button" onClick={() => void signOut("live")}>
+                Log out
+              </button>
+            </p>
           </div>
         </section>
       </MarketingShell>

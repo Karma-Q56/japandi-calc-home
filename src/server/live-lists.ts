@@ -85,7 +85,9 @@ export async function createSavedList(
         select ${viewer.restaurantId}::uuid, ${cleaned}, coalesce(jsonb_agg(m.id::text), '[]'::jsonb)
         from membership m
         where m.restaurant_id = ${viewer.restaurantId}::uuid
-          and m.id::text = any(${membershipIds}::text[])
+          and m.id::text in (
+            select jsonb_array_elements_text(${JSON.stringify(membershipIds)}::text::jsonb)
+          )
         returning id
       `);
       const id = row.rows[0]?.id;

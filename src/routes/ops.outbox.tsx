@@ -53,7 +53,7 @@ const STATUS_LABELS: Record<MessageStatus, string> = {
 
 function time(value: string | undefined): string {
   if (!value) return "";
-  return new Intl.DateTimeFormat("en-ZA", { dateStyle: "short", timeStyle: "short" }).format(
+  return new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", dateStyle: "short", timeStyle: "short" }).format(
     new Date(value),
   );
 }

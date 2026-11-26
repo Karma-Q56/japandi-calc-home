@@ -110,7 +110,7 @@ function LiveIdeas({ initial }: { initial: OwnerIdeaBoardItem[] | null }) {
                   {item.place}
                   <small className="demo-data-note">
                     {" "}· last ask{" "}
-                    {new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium" }).format(new Date(item.latestAt))}
+                    {new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", dateStyle: "medium" }).format(new Date(item.latestAt))}
                   </small>
                 </span>
                 <strong>
@@ -172,7 +172,7 @@ function DemoIdeas() {
                   {place.place}
                   <small className="demo-data-note">
                     · {IDEA_STATUS_LABELS[place.status]} · last ask{" "}
-                    {new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium" }).format(new Date(place.latestAt))}
+                    {new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", dateStyle: "medium" }).format(new Date(place.latestAt))}
                   </small>
                 </span>
                 <strong>

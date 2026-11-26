@@ -23,7 +23,7 @@ type Pending = { id: string; amount_cents: number; reference: string | null; cre
 type Invoice = { id: string; amount_cents: number; description: string; due_date: string; status: string; created_at: string };
 type Payment = { id: string; kind: string; amount_cents: number; status: string; reference: string | null; refunded_cents: number; created_at: string };
 
-const dateLabel = (iso: string) => new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium" }).format(new Date(iso));
+const dateLabel = (iso: string) => new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", dateStyle: "medium" }).format(new Date(iso));
 
 type Result = { ok: boolean; message?: string };
 

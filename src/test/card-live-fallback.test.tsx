@@ -24,6 +24,7 @@ vi.mock("@/server/live", () => ({
     return { page: null };
   },
   getCardFn: async () => ({ card: null }),
+  getViewerFn: async () => ({ role: "guest", customerId: "c1" }),
   joinGuestFn: async () => ({ ok: false as const, message: "Demo mode" }),
   recordStampFn: async () => ({ ok: true }),
   verifyScanFn: async () => ({ ok: true }),
@@ -70,13 +71,13 @@ afterEach(() => {
 });
 
 describe("live mode with a failing venue read", () => {
-  it("still opens the guest's stamp card", { timeout: 120_000 }, async () => {
+  it("opens the card page and never borrows a demo card", { timeout: 120_000 }, async () => {
     const fixture = await renderAt(`/r/${dinerFixture().slug}/card`);
 
     await waitFor(() =>
-      expect(screen.getByRole("heading", { name: /Show this at the till/i })).toBeInTheDocument(),
+      expect(screen.getByRole("heading", { name: /You have no card here yet/i })).toBeInTheDocument(),
     );
-    expect(screen.getAllByText(fixture.customerName).length).toBeGreaterThan(0);
+    expect(screen.queryByText(fixture.customerName)).not.toBeInTheDocument();
     // The card is the guest's own page; it never needs the venue read.
     expect(live.venueReads).toBe(0);
   });

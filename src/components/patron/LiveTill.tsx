@@ -321,7 +321,8 @@ export function LiveTill() {
         feedback={feedback}
       />
       <PageHeader
-        eyebrow={["Till", state.restaurant?.name, state.restaurant?.branchName]
+        /* A set, because a first branch is often named after the restaurant itself. */
+        eyebrow={[...new Set(["Till", state.restaurant?.name, state.restaurant?.branchName])]
           .filter(Boolean)
           .join(" · ")}
         title={`${state.staff.displayName}, you're on the till.`}

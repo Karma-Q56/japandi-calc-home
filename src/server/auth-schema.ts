@@ -1,4 +1,4 @@
-import { boolean, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { bigint, boolean, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 /**
  * Better Auth tables. Column names are camelCase because Better Auth addresses
@@ -61,5 +61,8 @@ export const rateLimit = pgTable("rateLimit", {
   id: text("id").primaryKey(),
   key: text("key").notNull().unique(),
   count: integer("count").notNull().default(0),
-  lastRequest: timestamp("lastRequest", { withTimezone: true }).notNull().defaultNow(),
+  // Milliseconds since 1970, which is what Better Auth writes (migration 0040).
+  lastRequest: bigint("lastRequest", { mode: "number" })
+    .notNull()
+    .$defaultFn(() => Date.now()),
 });

@@ -162,7 +162,7 @@ function OpsIdeas() {
                     </span>
                     <span className="inbox-row-meta">
                       {idea.suburb} · {idea.asks} ask{idea.asks === 1 ? "" : "s"} ·{" "}
-                      {new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium" }).format(new Date(idea.createdAt))}
+                      {new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", dateStyle: "medium" }).format(new Date(idea.createdAt))}
                     </span>
                   </button>
                 </li>
@@ -181,7 +181,7 @@ function OpsIdeas() {
                   <h2>{selected.place}</h2>
                   <p className="demo-data-note">
                     {selected.asks} ask{selected.asks === 1 ? "" : "s"} ·{" "}
-                    {new Intl.DateTimeFormat("en-ZA", { dateStyle: "long", timeStyle: "short" }).format(
+                    {new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", dateStyle: "long", timeStyle: "short" }).format(
                       new Date(selected.createdAt),
                     )}
                   </p>

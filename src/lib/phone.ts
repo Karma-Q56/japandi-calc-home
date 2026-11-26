@@ -204,3 +204,7 @@ export function isTestPhone(phone: string): boolean {
   }
   return normalized.startsWith('+27000');
 }
+
+/** Shown when a sign-up uses a number that already belongs to another card. */
+export const PHONE_TAKEN_MESSAGE =
+  "That number is already on another Patron card, and we cannot yet check that it is yours. Use a different number, or log in the way you did before.";

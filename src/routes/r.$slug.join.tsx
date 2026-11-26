@@ -1,10 +1,9 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, getRouteApi, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { api } from "@/api";
 import { VerificationStep } from "@/components/patron/VerificationStep";
 import { demoRepo, updateDemo } from "@/data/repo";
-import { getDataModeFn, joinGuestFn } from "@/server/live";
-import { linkReferralFn } from "@/server/live-challenges-fns";
+import { getDataModeFn } from "@/server/live";
 import { useDemoState } from "@/data/useDemoState";
 import { requireRole, setDemoSession } from "@/data/session";
 import { ThemeProvider } from "@/theme";
@@ -29,9 +28,48 @@ export const Route = createFileRoute("/r/$slug/join")({
   component: JoinPage,
 });
 
+const venueRoute = getRouteApi("/r/$slug");
+
 function JoinPage() {
-  const { slug } = Route.useParams();
   const { mode } = Route.useLoaderData();
+  // Live restaurants are not in the sample data, so live has its own page.
+  return mode === "live" ? <LiveJoinClosed /> : <DemoJoin />;
+}
+
+/**
+ * Live joining stays shut until phone numbers can be verified (docs/decisions.md). Say so
+ * before a guest types anything, instead of failing on the last step.
+ */
+function LiveJoinClosed() {
+  const { slug } = Route.useParams();
+  const { live } = venueRoute.useLoaderData();
+  if (!live) return <PlaceNotFound />;
+  return (
+    <main className="demo-hub page-width">
+      <h1>Joining {live.name} is not open yet.</h1>
+      <p>
+        Online sign up for this loyalty card is not switched on. Nothing you need to do now, and no
+        details are collected on this page.
+      </p>
+      <a className="builder-secondary" href={`/r/${slug}`}>
+        Back to {live.name}
+      </a>
+    </main>
+  );
+}
+
+function PlaceNotFound() {
+  return (
+    <main className="demo-hub page-width">
+      <h1>We couldn’t find that place.</h1>
+      <p>This join link may be for a paused or renamed venue.</p>
+      <a href="/">Back to Patron</a>
+    </main>
+  );
+}
+
+function DemoJoin() {
+  const { slug } = Route.useParams();
   const state = useDemoState();
   const restaurant = state.restaurants.find(
     (item) => item.slug === slug && item.status === "active",
@@ -54,15 +92,7 @@ function JoinPage() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  if (!restaurant) {
-    return (
-      <main className="demo-hub page-width">
-        <h1>We couldn’t find that place.</h1>
-        <p>This join link may be for a paused or renamed venue.</p>
-        <a href="/">Back to Patron</a>
-      </main>
-    );
-  }
+  if (!restaurant) return <PlaceNotFound />;
   const welcome = restaurant.welcomeStamps ?? 0;
 
   const details = () => {
@@ -103,19 +133,6 @@ function JoinPage() {
     const referralCode = params?.get("ref") || undefined;
     if (!agreed) {
       setError("Please agree to the terms to join.");
-      return;
-    }
-    if (mode === "live") {
-      const res = await joinGuestFn({ data: { slug, name, phone, marketingSms: true, source } });
-      if (!res.ok) {
-        setError(res.message);
-        return;
-      }
-      // A friend's link is linked once; a bad or repeated code does not stop the join.
-      if (referralCode) {
-        await linkReferralFn({ data: { slug, code: referralCode } }).catch(() => undefined);
-      }
-      void navigate({ to: "/r/$slug/card", params: { slug } });
       return;
     }
     const result = api.member.join({

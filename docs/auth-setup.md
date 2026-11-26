@@ -69,17 +69,19 @@ where email = 'OPERATOR_EMAIL';
 Sign in with that email once, then open `/ops/restaurants`. The database
 checks the operator row again on every action.
 
-## Not verified
+## State of live mode
 
-- `0007_auth_dev.sql` has not been run against the dev branch yet.
-- Google sign-in and the reset email need the credentials above; neither was
-  sent or tested.
-- No live auth test has run against Postgres. Only the role and phone rules are
-  covered by Vitest.
-- Phase D2 connects the owner overview and `/me` cards to Postgres. Other
-  owner tools show a "comes next" panel in live mode, and guest restaurant and
-  settings pages return to `/me` until D3. The live query path has not run
-  against the dev branch yet.
+- Migration `0040_auth_rate_limit_dev.sql` is needed before anyone can sign up
+  or sign in. Without it every attempt fails. Apply it to the dev branch first,
+  and to production only with the founder's yes.
+- Email sign-up, sign-in and the session are covered by real-database tests.
+- Email addresses and phone numbers are not verified. A login never takes over
+  another login's row by using its email, and never links to a card that holds
+  its phone number. Before linking an owner or operator by hand, confirm that
+  the person with that email is the one who signed up.
+- Live guests see only their cards. The Restaurants and Me tabs stay hidden.
+- Guests cannot join a card on live until phone verification is decided.
+- Google sign-in and the reset email have not been sent or tested.
 
 ## Phone verification decision
 

@@ -167,7 +167,7 @@ function OpsLeads() {
                     </span>
                     <span className="inbox-row-meta">
                       {lead.reference} · {KIND_LABELS[lead.kind]} ·{" "}
-                      {new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium" }).format(new Date(lead.createdAt))}
+                      {new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", dateStyle: "medium" }).format(new Date(lead.createdAt))}
                     </span>
                   </button>
                 </li>
@@ -186,7 +186,7 @@ function OpsLeads() {
                   <h2>{selected.restaurantName || "Enquiry"}</h2>
                   <p className="demo-data-note">
                     {KIND_LABELS[selected.kind]} ·{" "}
-                    {new Intl.DateTimeFormat("en-ZA", {
+                    {new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg",
                       dateStyle: "long",
                       timeStyle: "short",
                     }).format(new Date(selected.createdAt))}
@@ -235,7 +235,7 @@ function OpsLeads() {
                   label="Consent"
                   value={
                     selected.consent
-                      ? `Given ${selected.consentAt ? new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium", timeStyle: "short" }).format(new Date(selected.consentAt)) : ""}`
+                      ? `Given ${selected.consentAt ? new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", dateStyle: "medium", timeStyle: "short" }).format(new Date(selected.consentAt)) : ""}`
                       : "Not given"
                   }
                 />

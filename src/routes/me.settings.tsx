@@ -221,7 +221,7 @@ function GuestSettings() {
                 </strong>
                 <small>
                   {event.wordingText} · {event.source} ·{" "}
-                  {new Intl.DateTimeFormat("en-ZA", {
+                  {new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg",
                     dateStyle: "medium",
                     timeStyle: "short",
                   }).format(new Date(event.createdAt))}

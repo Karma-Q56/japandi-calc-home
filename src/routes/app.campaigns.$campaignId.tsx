@@ -347,15 +347,20 @@ function LiveCampaignResults({ data }: { data: LiveCampaignResults | null }) {
     data.messages.map((message) => message.status as CampaignMessageStatus),
   );
   const badge = campaignBadge(status as Parameters<typeof campaignBadge>[0]);
+  // A cancelled campaign gives its held credit back, so it costs nothing.
   const cost =
-    status === "sent" ? data.campaign.actualCostCents : (data.campaign.estimatedCostCents ?? 0);
+    status === "cancelled"
+      ? 0
+      : status === "sent"
+        ? data.campaign.actualCostCents
+        : (data.campaign.estimatedCostCents ?? 0);
   const approve = async () => {
     setBusy(true);
     const result = await approveCampaignFn({ data: { campaignId: data.campaign.id } });
     setBusy(false);
     if (result.ok) {
       setApproved(true);
-      setNotice("Campaign approved. Sending still waits for a later phase.");
+      setNotice("Campaign approved.");
     } else {
       setNotice(result.message);
     }
@@ -418,7 +423,7 @@ function LiveCampaignResults({ data }: { data: LiveCampaignResults | null }) {
         <h2>Recipients</h2>
         {data.messages.length === 0 ? (
           <p className="demo-data-note">
-            No messages have been queued yet. This is a read-only live view.
+            No messages have been queued yet.
           </p>
         ) : (
           <DataTable
@@ -459,9 +464,6 @@ function LiveCampaignResults({ data }: { data: LiveCampaignResults | null }) {
         )}
       </section>
       {notice && <p className="demo-data-note" role="status">{notice}</p>}
-      <p className="demo-data-note">
-        Sending, settling and editing campaign wording still come next.
-      </p>
     </main>
   );
 }

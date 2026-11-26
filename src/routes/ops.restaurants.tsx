@@ -41,7 +41,7 @@ type Row = {
 
 const dateLabel = (iso: string | undefined) =>
   iso
-    ? new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium" }).format(new Date(iso))
+    ? new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", dateStyle: "medium" }).format(new Date(iso))
     : "not set";
 
 function RestaurantList() {

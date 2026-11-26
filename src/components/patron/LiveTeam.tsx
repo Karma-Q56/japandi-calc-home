@@ -149,7 +149,7 @@ export function LiveTeam() {
             <small>
               {member.active ? "Active" : "Deactivated"} · Last stamp:{" "}
               {member.lastStampAt
-                ? new Intl.DateTimeFormat("en-ZA", {
+                ? new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg",
                     dateStyle: "medium",
                     timeStyle: "short",
                   }).format(new Date(member.lastStampAt))

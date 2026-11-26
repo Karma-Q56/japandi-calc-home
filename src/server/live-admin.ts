@@ -58,10 +58,13 @@ function ownerOnly(viewer: Viewer | null): viewer is Viewer & { restaurantId: st
 
 export type OwnerSettings = SettingsInput & { canEdit: boolean; helpOn: boolean };
 
-/** The owner's settings. Null for anyone else or in demo mode. */
+/**
+ * The owner's settings. Null for anyone else or in demo mode.
+ * The viewer's restaurant comes from the session. Do not join app_user here: only an operator
+ * may read that table, so the join returned nothing for every owner.
+ */
 export async function getOwnerSettings(viewer: Viewer | null): Promise<OwnerSettings | null> {
   if (getDataMode() !== "live" || !ownerOnly(viewer)) return null;
-  const userId = viewer.userId;
   return withContext({ databaseUrl: databaseUrl(), restaurantId: viewer.restaurantId, isOperator: false }, async (tx) => {
     const rows = await q<{
       name: string;
@@ -84,7 +87,6 @@ export async function getOwnerSettings(viewer: Viewer | null): Promise<OwnerSett
                r.offers_alerts, r.orders_at_till, r.marketing_weekly_cap, r.member_weekly_cap,
                r.patron_help_enabled, r.patron_help_expires_at
         from restaurant r
-        join app_user u on u.restaurant_id = r.id and u.user_id = ${userId}
         where r.id = ${viewer.restaurantId} limit 1
       `,
     );

@@ -319,7 +319,7 @@ function ReferralsBody({
                 key: "when",
                 header: "Joined",
                 cell: (row: { createdAt: string }) =>
-                  new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium" }).format(
+                  new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", dateStyle: "medium" }).format(
                     new Date(row.createdAt),
                   ),
               },

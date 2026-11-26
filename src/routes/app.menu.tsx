@@ -699,8 +699,7 @@ function LiveMenuEditor({ data }: { data: LiveMenu | null }) {
           ))
         )}
         <p className="demo-data-note">
-          Draft, preview and publish for the menu come next. This live builder saves each change
-          directly.
+          Each change is saved straight away.
         </p>
       </section>
     </main>

@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { api } from "@/api";
 import { demoRepo } from "@/data/repo";
-import { getCardFn, getDataModeFn } from "@/server/live";
+import { getCardFn, getDataModeFn, getViewerFn } from "@/server/live";
 import { useDemoState } from "@/data/useDemoState";
 import { requireRole } from "@/data/session";
 import { ThemeProvider } from "@/theme";
@@ -35,7 +35,7 @@ export const Route = createFileRoute("/r/$slug/card")({
   validateSearch: (search) => cardSearchSchema.parse(search),
   loader: async ({ params, location }) => {
     const { mode } = await getDataModeFn();
-    if (mode !== "live") return { mode, live: null };
+    if (mode !== "live") return { mode, live: null, signedIn: false };
     const { card } = await getCardFn({ data: { slug: params.slug } });
     if (!card) {
       // An old address (one an operator changed) goes to the new one, so printed QR codes keep working.
@@ -52,7 +52,8 @@ export const Route = createFileRoute("/r/$slug/card")({
           getGuestSpinFn({ data: { slug: params.slug } }),
         ])
       : [null, null, null];
-    return { mode, live: card, extras, specials, spin };
+    const signedIn = card !== null || (await getViewerFn()) !== null;
+    return { mode, live: card, extras, specials, spin, signedIn };
   },
   beforeLoad: async () => {
     const { mode } = await getDataModeFn();
@@ -133,6 +134,8 @@ function GuestCard() {
         spin={loaderData.spin}
       />
     );
+
+  if (loaderData.mode === "live") return <LiveNoCard slug={slug} signedIn={loaderData.signedIn} />;
 
   if (!customerId) {
     return (
@@ -288,7 +291,7 @@ function GuestCard() {
                   <strong>{rewardEarned(reward.description)}</strong>
                   <small>
                     Earned{" "}
-                    {new Intl.DateTimeFormat("en-ZA", {
+                    {new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg",
                       dateStyle: "medium",
                     }).format(new Date(reward.earnedAt))}
                   </small>
@@ -342,7 +345,7 @@ function GuestCard() {
                 <small>{offer.body}</small>
                 <small>
                   Code {offer.code} · Expires{" "}
-                  {new Intl.DateTimeFormat("en-ZA", {
+                  {new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg",
                     dateStyle: "medium",
                   }).format(
                     new Date(new Date(offer.sentAt ?? offer.createdAt).getTime() + 30 * 86400000),
@@ -374,7 +377,7 @@ function GuestCard() {
             visits.map((visit) => (
               <p className="visit-row" key={visit.id}>
                 <span>
-                  {new Intl.DateTimeFormat("en-ZA", {
+                  {new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg",
                     dateStyle: "medium",
                     timeStyle: "short",
                   }).format(new Date(visit.createdAt))}
@@ -482,6 +485,26 @@ function johannesburgDate(iso: string): string {
   }).format(new Date(iso));
 }
 
+/** Live mode with nothing to show: either nobody is signed in, or this login has no card here. */
+function LiveNoCard({ slug, signedIn }: { slug: string; signedIn: boolean }) {
+  return (
+    <main className="guest-page">
+      <section className="guest-panel">
+        <BackLink to={`/r/${slug}`} label="Restaurant" />
+        <h1>{signedIn ? "You have no card here yet." : "Log in to see your card."}</h1>
+        <p>
+          {signedIn
+            ? "This login does not have a loyalty card at this restaurant."
+            : "Your stamps and rewards show once you are logged in."}
+        </p>
+        <a className="builder-primary" href={signedIn ? "/me" : "/login"}>
+          {signedIn ? "My cards" : "Log in"}
+        </a>
+      </section>
+    </main>
+  );
+}
+
 /** Live-mode guest card (DATA_MODE=live): RLS-scoped rows from Postgres through
  *  the getCard server function. Demo rendering above is unchanged. */
 function LiveGuestCard({
@@ -499,7 +522,7 @@ function LiveGuestCard({
 }) {
   const available = card.rewards.filter((r) => r.status === "available");
   return (
-    <GuestShell back={{ to: "/me", label: "My cards" }}>
+    <GuestShell back={{ to: "/me", label: "My cards" }} live>
       <PageHeader
         eyebrow="Loyalty card"
         title={card.restaurant.name}

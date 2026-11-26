@@ -2,11 +2,15 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useDemoState } from "@/data/useDemoState";
 import { demoRepo } from "@/data/repo";
 import { requireRole } from "@/data/session";
+import { getDataModeFn } from "@/server/live";
 import { ONBOARDING_STEPS, getChecklist, toggleStep } from "@/domain/onboarding";
 import { PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
 
 export const Route = createFileRoute("/app/onboarding")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    // The setup checklist is sample data. A live owner starts on their overview.
+    const { mode } = await getDataModeFn();
+    if (mode === "live") throw redirect({ to: "/app" });
     if (!requireRole("owner", "manager")(demoRepo.read().session)) {
       throw redirect({ to: "/login" });
     }

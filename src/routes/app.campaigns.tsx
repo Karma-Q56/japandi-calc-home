@@ -51,14 +51,19 @@ function LiveCampaigns({ data }: { data: LiveCampaignList | null }) {
       <PageHeader
         eyebrow={data.restaurantName}
         title="Your campaigns."
-        intro="Read from your live campaign history. The composer and results page come next."
+        intro="Every campaign for your restaurant. Open one to see who it was for and what it cost."
+        actions={
+          <a className="builder-primary" href="/app/campaigns/new">
+            New campaign
+          </a>
+        }
       />
       <section className="builder-panel">
         <h2>All campaigns</h2>
         {data.campaigns.length === 0 ? (
           <EmptyState
             title="No campaigns yet."
-            hint="The live composer arrives with the next build. Your sent campaigns will appear here."
+            hint="Campaigns you create will appear here."
           />
         ) : (
           <DataTable
@@ -94,6 +99,7 @@ function LiveCampaigns({ data }: { data: LiveCampaignList | null }) {
                 key: "cost",
                 header: "Cost",
                 cell: (campaign) => {
+                  if (campaign.status === "cancelled") return "R0.00";
                   const cents =
                     campaign.status === "sent"
                       ? campaign.actualCostCents

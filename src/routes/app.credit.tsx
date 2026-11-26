@@ -124,7 +124,9 @@ function LiveCreditPage({ credit }: { credit: LiveCredit | null }) {
         {credit.entries.map((entry) => (
           <div className="outbox-meta" key={entry.id}>
             <span>
-              <strong>{ledgerWording(entry.entryType)}</strong> · {entry.reference}
+              <strong>{ledgerWording(entry.entryType)}</strong>
+              {/* References such as "release:<id>" are for the system, not the owner. */}
+              {/^[a-z_-]+:/.test(entry.reference) ? "" : ` · ${entry.reference}`}
               {entry.note ? ` · ${entry.note}` : ""}
             </span>
             <span>

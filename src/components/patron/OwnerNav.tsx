@@ -149,12 +149,17 @@ const SECTION_TABS: Record<string, Array<{ to: string; label: string }>> = {
   // tab bar (LoyaltyTabs) inside the page, so a second bar above would repeat it.
 };
 
-export function OwnerSectionTabs() {
+/** Live reports sit on the Performance tab of Insights, so live has no separate Reports page. */
+const DEMO_ONLY_TABS = new Set(["/app/reports"]);
+
+export function OwnerSectionTabs({ live = false }: { live?: boolean }) {
   const path = useRouterState({ select: (state) => state.location.pathname });
   const clean = path.replace(/\/$/, "") || "/app";
   const section = sectionFor(clean);
-  const tabs = section ? SECTION_TABS[section] : undefined;
-  if (!tabs) return null;
+  const all = section ? SECTION_TABS[section] : undefined;
+  const tabs = live ? all?.filter((tab) => !DEMO_ONLY_TABS.has(tab.to)) : all;
+  // A bar with one tab has nowhere to go.
+  if (!tabs || tabs.length < 2) return null;
   return (
     <SectionTabs
       tabs={tabs.map((tab) => ({ id: tab.to, href: tab.to, label: tab.label }))}

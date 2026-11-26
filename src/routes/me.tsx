@@ -78,7 +78,7 @@ function LiveMyCardsPage({ data }: { data: LiveCardsData | null }) {
   const rewardsReady = cards.reduce((sum, card) => sum + card.rewardsReady, 0);
   const stampsHeld = cards.reduce((sum, card) => sum + card.stampsCurrent, 0);
   return (
-    <GuestShell title={data.name}>
+    <GuestShell title={data.name} live>
       <PageHeader
         eyebrow="My cards"
         title={`Hi ${firstName}`}

@@ -12,11 +12,14 @@ export function GuestShell({
   back,
   title,
   venue,
+  live = false,
 }: {
   children: ReactNode;
   back?: { to: string; label: string };
   title?: string;
   venue?: { name: string; theme?: Theme };
+  /** Live guests have only their cards so far, so the other tabs would lead nowhere. */
+  live?: boolean;
 }) {
   const path = useRouterState({ select: (state) => state.location.pathname });
   const onCards = path === "/me" || path.endsWith("/card");
@@ -52,17 +55,19 @@ export function GuestShell({
         </div>
       </header>
       <main className="gx-body">{children}</main>
-      <nav className="gx-tabs" aria-label="Guest sections">
-        <Link to="/me" className={`gx-tab${onCards ? " is-active" : ""}`}>
-          <CreditCard /> Cards
-        </Link>
-        <Link to="/me/restaurants" className={`gx-tab${onRestaurants ? " is-active" : ""}`}>
-          <MapPin /> Restaurants
-        </Link>
-        <Link to="/me/settings" className={`gx-tab${onMe ? " is-active" : ""}`}>
-          <UserRound /> Me
-        </Link>
-      </nav>
+      {!live && (
+        <nav className="gx-tabs" aria-label="Guest sections">
+          <Link to="/me" className={`gx-tab${onCards ? " is-active" : ""}`}>
+            <CreditCard /> Cards
+          </Link>
+          <Link to="/me/restaurants" className={`gx-tab${onRestaurants ? " is-active" : ""}`}>
+            <MapPin /> Restaurants
+          </Link>
+          <Link to="/me/settings" className={`gx-tab${onMe ? " is-active" : ""}`}>
+            <UserRound /> Me
+          </Link>
+        </nav>
+      )}
     </div>
   );
 }

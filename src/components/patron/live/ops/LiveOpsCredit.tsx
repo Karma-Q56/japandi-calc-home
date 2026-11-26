@@ -7,7 +7,7 @@ import { confirmTopupFn, rejectTopupFn } from "@/server/live-ops-restaurants-fns
 
 type Pending = { id: string; restaurant_id: string; restaurant_name: string; amount_cents: number; reference: string | null; created_at: string };
 
-const dateLabel = (iso: string) => new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium" }).format(new Date(iso));
+const dateLabel = (iso: string) => new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", dateStyle: "medium" }).format(new Date(iso));
 
 /** Live credit screen: top ups waiting, plus adding credit by hand. Live data only. */
 export function LiveOpsCredit(props: { pending: Pending[]; restaurants: Array<{ id: string; name: string; credit_cents: number }> }) {

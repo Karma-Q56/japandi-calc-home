@@ -304,7 +304,7 @@ function DemoCustomers() {
               </span>
               <small>
                 {row.lastVisitAt
-                  ? `Last visit ${new Intl.DateTimeFormat("en-ZA", {
+                  ? `Last visit ${new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg",
                       dateStyle: "medium",
                     }).format(new Date(row.lastVisitAt))}`
                   : "No visits yet"}
@@ -345,7 +345,7 @@ function DemoCustomers() {
             <div className="guest-drawer-head">
               <div>
                 <strong>{guest.name}</strong>
-                <small>Member since {new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium" }).format(new Date(guest.joinedAt))}</small>
+                <small>Member since {new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", dateStyle: "medium" }).format(new Date(guest.joinedAt))}</small>
               </div>
               <button className="row-action" type="button" onClick={() => { setOpenId(null); setRevealed(null); }}>Close</button>
             </div>
@@ -353,7 +353,7 @@ function DemoCustomers() {
               <div><dt>Phone</dt><dd>{revealed === guest.customerId ? revealedPhone : guest.maskedPhone}</dd></div>
               <div><dt>Stamps</dt><dd>{countLabel(guest.stampsCurrent, "stamp")}</dd></div>
               <div><dt>Rewards ready</dt><dd>{guest.rewardsWaiting}</dd></div>
-              <div><dt>Last visit</dt><dd>{guest.lastVisitAt ? new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium" }).format(new Date(guest.lastVisitAt)) : "No visits yet"}</dd></div>
+              <div><dt>Last visit</dt><dd>{guest.lastVisitAt ? new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", dateStyle: "medium" }).format(new Date(guest.lastVisitAt)) : "No visits yet"}</dd></div>
               <div><dt>SMS</dt><dd>{guest.smsOptedIn ? "Opted in" : "No consent"}</dd></div>
             </dl>
             <div className="guest-drawer-actions">
@@ -433,7 +433,7 @@ function LiveCustomers({ data }: { data: LiveCustomerList | null }) {
       <PageHeader
         eyebrow={`Customers · ${data.restaurantName}`}
         title="Your regulars."
-        intro="Read from your live guest list. Profile, export and list tools come next."
+        intro="Everyone on your loyalty card. Select a name to see their stamps and rewards."
       />
       <div className="builder-fields customer-filters">
         <FormField label="Search name or phone">
