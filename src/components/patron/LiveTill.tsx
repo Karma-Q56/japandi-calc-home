@@ -12,6 +12,7 @@ import {
   lookupGuestFn,
   pairTillFn,
   tillRecordStampFn,
+  tillRedeemOfferFn,
   tillRedeemRewardFn,
   tillSignInFn,
   tillSignOutFn,
@@ -35,6 +36,7 @@ export function LiveTill() {
   const { feedback, show, clear, clearIfRead } = useTillFeedback();
   const [busy, setBusy] = useState(false);
   const [orderFor, setOrderFor] = useState<string | null>(null);
+  const [offerCode, setOfferCode] = useState("");
   const [lastRedeem, setLastRedeem] = useState<{ rewardId: string; canUndoUntil: number } | null>(
     null,
   );
@@ -89,6 +91,7 @@ export function LiveTill() {
     setBusy(false);
     setLastRedeem(null);
     setOrderFor(null);
+    setOfferCode("");
     if (!result.ok) {
       setLookup(null);
       say("error", result.message);
@@ -149,6 +152,26 @@ export function LiveTill() {
       rewards: lookup.rewards.filter((reward) => reward.id !== rewardId),
     });
     setLastRedeem({ rewardId, canUndoUntil: result.canUndoUntil });
+  };
+
+  const redeemOffer = async () => {
+    if (!lookup?.ok || !offerCode.trim()) return;
+    setBusy(true);
+    const result = await tillRedeemOfferFn({
+      data: { membershipId: lookup.membershipId, code: offerCode, key: crypto.randomUUID() },
+    });
+    setBusy(false);
+    if (!result.ok) {
+      say("error", result.message);
+      return;
+    }
+    setOfferCode("");
+    say(
+      "ok",
+      result.give
+        ? `Code accepted: ${result.title}. Give: ${result.give}`
+        : `Code accepted: ${result.title}.`,
+    );
   };
 
   const undoRedeem = async () => {
@@ -432,10 +455,33 @@ export function LiveTill() {
       </TillAction>
       <TillAction
         title="Redeem an offer code"
-        help="Offer codes cannot be checked on this till yet. Ask the owner what to do."
-        waiting={false}
+        help="Use this when the guest shows a code from a special or a message."
+        waiting={!guest}
       >
-        {null}
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            void redeemOffer();
+          }}
+        >
+          <FormField label="Offer code" hint="Exactly as the guest shows it.">
+            <input
+              value={offerCode}
+              onChange={(event) => setOfferCode(event.target.value.toUpperCase())}
+              maxLength={20}
+              autoCapitalize="characters"
+              autoComplete="off"
+              disabled={!guest}
+            />
+          </FormField>
+          <button
+            className="builder-secondary"
+            type="submit"
+            disabled={busy || !guest || !offerCode.trim()}
+          >
+            Use this code
+          </button>
+        </form>
       </TillAction>
       <TillAccountActions paired onUnpair={() => void unpair()} onLogOut={() => void leave()} />
     </main>

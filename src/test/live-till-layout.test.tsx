@@ -8,6 +8,7 @@ const server = vi.hoisted(() => ({
   tillRecordStampFn: vi.fn(),
   tillRedeemRewardFn: vi.fn(),
   tillUndoRedeemFn: vi.fn(),
+  tillRedeemOfferFn: vi.fn(),
   tillSignOutFn: vi.fn(),
   pairTillFn: vi.fn(),
   tillSignInFn: vi.fn(),
@@ -54,7 +55,7 @@ afterEach(() => {
 const button = (name: string | RegExp) => screen.getByRole("button", { name }) as HTMLButtonElement;
 
 async function findGuest() {
-  fireEvent.change(screen.getByRole("textbox"), { target: { value: "PT123" } });
+  fireEvent.change(screen.getByRole("textbox", { name: /Member code or phone/ }), { target: { value: "PT123" } });
   await act(async () => {
     fireEvent.click(button("Look up"));
   });
@@ -72,6 +73,29 @@ describe("live till after the PIN", () => {
     expect(button("Scan card")).toBeTruthy();
     expect(button("Add stamp").disabled).toBe(true);
     expect(button("Sign out")).toBeTruthy();
+  });
+
+  it("takes an offer code for the guest and says what to give", async () => {
+    server.tillRedeemOfferFn.mockResolvedValue({
+      ok: true,
+      title: "Winter coffee",
+      give: "Free coffee",
+    });
+    render(<LiveTill />);
+    await screen.findByRole("region", { name: "Redeem an offer code" });
+    expect(button("Use this code").disabled).toBe(true);
+    await findGuest();
+    fireEvent.change(screen.getByRole("textbox", { name: /Offer code/ }), {
+      target: { value: "winter9" },
+    });
+    await act(async () => {
+      fireEvent.click(button("Use this code"));
+    });
+    expect(server.tillRedeemOfferFn.mock.calls[0]![0].data).toMatchObject({
+      membershipId: "m1",
+      code: "WINTER9",
+    });
+    expect(screen.getByText("Code accepted: Winter coffee. Give: Free coffee")).toBeTruthy();
   });
 
   it("shows a green status line after a stamp and keeps it readable", async () => {

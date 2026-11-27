@@ -1090,6 +1090,67 @@ export async function redeemRewardAtTill(
   });
 }
 
+export type OfferOutcome =
+  | { ok: true; title: string; give: string }
+  | { ok: false; message: string };
+
+const OFFER_REFUSALS: Record<string, string> = {
+  not_found: "That code was not found. Check the letters and try again.",
+  not_active: "That offer is not running now.",
+  not_member: "That code is not for this guest.",
+  already_used: "This guest has already used that offer.",
+};
+
+/** The signed in staff member uses a guest's offer code (special or campaign). */
+export async function redeemOfferAtTill(
+  membershipId: string,
+  code: string,
+  key: string,
+): Promise<OfferOutcome> {
+  const session = requireSession();
+  if ("error" in session) return { ok: false, message: session.error };
+  return withContext(tillContext(session.restaurantId), async (transaction) => {
+    const staff = await q<{ ok: boolean }>(
+      transaction,
+      sql`select ${staffIsActive(session.restaurantId, session.staffId)} as ok`,
+    );
+    if (!staff[0]?.ok) return { ok: false as const, message: SIGNED_OUT_MESSAGE };
+    const rows = await q<{
+      out_result: string;
+      out_title: string | null;
+      out_reward: string | null;
+      out_percent_off: number | null;
+      out_amount_off_cents: number | null;
+    }>(
+      transaction,
+      sql`
+        select out_result, out_title, out_reward, out_percent_off, out_amount_off_cents
+        from redeem_special_code(
+          ${session.restaurantId}, ${code.trim()}, ${membershipId}, ${session.staffId}, ${key}
+        )
+      `,
+    );
+    const row = rows[0];
+    if (!row || (row.out_result !== "ok" && row.out_result !== "replay")) {
+      return {
+        ok: false as const,
+        message: OFFER_REFUSALS[row?.out_result ?? ""] ?? "That code could not be used.",
+      };
+    }
+    const discount =
+      row.out_percent_off !== null
+        ? `${row.out_percent_off}% off`
+        : row.out_amount_off_cents !== null
+          ? `R${(Number(row.out_amount_off_cents) / 100).toFixed(2)} off`
+          : "";
+    return {
+      ok: true as const,
+      title: row.out_title ?? "Offer",
+      give: [row.out_reward, discount].filter(Boolean).join(", "),
+    };
+  });
+}
+
 export async function undoRedeemAtTill(
   rewardId: string,
 ): Promise<{ ok: true } | { ok: false; message: string }> {

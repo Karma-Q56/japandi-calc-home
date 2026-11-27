@@ -552,6 +552,19 @@ export const tillRedeemRewardFn = createServerFn({ method: "POST" })
     return redeemRewardAtTill(data.membershipId, data.rewardId);
   });
 
+export const tillRedeemOfferFn = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      membershipId: uuidSchema,
+      code: z.string().trim().min(1, "Type the offer code.").max(20),
+      key: keySchema,
+    }),
+  )
+  .handler(async ({ data }) => {
+    const { redeemOfferAtTill } = await import("./live-till");
+    return redeemOfferAtTill(data.membershipId, data.code, data.key);
+  });
+
 export const tillUndoRedeemFn = createServerFn({ method: "POST" })
   .validator(z.object({ rewardId: uuidSchema }))
   .handler(async ({ data }) => {
