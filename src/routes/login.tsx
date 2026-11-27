@@ -1,13 +1,17 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { MarketingShell } from "@/components/patron/MarketingShell";
 import { authClient } from "@/lib/auth-client";
-import { landingForRole } from "@/lib/auth-rules";
+import { joinReturnPath, landingForRole, type ViewerRole } from "@/lib/auth-rules";
 import { getDataModeFn, getViewerFn } from "@/server/live";
 import { DEMO_ACCOUNTS, signInAsDemoAccount, type DemoAccount } from "@/lib/demo-signin";
 
 export const Route = createFileRoute("/login")({
+  validateSearch: (search: Record<string, unknown>): { next?: string } => {
+    const next = joinReturnPath(search["next"]);
+    return next ? { next } : {};
+  },
   loader: async () => getDataModeFn(),
   head: () => ({
     meta: [
@@ -25,6 +29,15 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const { mode } = Route.useLoaderData();
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
+  // A guest who came from a join page goes back to it.
+  const goOn = useCallback(
+    (role: ViewerRole) => {
+      if (next && role === "guest") window.location.assign(next);
+      else void navigate({ to: landingForRole(role) });
+    },
+    [navigate, next],
+  );
   const [status, setStatus] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -42,16 +55,16 @@ function LoginPage() {
       setStatus("That sign-in did not stick. Please try again.");
       return;
     }
-    void navigate({ to: landingForRole(viewer.role) });
+    goOn(viewer.role);
   };
 
   // Returning from Google lands here with a session already set.
   useEffect(() => {
     if (mode !== "live") return;
     void getViewerFn().then((viewer) => {
-      if (viewer) void navigate({ to: landingForRole(viewer.role) });
+      if (viewer) goOn(viewer.role);
     });
-  }, [mode, navigate]);
+  }, [mode, goOn]);
 
   const signIn = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -69,7 +82,10 @@ function LoginPage() {
 
   const google = async () => {
     setStatus("");
-    await authClient.signIn.social({ provider: "google", callbackURL: "/login" });
+    await authClient.signIn.social({
+      provider: "google",
+      callbackURL: next ? `/login?next=${encodeURIComponent(next)}` : "/login",
+    });
   };
 
   return (
@@ -193,7 +209,8 @@ function LoginPage() {
             <a href="/forgot-password">Forgot password?</a>
           </p>
           <p className="login-new">
-            New here? <a href="/signup">Create account</a>
+            New here?{" "}
+            <a href={next ? `/signup?next=${encodeURIComponent(next)}` : "/signup"}>Create account</a>
           </p>
           <p className="login-note" role="note">
             Restaurant owners and staff sign in here too. We take you to the right place.

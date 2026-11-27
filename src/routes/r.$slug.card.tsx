@@ -497,7 +497,13 @@ function LiveNoCard({ slug, signedIn }: { slug: string; signedIn: boolean }) {
             ? "This login does not have a loyalty card at this restaurant."
             : "Your stamps and rewards show once you are logged in."}
         </p>
-        <a className="builder-primary" href={signedIn ? "/me" : "/login"}>
+        <a className="builder-primary" href={`/r/${slug}/join?src=card`}>
+          Join this card
+        </a>
+        <a
+          className="builder-secondary"
+          href={signedIn ? "/me" : `/login?next=${encodeURIComponent(`/r/${slug}/join`)}`}
+        >
           {signedIn ? "My cards" : "Log in"}
         </a>
       </section>

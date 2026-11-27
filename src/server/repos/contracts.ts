@@ -88,6 +88,14 @@ export interface JoinInput {
   otpVerified?: boolean;
 }
 
+/** A signed-in guest adding a card. The customer id always comes from their session. */
+export interface JoinCardInput {
+  slug: string;
+  customerId: string;
+  marketingSms: boolean;
+  source: string;
+}
+
 export interface JoinResult {
   customerId: string;
   membershipId: string;
@@ -139,6 +147,7 @@ export interface PatronRepos {
   getPublicPage(slug: string): Promise<PublicPage | null>;
   submitLead(input: LeadInput): Promise<{ id: string; reference?: string }>;
   joinGuest(input: JoinInput): Promise<JoinResult>;
+  joinCard(input: JoinCardInput): Promise<JoinResult>;
   getCard(slug: string, customerId: string): Promise<CardView | null>;
   listCards(customerId: string): Promise<{ membershipId: string; restaurantSlug: string }[]>;
   recordStamp(input: {

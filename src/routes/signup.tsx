@@ -1,13 +1,17 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { MarketingShell } from "@/components/patron/MarketingShell";
 import { authClient } from "@/lib/auth-client";
-import { landingForRole } from "@/lib/auth-rules";
+import { joinReturnPath, landingForRole, type ViewerRole } from "@/lib/auth-rules";
 import { PHONE_TAKEN_MESSAGE } from "@/lib/phone";
 import { signOut } from "@/lib/sign-out";
 import { completePhoneFn, getDataModeFn, getViewerFn } from "@/server/live";
 
 export const Route = createFileRoute("/signup")({
+  validateSearch: (search: Record<string, unknown>): { next?: string } => {
+    const next = joinReturnPath(search["next"]);
+    return next ? { next } : {};
+  },
   loader: async () => getDataModeFn(),
   head: () => ({
     meta: [
@@ -24,6 +28,15 @@ export const Route = createFileRoute("/signup")({
 function SignUpPage() {
   const { mode } = Route.useLoaderData();
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
+  // A guest who came from a join page goes back to it.
+  const goOn = useCallback(
+    (role: ViewerRole) => {
+      if (next && role === "guest") window.location.assign(next);
+      else void navigate({ to: landingForRole(role) });
+    },
+    [navigate, next],
+  );
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -40,10 +53,10 @@ function SignUpPage() {
         setNeedsPhone(true);
         if (viewer.phoneTaken) setStatus(PHONE_TAKEN_MESSAGE);
       } else if (viewer.role !== "guest" || viewer.customerId) {
-        void navigate({ to: landingForRole(viewer.role) });
+        goOn(viewer.role);
       }
     });
-  }, [mode, navigate]);
+  }, [mode, goOn]);
 
   const signUp = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -70,7 +83,7 @@ function SignUpPage() {
       setBusy(false);
       return;
     }
-    void navigate({ to: landingForRole(viewer.role) });
+    goOn(viewer.role);
     setBusy(false);
   };
 
@@ -84,7 +97,7 @@ function SignUpPage() {
       setBusy(false);
       return;
     }
-    void navigate({ to: landingForRole(result.viewer.role) });
+    goOn(result.viewer.role);
     setBusy(false);
   };
 
@@ -196,7 +209,8 @@ function SignUpPage() {
             </button>
           </form>
           <p className="login-new">
-            Already have an account? <a href="/login">Log in</a>
+            Already have an account?{" "}
+            <a href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"}>Log in</a>
           </p>
           {status && (
             <p className="login-status" role="alert">

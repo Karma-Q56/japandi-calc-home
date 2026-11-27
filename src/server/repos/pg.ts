@@ -3,7 +3,7 @@ import { sql, type SQL } from "drizzle-orm";
 import { normalizePhone, isValidSAMobile } from "@/lib/phone";
 import { getConsentWording } from "@/config/consent";
 import { withContext, type DatabaseTransaction } from "@/server/db";
-import type { JoinInput, JsonValue, LeadInput, PatronRepos, PublicPage, StampOutcome } from "./contracts";
+import type { JoinCardInput, JoinInput, JsonValue, LeadInput, PatronRepos, PublicPage, StampOutcome } from "./contracts";
 import { pgGetSpecialOffers, pgRedeemSpecial } from "./special-offers-pg";
 
 type Ctx = { databaseUrl: string; restaurantId?: string | null; customerId?: string | null; isOperator?: boolean };
@@ -140,6 +140,67 @@ interface SpecialRow {
   kind: "public" | "members" | "targeted";
   code: string | null;
   min_tier: string | null;
+}
+
+type JoinVenue = {
+  id: string;
+  name: string;
+  stamps_required: number;
+  welcome_stamps: number;
+};
+
+/** A join refusal whose message is safe to show the guest. */
+export class JoinRefused extends Error {}
+
+/** Give this customer a card at the restaurant, or return the one they already have. */
+async function addCard(
+  tx: Parameters<Parameters<typeof withContext>[1]>[0],
+  r: JoinVenue,
+  customerId: string,
+  marketingSms: boolean,
+  source: string,
+) {
+  const existing = await q<{ id: string }>(
+    tx,
+    sql`select id from membership where restaurant_id = ${r.id} and customer_id = ${customerId} limit 1`,
+  );
+  if (existing[0]) return { customerId, membershipId: existing[0].id, alreadyMember: true };
+  const mem = await q<{ id: string }>(
+    tx,
+    sql`insert into membership (restaurant_id, customer_id, source, marketing_sms) values (${r.id}, ${customerId}, ${source}, ${marketingSms ? "opted_in" : "not_opted_in"}) returning id`,
+  );
+  const membershipId = mem[0]?.id;
+  if (!membershipId) throw new Error("Could not join.");
+  // Welcome stamps: once at join, never at or above the reward threshold.
+  const welcomeStamps = Math.max(
+    0,
+    Math.min((r.stamps_required ?? 8) - 1, r.welcome_stamps ?? 0),
+  );
+  for (let index = 0; index < welcomeStamps; index++) {
+    await q<unknown>(
+      tx,
+      sql`insert into stamp_event (restaurant_id, membership_id, idempotency_key, reason) values (${r.id}, ${membershipId}, ${`welcome:${membershipId}:${index}`}, 'welcome') on conflict do nothing`,
+    );
+  }
+  if (welcomeStamps > 0) {
+    await q<unknown>(
+      tx,
+      sql`update membership set stamps_current = stamps_current + ${welcomeStamps}, stamps_total = stamps_total + ${welcomeStamps} where id = ${membershipId}`,
+    );
+  }
+  const loyalty = getConsentWording("loyalty", r.name);
+  await q<unknown>(
+    tx,
+    sql`insert into consent_event (membership_id, purpose, action, wording_version, wording_text, source) values (${membershipId}, 'loyalty', 'granted', ${loyalty.version}, ${loyalty.text}, 'join_form')`,
+  );
+  if (marketingSms) {
+    const sms = getConsentWording("marketing_sms", r.name);
+    await q<unknown>(
+      tx,
+      sql`insert into consent_event (membership_id, purpose, action, wording_version, wording_text, source) values (${membershipId}, 'marketing_sms', 'granted', ${sms.version}, ${sms.text}, 'join_form')`,
+    );
+  }
+  return { customerId, membershipId, alreadyMember: false };
 }
 
 export function createPgRepos(ctx: Ctx): PatronRepos {
@@ -280,48 +341,42 @@ export function createPgRepos(ctx: Ctx): PatronRepos {
           customerId = created[0]?.id;
           if (!customerId) throw new Error("Could not join.");
         }
-        const existing = await q<{ id: string }>(
+        return addCard(tx, r, customerId, input.marketingSms, input.source);
+      });
+    },
+
+    async joinCard(input: JoinCardInput) {
+      // Operator context, like joinGuest. The caller passes the signed-in guest's own
+      // customer id, never one sent by the browser.
+      const sys: Ctx = { ...ctx, isOperator: true };
+      return withContext(sys, async (tx) => {
+        const rRows = await q<JoinVenue>(
           tx,
-          sql`select id from membership where restaurant_id = ${r.id} and customer_id = ${customerId} limit 1`,
+          sql`select id, name, stamps_required, welcome_stamps from restaurant where slug = ${input.slug} and status = 'active' limit 1`,
         );
-        if (existing[0]) return { customerId, membershipId: existing[0].id, alreadyMember: true };
-        const mem = await q<{ id: string }>(
-          tx,
-          sql`insert into membership (restaurant_id, customer_id, source, marketing_sms) values (${r.id}, ${customerId}, ${input.source}, ${input.marketingSms ? "opted_in" : "not_opted_in"}) returning id`,
-        );
-        const membershipId = mem[0]?.id;
-        if (!membershipId) throw new Error("Could not join.");
-        // Welcome stamps: once at join, never at or above the reward threshold.
-        const welcomeStamps = Math.max(
-          0,
-          Math.min((r.stamps_required ?? 8) - 1, r.welcome_stamps ?? 0),
-        );
-        for (let index = 0; index < welcomeStamps; index++) {
-          await q<unknown>(
-            tx,
-            sql`insert into stamp_event (restaurant_id, membership_id, idempotency_key, reason) values (${r.id}, ${membershipId}, ${`welcome:${membershipId}:${index}`}, 'welcome') on conflict do nothing`,
-          );
-        }
-        if (welcomeStamps > 0) {
-          await q<unknown>(
-            tx,
-            sql`update membership set stamps_current = stamps_current + ${welcomeStamps}, stamps_total = stamps_total + ${welcomeStamps} where id = ${membershipId}`,
-          );
-        }
-        const loyalty = getConsentWording("loyalty", r.name);
+        const r = rRows[0];
+        if (!r) throw new JoinRefused("We could not find that restaurant.");
+        // Two taps at once must not make two cards: the second waits for the first.
         await q<unknown>(
           tx,
-          sql`insert into consent_event (membership_id, purpose, action, wording_version, wording_text, source) values (${membershipId}, 'loyalty', 'granted', ${loyalty.version}, ${loyalty.text}, 'join_form')`,
+          sql`select pg_advisory_xact_lock(hashtext(${`join:${r.id}:${input.customerId}`}))`,
         );
-        if (input.marketingSms) {
-          const sms = getConsentWording("marketing_sms", r.name);
-          await q<unknown>(
-            tx,
-            sql`insert into consent_event (membership_id, purpose, action, wording_version, wording_text, source) values (${membershipId}, 'marketing_sms', 'granted', ${sms.version}, ${sms.text}, 'join_form')`,
-          );
+        await q<unknown>(
+          tx,
+          sql`delete from rate_limit_hit where bucket = 'join-card' and key = ${input.customerId} and created_at < now() - interval '1 hour'`,
+        );
+        const hits = await q<{ n: string | number }>(
+          tx,
+          sql`select count(*)::int as n from rate_limit_hit where bucket = 'join-card' and key = ${input.customerId}`,
+        );
+        if (Number(hits[0]?.n ?? 0) >= 20) {
+          throw new JoinRefused("That is a lot of joining. Try again in an hour.");
         }
-        // DEMO OTP SEAM: no real OTP is sent; otpVerified is accepted as-is.
-        return { customerId, membershipId, alreadyMember: false };
+        await q<unknown>(
+          tx,
+          sql`insert into rate_limit_hit (bucket, key) values ('join-card', ${input.customerId})`,
+        );
+        return addCard(tx, r, input.customerId, input.marketingSms, input.source);
       });
     },
 

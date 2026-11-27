@@ -10,7 +10,7 @@ vi.mock("@/server/live", () => ({
   getDataModeFn: async () => ({ mode: "demo" }),
   getPublicPageFn: async () => ({ page: null }),
   getCardFn: async () => ({ card: null }),
-  joinGuestFn: async () => ({ ok: false, message: "Demo mode" }),
+  joinCardFn: async () => ({ ok: false as const, message: "Demo mode" }),
   recordStampFn: async () => ({ ok: true }),
   verifyScanFn: async () => ({ ok: true }),
 }));

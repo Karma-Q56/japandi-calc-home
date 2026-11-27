@@ -25,7 +25,7 @@ vi.mock("@/server/live", () => ({
   },
   getCardFn: async () => ({ card: null }),
   getViewerFn: async () => ({ role: "guest", customerId: "c1" }),
-  joinGuestFn: async () => ({ ok: false as const, message: "Demo mode" }),
+  joinCardFn: async () => ({ ok: false as const, message: "Demo mode" }),
   recordStampFn: async () => ({ ok: true }),
   verifyScanFn: async () => ({ ok: true }),
 }));

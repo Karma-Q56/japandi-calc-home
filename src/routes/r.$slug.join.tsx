@@ -3,7 +3,7 @@ import { useState } from "react";
 import { api } from "@/api";
 import { VerificationStep } from "@/components/patron/VerificationStep";
 import { demoRepo, updateDemo } from "@/data/repo";
-import { getDataModeFn } from "@/server/live";
+import { getCardFn, getDataModeFn, getViewerFn, joinCardFn } from "@/server/live";
 import { useDemoState } from "@/data/useDemoState";
 import { requireRole, setDemoSession } from "@/data/session";
 import { ThemeProvider } from "@/theme";
@@ -15,9 +15,23 @@ import { VenueMark } from "@/components/patron/kit";
 import { venueName } from "@/lib/venue-name";
 
 export const Route = createFileRoute("/r/$slug/join")({
-  loader: async () => {
+  loader: async ({ params, location }) => {
     const { mode } = await getDataModeFn();
-    return { mode };
+    // Keep the table or friend code so it survives creating a login.
+    const query = new URLSearchParams(location.searchStr);
+    const kept = new URLSearchParams();
+    for (const key of ["src", "ref"]) {
+      const value = query.get(key)?.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 40);
+      if (value) kept.set(key, value);
+    }
+    const returnTo = `/r/${params.slug}/join${kept.size ? `?${kept.toString()}` : ""}`;
+    if (mode !== "live") return { mode, viewer: null, hasCard: false, returnTo };
+    const viewer = await getViewerFn();
+    const hasCard =
+      viewer?.role === "guest" && viewer.customerId
+        ? (await getCardFn({ data: { slug: params.slug } })).card !== null
+        : false;
+    return { mode, viewer, hasCard, returnTo };
   },
   beforeLoad: () => {
     if (typeof window !== "undefined") {
@@ -33,27 +47,127 @@ const venueRoute = getRouteApi("/r/$slug");
 function JoinPage() {
   const { mode } = Route.useLoaderData();
   // Live restaurants are not in the sample data, so live has its own page.
-  return mode === "live" ? <LiveJoinClosed /> : <DemoJoin />;
+  return mode === "live" ? <LiveJoin /> : <DemoJoin />;
 }
 
 /**
- * Live joining stays shut until phone numbers can be verified (docs/decisions.md). Say so
- * before a guest types anything, instead of failing on the last step.
+ * Live joining needs a free Patron login (founder decision, 27 Nov 2026). Phone numbers are
+ * not checked yet, see docs/decisions.md.
  */
-function LiveJoinClosed() {
+function LiveJoin() {
   const { slug } = Route.useParams();
+  const { viewer, hasCard, returnTo } = Route.useLoaderData();
   const { live } = venueRoute.useLoaderData();
+  const [agreed, setAgreed] = useState(false);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   if (!live) return <PlaceNotFound />;
+  const next = encodeURIComponent(returnTo);
+
+  const join = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError("");
+    if (!agreed) return setError("Please agree to the terms to join.");
+    setBusy(true);
+    const params = new URLSearchParams(window.location.search);
+    const referralCode = params.get("ref")?.trim().slice(0, 20);
+    try {
+      const result = await joinCardFn({
+        data: {
+          slug,
+          agreed: true,
+          marketingSms: true,
+          source: params.get("src")?.trim().slice(0, 64) || "link",
+          ...(referralCode ? { referralCode } : {}),
+        },
+      });
+      if (result.ok) {
+        window.location.assign(`/r/${slug}/card`);
+        return;
+      }
+      setError(result.message);
+    } catch {
+      setError("We could not add your card. Check your connection and try again.");
+    }
+    setBusy(false);
+  };
+
   return (
-    <main className="demo-hub page-width">
-      <h1>Joining {live.name} is not open yet.</h1>
-      <p>
-        Online sign up for this loyalty card is not switched on. Nothing you need to do now, and no
-        details are collected on this page.
-      </p>
-      <a className="builder-secondary" href={`/r/${slug}`}>
-        Back to {live.name}
-      </a>
+    <main className="guest-page">
+      <section className="guest-flow">
+        <div className="join-back">
+          <BackLink to={`/r/${slug}`} label="Restaurant" />
+        </div>
+        <div className="guest-panel">
+          <section className="guest-step">
+            {!viewer ? (
+              <>
+                <h1>Join the card at {live.name}.</h1>
+                <p>Your stamps are kept on a free Patron login. It takes about a minute.</p>
+                <div className="join-button-row">
+                  <a className="builder-primary" href={`/signup?next=${next}`}>
+                    Create a free login
+                  </a>
+                  <a className="builder-secondary" href={`/login?next=${next}`}>
+                    I already have one
+                  </a>
+                </div>
+              </>
+            ) : viewer.role !== "guest" ? (
+              <>
+                <h1>This login runs a restaurant.</h1>
+                <p>Use a separate guest login to collect stamps.</p>
+                <a className="builder-secondary" href={`/r/${slug}`}>
+                  Back to {live.name}
+                </a>
+              </>
+            ) : viewer.needsPhone || !viewer.customerId ? (
+              <>
+                <h1>Add your mobile number first.</h1>
+                <p>The restaurant finds your card with it.</p>
+                <a className="builder-primary" href={`/signup?next=${next}`}>
+                  Add my number
+                </a>
+              </>
+            ) : hasCard ? (
+              <>
+                <h1>You already have a card here.</h1>
+                <a className="builder-primary" href={`/r/${slug}/card`}>
+                  Open my card
+                </a>
+              </>
+            ) : (
+              <form onSubmit={(event) => void join(event)}>
+                <h1>Join the card at {live.name}.</h1>
+                <p>You are logged in as {viewer.name}.</p>
+                {/* The same single consent line as demo, so the saved wording is what was shown. */}
+                <label className="join-consent-line">
+                  <input
+                    type="checkbox"
+                    checked={agreed}
+                    onChange={(event) => setAgreed(event.target.checked)}
+                  />
+                  <span>
+                    By joining you agree to our <a href="/terms">Terms</a>,{" "}
+                    <a href="/privacy">Privacy Policy</a> and to receive {live.name}&apos;s loyalty
+                    offers. Reply STOP anytime.
+                  </span>
+                </label>
+                <div className="join-button-row">
+                  <button className="builder-primary" type="submit" disabled={busy}>
+                    Add my card
+                  </button>
+                </div>
+              </form>
+            )}
+            {error && (
+              <p className="field-error" role="alert">
+                {error}
+              </p>
+            )}
+          </section>
+        </div>
+      </section>
     </main>
   );
 }

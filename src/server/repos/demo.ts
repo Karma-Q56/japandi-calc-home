@@ -129,6 +129,18 @@ export function createDemoRepos(): PatronRepos {
       };
     },
 
+    async joinCard(input) {
+      const customer = demoRepo.read().customers.find((item) => item.id === input.customerId);
+      if (!customer) throw new Error("Could not join.");
+      return this.joinGuest({
+        slug: input.slug,
+        name: customer.name,
+        phone: customer.phoneE164,
+        marketingSms: input.marketingSms,
+        source: input.source,
+      });
+    },
+
     async getCard(slug, customerId) {
       const res = demoGetCard(slug, customerId) as unknown as
         | { ok: true; value?: never; data?: never }

@@ -80,14 +80,15 @@ checks the operator row again on every action.
   its phone number. Before linking an owner or operator by hand, confirm that
   the person with that email is the one who signed up.
 - Live guests see only their cards. The Restaurants and Me tabs stay hidden.
-- Guests cannot join a card on live until phone verification is decided.
+- Guests join a card with their login (see below).
 - Google sign-in and the reset email have not been sent or tested.
 
 ## Phone verification decision
 
-Sign-up normalises to a South African mobile number and rejects landlines, but
-does not send a code. Risk: a wrong or fake number gets a card and, later, SMS.
-Proposed default, behind a switch that stays off until you decide: send one
-verification code the first time a guest opts in to SMS offers, paid by Patron,
-rate limited per number and per IP. Apple sign-in waits for a paid Apple
-developer account.
+Decided by the founder on 27 November 2026: guests join with a free Patron login,
+with no SMS code for now. The join page uses the name and number on that login.
+
+Known risk: numbers are not checked. A person can register a number that is not
+theirs. SMS offers would go to that number, and the real owner cannot add it to
+their own login. Every offer carries STOP. Before many real guests join, add a
+one-time SMS code (it needs SMS credit), and ask the lawyer about the consent line.

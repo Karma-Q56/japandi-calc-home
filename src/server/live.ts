@@ -115,33 +115,24 @@ export const submitLeadFn = createServerFn({ method: "POST" })
     }
   });
 
-export const joinGuestFn = createServerFn({ method: "POST" })
+/**
+ * A signed-in guest adds a restaurant's card (live). Name and number come from their own
+ * login; the browser only chooses the restaurant and the message consent.
+ */
+export const joinCardFn = createServerFn({ method: "POST" })
   .validator(
     z.object({
       slug: slugSchema,
-      name: z.string().trim().min(1, "Enter your first name.").max(40),
-      phone: e164Schema,
+      agreed: z.literal(true, { message: "Please agree to the terms to join." }),
       marketingSms: z.boolean(),
       source: z.string().trim().min(1).max(64),
+      referralCode: z.string().trim().min(1).max(20).optional(),
     }),
   )
   .handler(async ({ data }) => {
-    const { repos } = getRepos(serverEnv());
-    try {
-      // No real phone verification exists yet: joins stay disabled unless the
-      // demo bypass is explicitly enabled (DEMO_OTP_BYPASS=true). See
-      // docs/decisions.md ("Phone verification (OTP) gate").
-      if (process.env["DEMO_OTP_BYPASS"] !== "true") {
-        return { ok: false as const, message: "Phone verification is not enabled yet." };
-      }
-      const result = await repos.joinGuest({ ...data, otpVerified: true });
-      return { ok: true as const, ...result };
-    } catch (error) {
-      return {
-        ok: false as const,
-        message: error instanceof Error ? error.message : "Could not join.",
-      };
-    }
+    const { readViewer } = await import("./auth-viewer");
+    const { joinForViewer } = await import("./live-join");
+    return joinForViewer(await readViewer(), data);
   });
 
 /** Verify a signed card token on the server (live mode). The secret never

@@ -92,30 +92,6 @@ export const getGuestExtrasFn = createServerFn({ method: "GET" })
     return { challenges, referralCode, restaurantName: card.restaurant.name };
   });
 
-/**
- * Links the signed-in guest, as a new friend, to the code they arrived with.
- * Only the session's own membership is linked, and the result is never shown as an error to the guest.
- */
-export const linkReferralFn = createServerFn({ method: "POST" })
-  .validator(z.object({ slug: z.string().min(1).max(120), code: z.string().min(1).max(20) }))
-  .handler(async ({ data }) => {
-    const [{ readViewer }, { getRepos }, { linkReferral }] = await Promise.all([
-      import("./auth-viewer"),
-      import("./repos"),
-      import("./live-referrals"),
-    ]);
-    const viewer = await readViewer();
-    if (!viewer || viewer.role !== "guest" || !viewer.customerId) return { outcome: "not_signed_in" as const };
-    const { repos } = getRepos({
-      DATA_MODE: process.env["DATA_MODE"],
-      DATABASE_URL: process.env["DATABASE_URL"],
-    });
-    const card = await repos.getCard(data.slug, viewer.customerId);
-    if (!card) return { outcome: "not_found" as const };
-    const outcome = await linkReferral(card.restaurant.id, card.membership.id, data.code);
-    return { outcome };
-  });
-
 /** Read the live referral settings for the signed-in owner or manager. */
 export const getReferralSettingsFn = createServerFn({ method: "GET" }).handler(async () => {
   const [{ readViewer }, { loadReferralSettings }] = await Promise.all([
