@@ -19,13 +19,7 @@ import {
   FEEDBACK_SHOT_MAX_BYTES,
   FEEDBACK_STATUS_LABELS,
 } from "@/domain/feedback";
-import {
-  Badge,
-  EmptyState,
-  FormField,
-  Helper,
-  PageHeader,
-} from "@/components/patron/dash";
+import { ConfirmDialog, Badge, EmptyState, FormField, Helper, PageHeader } from "@/components/patron/dash";
 import {
   HELP_ASK_LIMIT,
   HELP_ASK_MIN,
@@ -391,7 +385,13 @@ function DemoFeedback() {
                           <button className="builder-primary" onClick={() => applyDraft(draft.id)}>
                             Use these words
                           </button>
-                          <button className="row-action is-danger" onClick={() => dropDraft(draft.id)}>Throw away</button>
+                          <ConfirmDialog
+                            label="Throw away"
+                            question="Throw away these words?"
+                            confirmLabel="Yes, throw away"
+                            buttonClass="row-action is-danger"
+                            onConfirm={() => dropDraft(draft.id)}
+                          />
                         </div>
                       </div>
                     )}

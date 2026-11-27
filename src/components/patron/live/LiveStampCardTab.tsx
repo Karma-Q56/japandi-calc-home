@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FormField, Helper } from "@/components/patron/dash";
+import { ConfirmDialog, FormField, Helper } from "@/components/patron/dash";
 import { updateLoyaltySettingsFn } from "@/server/live";
 import { saveLogoFn } from "@/server/live-logo-fns";
 import { removeOwnerLogoFn, saveOwnerDesignFn } from "@/server/live-page-fns";
@@ -71,9 +71,14 @@ function LogoPanel({ initialVersion }: { initialVersion: number | null }) {
       {version !== null && (
         <div className="logo-panel-current">
           {shown && <img src={shown} alt="Your current logo" width={96} height={96} />}
-          <button className="builder-secondary is-danger" type="button" disabled={logoBusy} onClick={remove}>
-            Remove logo
-          </button>
+          <ConfirmDialog
+            label="Remove logo"
+            question="Remove your logo from your page and your QR code?"
+            confirmLabel="Yes, remove it"
+            buttonClass="builder-secondary is-danger"
+            disabled={logoBusy}
+            onConfirm={() => void remove()}
+          />
         </div>
       )}
       <FormField label={version === null ? "Choose a logo" : "Choose a new logo to replace it"}>

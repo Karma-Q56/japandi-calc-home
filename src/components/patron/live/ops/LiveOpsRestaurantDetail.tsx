@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "@tanstack/react-router";
-import { Badge, DataTable, EmptyState, FormField, PageHeader } from "@/components/patron/dash";
+import { ConfirmDialog, Badge, DataTable, EmptyState, FormField, PageHeader } from "@/components/patron/dash";
 import {
   formatRandFromCents,
   isLowCredit,
@@ -89,17 +89,16 @@ export function LiveOpsRestaurantDetail(props: { detail: Detail }) {
             ))}
           </select>
         </FormField>
-        <button
-          className="builder-secondary"
+        <ConfirmDialog
+          label="Save status"
+          question={`Change the status to ${statusLabel(status)}?`}
+          confirmLabel="Yes, change it"
+          buttonClass="builder-secondary"
           disabled={busy || !reasonOk}
-          onClick={() =>
-            run(() =>
-              setRestaurantStatusFn({ data: { restaurantId: id, status: status as "draft" | "active" | "paused" | "closed", reason } }),
-            )
+          onConfirm={() =>
+            void run(() => setRestaurantStatusFn({ data: { restaurantId: id, status: status as "draft" | "active" | "paused" | "closed", reason } }))
           }
-        >
-          Save status
-        </button>
+        />
         <FormField label="Plan">
           <select value={plan} onChange={(e) => setPlan(e.target.value)}>
             {["starter", "managed", "partner", "custom"].map((item) => (
@@ -109,17 +108,16 @@ export function LiveOpsRestaurantDetail(props: { detail: Detail }) {
             ))}
           </select>
         </FormField>
-        <button
-          className="builder-secondary"
+        <ConfirmDialog
+          label="Save plan"
+          question={`Change the plan to ${planLabel(plan)}?`}
+          confirmLabel="Yes, change it"
+          buttonClass="builder-secondary"
           disabled={busy || !reasonOk}
-          onClick={() =>
-            run(() =>
-              setRestaurantPlanFn({ data: { restaurantId: id, plan: plan as "starter" | "managed" | "partner" | "custom", reason } }),
-            )
+          onConfirm={() =>
+            void run(() => setRestaurantPlanFn({ data: { restaurantId: id, plan: plan as "starter" | "managed" | "partner" | "custom", reason } }))
           }
-        >
-          Save plan
-        </button>
+        />
       </div>
 
       {detail.ledger.length === 0 ? (
@@ -153,20 +151,26 @@ export function LiveOpsRestaurantDetail(props: { detail: Detail }) {
             Use these only when the bank or PayFast says something different from the app, for example money that
             came in by EFT. Each one is recorded in the activity log. Write the reason in the box above first.
           </p>
-          <button
-            className="builder-secondary"
+          <ConfirmDialog
+            label="Mark as paid (money received)"
+            question="Mark this monthly payment as received?"
+            confirmLabel="Yes, mark it paid"
+            buttonClass="builder-secondary"
             disabled={busy || !reasonOk}
-            onClick={() => run(() => setSubscriptionStateFn({ data: { restaurantId: id, state: "active", note: reason } }))}
-          >
-            Mark as paid (money received)
-          </button>{" "}
-          <button
-            className="builder-secondary"
+            onConfirm={() =>
+              void run(() => setSubscriptionStateFn({ data: { restaurantId: id, state: "active", note: reason } }))
+            }
+          />{" "}
+          <ConfirmDialog
+            label="Mark as cancelled"
+            question="Mark this monthly payment as cancelled?"
+            confirmLabel="Yes, mark it cancelled"
+            buttonClass="builder-secondary"
             disabled={busy || !reasonOk}
-            onClick={() => run(() => setSubscriptionStateFn({ data: { restaurantId: id, state: "cancelled", note: reason } }))}
-          >
-            Mark as cancelled
-          </button>
+            onConfirm={() =>
+              void run(() => setSubscriptionStateFn({ data: { restaurantId: id, state: "cancelled", note: reason } }))
+            }
+          />
         </>
       ) : (
         <EmptyState title="No monthly plan" hint="This restaurant does not pay monthly by card." />

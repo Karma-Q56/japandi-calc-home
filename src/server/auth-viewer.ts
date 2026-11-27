@@ -181,6 +181,26 @@ export async function readViewer(): Promise<Viewer | null> {
 /** The one place a route learns who is signed in. Returns null when signed out. */
 export const getViewerFn = createServerFn({ method: "GET" }).handler(readViewer);
 
+const PHONE_TRIES_PER_HOUR = 5;
+
+/**
+ * Count one try at adding a number. The answer says whether a number is already on a card,
+ * so each login only gets a few goes an hour.
+ */
+export async function takePhoneTry(userId: string): Promise<boolean> {
+  return withContext({ databaseUrl: databaseUrl(), isOperator: true }, async (tx) => {
+    // One try at a time per login, so requests sent together cannot all slip under the limit.
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`add-phone:${userId}`}))`);
+    const hits = await tx.execute<{ n: number | string }>(sql`
+      select count(*)::int as n from rate_limit_hit
+      where bucket = 'add-phone' and key = ${userId} and created_at > now() - interval '1 hour'
+    `);
+    if (Number(hits.rows[0]?.n ?? 0) >= PHONE_TRIES_PER_HOUR) return false;
+    await tx.execute(sql`insert into rate_limit_hit (bucket, key) values ('add-phone', ${userId})`);
+    return true;
+  });
+}
+
 /** Finish a Google profile with the phone the guest wants on their card. */
 export async function completePhone(phoneInput: string) {
   const session = await readSession();
@@ -190,6 +210,12 @@ export async function completePhone(phoneInput: string) {
   const phone = normalizePhone(phoneInput);
   if (!phone || !isValidSAMobile(phone)) {
     return { ok: false as const, message: "Enter a valid South African mobile number." };
+  }
+  if (!(await takePhoneTry(session.user.id))) {
+    return {
+      ok: false as const,
+      message: "Too many tries. Wait an hour, then try again.",
+    };
   }
   await withContext({ databaseUrl: databaseUrl(), isOperator: true }, async (tx) => {
     await tx.execute(sql`

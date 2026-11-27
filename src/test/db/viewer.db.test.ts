@@ -13,7 +13,7 @@ import {
   type DbConnections,
   type Fixtures,
 } from "../db-fixture";
-import { ensureViewer } from "@/server/auth-viewer";
+import { ensureViewer, takePhoneTry } from "@/server/auth-viewer";
 
 // Same stand-in for the Neon driver as the campaign tests: real SQL and row security, as app_user.
 vi.mock("../../server/db", async () => {
@@ -138,5 +138,13 @@ describe.skipIf(!dbTestsEnabled)("a new guest login (real database)", () => {
     const done = await login("later", freePhone());
     expect(done.needsPhone).toBe(false);
     fixtures.customers.push(done.customerId!);
+  });
+
+  it("allows five tries an hour at adding a number, even when sent together", async () => {
+    const id = `t-viewer-tries-${stamp}`;
+    const results = await Promise.all(Array.from({ length: 8 }, () => takePhoneTry(id)));
+    expect(results.filter(Boolean)).toHaveLength(5);
+    expect(await takePhoneTry(`${id}-other`)).toBe(true);
+    await db.owner`delete from rate_limit_hit where bucket = 'add-phone' and key like ${`${id}%`}`;
   });
 });

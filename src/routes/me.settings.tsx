@@ -9,7 +9,7 @@ import { birthdayOf, MONTH_NAMES } from "@/lib/birthday";
 import { maskPhone } from "@/lib/phone";
 import { Switch } from "@/components/patron/Switch";
 import { GuestShell } from "@/components/patron/GuestShell";
-import { FormField, PageHeader } from "@/components/patron/dash";
+import { ConfirmDialog, FormField, PageHeader } from "@/components/patron/dash";
 import { enableBrowserPush, disableBrowserPush, showLocalPushTest } from "@/lib/web-push-client";
 import { PushOptIn } from "@/components/patron/PushOptIn";
 import { signOut } from "@/lib/sign-out";
@@ -254,10 +254,13 @@ function GuestSettings() {
             <button className="builder-secondary" onClick={download}>
               Download my data
             </button>
-            <button
-              className="builder-secondary is-danger"
-              disabled={customer.deleted}
-              onClick={() => {
+            <ConfirmDialog
+              label="Delete my account"
+              question="Delete your account? Your name and number are removed and this cannot be undone."
+              confirmLabel="Yes, delete it"
+              buttonClass="builder-secondary is-danger"
+              disabled={Boolean(customer.deleted)}
+              onConfirm={() => {
                 const result = api.member.requestDeletion(customerId);
                 setNotice(
                   result.ok
@@ -265,9 +268,7 @@ function GuestSettings() {
                     : result.error.message,
                 );
               }}
-            >
-              Delete my account
-            </button>
+            />
           </div>
           <p>
             Deletion requests in this demo anonymise name and phone details while keeping activity

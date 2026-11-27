@@ -7,7 +7,7 @@ import { requireRole } from "@/data/session";
 import { branchLabel } from "@/lib/live-locations";
 import { getDataModeFn } from "@/server/live";
 import { LiveTeam } from "@/components/patron/LiveTeam";
-import { EmptyState, FormField, PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
+import { ConfirmDialog, EmptyState, FormField, PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
 
 export const Route = createFileRoute("/app/team")({
   loader: async () => {
@@ -158,14 +158,19 @@ function DemoTeam() {
             >
               {member.pinHash ? "Reset PIN" : "Set PIN"}
             </button>
-            <button
-              className={`builder-secondary${member.active ? " is-danger" : ""}`}
-              onClick={() => {
-                api.team.setActive(member.id, !member.active);
-              }}
-            >
-              {member.active ? "Deactivate" : "Activate"}
-            </button>
+            {member.active ? (
+              <ConfirmDialog
+                label="Deactivate"
+                question={`Deactivate ${member.displayName}? Their PIN stops working on the till.`}
+                confirmLabel="Yes, deactivate"
+                buttonClass="builder-secondary is-danger"
+                onConfirm={() => { api.team.setActive(member.id, !member.active); }}
+              />
+            ) : (
+              <button className="builder-secondary" onClick={() => { api.team.setActive(member.id, !member.active); }}>
+                Activate
+              </button>
+            )}
           </span>
         </article>
       ))}

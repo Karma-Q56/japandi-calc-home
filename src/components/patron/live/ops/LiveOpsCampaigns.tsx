@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Badge, PageHeader } from "@/components/patron/dash";
+import { ConfirmDialog, Badge, PageHeader } from "@/components/patron/dash";
 import { decideCampaignFn } from "@/server/live-ops-inbox-fns";
 import type { PendingCampaignRow } from "@/server/live-ops-inbox";
 
@@ -54,9 +54,14 @@ export function LiveOpsCampaigns({ initial }: { initial: PendingCampaignRow[] })
               <button className="builder-primary" disabled={busy} onClick={() => decide(row.id, "approve")}>
                 Approve
               </button>
-              <button className="builder-secondary is-danger" disabled={busy} onClick={() => decide(row.id, "reject")}>
-                Reject
-              </button>
+              <ConfirmDialog
+                label="Reject"
+                question="Reject this campaign? It is cancelled and cannot be brought back."
+                confirmLabel="Yes, reject it"
+                buttonClass="builder-secondary is-danger"
+                disabled={busy}
+                onConfirm={() => void decide(row.id, "reject")}
+              />
             </div>
           </div>
         ))}

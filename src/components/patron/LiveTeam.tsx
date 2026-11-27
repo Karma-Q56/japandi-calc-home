@@ -10,7 +10,7 @@ import { getBranchesFn, setStaffBranchFn } from "@/server/live-locations-fns";
 import type { BranchRow } from "@/server/live-locations";
 import type { LiveStaffRow } from "@/server/live-till";
 import { branchLabel } from "@/lib/live-locations";
-import { EmptyState, FormField, PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
+import { ConfirmDialog, EmptyState, FormField, PageHeader, StatCard, StatGrid } from "@/components/patron/dash";
 
 /**
  * Live team screen. Same shape as the demo screen, but every read and write
@@ -178,9 +178,20 @@ export function LiveTeam() {
             >
               Reset PIN
             </button>
-            <button className={`builder-secondary${member.active ? " is-danger" : ""}`} disabled={busy} onClick={() => void toggle(member)}>
-              {member.active ? "Deactivate" : "Activate"}
-            </button>
+            {member.active ? (
+              <ConfirmDialog
+                label="Deactivate"
+                question={`Deactivate ${member.displayName}? Their PIN stops working on the till.`}
+                confirmLabel="Yes, deactivate"
+                buttonClass="builder-secondary is-danger"
+                disabled={busy}
+                onConfirm={() => { void toggle(member); }}
+              />
+            ) : (
+              <button className="builder-secondary" disabled={busy} onClick={() => { void toggle(member); }}>
+                Activate
+              </button>
+            )}
           </span>
         </article>
       ))}

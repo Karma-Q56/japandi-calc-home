@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { api } from "@/api";
 import { useDemoState } from "@/data/useDemoState";
-import { EmptyState, FormField, PageHeader } from "@/components/patron/dash";
+import { ConfirmDialog, EmptyState, FormField, PageHeader } from "@/components/patron/dash";
 import { branchesFor, demoPlanMax } from "@/domain/locations";
 import type { BranchesState } from "@/server/live-locations";
 import {
@@ -237,9 +237,14 @@ export function BranchesView({
                     </button>
                   ) : null}
                   {row.active && !row.isMain ? (
-                    <button className="row-action is-danger" type="button" onClick={() => act(row, "off")} disabled={busy}>
-                      Turn off {row.name}
-                    </button>
+                    <ConfirmDialog
+                      label={`Turn off ${row.name}`}
+                      question={`Turn off ${row.name}? Its till stops working until you turn it on again.`}
+                      confirmLabel="Yes, turn it off"
+                      buttonClass="row-action is-danger"
+                      disabled={busy}
+                      onConfirm={() => act(row, "off")}
+                    />
                   ) : null}
                   {!row.active ? (
                     <button className="row-action" type="button" onClick={() => act(row, "on")} disabled={busy}>

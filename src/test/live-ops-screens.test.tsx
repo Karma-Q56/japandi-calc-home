@@ -144,6 +144,7 @@ describe("LiveOpsCredit", () => {
     fireEvent.change(screen.getByLabelText(/Reason if not received/), { target: { value: "  Nothing in the bank  " } });
     expect(reject).toBeEnabled();
     fireEvent.click(reject);
+    fireEvent.click(screen.getByRole("button", { name: "Yes, reject it" }));
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Top up rejected."));
     expect(calls.rejectTopupFn).toHaveBeenCalledWith({ data: { paymentId: "pay-1", reason: "Nothing in the bank" } });
   });
@@ -206,11 +207,14 @@ describe("LiveOpsMoneyActions refunds", () => {
     fireEvent.change(screen.getByLabelText(/Why are you doing this/), { target: { value: "Charged twice" } });
     fireEvent.change(screen.getByLabelText("Refund amount in rand"), { target: { value: "400" } });
     fireEvent.click(button);
+    fireEvent.click(screen.getByRole("button", { name: "Yes, record it" }));
     expect(calls.recordRefundFn).not.toHaveBeenCalled();
     expect(screen.getByRole("status")).toHaveTextContent(/more than the amount left to refund \(R300\)/);
 
     fireEvent.change(screen.getByLabelText("Refund amount in rand"), { target: { value: "300" } });
-    fireEvent.click(button);
+    fireEvent.click(screen.getByRole("button", { name: "Record refund" }));
+    expect(calls.recordRefundFn).not.toHaveBeenCalled(); // asks first
+    fireEvent.click(screen.getByRole("button", { name: "Yes, record it" }));
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Refund recorded."));
     expect(calls.recordRefundFn).toHaveBeenCalledWith({ data: { paymentId: "p-1", amountCents: 30000, reason: "Charged twice" } });
   });

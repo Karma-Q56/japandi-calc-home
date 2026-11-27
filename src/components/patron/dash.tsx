@@ -156,12 +156,18 @@ export function ConfirmDialog(props: {
   question: string;
   confirmLabel?: string;
   buttonClass?: string;
+  disabled?: boolean;
   onConfirm: () => void;
 }) {
   const [open, setOpen] = useState(false);
   if (!open) {
     return (
-      <button className={props.buttonClass ?? "guest-back"} onClick={() => setOpen(true)}>
+      <button
+        type="button"
+        className={props.buttonClass ?? "guest-back"}
+        disabled={props.disabled === true}
+        onClick={() => setOpen(true)}
+      >
         {props.label}
       </button>
     );
@@ -170,7 +176,9 @@ export function ConfirmDialog(props: {
     <span className="dash-confirm" role="alertdialog" aria-label={props.question}>
       <span>{props.question}</span>
       <Button
+        type="button"
         variant="primary"
+        disabled={props.disabled === true}
         onClick={() => {
           setOpen(false);
           props.onConfirm();
@@ -178,7 +186,7 @@ export function ConfirmDialog(props: {
       >
         {props.confirmLabel ?? "Yes"}
       </Button>
-      <Button variant="quiet" onClick={() => setOpen(false)}>
+      <Button type="button" variant="quiet" onClick={() => setOpen(false)}>
         No
       </Button>
     </span>

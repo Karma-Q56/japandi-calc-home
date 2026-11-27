@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "@tanstack/react-router";
-import { DataTable, EmptyState, FormField, PageHeader } from "@/components/patron/dash";
+import { ConfirmDialog, DataTable, EmptyState, FormField, PageHeader } from "@/components/patron/dash";
 import { formatRandFromCents, isLowCredit } from "@/lib/live-ops-restaurants";
 import { addCreditFn } from "@/server/live-ops-fns";
 import { confirmTopupFn, rejectTopupFn } from "@/server/live-ops-restaurants-fns";
@@ -82,15 +82,16 @@ export function LiveOpsCredit(props: { pending: Pending[]; restaurants: Array<{ 
                     value={rejectReasons[row.id] ?? ""}
                     onChange={(e) => setRejectReasons({ ...rejectReasons, [row.id]: e.target.value })}
                   />{" "}
-                  <button
-                    className="builder-secondary"
+                  <ConfirmDialog
+                    label="Not received, reject"
+                    question="Reject this top up? No credit is added."
+                    confirmLabel="Yes, reject it"
+                    buttonClass="builder-secondary"
                     disabled={busy || (rejectReasons[row.id] ?? "").trim().length < 3}
-                    onClick={() =>
+                    onConfirm={() =>
                       void decide(() => rejectTopupFn({ data: { paymentId: row.id, reason: (rejectReasons[row.id] ?? "").trim() } }))
                     }
-                  >
-                    Not received, reject
-                  </button>
+                  />
                 </span>
               ),
             },

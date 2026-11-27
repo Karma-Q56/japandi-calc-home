@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "@tanstack/react-router";
-import { DataTable, EmptyState, FormField } from "@/components/patron/dash";
+import { ConfirmDialog, DataTable, EmptyState, FormField } from "@/components/patron/dash";
 import {
   formatRandFromCents,
   invoiceStatusText,
@@ -91,9 +91,14 @@ export function LiveOpsMoneyActions(props: {
                   <button className="builder-primary" disabled={busy} onClick={() => run(() => confirmTopupFn({ data: { paymentId: row.id } }))}>
                     Money received, add credit
                   </button>{" "}
-                  <button className="builder-secondary" disabled={busy || !reasonOk} onClick={() => run(() => rejectTopupFn({ data: { paymentId: row.id, reason } }))}>
-                    Not received, reject
-                  </button>
+                  <ConfirmDialog
+                    label="Not received, reject"
+                    question="Reject this top up? No credit is added."
+                    confirmLabel="Yes, reject it"
+                    buttonClass="builder-secondary"
+                    disabled={busy || !reasonOk}
+                    onConfirm={() => void run(() => rejectTopupFn({ data: { paymentId: row.id, reason } }))}
+                  />
                 </span>
               ),
             },
@@ -147,9 +152,14 @@ export function LiveOpsMoneyActions(props: {
                     >
                       Mark paid
                     </button>{" "}
-                    <button className="builder-secondary" disabled={busy || !reasonOk} onClick={() => run(() => voidInvoiceFn({ data: { invoiceId: row.id, reason } }))}>
-                      Cancel invoice
-                    </button>
+                    <ConfirmDialog
+                      label="Cancel invoice"
+                      question="Cancel this invoice? It cannot be opened again."
+                      confirmLabel="Yes, cancel it"
+                      buttonClass="builder-secondary"
+                      disabled={busy || !reasonOk}
+                      onConfirm={() => void run(() => voidInvoiceFn({ data: { invoiceId: row.id, reason } }))}
+                    />
                   </span>
                 ) : (
                   ""
@@ -182,21 +192,22 @@ export function LiveOpsMoneyActions(props: {
                       value={refundRands[row.id] ?? ""}
                       onChange={(e) => setRefundRands({ ...refundRands, [row.id]: e.target.value })}
                     />{" "}
-                    <button
-                      className="builder-secondary"
+                    <ConfirmDialog
+                      label="Record refund"
+                      question="Record this refund? It cannot be undone here."
+                      confirmLabel="Yes, record it"
+                      buttonClass="builder-secondary"
                       disabled={busy || !reasonOk}
-                      onClick={() => {
+                      onConfirm={() => {
                         const check = validateRefundInput(
                           Math.round(Number(refundRands[row.id]) * 100),
                           row.amount_cents - row.refunded_cents,
                           reason,
                         );
                         if (!check.ok) return setMessage(check.message);
-                        run(() => recordRefundFn({ data: { paymentId: row.id, amountCents: check.amountCents, reason: check.reason } }));
+                        void run(() => recordRefundFn({ data: { paymentId: row.id, amountCents: check.amountCents, reason: check.reason } }));
                       }}
-                    >
-                      Record refund
-                    </button>
+                    />
                   </span>
                 ) : row.refunded_cents >= row.amount_cents && row.amount_cents > 0 ? (
                   "Fully refunded"
