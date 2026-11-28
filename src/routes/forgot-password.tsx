@@ -2,8 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { MarketingShell } from "@/components/patron/MarketingShell";
 import { authClient } from "@/lib/auth-client";
+import { getDataModeFn } from "@/server/live";
 
 export const Route = createFileRoute("/forgot-password")({
+  loader: async () => getDataModeFn(),
   head: () => ({
     meta: [{ title: "Forgot your password | Patron" }],
   }),
@@ -11,6 +13,7 @@ export const Route = createFileRoute("/forgot-password")({
 });
 
 function ForgotPassword() {
+  const { mode } = Route.useLoaderData();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
@@ -18,6 +21,11 @@ function ForgotPassword() {
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
+    // The demo has no accounts or email, so nothing is asked of the server.
+    if (mode !== "live") {
+      setError("This is the demo, so no email is sent. Use Log in to pick a demo account.");
+      return;
+    }
     const result = await authClient.requestPasswordReset({
       email,
       redirectTo: "/reset-password",

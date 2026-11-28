@@ -5,7 +5,7 @@ import { QUIET_DAYS, setQuietDay, useQuietDay, type QuietDay as QuietDayName } f
 const ideas = [
   { day: 'Mon', title: 'Double-stamp Monday', idea: 'A double stamp for anyone who visited last week.', sms: 'Hi Thandi! Double stamps at The Daily Grind today for our regulars. See you soon?' },
   { day: 'Tue', title: '2-for-1 coffee Tuesday', idea: '2-for-1 coffee for guests who have not visited in 30 days.', sms: 'We miss you, Thandi! Bring a friend this Tuesday: 2 coffees for the price of 1. Just say TUESDAY.' },
-  { day: 'Wed', title: 'Midweek set lunch', idea: 'A midweek set lunch for guests within 5 km.', sms: 'Lunch sorted, Thandi: our R95 midweek set lunch is on this Wednesday, 12–3pm.' },
+  { day: 'Wed', title: 'Midweek set lunch', idea: 'A midweek set lunch for guests within 5 km.', sms: 'Lunch sorted, Thandi: our R95 midweek set lunch is on this Wednesday, 12 to 3pm.' },
   { day: 'Thu', title: 'Bring a friend Thursday', idea: 'Bring a friend and you both get a free dessert.', sms: 'Thursday treat, Thandi: bring a friend and you both get a free dessert with any main.' },
   { day: 'Fri', title: 'Early-bird Friday', idea: 'An early-bird offer for the slow hour before the dinner rush.', sms: 'Beat the rush, Thandi! 15% off the bill this Friday between 5 and 6pm.' },
   { day: 'Sat', title: 'Saturday tea & cake', idea: 'A late-afternoon tea-and-cake special.', sms: 'Saturday slow-down, Thandi: tea and a slice of cake for R65, from 3pm.' },

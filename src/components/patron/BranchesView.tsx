@@ -62,8 +62,13 @@ export function BranchesView({
     if (live) setLiveState(await getBranchesFn());
   }
 
-  function report(result: { ok: boolean; message?: string }, okText: string) {
-    setMessage(result.ok ? okText : (result.message ?? "Something went wrong. Try again."));
+  function report(
+    result: { ok: boolean; message?: string; error?: { message: string } },
+    okText: string,
+  ) {
+    // Live answers carry a message, demo answers carry error.message.
+    const why = result.message ?? result.error?.message ?? "Something went wrong. Try again.";
+    setMessage(result.ok ? okText : why);
     if (result.ok) {
       setForm(EMPTY_FORM);
       setEditingId(null);

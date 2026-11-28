@@ -45,14 +45,14 @@ function Hours({
       <div className="pt-hours pt-hours--compact">
         <p className="pt-hours-today">
           <strong>Today · {today.slice(0, 3)}</strong>
-          <span>{todayHours ? `${todayHours.open}–${todayHours.close}` : "Closed"}</span>
+          <span>{todayHours ? `${todayHours.open} to ${todayHours.close}` : "Closed"}</span>
         </p>
         <details>
           <summary>Full week</summary>
           {Object.entries(restaurant.hours).map(([day, span]) => (
             <div key={day} className={day === today ? "is-today" : undefined}>
               <span>{day.slice(0, 3)}</span>
-              <strong>{span ? `${span.open}–${span.close}` : "Closed"}</strong>
+              <strong>{span ? `${span.open} to ${span.close}` : "Closed"}</strong>
             </div>
           ))}
         </details>
@@ -64,7 +64,7 @@ function Hours({
       {Object.entries(restaurant.hours).map(([day, span]) => (
         <div key={day} className={day === today ? "is-today" : undefined}>
           <span>{day.slice(0, 3)}</span>
-          <strong>{span ? `${span.open}–${span.close}` : "Closed"}</strong>
+          <strong>{span ? `${span.open} to ${span.close}` : "Closed"}</strong>
         </div>
       ))}
     </div>
@@ -104,7 +104,7 @@ function SpecialCard({ special }: { special: Special | null }) {
       <h3>{special.title}</h3>
       <p>{special.body}</p>
       <small>
-        {dateLabel(special.startsAt)} – {dateLabel(special.endsAt)}
+        {dateLabel(special.startsAt)} to {dateLabel(special.endsAt)}
       </small>
     </div>
   );
@@ -235,7 +235,7 @@ export function PublicTemplate({
               <h2>{special.title}</h2>
               <p>{special.body}</p>
               <small>
-                {dateLabel(special.startsAt)} – {dateLabel(special.endsAt)}
+                {dateLabel(special.startsAt)} to {dateLabel(special.endsAt)}
               </small>
             </section>
           )}

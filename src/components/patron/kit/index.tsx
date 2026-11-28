@@ -388,11 +388,13 @@ export function StampCircles({
   label?: string;
   tick?: boolean;
 }) {
+  // A half typed number in a settings box (999999999, -5) must not break the screen.
+  const count = Number.isFinite(total) ? Math.min(60, Math.max(0, Math.floor(total))) : 0;
   return (
     <div className="pk-stamps" role="img" aria-label={label ?? `${filled} of ${total} stamps`}>
-      {Array.from({ length: total }, (_, index) => {
+      {Array.from({ length: count }, (_, index) => {
         const on = index < filled;
-        const reward = index === total - 1;
+        const reward = index === count - 1;
         return (
           <span
             key={index}

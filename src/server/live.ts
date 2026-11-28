@@ -28,7 +28,7 @@ const slugSchema = z
 
 const uuidSchema = z.string().uuid("Invalid id.");
 
-// E.164 (+country, 8–15 digits). Spaces/dashes typed by users are stripped
+// E.164 (+country, 8 to 15 digits). Spaces/dashes typed by users are stripped
 // first; anything else that is not E.164 is rejected.
 const e164Schema = z.preprocess(
   (v) => (typeof v === "string" ? v.replace(/[\s-]/g, "") : v),
