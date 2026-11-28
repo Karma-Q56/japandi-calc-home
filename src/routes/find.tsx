@@ -163,6 +163,7 @@ function FindPage() {
               <Input
                 type="search"
                 value={query}
+                maxLength={80}
                 placeholder="The Daily Grind or Parkhurst"
                 onChange={(event) => setQuery(event.target.value)}
               />

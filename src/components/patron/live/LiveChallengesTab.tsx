@@ -1,4 +1,6 @@
+import { safely } from "@/lib/server-call";
 import { useState } from "react";
+import { useRouter } from "@tanstack/react-router";
 import { saveChallengeFn } from "@/server/live-challenges-fns";
 import type { LiveChallenge } from "@/server/live-challenges";
 import type { LiveChallengeInput, RewardType, ChallengeKind } from "@/lib/live-challenges";
@@ -47,6 +49,7 @@ export function LiveChallengesTab({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
+  const router = useRouter({ warn: false });
 
   if (!challenges) {
     return <EmptyState title="Sign in as the owner or a manager to see challenges." />;
@@ -78,7 +81,7 @@ export function LiveChallengesTab({
   const save = async () => {
     setBusy(true);
     setNotice("");
-    const result = await saveChallengeFn({ data: { id: editingId, input: draft } });
+    const result = await safely(saveChallengeFn({ data: { id: editingId, input: draft } }));
     setBusy(false);
     if (!result.ok) {
       setNotice(result.message);
@@ -87,6 +90,8 @@ export function LiveChallengesTab({
     setNotice("Saved. Guests see it straight away if it is showing.");
     setEditingId(null);
     setDraft(blank);
+    // Show the change in the list straight away.
+    await router?.invalidate();
   };
 
   const edit = (challenge: LiveChallenge) => {
@@ -99,11 +104,12 @@ export function LiveChallengesTab({
   const pauseOrShow = async (challenge: LiveChallenge) => {
     setBusy(true);
     const { claimedByMe: _ignored, id: _id, ...input } = challenge;
-    const result = await saveChallengeFn({
+    const result = await safely(saveChallengeFn({
       data: { id: challenge.id, input: { ...input, active: !challenge.active } },
-    });
+    }));
     setBusy(false);
     setNotice(result.ok ? "" : result.message);
+    if (result.ok) await router?.invalidate();
   };
 
   return (

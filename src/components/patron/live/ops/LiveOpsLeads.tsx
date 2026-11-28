@@ -1,3 +1,4 @@
+import { safely } from "@/lib/server-call";
 import { useState } from "react";
 import { EmptyState, FormField, PageHeader } from "@/components/patron/dash";
 import { listLeadsFn, updateLeadFn } from "@/server/live-ops-inbox-fns";
@@ -39,7 +40,7 @@ export function LiveOpsLeads({ initial }: { initial: LeadRow[] }) {
   const reload = async (nextStatus: "" | Status, nextSearch: string) => {
     setBusy(true);
     setLoadError("");
-    const result = await listLeadsFn({ data: { status: nextStatus, search: nextSearch, limit: 50, offset: 0 } });
+    const result = await safely(listLeadsFn({ data: { status: nextStatus, search: nextSearch, limit: 50, offset: 0 } }));
     setBusy(false);
     if (result.ok) {
       setRows(result.rows);
@@ -60,7 +61,7 @@ export function LiveOpsLeads({ initial }: { initial: LeadRow[] }) {
     if (!open) return;
     setBusy(true);
     setSaveLine("");
-    const result = await updateLeadFn({ data: { leadId: open.id, status: draftStatus, notes: draftNotes } });
+    const result = await safely(updateLeadFn({ data: { leadId: open.id, status: draftStatus, notes: draftNotes } }));
     if (result.ok) {
       await reload(status, search);
       setSaveLine("Saved.");

@@ -1,3 +1,4 @@
+import { safely } from "@/lib/server-call";
 import { useState } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { ConfirmDialog, Badge, DataTable, EmptyState, FormField, PageHeader } from "@/components/patron/dash";
@@ -33,7 +34,7 @@ export function LiveOpsRestaurantDetail(props: { detail: Detail }) {
   async function run(action: () => Promise<{ ok: boolean; message?: string }>) {
     setBusy(true);
     setMessage(null);
-    const result = await action();
+    const result: { ok: boolean; message?: string } = await safely(action());
     setMessage(result.message ?? (result.ok ? "Saved." : "Nothing changed."));
     setBusy(false);
     if (result.ok) await router?.invalidate();

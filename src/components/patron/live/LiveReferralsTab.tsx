@@ -1,3 +1,4 @@
+import { safely } from "@/lib/server-call";
 import { useState } from "react";
 import { saveReferralSettingsFn } from "@/server/live-challenges-fns";
 import type { LiveReferralInput } from "@/lib/live-challenges";
@@ -42,7 +43,7 @@ export function LiveReferralsTab({ settings }: { settings: LiveReferralInput | n
     };
     setBusy(true);
     setNotice("");
-    const result = await saveReferralSettingsFn({ data: input });
+    const result = await safely(saveReferralSettingsFn({ data: input }));
     setBusy(false);
     setNotice(result.ok ? "Bring a friend settings saved." : result.message);
   };

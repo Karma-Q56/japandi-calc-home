@@ -1,3 +1,4 @@
+import { safely } from "@/lib/server-call";
 import { useState } from "react";
 import { Helper, FormField } from "@/components/patron/dash";
 import { Switch } from "@/components/patron/Switch";
@@ -37,7 +38,7 @@ export function LiveToolsTab({ data }: { data: LiveToolsSettings }) {
       mysteryEveryVisits: mysteryEvery,
     };
     setBusy(true);
-    const result = await updateLoyaltyToolsFn({ data: input });
+    const result = await safely(updateLoyaltyToolsFn({ data: input }));
     setBusy(false);
     if (!result.ok) {
       setNotice(result.message);

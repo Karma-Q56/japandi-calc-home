@@ -1,3 +1,4 @@
+import { safely } from "@/lib/server-call";
 import { useState } from "react";
 import { FormField, PageHeader } from "@/components/patron/dash";
 import { createRestaurantForOwnerFn } from "@/server/live-ops-fns";
@@ -15,7 +16,7 @@ export function LiveOpsNewRestaurant() {
   async function submit() {
     setBusy(true);
     setMessage(null);
-    const result = await createRestaurantForOwnerFn({ data: { ownerEmail, name, slug, suburb, city } });
+    const result = await safely(createRestaurantForOwnerFn({ data: { ownerEmail, name, slug, suburb, city } }));
     if (result.ok) {
       setMessage("Restaurant created. It is a draft until it is set to live.");
       window.location.assign(`/ops/restaurants/${result.restaurantId}`);

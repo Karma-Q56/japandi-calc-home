@@ -1,3 +1,4 @@
+import { safely } from "@/lib/server-call";
 import { useState } from "react";
 import { ConfirmDialog, FormField, Helper } from "@/components/patron/dash";
 import { updateLoyaltySettingsFn } from "@/server/live";
@@ -170,7 +171,7 @@ export function LiveStampCardTab({
 
   const save = async () => {
     setBusy(true);
-    const result = await updateLoyaltySettingsFn({
+    const result = await safely(updateLoyaltySettingsFn({
       data: {
         stampsRequired,
         rewardDescription: reward,
@@ -186,7 +187,7 @@ export function LiveStampCardTab({
         marketingWeeklyCap: data.marketingWeeklyCap,
         memberWeeklyCap: data.memberWeeklyCap,
       },
-    });
+    }));
     setBusy(false);
     setNotice(result.ok ? "Saved. The live card uses these rules now." : result.message);
   };

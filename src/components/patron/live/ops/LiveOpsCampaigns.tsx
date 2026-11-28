@@ -1,3 +1,4 @@
+import { safely } from "@/lib/server-call";
 import { useState } from "react";
 import { ConfirmDialog, Badge, PageHeader } from "@/components/patron/dash";
 import { decideCampaignFn } from "@/server/live-ops-inbox-fns";
@@ -13,9 +14,9 @@ export function LiveOpsCampaigns({ initial }: { initial: PendingCampaignRow[] })
 
   const decide = async (campaignId: string, decision: "approve" | "reject") => {
     setBusy(true);
-    const result = await decideCampaignFn({
+    const result = await safely(decideCampaignFn({
       data: { campaignId, decision, reason: reasons[campaignId] ?? "" },
-    });
+    }));
     setBusy(false);
     setNotice(result.message ?? "");
     if (result.ok) setRows((current) => current.filter((row) => row.id !== campaignId));

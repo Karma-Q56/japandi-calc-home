@@ -1,3 +1,4 @@
+import { safely } from "@/lib/server-call";
 import { useEffect, useState, type FormEvent } from "react";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { Outlet, useChildMatches, useLocation } from "@tanstack/react-router";
@@ -297,9 +298,9 @@ function RestaurantSetup() {
     setSaving(true);
     setError(null);
     try {
-      const result = await createRestaurantFn({
+      const result = await safely(createRestaurantFn({
         data: { name, slug: effectiveSlug, suburb, city },
-      });
+      }));
       if (!result.ok) {
         setError(result.message);
         return;

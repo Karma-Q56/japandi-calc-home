@@ -1,3 +1,4 @@
+import { safely } from "@/lib/server-call";
 import { useState } from "react";
 import { EmptyState, PageHeader } from "@/components/patron/dash";
 import { listIdeasFn, setIdeaFn } from "@/server/live-ops-inbox-fns";
@@ -25,14 +26,14 @@ export function LiveOpsIdeas({ initial }: { initial: IdeaRow[] }) {
   const changeStatus = async (next: (typeof STATUSES)[number]) => {
     if (!selected) return;
     setBusy(true);
-    const result = await setIdeaFn({ data: { ideaId: selected.id, status: next, adminNotes: notes } });
+    const result = await safely(setIdeaFn({ data: { ideaId: selected.id, status: next, adminNotes: notes } }));
     setBusy(false);
     setNotice(result.message ?? "");
     if (result.ok) await refresh();
   };
 
   const refresh = async () => {
-    const refreshed = await listIdeasFn({ data: { status: "", limit: 50, offset: 0 } });
+    const refreshed = await safely(listIdeasFn({ data: { status: "", limit: 50, offset: 0 } }));
     if (refreshed.ok) setRows(refreshed.rows);
   };
 

@@ -1,3 +1,4 @@
+import { safely } from "@/lib/server-call";
 import { useState } from "react";
 import { Helper, FormField } from "@/components/patron/dash";
 import { validateTiers, type LiveTiersInput } from "@/lib/live-tools";
@@ -18,7 +19,7 @@ export function LiveTiersTab({ data }: { data: LiveTiers }) {
       return;
     }
     setBusy(true);
-    const result = await updateGuestTiersFn({ data: input });
+    const result = await safely(updateGuestTiersFn({ data: input }));
     setBusy(false);
     setNotice(result.ok ? "Saved. Guests see their new tier from their next visit." : result.message);
   };

@@ -65,8 +65,9 @@ export function specialStatus(
   row: { active: boolean; starts_at: string; ends_at: string },
   now: Date,
 ): LiveSpecial["status"] {
-  if (!row.active) return "paused";
+  // Ending a special also switches it off, so "ended" has to be checked first.
   if (row.ends_at && new Date(row.ends_at) < now) return "ended";
+  if (!row.active) return "paused";
   if (row.starts_at && new Date(row.starts_at) > now) return "scheduled";
   return "running";
 }

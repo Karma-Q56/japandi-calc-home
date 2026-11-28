@@ -13,7 +13,8 @@ import {
   type LiveSpecialInput,
   type SpecialKind,
 } from "@/lib/live-specials";
-import { Badge, DataTable, EmptyState, FormField } from "@/components/patron/dash";
+import { ConfirmDialog, Badge, DataTable, EmptyState, FormField } from "@/components/patron/dash";
+import { safely } from "@/lib/server-call";
 
 const blank: LiveSpecialInput = {
   title: "",
@@ -71,7 +72,7 @@ export function LiveSpecialsTab({ specials }: { specials: LiveSpecial[] | null }
   const save = async () => {
     setBusy(true);
     setNotice("");
-    const result = await saveSpecialFn({ data: { id: editingId, input: draft } });
+    const result = await safely(saveSpecialFn({ data: { id: editingId, input: draft } }));
     setBusy(false);
     if (!result.ok) {
       setNotice(result.message);
@@ -84,7 +85,7 @@ export function LiveSpecialsTab({ specials }: { specials: LiveSpecial[] | null }
 
   const toggle = async (special: LiveSpecial) => {
     setBusy(true);
-    const result = await setSpecialActiveFn({ data: { id: special.id, active: !special.active } });
+    const result = await safely(setSpecialActiveFn({ data: { id: special.id, active: !special.active } }));
     setBusy(false);
     if (!result.ok) {
       setNotice(result.message);
@@ -95,7 +96,7 @@ export function LiveSpecialsTab({ specials }: { specials: LiveSpecial[] | null }
 
   const end = async (special: LiveSpecial) => {
     setBusy(true);
-    const result = await endSpecialFn({ data: { id: special.id } });
+    const result = await safely(endSpecialFn({ data: { id: special.id } }));
     setBusy(false);
     if (!result.ok) {
       setNotice(result.message);
@@ -153,9 +154,14 @@ export function LiveSpecialsTab({ specials }: { specials: LiveSpecial[] | null }
                     </button>
                   )}{" "}
                   {special.status !== "ended" && (
-                    <button className="row-action" type="button" disabled={busy} onClick={() => end(special)}>
-                      End {special.title}
-                    </button>
+                    <ConfirmDialog
+                      label={`End ${special.title}`}
+                      question={`End ${special.title} for good? Its code stops working.`}
+                      confirmLabel="Yes, end it"
+                      buttonClass="row-action is-danger"
+                      disabled={busy}
+                      onConfirm={() => void end(special)}
+                    />
                   )}
                 </>
               ),

@@ -4,6 +4,8 @@ import { z } from "zod";
 // Live server functions for the operator console, part 2 (D24). The operator comes from the server session.
 
 const uuid = z.string().uuid();
+/** Feedback and idea ids are text with a prefix, such as fb- or idea-, not bare UUIDs. */
+const textId = z.string().trim().min(1).max(64).regex(/^[A-Za-z0-9-]+$/);
 const note = z.string().trim().max(500).default("");
 const paging = {
   limit: z.number().int().min(1).max(200).default(50),
@@ -98,7 +100,7 @@ export const listFeedbackFn = createServerFn({ method: "GET" })
 
 /** One feedback screenshot, fetched when the operator opens it. */
 export const feedbackScreenshotFn = createServerFn({ method: "GET" })
-  .validator(z.object({ feedbackId: uuid }))
+  .validator(z.object({ feedbackId: textId }))
   .handler(async ({ data }) => {
     const [{ readViewer }, { feedbackScreenshotLive }] = await Promise.all([
       import("./auth-viewer"),
@@ -113,7 +115,7 @@ export const feedbackScreenshotFn = createServerFn({ method: "GET" })
 export const setFeedbackFn = createServerFn({ method: "POST" })
   .validator(
     z.object({
-      feedbackId: uuid,
+      feedbackId: textId,
       status: z.enum(["new", "seen", "planned", "done", "not_now"]),
       note,
     }),
@@ -145,7 +147,7 @@ export const listIdeasFn = createServerFn({ method: "GET" })
 export const setIdeaFn = createServerFn({ method: "POST" })
   .validator(
     z.object({
-      ideaId: uuid,
+      ideaId: textId,
       status: z.enum(["new", "exploring", "added"]),
       adminNotes: note,
     }),

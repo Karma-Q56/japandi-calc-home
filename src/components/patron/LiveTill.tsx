@@ -1,3 +1,4 @@
+import { safely } from "@/lib/server-call";
 import { useEffect, useState } from "react";
 import { CardScanner } from "@/components/patron/CardScanner";
 import { TillOrderStep } from "@/components/patron/live/TillOrderStep";
@@ -59,7 +60,7 @@ export function LiveTill() {
 
   const pair = async () => {
     setBusy(true);
-    const result = await pairTillFn({ data: { code: pairingCode } });
+    const result = await safely(pairTillFn({ data: { code: pairingCode } }));
     setBusy(false);
     if (!result.ok) {
       say("error", result.message);
@@ -72,7 +73,7 @@ export function LiveTill() {
 
   const signIn = async () => {
     setBusy(true);
-    const result = await tillSignInFn({ data: { staffId, pin } });
+    const result = await safely(tillSignInFn({ data: { staffId, pin } }));
     setBusy(false);
     setPin("");
     if (!result.ok) {
@@ -87,7 +88,7 @@ export function LiveTill() {
     const code = raw.trim();
     if (!code) return;
     setBusy(true);
-    const result = await lookupGuestFn({ data: { code } });
+    const result = await safely(lookupGuestFn({ data: { code } }));
     setBusy(false);
     setLastRedeem(null);
     setOrderFor(null);
@@ -104,9 +105,9 @@ export function LiveTill() {
   const addStamp = async () => {
     if (!lookup?.ok) return;
     setBusy(true);
-    const result = await tillRecordStampFn({
+    const result = await safely(tillRecordStampFn({
       data: { membershipId: lookup.membershipId, key: crypto.randomUUID() },
-    });
+    }));
     if (!result.ok) {
       setBusy(false);
       say("error", result.message);
@@ -125,9 +126,9 @@ export function LiveTill() {
     setLookup({ ...lookup, stampsCurrent: result.stampsCurrent });
     setOrderFor(lookup.membershipId);
     // Reload so any new reward shows the Redeem button.
-    const fresh = await lookupGuestFn({
+    const fresh = await safely(lookupGuestFn({
       data: { code: lookupCode.trim() || lookup.membershipId },
-    });
+    }));
     setBusy(false);
     if (fresh.ok) setLookup(fresh);
   };
@@ -135,9 +136,9 @@ export function LiveTill() {
   const redeem = async (rewardId: string) => {
     if (!lookup?.ok) return;
     setBusy(true);
-    const result = await tillRedeemRewardFn({
+    const result = await safely(tillRedeemRewardFn({
       data: { membershipId: lookup.membershipId, rewardId },
-    });
+    }));
     setBusy(false);
     if (!result.ok) {
       say("error", result.message);
@@ -157,9 +158,9 @@ export function LiveTill() {
   const redeemOffer = async () => {
     if (!lookup?.ok || !offerCode.trim()) return;
     setBusy(true);
-    const result = await tillRedeemOfferFn({
+    const result = await safely(tillRedeemOfferFn({
       data: { membershipId: lookup.membershipId, code: offerCode, key: crypto.randomUUID() },
-    });
+    }));
     setBusy(false);
     if (!result.ok) {
       say("error", result.message);
@@ -177,7 +178,7 @@ export function LiveTill() {
   const undoRedeem = async () => {
     if (!lastRedeem) return;
     setBusy(true);
-    const result = await tillUndoRedeemFn({ data: { rewardId: lastRedeem.rewardId } });
+    const result = await safely(tillUndoRedeemFn({ data: { rewardId: lastRedeem.rewardId } }));
     setBusy(false);
     if (!result.ok) {
       say("error", result.message);
@@ -364,6 +365,7 @@ export function LiveTill() {
               value={lookupCode}
               onChange={(event) => setLookupCode(event.target.value.toUpperCase())}
               placeholder="PT… or +27…"
+              maxLength={80}
               autoComplete="off"
               autoCapitalize="characters"
             />

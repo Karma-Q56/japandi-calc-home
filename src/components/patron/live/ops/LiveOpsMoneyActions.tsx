@@ -1,3 +1,4 @@
+import { safely } from "@/lib/server-call";
 import { useState } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { ConfirmDialog, DataTable, EmptyState, FormField } from "@/components/patron/dash";
@@ -47,7 +48,7 @@ export function LiveOpsMoneyActions(props: {
   async function run(action: () => Promise<Result>) {
     setBusy(true);
     setMessage(null);
-    const result = await action();
+    const result: Result = await safely(action());
     setMessage(result.message ?? (result.ok ? "Done." : "Nothing changed."));
     setBusy(false);
     // Reload the page data in place so the message stays on screen.

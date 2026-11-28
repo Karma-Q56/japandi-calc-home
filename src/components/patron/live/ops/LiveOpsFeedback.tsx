@@ -1,3 +1,4 @@
+import { safely } from "@/lib/server-call";
 import { useState } from "react";
 import { EmptyState, PageHeader } from "@/components/patron/dash";
 import { feedbackScreenshotFn, listFeedbackFn, setFeedbackFn } from "@/server/live-ops-inbox-fns";
@@ -29,7 +30,7 @@ export function LiveOpsFeedback({ initial }: { initial: FeedbackRow[] }) {
 
   const showPicture = async (feedbackId: string) => {
     setBusy(true);
-    const result = await feedbackScreenshotFn({ data: { feedbackId } });
+    const result = await safely(feedbackScreenshotFn({ data: { feedbackId } }));
     setBusy(false);
     if (result.ok) setPicture(result.rows ?? null);
     else setNotice(result.message ?? "Could not load the picture.");
@@ -38,11 +39,11 @@ export function LiveOpsFeedback({ initial }: { initial: FeedbackRow[] }) {
   const save = async () => {
     if (!selected) return;
     setBusy(true);
-    const result = await setFeedbackFn({ data: { feedbackId: selected.id, status, note } });
+    const result = await safely(setFeedbackFn({ data: { feedbackId: selected.id, status, note } }));
     setBusy(false);
     setNotice(result.message ?? "");
     if (result.ok) {
-      const refreshed = await listFeedbackFn({ data: { status: "", limit: 50, offset: 0 } });
+      const refreshed = await safely(listFeedbackFn({ data: { status: "", limit: 50, offset: 0 } }));
       if (refreshed.ok) setRows(refreshed.rows);
     }
   };

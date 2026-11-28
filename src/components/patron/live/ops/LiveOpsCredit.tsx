@@ -1,3 +1,4 @@
+import { safely } from "@/lib/server-call";
 import { useState } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { ConfirmDialog, DataTable, EmptyState, FormField, PageHeader } from "@/components/patron/dash";
@@ -28,9 +29,9 @@ export function LiveOpsCredit(props: { pending: Pending[]; restaurants: Array<{ 
     if (reason.trim().length < 3) return setMessage("Write a short reason (at least 3 characters).");
     setBusy(true);
     setMessage(null);
-    const result = await addCreditFn({
+    const result = await safely(addCreditFn({
       data: { restaurantId, entryType: kind, amountCents: amount, reference: reference.trim(), reason: reason.trim() },
-    });
+    }));
     setMessage(result.ok ? "Credit added." : result.message);
     setBusy(false);
     if (result.ok) await router?.invalidate();
@@ -39,7 +40,7 @@ export function LiveOpsCredit(props: { pending: Pending[]; restaurants: Array<{ 
   async function decide(action: () => Promise<{ ok: boolean; message?: string }>) {
     setBusy(true);
     setMessage(null);
-    const result = await action();
+    const result: { ok: boolean; message?: string } = await safely(action());
     setMessage(result.message ?? (result.ok ? "Done." : "Nothing changed."));
     setBusy(false);
     if (result.ok) await router?.invalidate();
